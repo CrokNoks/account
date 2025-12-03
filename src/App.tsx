@@ -17,6 +17,7 @@ function App() {
         dataProvider={dataProvider}
         authProvider={authProvider}
         layout={CustomLayout}
+        requireAuth
       >
         {/* Rapports */}
         <Resource
@@ -39,7 +40,7 @@ function App() {
           edit={ExpenseEdit}
           create={ExpenseCreate}
         />
-        
+
         {/* Catégories */}
         <Resource
           name="categories"

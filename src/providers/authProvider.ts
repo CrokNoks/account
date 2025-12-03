@@ -33,10 +33,13 @@ export const authProvider: AuthProvider = {
   },
 
   checkAuth: async () => {
-    const { data } = await supabaseClient.auth.getSession();
-    if (!data.session) {
-      return Promise.reject();
+    const { data, error } = await supabaseClient.auth.getSession();
+
+    if (error || !data.session) {
+      console.log('Pas de session active, redirection vers login');
+      return Promise.reject({ message: 'Session expirée', redirectTo: '/login' });
     }
+
     return Promise.resolve();
   },
 
