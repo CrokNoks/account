@@ -5,27 +5,24 @@ import {
   EditButton,
   DeleteButton,
 } from 'react-admin';
-import { TopToolbar, CreateButton, NumberField } from 'ra-ui-materialui';
+import { NumberField, SimpleList } from 'ra-ui-materialui';
 import { ColorField } from '../../components/ColorField';
 import { useAccount } from '../../context/AccountContext';
 import { ImportCategoriesButton } from './ImportCategoriesButton';
+import { useIsSmall } from '../../hooks/isSmall';
+import { ImportCreateToolbar } from '../../components/ImportCreateToolbar';
+import { AccountRequired } from '../../components/AccountRequired';
 
 const CategoryListActions = () => (
-  <TopToolbar>
-    <ImportCategoriesButton />
-    <CreateButton />
-  </TopToolbar>
+  <ImportCreateToolbar importButton={<ImportCategoriesButton />} />
 );
 
 export const CategoryList = () => {
   const { selectedAccountId } = useAccount();
+  const isSmall = useIsSmall();
 
   if (!selectedAccountId) {
-    return (
-      <List>
-        <div>Veuillez sélectionner un compte pour voir les catégories.</div>
-      </List>
-    );
+    return <AccountRequired message="Veuillez sélectionner un compte pour voir les catégories." />;
   }
 
   return (
@@ -33,16 +30,32 @@ export const CategoryList = () => {
       filter={{ account_id: selectedAccountId }}
       actions={<CategoryListActions />}
     >
-      <Datagrid rowClick="edit">
-        <TextField source="name" label="Nom" />
-        <TextField source="description" label="Description" />
-        <TextField source="type" label="Type" />
-        <ColorField source="color" label="Couleur" />
-        <NumberField source="budget" label="Budget"
-          options={{ style: 'currency', currency: 'EUR' }} />
-        <EditButton />
-        <DeleteButton />
-      </Datagrid>
+      {isSmall ? (
+        <SimpleList
+          primaryText={(record) => record.name}
+          secondaryText={(record) => record.description}
+          tertiaryText={(record) =>
+            new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(
+              record.budget || 0
+            )
+          }
+        />
+      ) : (
+        <Datagrid rowClick="edit">
+          <TextField source="name" label="Nom" />
+          <TextField source="description" label="Description" />
+          <TextField source="type" label="Type" />
+          <ColorField source="color" label="Couleur" />
+          <NumberField
+            source="budget"
+            label="Budget"
+            options={{ style: 'currency', currency: 'EUR' }}
+          />
+          <EditButton />
+          <DeleteButton />
+        </Datagrid>
+      )}
     </List>
   );
 };
+

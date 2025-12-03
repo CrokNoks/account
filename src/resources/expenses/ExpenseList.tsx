@@ -14,26 +14,28 @@ import {
   useRefresh,
 } from 'react-admin';
 import {
-  TopToolbar,
-  CreateButton,
   TextInput,
   ReferenceInput,
   SelectInput,
-  DateInput, FilterList, FilterListItem, FilterLiveSearch, SavedQueriesList, FunctionField,
+  DateInput,
+  FilterList,
+  FilterListItem,
+  FilterLiveSearch,
+  SavedQueriesList,
+  FunctionField,
   SimpleList,
-  NullableBooleanInput
+  NullableBooleanInput,
 } from 'ra-ui-materialui';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import { Card, CardContent, Switch } from '@mui/material';
+import { Card, CardContent, Switch, Typography } from '@mui/material';
 import { useAccount } from '../../context/AccountContext';
 import { ImportExpensesButton } from './ImportExpensesButton';
 import { useIsSmall } from '../../hooks/isSmall';
+import { ImportCreateToolbar } from '../../components/ImportCreateToolbar';
+import { AccountRequired } from '../../components/AccountRequired';
 
 const ExpenseListActions = () => (
-  <TopToolbar>
-    <ImportExpensesButton />
-    <CreateButton />
-  </TopToolbar>
+  <ImportCreateToolbar importButton={<ImportExpensesButton />} />
 );
 
 const expenseFilters = (selectedAccountId: string | null, embed: boolean = false) => {
@@ -91,13 +93,19 @@ const ReconciledToggle = () => {
 };
 
 export const ExpenseFilterSidebar = () => (
-  <Card sx={{ order: -1, mr: 2, mt: 9, width: 200 }}>
+  <Card sx={{ order: -1, mr: 2, mt: 9, width: 260 }}>
     <CardContent>
+      <Typography variant="subtitle2" gutterBottom>
+        Filtres des opérations
+      </Typography>
+      <Typography variant="body2" color="text.secondary" mb={1}>
+        Affinez l&apos;affichage par texte, période et statut de pointage.
+      </Typography>
       <SavedQueriesList />
       <FilterLiveSearch />
       <FilterList label="Pointé" icon={<CheckCircleIcon />}>
-        <FilterListItem label="Oui" value={{ reconciled: true }} />
-        <FilterListItem label="Non" value={{ reconciled: false }} />
+        <FilterListItem label="Oui (pointé)" value={{ reconciled: true }} />
+        <FilterListItem label="Non pointé" value={{ reconciled: false }} />
       </FilterList>
     </CardContent>
   </Card>
@@ -108,11 +116,7 @@ export const ExpenseList = ({ filter, embed = false, actions = <></> }: { filter
   const isSmall = useIsSmall();
 
   if (!selectedAccountId) {
-    return (
-      <List>
-        <div>Veuillez sélectionner un compte pour voir les dépenses.</div>
-      </List>
-    );
+    return <AccountRequired message="Veuillez sélectionner un compte pour voir les dépenses." />;
   }
 
   return (

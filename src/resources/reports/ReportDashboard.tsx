@@ -85,7 +85,19 @@ export const ReportDashboard = () => {
     refreshCurrentReport();
   };
 
-  if (!selectedAccountId) return <Box p={2}>Veuillez sélectionner un compte.</Box>;
+  if (!selectedAccountId) {
+    return (
+      <Box p={2}>
+        <Typography variant="h6" gutterBottom>
+          Aucun compte sélectionné
+        </Typography>
+        <Typography variant="body2" color="text.secondary">
+          Choisissez un compte en haut de l&apos;écran pour afficher vos rapports et vos
+          opérations.
+        </Typography>
+      </Box>
+    );
+  }
   if (loading) return <Loading />;
 
   return (
