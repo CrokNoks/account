@@ -11,6 +11,14 @@ const baseDataProvider = supabaseDataProvider({
 export const dataProvider: DataProvider = {
   ...baseDataProvider,
   getList: async (resource, params) => {
+    if (resource === 'transfers') {
+      // Les virements sont une vue logique : on ne stocke pas de table dédiée
+      return {
+        data: [],
+        total: 0,
+      };
+    }
+
     // For expenses, handle date and amount range filters manually
     if (resource === 'expenses') {
       const { pagination = { page: 1, perPage: 10 }, sort = { field: 'date', order: 'DESC' }, filter } = params;
@@ -62,6 +70,84 @@ export const dataProvider: DataProvider = {
     return baseDataProvider.getList(resource, params);
   },
   create: async (resource, params) => {
+    if (resource === 'transfers') {
+      const {
+        source_account_id,
+        source_category_id,
+        destination_account_id,
+        destination_category_id,
+        amount,
+        description,
+        date,
+        notes,
+      } = params.data as any;
+
+      if (
+        !source_account_id ||
+        !destination_account_id ||
+        !source_category_id ||
+        !destination_category_id ||
+        !amount
+      ) {
+        throw new Error('Champs manquants pour le virement');
+      }
+
+      const { data: authData } = await supabaseClient.auth.getUser();
+      const user = authData?.user;
+
+      if (!user) {
+        throw new Error('Utilisateur non connecté');
+      }
+
+      const baseFields = {
+        description: description || 'Virement entre comptes',
+        date: date || new Date().toISOString(),
+        notes: notes || null,
+        reconciled: false,
+        user_id: user.id,
+      };
+
+      const amountNumber = Number(amount);
+      const absAmount = Math.abs(amountNumber);
+
+      const rows = [
+        {
+          ...baseFields,
+          account_id: source_account_id,
+          category_id: source_category_id,
+          amount: -absAmount,
+        },
+        {
+          ...baseFields,
+          account_id: destination_account_id,
+          category_id: destination_category_id,
+          amount: absAmount,
+        },
+      ];
+
+      const { data, error } = await supabaseClient
+        .from('expenses')
+        .insert(rows)
+        .select();
+
+      if (error) {
+        console.error('Erreur création virement (expenses):', error);
+        throw new Error(error.message);
+      }
+
+      // On retourne un objet logique de "virement"
+      return {
+        data: {
+          id: data[0]?.id,
+          source_account_id,
+          destination_account_id,
+          amount: absAmount,
+          description: baseFields.description,
+          date: baseFields.date,
+        },
+      };
+    }
+
     // Pour les ressources liées à un compte, on s'assure d'injecter le user_id (créateur)
     // L'account_id doit déjà être présent dans params.data via le transform du composant
     if (resource === 'categories' || resource === 'expenses' || resource === 'accounts') {

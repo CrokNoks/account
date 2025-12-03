@@ -1,4 +1,4 @@
-import { List, Datagrid, TextField, DateField, EditButton, NumberField } from 'react-admin';
+import { List, Datagrid, TextField, DateField, EditButton, NumberField, DeleteButton } from 'react-admin';
 import { SimpleList } from 'ra-ui-materialui';
 import { useIsSmall } from '../../hooks/isSmall';
 
@@ -32,6 +32,7 @@ export const AccountList = () => {
             options={{ style: 'currency', currency: 'EUR' }}
           />
           <EditButton />
+          <DeleteButton />
         </Datagrid>
       )}
     </List>

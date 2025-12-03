@@ -111,7 +111,7 @@ export const ExpenseFilterSidebar = () => (
   </Card>
 );
 
-export const ExpenseList = ({ filter, embed = false, actions = <></> }: { filter: any, embed?: boolean, actions?: any } = { filter: {} }) => {
+export const ExpenseList = ({ filter, embed = false, actions = <></>, onRowClick }: { filter: any, embed?: boolean, actions?: any, onRowClick?: (id: any) => false }) => {
   const { selectedAccountId } = useAccount();
   const isSmall = useIsSmall();
 
@@ -133,7 +133,7 @@ export const ExpenseList = ({ filter, embed = false, actions = <></> }: { filter
 
       {isSmall ? (
         <SimpleList
-          rowClick={false}
+          rowClick={onRowClick || false}
           primaryText={(record) => record.description}
           secondaryText={(record) => new Date(record.date).toLocaleDateString()}
           tertiaryText={(record) => new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(record.amount)}
@@ -150,7 +150,7 @@ export const ExpenseList = ({ filter, embed = false, actions = <></> }: { filter
           }}
         />
       ) : (
-        <Datagrid {...(embed ? { bulkActionButtons: false, rowClick: false } : { rowClick: 'edit' })}>
+        <Datagrid {...(embed ? { bulkActionButtons: false, rowClick: onRowClick || false } : { rowClick: 'edit' })}>
           <DateField source="date" label="Date" />
           <TextField source="description" label="Description" />
           <ReferenceField source="category_id" reference="categories" label="Catégorie">

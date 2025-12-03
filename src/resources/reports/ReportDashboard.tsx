@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNotify, Loading } from 'react-admin';
+import { useNotify, Loading, useRedirect } from 'react-admin';
 import { Card, CardContent, Typography, Grid, Box, Button } from '@mui/material';
 import { useAccount } from '../../context/AccountContext';
 import { CategorySummaryTable } from '../../components/CategorySummaryTable';
@@ -29,9 +29,11 @@ export const ReportDashboard = () => {
   const { selectedAccountId } = useAccount();
   const notify = useNotify();
   const isSmall = useIsSmall();
+  const redirect = useRedirect();
 
   // Expense Drawer state
   const [isExpenseDrawerOpen, setExpenseDrawerOpen] = useState(false);
+  const [selectedExpenseId, setSelectedExpenseId] = useState<string | null>(null);
 
   // Use custom hooks
   const {
@@ -79,9 +81,16 @@ export const ReportDashboard = () => {
     }
   };
 
+  const handleRowClick = (id: string): false => {
+    setSelectedExpenseId(id);
+    setExpenseDrawerOpen(true);
+    return false;
+  };
+
   const handleExpenseSuccess = () => {
-    notify('Opération ajoutée', { type: 'success' });
+    notify(selectedExpenseId ? 'Opération modifiée' : 'Opération ajoutée', { type: 'success' });
     setExpenseDrawerOpen(false);
+    setSelectedExpenseId(null);
     refreshCurrentReport();
   };
 
@@ -186,13 +195,29 @@ export const ReportDashboard = () => {
                       {new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(reportData.totalIncome - reportData.totalExpense)}
                     </Typography>
                   </Box>
-                  <Button variant="contained" color="success" onClick={() => setExpenseDrawerOpen(true)} size="small">
-                    Ajouter
-                  </Button>
+                  <Box display="flex" gap={1}>
+                    <Button
+                      variant="outlined"
+                      color="primary"
+                      size="small"
+                      onClick={() => redirect('/transfers/create')}
+                    >
+                      Virement
+                    </Button>
+                    <Button
+                      variant="contained"
+                      color="success"
+                      onClick={() => setExpenseDrawerOpen(true)}
+                      size="small"
+                    >
+                      Ajouter
+                    </Button>
+                  </Box>
                 </Box>
                 <ExpenseList
                   embed
                   filter={getFilter({ date_gte: reportData.startDate, date_lte: reportData.endDate })}
+                  onRowClick={handleRowClick}
                 />
               </CardContent>
             </Card>
@@ -225,9 +250,13 @@ export const ReportDashboard = () => {
 
       <AddExpenseDrawer
         open={isExpenseDrawerOpen}
-        onClose={() => setExpenseDrawerOpen(false)}
+        onClose={() => {
+          setExpenseDrawerOpen(false);
+          setSelectedExpenseId(null);
+        }}
         selectedAccountId={selectedAccountId}
         onSuccess={handleExpenseSuccess}
+        expenseId={selectedExpenseId}
       />
     </Box>
   );

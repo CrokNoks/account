@@ -8,11 +8,13 @@ import {
   SelectInput,
   required,
   BooleanInput,
+  useRedirect,
 } from 'react-admin';
 import { useAccount } from '../../context/AccountContext';
 
 export const ExpenseCreate = () => {
   const { selectedAccountId } = useAccount();
+  const redirect = useRedirect();
 
   const transform = (data: any) => ({
     ...data,
@@ -24,7 +26,14 @@ export const ExpenseCreate = () => {
   }
 
   return (
-    <Create transform={transform}>
+    <Create
+      transform={transform}
+      mutationOptions={{
+        onSuccess: () => {
+          redirect('/reports');
+        },
+      }}
+    >
       <SimpleForm>
         <TextInput source="description" label="Description" validate={[required()]} fullWidth />
         <NumberInput source="amount" label="Montant" validate={[required()]} />

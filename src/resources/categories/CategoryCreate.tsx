@@ -5,12 +5,14 @@ import {
   NumberInput,
   SelectInput,
   required,
+  useRedirect,
 } from 'react-admin';
 import { ColorInput } from '../../components/ColorInput';
 import { useAccount } from '../../context/AccountContext';
 
 export const CategoryCreate = () => {
   const { selectedAccountId } = useAccount();
+  const redirect = useRedirect();
 
   const transform = (data: any) => ({
     ...data,
@@ -22,7 +24,14 @@ export const CategoryCreate = () => {
   }
 
   return (
-    <Create transform={transform}>
+    <Create
+      transform={transform}
+      mutationOptions={{
+        onSuccess: () => {
+          redirect('/categories');
+        },
+      }}
+    >
       <SimpleForm>
         <TextInput source="name" label="Nom" validate={[required()]} />
         <TextInput source="description" label="Description" />

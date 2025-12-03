@@ -9,6 +9,7 @@ import { ExpenseList, ExpenseEdit, ExpenseCreate } from './resources/expenses';
 import { CategoryList, CategoryEdit, CategoryCreate } from './resources/categories';
 import { AccountList, AccountCreate, AccountEdit } from './resources/accounts';
 import { ReportDashboard, CategoryEvolution } from './resources/reports';
+import { TransferCreate } from './resources/transfers';
 
 function App() {
   return (
@@ -55,6 +56,13 @@ function App() {
           list={AccountList}
           edit={AccountEdit}
           create={AccountCreate}
+        />
+
+        {/* Virements */}
+        <Resource
+          name="transfers"
+          create={TransferCreate}
+          options={{ label: 'Virements' }}
         />
       </Admin>
     </AccountProvider>
