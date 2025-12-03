@@ -155,8 +155,40 @@ export const useReportData = (selectedAccountId: string | null) => {
         setLoading(false);
       }
     } else {
-      setSelectedReportId('new');
-      setReportData(null);
+      // Pas d'historique : initialiser le premier rapport
+      setLoading(true);
+      try {
+        const { data: account } = await supabaseClient
+          .from('accounts')
+          .select('initial_balance')
+          .eq('id', selectedAccountId)
+          .single();
+
+        const { data: firstExpense } = await supabaseClient
+          .from('expenses')
+          .select('date')
+          .eq('account_id', selectedAccountId)
+          .order('date', { ascending: true })
+          .limit(1)
+          .single();
+
+        if (firstExpense) {
+          const startDate = firstExpense.date;
+          const initialBalance = account?.initial_balance || 0;
+
+          const report = await fetchAndCalculateReport(startDate, null, initialBalance);
+          setReportData(report);
+          setSelectedReportId('new');
+        } else {
+          setSelectedReportId('new');
+          setReportData(null);
+        }
+      } catch (e) {
+        console.error(e);
+        notify('Erreur lors de l\'initialisation du rapport', { type: 'error' });
+      } finally {
+        setLoading(false);
+      }
     }
   }, [selectedAccountId, history, fetchAndCalculateReport, notify]);
 
@@ -217,8 +249,45 @@ export const useReportData = (selectedAccountId: string | null) => {
           setLoading(false);
         }
       } else {
-        setSelectedReportId('');
-        setReportData(null);
+        // Pas d'historique : créer le premier rapport
+        // On récupère les infos du compte et la première opération
+        setLoading(true);
+        try {
+          const { data: account } = await supabaseClient
+            .from('accounts')
+            .select('initial_balance')
+            .eq('id', selectedAccountId)
+            .single();
+
+          const { data: firstExpense } = await supabaseClient
+            .from('expenses')
+            .select('date')
+            .eq('account_id', selectedAccountId)
+            .order('date', { ascending: true })
+            .limit(1)
+            .single();
+
+          if (firstExpense) {
+            // Il y a au moins une opération
+            const startDate = firstExpense.date;
+            const initialBalance = account?.initial_balance || 0;
+
+            const report = await fetchAndCalculateReport(startDate, null, initialBalance);
+            setReportData(report);
+            setSelectedReportId('new');
+          } else {
+            // Pas d'opération du tout
+            setSelectedReportId('');
+            setReportData(null);
+          }
+        } catch (e) {
+          console.error(e);
+          notify('Erreur lors de l\'initialisation du rapport', { type: 'warning' });
+          setSelectedReportId('');
+          setReportData(null);
+        } finally {
+          setLoading(false);
+        }
       }
     };
 
