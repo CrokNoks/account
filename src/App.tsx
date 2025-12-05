@@ -10,6 +10,7 @@ import { CategoryList, CategoryEdit, CategoryCreate } from './resources/categori
 import { AccountList, AccountCreate, AccountEdit } from './resources/accounts';
 import { ReportDashboard, CategoryEvolution } from './resources/reports';
 import { TransferCreate } from './resources/transfers';
+// app_users est utilisé pour les listes de sélection (partage de comptes)
 
 function App() {
   return (
@@ -63,6 +64,12 @@ function App() {
           name="transfers"
           create={TransferCreate}
           options={{ label: 'Virements' }}
+        />
+
+        {/* Utilisateurs (pour sélection) */}
+        <Resource
+          name="app_users"
+          options={{ label: 'Utilisateurs' }}
         />
       </Admin>
     </AccountProvider>

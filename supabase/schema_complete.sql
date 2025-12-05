@@ -137,13 +137,13 @@ CREATE INDEX IF NOT EXISTS idx_categories_account_id ON public.categories(accoun
 CREATE INDEX IF NOT EXISTS idx_expenses_account_id ON public.expenses(account_id);
 
 -- Helper function to check access
-CREATE OR REPLACE FUNCTION public.has_account_access(account_id UUID, required_permission VARCHAR DEFAULT 'read')
+CREATE OR REPLACE FUNCTION public.has_account_access(p_account_id UUID, required_permission VARCHAR DEFAULT 'read')
 RETURNS BOOLEAN AS $$
 BEGIN
   -- Check if owner
   IF EXISTS (
     SELECT 1 FROM public.accounts 
-    WHERE id = account_id AND owner_id = auth.uid()
+    WHERE id = p_account_id AND owner_id = auth.uid()
   ) THEN
     RETURN TRUE;
   END IF;
@@ -151,7 +151,7 @@ BEGIN
   -- Check if shared
   IF EXISTS (
     SELECT 1 FROM public.account_shares 
-    WHERE account_id = account_id 
+    WHERE account_id = p_account_id 
     AND user_id = auth.uid()
     AND (
       permission = required_permission 
@@ -303,6 +303,63 @@ ALTER TABLE public.categories
 ADD COLUMN IF NOT EXISTS type TEXT CHECK (type IN ('expense', 'income'));
 
 COMMENT ON COLUMN public.categories.type IS 'Type of category: expense or income. Used for budgeting.';
+
+-- ============================================================================
+-- 5. APP USERS (mirror of auth.users for client-side selections)
+-- ============================================================================
+
+CREATE TABLE IF NOT EXISTS public.app_users (
+  id UUID PRIMARY KEY,
+  email TEXT UNIQUE NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+ALTER TABLE public.app_users ENABLE ROW LEVEL SECURITY;
+
+-- Allow authenticated users to read emails/id
+CREATE POLICY "app_users readable by authenticated" ON public.app_users
+  FOR SELECT
+  USING (auth.role() = 'authenticated');
+
+-- Maintenance des timestamps
+CREATE TRIGGER set_app_users_updated_at
+  BEFORE UPDATE ON public.app_users
+  FOR EACH ROW
+  EXECUTE FUNCTION public.handle_updated_at();
+
+-- Sync depuis auth.users (insert & update)
+CREATE OR REPLACE FUNCTION public.sync_app_users()
+RETURNS TRIGGER AS $$
+BEGIN
+  IF TG_OP = 'INSERT' THEN
+    INSERT INTO public.app_users (id, email) VALUES (NEW.id, NEW.email)
+    ON CONFLICT (id) DO UPDATE SET email = EXCLUDED.email, updated_at = NOW();
+    RETURN NEW;
+  ELSIF TG_OP = 'UPDATE' THEN
+    UPDATE public.app_users
+      SET email = NEW.email,
+          updated_at = NOW()
+      WHERE id = NEW.id;
+    RETURN NEW;
+  END IF;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_trigger WHERE tgname = 'on_auth_users_sync_to_app_users'
+  ) THEN
+    CREATE TRIGGER on_auth_users_sync_to_app_users
+    AFTER INSERT OR UPDATE ON auth.users
+    FOR EACH ROW EXECUTE FUNCTION public.sync_app_users();
+  END IF;
+END;
+$$;
+
+CREATE INDEX IF NOT EXISTS idx_app_users_email ON public.app_users(email);
 
 -- ============================================================================
 -- SCHEMA COMPLETE

@@ -25,24 +25,32 @@ export const dataProvider: DataProvider = {
       const { page, perPage } = pagination;
       const { field, order } = sort;
 
+      // Pas d'embed pour éviter l'erreur "not an embedded resource"
       let query = supabaseClient
         .from(resource)
-        .select('*, category:categories(id, name, color)', { count: 'exact' });
+        .select('*', { count: 'exact' });
 
       // Apply filters
       Object.keys(filter).forEach(key => {
+        const value = (filter as any)[key];
+        // Ignore undefined/null filters to avoid invalid casts (e.g., reconciled undefined)
+        if (value === undefined || value === null) {
+          return;
+        }
         if (key === 'date_gte') {
-          query = query.gte('date', filter[key]);
+          query = query.gte('date', value);
         } else if (key === 'date_lte') {
-          query = query.lte('date', filter[key]);
+          query = query.lte('date', value);
+        } else if (key === 'account_id') {
+          query = query.eq('account_id', value);
         } else if (key === 'amount_gte') {
-          query = query.gte('amount', filter[key]);
+          query = query.gte('amount', value);
         } else if (key === 'amount_lte') {
-          query = query.lte('amount', filter[key]);
+          query = query.lte('amount', value);
         } else if (key === 'description') {
-          query = query.ilike('description', `%${filter[key]}%`);
+          query = query.ilike('description', `%${value}%`);
         } else {
-          query = query.eq(key, filter[key]);
+          query = query.eq(key, value);
         }
       });
 
@@ -50,6 +58,42 @@ export const dataProvider: DataProvider = {
       query = query.order(field, { ascending: order === 'ASC' });
 
       // Apply pagination
+      const from = (page - 1) * perPage;
+      const to = from + perPage - 1;
+      query = query.range(from, to);
+
+      const { data, error, count } = await query;
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      return {
+        data: data || [],
+        total: count || 0,
+      };
+    }
+
+    // For categories, add explicit account_id scoping to avoid ambiguity and ensure RLS-friendly filters
+    if (resource === 'categories') {
+      const { pagination = { page: 1, perPage: 10 }, sort = { field: 'name', order: 'ASC' }, filter } = params;
+      const { page, perPage } = pagination;
+      const { field, order } = sort;
+
+      let query = supabaseClient.from(resource).select('*', { count: 'exact' });
+
+      Object.keys(filter).forEach((key) => {
+        if (key === 'account_id') {
+          query = query.eq('account_id', filter[key]);
+        } else if (key === 'name') {
+          query = query.ilike('name', `%${filter[key]}%`);
+        } else {
+          query = query.eq(key, filter[key]);
+        }
+      });
+
+      query = query.order(field, { ascending: order === 'ASC' });
+
       const from = (page - 1) * perPage;
       const to = from + perPage - 1;
       query = query.range(from, to);
@@ -148,8 +192,7 @@ export const dataProvider: DataProvider = {
       };
     }
 
-    // Pour les ressources liées à un compte, on s'assure d'injecter le user_id (créateur)
-    // L'account_id doit déjà être présent dans params.data via le transform du composant
+    // Pour les ressources liées à un compte
     if (resource === 'categories' || resource === 'expenses' || resource === 'accounts') {
       const { data: { user } } = await supabaseClient.auth.getUser();
 
@@ -157,19 +200,12 @@ export const dataProvider: DataProvider = {
         throw new Error('Utilisateur non connecté');
       }
 
-      // On prépare les données
       const dataToInsert = {
         ...params.data,
-        // On force le user_id si la table le demande (c'est le cas pour categories/expenses/accounts)
-        // Pour accounts, c'est 'owner_id' dans le schéma, mais 'user_id' est souvent utilisé par convention react-admin
-        // Mon schéma accounts a 'owner_id'.
-        // Mes schémas categories/expenses ont 'user_id'.
       };
 
       if (resource === 'accounts') {
         dataToInsert.owner_id = user.id;
-      } else {
-        dataToInsert.user_id = user.id;
       }
 
       const { data, error } = await supabaseClient

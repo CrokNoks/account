@@ -4,6 +4,7 @@ import {
     TextInput, 
     required
 } from 'react-admin';
+import { AccountSharesManager } from './AccountSharesManager';
 
 export const AccountEdit = () => {
 
@@ -20,8 +21,7 @@ export const AccountEdit = () => {
                     type="number"
                     fullWidth 
                 />
-                
-
+                <AccountSharesManager />
             </SimpleForm>
         </Edit>
     );
