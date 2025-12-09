@@ -1,6 +1,6 @@
 import { Drawer, Box, Typography, IconButton } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
-import { CreateBase, SimpleForm, TextInput, NumberInput, DateInput, ReferenceInput, SelectInput, required, useDataProvider, useNotify } from 'react-admin';
+import { CreateBase, SimpleForm, TextInput, NumberInput, DateInput, ReferenceInput, SelectInput, AutocompleteInput, required, useDataProvider, useNotify } from 'react-admin';
 import { useAccount } from '../../../context/AccountContext';
 import { useFormContext } from 'react-hook-form';
 
@@ -56,7 +56,11 @@ const FormFields = () => {
         sort={{ field: 'name', order: 'ASC' }}
         key={`source-cat-${sourceAccountId}`}
       >
-        <SelectInput optionText="name" fullWidth />
+        <AutocompleteInput
+          optionText="name"
+          filterToQuery={searchText => ({ name: searchText })}
+          fullWidth
+        />
       </ReferenceInput>
 
       <ReferenceInput
@@ -76,7 +80,11 @@ const FormFields = () => {
         sort={{ field: 'name', order: 'ASC' }}
         key={`target-cat-${targetAccountId}`}
       >
-        <SelectInput optionText="name" fullWidth />
+        <AutocompleteInput
+          optionText="name"
+          filterToQuery={searchText => ({ name: searchText })}
+          fullWidth
+        />
       </ReferenceInput>
 
       <TextInput

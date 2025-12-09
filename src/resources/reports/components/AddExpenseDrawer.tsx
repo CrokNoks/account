@@ -1,6 +1,6 @@
 import { Drawer, Box, Typography, IconButton } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
-import { CreateBase, EditBase, SimpleForm, TextInput, NumberInput, DateInput, ReferenceInput, SelectInput, BooleanInput, required, Toolbar, SaveButton, DeleteButton } from 'react-admin';
+import { CreateBase, EditBase, SimpleForm, TextInput, NumberInput, DateInput, ReferenceInput, AutocompleteInput, BooleanInput, required, Toolbar, SaveButton, DeleteButton } from 'react-admin';
 
 interface AddExpenseDrawerProps {
   open: boolean;
@@ -55,7 +55,12 @@ export const AddExpenseDrawer = ({ open, onClose, selectedAccountId, onSuccess, 
                 perPage={100}
                 sort={{ field: 'name', order: 'ASC' }}
               >
-                <SelectInput optionText="name" label="Catégorie" fullWidth />
+                <AutocompleteInput
+                  optionText="name"
+                  label="Catégorie"
+                  filterToQuery={searchText => ({ name: searchText })}
+                  fullWidth
+                />
               </ReferenceInput>
 
               <TextInput source="notes" label="Notes" multiline fullWidth />
@@ -81,7 +86,12 @@ export const AddExpenseDrawer = ({ open, onClose, selectedAccountId, onSuccess, 
                 perPage={100}
                 sort={{ field: 'name', order: 'ASC' }}
               >
-                <SelectInput optionText="name" label="Catégorie" fullWidth />
+                <AutocompleteInput
+                  optionText="name"
+                  label="Catégorie"
+                  filterToQuery={searchText => ({ name: searchText })}
+                  fullWidth
+                />
               </ReferenceInput>
 
               <TextInput source="notes" label="Notes" multiline fullWidth />
