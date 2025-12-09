@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNotify, Loading, useRedirect } from 'react-admin';
+import { useNotify, Loading } from 'react-admin';
 import { Card, CardContent, Typography, Grid, Box, Button } from '@mui/material';
 import { useAccount } from '../../context/AccountContext';
 import { CategorySummaryTable } from '../../components/CategorySummaryTable';
@@ -10,7 +10,8 @@ import {
   ReportSelector,
   CreateReportModal,
   CloseReportModal,
-  AddExpenseDrawer
+  AddExpenseDrawer,
+  TransferDrawer
 } from './components';
 import { useReportData } from './hooks/useReportData';
 import { useReportActions } from './hooks/useReportActions';
@@ -29,11 +30,13 @@ export const ReportDashboard = () => {
   const { selectedAccountId } = useAccount();
   const notify = useNotify();
   const isSmall = useIsSmall();
-  const redirect = useRedirect();
 
   // Expense Drawer state
   const [isExpenseDrawerOpen, setExpenseDrawerOpen] = useState(false);
   const [selectedExpenseId, setSelectedExpenseId] = useState<string | null>(null);
+
+  // Transfer Drawer state
+  const [isTransferDrawerOpen, setTransferDrawerOpen] = useState(false);
 
   // Use custom hooks
   const {
@@ -200,7 +203,7 @@ export const ReportDashboard = () => {
                       variant="outlined"
                       color="primary"
                       size="small"
-                      onClick={() => redirect('/transfers/create')}
+                      onClick={() => setTransferDrawerOpen(true)}
                     >
                       Virement
                     </Button>
@@ -257,6 +260,15 @@ export const ReportDashboard = () => {
         selectedAccountId={selectedAccountId}
         onSuccess={handleExpenseSuccess}
         expenseId={selectedExpenseId}
+      />
+
+      <TransferDrawer
+        open={isTransferDrawerOpen}
+        onClose={() => setTransferDrawerOpen(false)}
+        onSuccess={() => {
+          setTransferDrawerOpen(false);
+          refreshCurrentReport();
+        }}
       />
     </Box>
   );

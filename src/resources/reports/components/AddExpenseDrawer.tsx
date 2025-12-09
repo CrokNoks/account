@@ -1,6 +1,6 @@
 import { Drawer, Box, Typography, IconButton } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
-import { CreateBase, EditBase, SimpleForm, TextInput, NumberInput, DateInput, ReferenceInput, SelectInput, BooleanInput, required } from 'react-admin';
+import { CreateBase, EditBase, SimpleForm, TextInput, NumberInput, DateInput, ReferenceInput, SelectInput, BooleanInput, required, Toolbar, SaveButton, DeleteButton } from 'react-admin';
 
 interface AddExpenseDrawerProps {
   open: boolean;
@@ -9,6 +9,13 @@ interface AddExpenseDrawerProps {
   onSuccess: () => void;
   expenseId?: string | null;
 }
+
+const EditToolbar = () => (
+  <Toolbar>
+    <SaveButton />
+    <DeleteButton redirect={false} mutationOptions={{ onSuccess: () => window.location.reload() }} />
+  </Toolbar>
+);
 
 export const AddExpenseDrawer = ({ open, onClose, selectedAccountId, onSuccess, expenseId }: AddExpenseDrawerProps) => {
   const isEdit = !!expenseId;
@@ -29,8 +36,14 @@ export const AddExpenseDrawer = ({ open, onClose, selectedAccountId, onSuccess, 
           </IconButton>
         </Box>
         {isEdit ? (
-          <EditBase resource="expenses" id={expenseId} mutationOptions={{ onSuccess }}>
-            <SimpleForm>
+          <EditBase
+            resource="expenses"
+            id={expenseId}
+            redirect={false}
+            mutationMode="optimistic"
+            mutationOptions={{ onSuccess }}
+          >
+            <SimpleForm toolbar={<EditToolbar />}>
               <TextInput source="description" label="Description" validate={[required()]} fullWidth />
               <NumberInput source="amount" label="Montant" validate={[required()]} fullWidth />
               <DateInput source="date" label="Date" validate={[required()]} fullWidth />
@@ -53,6 +66,7 @@ export const AddExpenseDrawer = ({ open, onClose, selectedAccountId, onSuccess, 
           <CreateBase
             resource="expenses"
             transform={(data: any) => ({ ...data, account_id: selectedAccountId })}
+            redirect={false}
             mutationOptions={{ onSuccess }}
           >
             <SimpleForm>
