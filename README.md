@@ -5,7 +5,7 @@ Une application moderne, rapide et mobile-first pour suivre vos dépenses et rev
 ![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)
 ![Status](https://img.shields.io/badge/status-active-success.svg)
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
-![Build Status](https://github.com/CrokNoks/account/actions/workflows/main.yml/badge.svg)
+![Build Status](https://github.com/CrokNoks/account/actions/workflows/firebase-deploy.yml/badge.svg)
 
 ![React](https://img.shields.io/badge/React-18-61DAFB.svg?style=flat&logo=react&logoColor=white)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.0-3178C6.svg?style=flat&logo=typescript&logoColor=white)
