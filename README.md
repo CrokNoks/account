@@ -1,127 +1,88 @@
-# Application de Suivi de Dépenses
+# 💰 Mes Comptes - Gestionnaire de Finances Personnelles
 
-Une application moderne de suivi de dépenses construite avec React Admin et Supabase.
+Une application moderne, rapide et mobile-first pour suivre vos dépenses et revenus, construite avec **React Admin** et **Supabase**.
+
+![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)
+![Status](https://img.shields.io/badge/status-active-success.svg)
+![License](https://img.shields.io/badge/license-MIT-blue.svg)
+![Build Status](https://github.com/CrokNoks/account/actions/workflows/main.yml/badge.svg)
+
+![React](https://img.shields.io/badge/React-18-61DAFB.svg?style=flat&logo=react&logoColor=white)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.0-3178C6.svg?style=flat&logo=typescript&logoColor=white)
+![Vite](https://img.shields.io/badge/Vite-5.0-646CFF.svg?style=flat&logo=vite&logoColor=white)
+![Supabase](https://img.shields.io/badge/Supabase-PostgreSQL-3ECF8E.svg?style=flat&logo=supabase&logoColor=white)
+![Material UI](https://img.shields.io/badge/Material--UI-5.15-007FFF.svg?style=flat&logo=mui&logoColor=white)
+![PWA](https://img.shields.io/badge/PWA-Ready-purple.svg?style=flat&logo=pwa&logoColor=white)
+
+## ✨ Fonctionnalités
+
+- **📱 Mobile First & PWA** : Interface optimisée pour mobile, installable comme une application native.
+- **📊 Rapports Mensuels** : Génération automatique de rapports avec suivi des soldes (initial, final, pointé).
+- **📈 Visualisation** : Graphiques d'évolution des dépenses et revenus par catégorie.
+- **🌗 Mode Sombre** : Support complet du thème clair et sombre.
+- **📥 Import CSV** : Import facile de vos relevés bancaires.
+- **🏷️ Catégorisation** : Gestion flexible des catégories avec budgets et couleurs.
+- **✅ Pointage** : Système de réconciliation bancaire (pointage des opérations).
+- **🔒 Sécurisé** : Authentification et Row Level Security (RLS) via Supabase.
 
 ## 🚀 Technologies
 
-- **Frontend**: React + TypeScript + React Admin
-- **Backend**: Supabase (PostgreSQL + Auth)
-- **Integration**: ra-supabase (package officiel pour React Admin ↔ Supabase)
-- **Bundler**: Vite
-
-## 📋 Prérequis
-
-- Node.js 18+ et npm
-- Un compte Supabase
+- **Frontend**: React, TypeScript, React Admin, Material UI, Recharts
+- **Backend**: Supabase (PostgreSQL, Auth, Edge Functions)
+- **Build**: Vite, Vite PWA
 
 ## 🛠️ Installation
 
-### 1. Installer les dépendances
+### 1. Cloner le projet
 
 ```bash
+git clone https://github.com/CrokNoks/account.git
+cd account
 npm install
 ```
 
 ### 2. Configurer Supabase
 
-#### a. Créer un projet Supabase
-1. Aller sur [supabase.com](https://supabase.com)
-2. Créer un nouveau projet
-3. Attendre que le projet soit prêt
+1. Créez un projet sur [Supabase](https://supabase.com).
+2. Exécutez le script SQL fourni dans `supabase/schema.sql` via l'éditeur SQL de Supabase pour créer les tables et les politiques de sécurité.
 
-#### b. Configurer la base de données
-1. Aller dans l'onglet "SQL Editor" de votre projet Supabase
-2. Copier le contenu du fichier `supabase/schema.sql`
-3. Exécuter le script SQL
+### 3. Variables d'environnement
 
-#### c. Configurer les variables d'environnement
-1. Copier le fichier `.env.example` vers `.env`:
-   ```bash
-   cp .env.example .env
-   ```
-2. Remplir les variables dans `.env` avec vos credentials Supabase:
-   - `VITE_SUPABASE_URL`: URL de votre projet (Settings > API > Project URL)
-   - `VITE_SUPABASE_ANON_KEY`: Clé anonyme (Settings > API > Project API keys > anon public)
+Créez un fichier `.env` à la racine du projet en copiant `.env.example` :
 
-### 3. Lancer l'application
+```bash
+cp .env.example .env
+```
+
+Remplissez les variables avec vos identifiants Supabase :
+
+```env
+VITE_SUPABASE_URL=votre_url_supabase
+VITE_SUPABASE_ANON_KEY=votre_cle_anon_publique
+```
+
+### 4. Lancer l'application
 
 ```bash
 npm run dev
 ```
 
-L'application sera accessible sur `http://localhost:5173`
+L'application sera accessible sur `http://localhost:5173`.
 
-## 📁 Structure du projet
+## 📱 PWA (Progressive Web App)
 
-```
-account-v2/
-├── src/
-│   ├── resources/           # Ressources React Admin
-│   │   ├── expenses/        # Gestion des dépenses
-│   │   └── categories/      # Gestion des catégories
-│   ├── providers/           # Providers pour React Admin
-│   │   ├── dataProvider.ts  # Provider de données Supabase
-│   │   └── authProvider.ts  # Provider d'authentification
-│   ├── supabaseClient.ts    # Client Supabase
-│   ├── App.tsx              # Composant principal
-│   └── main.tsx             # Point d'entrée
-├── supabase/
-│   └── schema.sql           # Schéma de base de données
-├── .env.example             # Exemple de variables d'environnement
-└── package.json
-```
+L'application est configurée comme une PWA. Une fois déployée (ou en local avec HTTPS), vous pouvez l'installer sur votre téléphone via le navigateur ("Ajouter à l'écran d'accueil").
 
-## 🔐 Authentification
+## 🤝 Contribuer
 
-L'application utilise l'authentification Supabase. Pour créer un utilisateur:
+Les contributions sont les bienvenues ! N'hésitez pas à ouvrir une issue ou une Pull Request.
 
-1. Aller dans votre projet Supabase > Authentication > Users
-2. Cliquer sur "Add user" ou "Invite user"
-3. Utiliser ces credentials pour vous connecter à l'application
+1. Forker le projet
+2. Créer une branche (`git checkout -b feature/AmazingFeature`)
+3. Commiter vos changements (`git commit -m 'Add some AmazingFeature'`)
+4. Pusher la branche (`git push origin feature/AmazingFeature`)
+5. Ouvrir une Pull Request
 
-## 📊 Ressources disponibles
+## 📄 Licence
 
-### Dépenses (Expenses)
-- Date
-- Description
-- Montant
-- Catégorie (référence)
-- Notes
-
-### Catégories (Categories)
-- Nom
-- Description
-- Couleur
-
-## 🔒 Sécurité
-
-Le projet utilise Row Level Security (RLS) de Supabase pour s'assurer que:
-- Les utilisateurs ne peuvent voir que leurs propres données
-- Les utilisateurs ne peuvent créer/modifier/supprimer que leurs propres enregistrements
-
-## 🚀 Prochaines étapes
-
-Vous pouvez étendre l'application en ajoutant:
-- Dashboard avec statistiques
-- Graphiques et visualisations
-- Export de données
-- Filtres avancés
-- Tags pour les dépenses
-- Budget mensuel
-- Récurrence de dépenses
-
-## 📝 Scripts disponibles
-
-- `npm run dev` - Lancer le serveur de développement
-- `npm run build` - Construire pour la production
-- `npm run preview` - Prévisualiser la build de production
-- `npm run lint` - Linter le code
-
-## 🐛 Débogage
-
-Si vous rencontrez des problèmes:
-
-1. Vérifier que les variables d'environnement sont correctes
-2. Vérifier que le schéma SQL a été exécuté sans erreurs
-3. Vérifier les logs de la console du navigateur
-4. Vérifier les logs Supabase (Logs > Postgres Logs)
+Distribué sous la licence MIT.
