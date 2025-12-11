@@ -1,6 +1,17 @@
 {
-  "name": "account-v2",
-  "version": "0.1.0",
+  "name": "account",
+  "version": "1.0.0",
+  "description": "Une application moderne de suivi de dépenses et revenus.",
+  "author": "CrokNoks",
+  "license": "MIT",
+  "keywords": [
+    "react",
+    "react-admin",
+    "supabase",
+    "finance",
+    "expense-tracker",
+    "pwa"
+  ],
   "private": true,
   "type": "module",
   "scripts": {
