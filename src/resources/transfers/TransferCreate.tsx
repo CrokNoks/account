@@ -36,20 +36,20 @@ export const TransferCreate = () => {
       <SimpleForm defaultValues={defaultValues}>
         <TextInput
           source="description"
-          label="Libellé"
+          label="resources.expenses.fields.description"
           validate={[required()]}
           fullWidth
         />
 
         <NumberInput
           source="amount"
-          label="Montant"
+          label="resources.expenses.fields.amount"
           validate={[required()]}
         />
 
         <DateInput
           source="date"
-          label="Date"
+          label="resources.expenses.fields.date"
           validate={[required()]}
         />
 
@@ -57,7 +57,7 @@ export const TransferCreate = () => {
         <ReferenceInput
           source="source_account_id"
           reference="accounts"
-          label="Compte source"
+          label="resources.transfers.fields.source_account_id"
         >
           <SelectInput optionText="name" validate={[required()]} />
         </ReferenceInput>
@@ -67,7 +67,7 @@ export const TransferCreate = () => {
             <ReferenceInput
               source="source_category_id"
               reference="categories"
-              label="Catégorie source"
+              label="resources.transfers.fields.source_category_id"
               filter={{ account_id: formData.source_account_id }}
               {...rest}
             >
@@ -80,7 +80,7 @@ export const TransferCreate = () => {
         <ReferenceInput
           source="destination_account_id"
           reference="accounts"
-          label="Compte de destination"
+          label="resources.transfers.fields.destination_account_id"
         >
           <SelectInput optionText="name" validate={[required()]} />
         </ReferenceInput>
@@ -90,7 +90,7 @@ export const TransferCreate = () => {
             <ReferenceInput
               source="destination_category_id"
               reference="categories"
-              label="Catégorie de destination"
+              label="resources.transfers.fields.destination_category_id"
               filter={{ account_id: formData.destination_account_id }}
               {...rest}
             >
@@ -99,7 +99,7 @@ export const TransferCreate = () => {
           )}
         </FormDataConsumer>
 
-        <TextInput source="notes" label="Notes" multiline fullWidth />
+        <TextInput source="notes" label="resources.expenses.fields.note" multiline fullWidth />
       </SimpleForm>
     </Create>
   );

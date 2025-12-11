@@ -12,6 +12,7 @@ import {
   useRecordContext,
   useNotify,
   useRefresh,
+  useTranslate,
 } from 'react-admin';
 import {
   TextInput,
@@ -27,7 +28,6 @@ import {
   NullableBooleanInput,
 } from 'ra-ui-materialui';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import CancelIcon from '@mui/icons-material/Cancel';
 import { Card, CardContent, Switch, Typography } from '@mui/material';
 import { useAccount } from '../../context/AccountContext';
 import { ImportExpensesButton } from './ImportExpensesButton';
@@ -42,20 +42,20 @@ const ExpenseListActions = () => (
 const expenseFilters = (selectedAccountId: string | null, embed: boolean = false) => {
   const defaultProps = embed ? {} : { alwaysOn: true };
   return [
-    <TextInput source="description" label="Description" {...defaultProps} />,
+    <TextInput source="description" label="resources.expenses.fields.description" {...defaultProps} />,
     <ReferenceInput
       source="category_id"
       reference="categories"
-      label="Catégorie"
+      label="resources.expenses.fields.category_id"
       filter={{ account_id: selectedAccountId }}
       {...defaultProps}
     >
       <SelectInput optionText="name" />
     </ReferenceInput>,
-    <DateInput source="date_gte" label="Date début"  {...defaultProps} />,
-    <DateInput source="date_lte" label="Date fin" {...defaultProps} />,
+    <DateInput source="date_gte" label="app.filters.date_gte"  {...defaultProps} />,
+    <DateInput source="date_lte" label="app.filters.date_lte" {...defaultProps} />,
 
-    <NullableBooleanInput nullLabel="Tous" trueLabel="Pointé" falseLabel="Non pointé" source="reconciled" label="Pointé" {...defaultProps} {...(embed ? { alwaysOn: true } : {})} />,
+    <NullableBooleanInput nullLabel="app.filters.reconciled.all" trueLabel="app.filters.reconciled.true" falseLabel="app.filters.reconciled.false" source="reconciled" label="resources.expenses.fields.reconciled" {...defaultProps} {...(embed ? { alwaysOn: true } : {})} />,
   ]
 };
 
@@ -64,6 +64,7 @@ const ReconciledToggle = () => {
   const notify = useNotify();
   const [update] = useUpdate();
   const refresh = useRefresh();
+  const translate = useTranslate();
 
   if (!record) return null;
 
@@ -77,9 +78,9 @@ const ReconciledToggle = () => {
         { id: record.id, data: { reconciled: newValue }, previousData: record }
       );
       await refresh();
-      notify('Statut mis à jour', { type: 'success' });
+      notify(translate('app.expenses.notifications.status_updated'), { type: 'success' });
     } catch (error) {
-      notify('Erreur lors de la mise à jour', { type: 'error' });
+      notify(translate('app.expenses.notifications.update_error'), { type: 'error' });
     }
   };
 
@@ -93,31 +94,34 @@ const ReconciledToggle = () => {
   );
 };
 
-export const ExpenseFilterSidebar = () => (
-  <Card sx={{ order: -1, mr: 2, mt: 9, width: 260 }}>
-    <CardContent>
-      <Typography variant="subtitle2" gutterBottom>
-        Filtres des opérations
-      </Typography>
-      <Typography variant="body2" color="text.secondary" mb={1}>
-        Affinez l&apos;affichage par texte, période et statut de pointage.
-      </Typography>
-      <SavedQueriesList />
-      <FilterLiveSearch />
-      <FilterList label="Pointé" icon={<CheckCircleIcon />}>
-        <FilterListItem label="Oui (pointé)" value={{ reconciled: true }} />
-        <FilterListItem label="Non pointé" value={{ reconciled: false }} />
-      </FilterList>
-    </CardContent>
-  </Card>
-);
+export const ExpenseFilterSidebar = () => {
+  const translate = useTranslate();
+  return (
+    <Card sx={{ order: -1, mr: 2, mt: 9, width: 260 }}>
+      <CardContent>
+        <Typography variant="subtitle2" gutterBottom>
+          {translate('app.expenses.filter.title')}
+        </Typography>
+        <Typography variant="body2" color="text.secondary" mb={1}>
+          {translate('app.expenses.filter.subtitle')}
+        </Typography>
+        <SavedQueriesList />
+        <FilterLiveSearch />
+        <FilterList label={translate('resources.expenses.fields.reconciled')} icon={<CheckCircleIcon />}>
+          <FilterListItem label={translate('app.filters.reconciled.true')} value={{ reconciled: true }} />
+          <FilterListItem label={translate('app.filters.reconciled.false')} value={{ reconciled: false }} />
+        </FilterList>
+      </CardContent>
+    </Card>
+  );
+};
 
 export const ExpenseList = ({ filter, embed = false, actions = <></>, onRowClick }: { filter: any, embed?: boolean, actions?: any, onRowClick?: (id: any) => false }) => {
   const { selectedAccountId } = useAccount();
   const isSmall = useIsSmall();
 
   if (!selectedAccountId) {
-    return <AccountRequired message="Veuillez sélectionner un compte pour voir les dépenses." />;
+    return <AccountRequired message="app.components.account_required.message" />;
   }
 
   return (
@@ -135,7 +139,6 @@ export const ExpenseList = ({ filter, embed = false, actions = <></>, onRowClick
       {isSmall ? (
         <SimpleList
           rowClick={onRowClick || false}
-          leftIcon={(record) => record.reconciled ? <CheckCircleIcon color="success" /> : <CancelIcon color="error" />}
           primaryText={(record) => record.description}
           secondaryText={(record) => new Date(record.date).toLocaleDateString()}
           tertiaryText={(record) => new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(record.amount)}
@@ -153,9 +156,9 @@ export const ExpenseList = ({ filter, embed = false, actions = <></>, onRowClick
         />
       ) : (
         <Datagrid {...(embed ? { bulkActionButtons: false, rowClick: onRowClick || false } : { rowClick: 'edit' })}>
-          <DateField source="date" label="Date" />
-          <TextField source="description" label="Description" />
-          <ReferenceField source="category_id" reference="categories" label="Catégorie">
+          <DateField source="date" label="resources.expenses.fields.date" />
+          <TextField source="description" label="resources.expenses.fields.description" />
+          <ReferenceField source="category_id" reference="categories" label="resources.expenses.fields.category_id">
             <FunctionField
               render={(record: any) => (
                 <TextField source="name" sx={{ color: 'text.primary', backgroundColor: record.color, padding: 1, borderRadius: 1 }} />
@@ -164,10 +167,10 @@ export const ExpenseList = ({ filter, embed = false, actions = <></>, onRowClick
           </ReferenceField>
           <NumberField
             source="amount"
-            label="Montant"
+            label="resources.expenses.fields.amount"
             options={{ style: 'currency', currency: 'EUR' }}
           />
-          <FunctionField label="Pointé" render={() => <ReconciledToggle />} />
+          <FunctionField label="resources.expenses.fields.reconciled" render={() => <ReconciledToggle />} />
           {embed ? <></> : <EditButton />}
           {embed ? <></> : <DeleteButton />}
         </Datagrid>)}

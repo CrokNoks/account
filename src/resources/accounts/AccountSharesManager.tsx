@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useDataProvider, useNotify, useRecordContext, useRefresh } from 'react-admin';
+import { useDataProvider, useNotify, useRecordContext, useRefresh, useTranslate } from 'react-admin';
 import {
   Box,
   Button,
@@ -24,6 +24,7 @@ export const AccountSharesManager = () => {
   const dataProvider = useDataProvider();
   const notify = useNotify();
   const refresh = useRefresh();
+  const translate = useTranslate();
 
   const [shares, setShares] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
@@ -43,7 +44,7 @@ export const AccountSharesManager = () => {
       });
       setShares(data);
     } catch (error) {
-      notify('Erreur lors du chargement des partages', { type: 'warning' });
+      notify(translate('resources.accounts.shares.notifications.load_error'), { type: 'warning' });
     } finally {
       setLoading(false);
     }
@@ -57,7 +58,7 @@ export const AccountSharesManager = () => {
   const handleAdd = async () => {
     if (!record) return;
     if (!formState.user_id) {
-      notify('Veuillez choisir un utilisateur', { type: 'warning' });
+      notify(translate('resources.accounts.shares.notifications.choose_user'), { type: 'warning' });
       return;
     }
     try {
@@ -69,24 +70,24 @@ export const AccountSharesManager = () => {
         },
       });
       setFormState({ user_id: undefined, permission: 'write' });
-      notify('Accès ajouté', { type: 'success' });
+      notify(translate('resources.accounts.shares.notifications.add_success'), { type: 'success' });
       loadShares();
       refresh();
     } catch (error: any) {
       console.error(error);
-      notify(error?.message || 'Erreur lors de l’ajout du partage', { type: 'warning' });
+      notify(error?.message || translate('resources.accounts.shares.notifications.add_error'), { type: 'warning' });
     }
   };
 
   const handleDelete = async (id: string) => {
     try {
       await dataProvider.delete('account_shares', { id });
-      notify('Accès retiré', { type: 'info' });
+      notify(translate('resources.accounts.shares.notifications.delete_success'), { type: 'info' });
       loadShares();
       refresh();
     } catch (error: any) {
       console.error(error);
-      notify(error?.message || 'Erreur lors de la suppression du partage', { type: 'warning' });
+      notify(error?.message || translate('resources.accounts.shares.notifications.delete_error'), { type: 'warning' });
     }
   };
 
@@ -96,15 +97,18 @@ export const AccountSharesManager = () => {
     <Card variant="outlined">
       <CardContent>
         <Typography variant="h6" gutterBottom>
-          Partages du compte
+          {translate('resources.accounts.shares.title')}
         </Typography>
-        <Typography variant="body2" color="text.secondary" gutterBottom>
-          Ajoute un autre utilisateur via son <code>user_id</code> Supabase et choisis le niveau d’accès.
-        </Typography>
+        <Typography
+          variant="body2"
+          color="text.secondary"
+          gutterBottom
+          dangerouslySetInnerHTML={{ __html: translate('resources.accounts.shares.description') }}
+        />
 
         <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} alignItems="flex-start" mb={2}>
           <ReferenceInput
-            label="Utilisateur"
+            label={translate('resources.accounts.shares.user')}
             source="user_id"
             reference="app_users"
             perPage={50}
@@ -122,25 +126,25 @@ export const AccountSharesManager = () => {
           <TextField
             size="small"
             select
-            label="Permission"
+            label={translate('resources.accounts.shares.permission')}
             value={formState.permission}
             onChange={(e) =>
               setFormState((s) => ({ ...s, permission: e.target.value as ShareFormState['permission'] }))
             }
             sx={{ minWidth: 150 }}
           >
-            <MenuItem value="read">Lecture</MenuItem>
-            <MenuItem value="write">Écriture</MenuItem>
+            <MenuItem value="read">{translate('resources.accounts.shares.permissions.read')}</MenuItem>
+            <MenuItem value="write">{translate('resources.accounts.shares.permissions.write')}</MenuItem>
           </TextField>
           <Button variant="contained" onClick={handleAdd} sx={{ whiteSpace: 'nowrap' }}>
-            Ajouter
+            {translate('resources.accounts.shares.add')}
           </Button>
         </Stack>
 
         <Box sx={{ opacity: loading ? 0.6 : 1 }}>
           {shares.length === 0 ? (
             <Typography variant="body2" color="text.secondary">
-              Aucun partage pour ce compte.
+              {translate('resources.accounts.shares.empty')}
             </Typography>
           ) : (
             <Stack spacing={1}>
@@ -160,7 +164,9 @@ export const AccountSharesManager = () => {
                       {share.user_id}
                     </Typography>
                     <Typography variant="caption" color="text.secondary">
-                      {share.permission === 'write' ? 'Écriture' : 'Lecture'}
+                      {share.permission === 'write'
+                        ? translate('resources.accounts.shares.permissions.write')
+                        : translate('resources.accounts.shares.permissions.read')}
                     </Typography>
                   </Box>
                   <IconButton

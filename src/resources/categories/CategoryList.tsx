@@ -22,7 +22,7 @@ export const CategoryList = () => {
   const isSmall = useIsSmall();
 
   if (!selectedAccountId) {
-    return <AccountRequired message="Veuillez sélectionner un compte pour voir les catégories." />;
+    return <AccountRequired message="app.components.account_required.message" />;
   }
 
   return (
@@ -42,13 +42,13 @@ export const CategoryList = () => {
         />
       ) : (
         <Datagrid rowClick="edit">
-          <TextField source="name" label="Nom" />
-          <TextField source="description" label="Description" />
-          <TextField source="type" label="Type" />
-          <ColorField source="color" label="Couleur" />
+          <TextField source="name" label="resources.categories.fields.name" />
+          <TextField source="description" label="resources.categories.fields.description" />
+          <TextField source="type" label="resources.categories.fields.type" />
+          <ColorField source="color" label="resources.categories.fields.color" />
           <NumberField
             source="budget"
-            label="Budget"
+            label="resources.categories.fields.budget"
             options={{ style: 'currency', currency: 'EUR' }}
           />
           <EditButton />

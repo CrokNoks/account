@@ -23,6 +23,9 @@
   "dependencies": {
     "@supabase/supabase-js": "^2.39.0",
     "papaparse": "^5.5.3",
+    "ra-i18n-polyglot": "^5.13.3",
+    "ra-language-english": "^5.13.3",
+    "ra-language-french": "^5.13.3",
     "ra-supabase": "^3.5.2",
     "ra-ui-materialui": "^5.13.2",
     "react": "^18.2.0",

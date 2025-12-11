@@ -12,22 +12,22 @@ import {
 import { useAccount } from '../../context/AccountContext';
 
 export const ExpenseEdit = () => {
-    const { selectedAccountId } = useAccount();
+  const { selectedAccountId } = useAccount();
 
-    return (
-      <Edit>
-        <SimpleForm>
-          <TextInput source="description" label="Description" validate={[required()]} fullWidth />
-          <NumberInput source="amount" label="Montant" validate={[required()]} />
-          <DateInput source="date" label="Date" validate={[required()]} />
-          
-          <ReferenceInput source="category_id" reference="categories" filter={{ account_id: selectedAccountId }}>
-            <SelectInput optionText="name" label="Catégorie" />
-          </ReferenceInput>
-          
-          <TextInput source="notes" label="Notes" multiline fullWidth />
-          <BooleanInput source="reconciled" label="Pointé" />
-        </SimpleForm>
-      </Edit>
-    );
+  return (
+    <Edit>
+      <SimpleForm>
+        <TextInput source="description" label="resources.expenses.fields.description" validate={[required()]} fullWidth />
+        <NumberInput source="amount" label="resources.expenses.fields.amount" validate={[required()]} />
+        <DateInput source="date" label="resources.expenses.fields.date" validate={[required()]} />
+
+        <ReferenceInput source="category_id" reference="categories" filter={{ account_id: selectedAccountId }}>
+          <SelectInput optionText="name" label="resources.expenses.fields.category_id" />
+        </ReferenceInput>
+
+        <TextInput source="notes" label="resources.expenses.fields.note" multiline fullWidth />
+        <BooleanInput source="reconciled" label="resources.expenses.fields.reconciled" />
+      </SimpleForm>
+    </Edit>
+  );
 };

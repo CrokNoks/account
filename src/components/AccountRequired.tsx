@@ -1,5 +1,5 @@
 import AccountBalanceIcon from '@mui/icons-material/AccountBalance';
-import { List } from 'react-admin';
+import { List, useTranslate } from 'react-admin';
 import { EmptyState } from './EmptyState';
 
 interface AccountRequiredProps {
@@ -7,14 +7,15 @@ interface AccountRequiredProps {
 }
 
 export const AccountRequired = ({
-  message = 'Veuillez sélectionner un compte pour voir ces données.',
+  message = 'app.components.account_required.message',
 }: AccountRequiredProps) => {
+  const translate = useTranslate();
   return (
     <List>
       <EmptyState
         icon={<AccountBalanceIcon fontSize="large" color="primary" />}
-        title="Compte requis"
-        description={message}
+        title={translate('app.components.account_required.title')}
+        description={translate(message)}
       />
     </List>
   );

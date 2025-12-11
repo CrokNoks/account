@@ -11,6 +11,7 @@ import {
   useRedirect,
 } from 'react-admin';
 import { useAccount } from '../../context/AccountContext';
+import { AccountRequired } from '../../components/AccountRequired';
 
 export const ExpenseCreate = () => {
   const { selectedAccountId } = useAccount();
@@ -22,7 +23,7 @@ export const ExpenseCreate = () => {
   });
 
   if (!selectedAccountId) {
-      return <div>Veuillez sélectionner un compte avant de créer une dépense.</div>;
+    return <div><AccountRequired message="app.components.account_required.message" /></div>;
   }
 
   return (
@@ -35,16 +36,16 @@ export const ExpenseCreate = () => {
       }}
     >
       <SimpleForm>
-        <TextInput source="description" label="Description" validate={[required()]} fullWidth />
-        <NumberInput source="amount" label="Montant" validate={[required()]} />
-        <DateInput source="date" label="Date" validate={[required()]} defaultValue={new Date()} />
-        
+        <TextInput source="description" label="resources.expenses.fields.description" validate={[required()]} fullWidth />
+        <NumberInput source="amount" label="resources.expenses.fields.amount" validate={[required()]} />
+        <DateInput source="date" label="resources.expenses.fields.date" validate={[required()]} defaultValue={new Date()} />
+
         <ReferenceInput source="category_id" reference="categories" filter={{ account_id: selectedAccountId }}>
-          <SelectInput optionText="name" label="Catégorie" />
+          <SelectInput optionText="name" label="resources.expenses.fields.category_id" />
         </ReferenceInput>
-        
-        <TextInput source="notes" label="Notes" multiline fullWidth />
-        <BooleanInput source="reconciled" label="Pointé" defaultValue={false} />
+
+        <TextInput source="notes" label="resources.expenses.fields.note" multiline fullWidth />
+        <BooleanInput source="reconciled" label="resources.expenses.fields.reconciled" defaultValue={false} />
       </SimpleForm>
     </Create>
   );

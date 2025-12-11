@@ -1,5 +1,6 @@
 import { Card, CardContent, Typography, Grid, Tooltip, Box } from '@mui/material';
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
+import { useTranslate, useLocale } from 'react-admin';
 
 interface ReportData {
   initialBalance: number;
@@ -18,8 +19,11 @@ interface ReportSummaryCardsProps {
 }
 
 export const ReportSummaryCards = ({ reportData, isSmall, isClosed = false }: ReportSummaryCardsProps) => {
+  const translate = useTranslate();
+  const locale = useLocale();
+
   const formatCurrency = (amount: number) =>
-    new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(amount);
+    new Intl.NumberFormat(locale, { style: 'currency', currency: 'EUR' }).format(amount);
 
   return (
     <>
@@ -27,7 +31,7 @@ export const ReportSummaryCards = ({ reportData, isSmall, isClosed = false }: Re
       <Grid size={{ xs: 6, md: 2 }} sx={{ display: (isSmall && !isClosed) ? 'none' : 'grid' }}>
         <Card sx={{ bgcolor: 'action.hover', height: '100%' }}>
           <CardContent>
-            <Typography color="textSecondary" gutterBottom>Solde initial</Typography>
+            <Typography color="textSecondary" gutterBottom>{translate('app.dashboard.cards.initial_balance')}</Typography>
             <Typography variant="h5" color={reportData.initialBalance >= 0 ? 'success.main' : 'error.main'}>
               {formatCurrency(reportData.initialBalance)}
             </Typography>
@@ -39,7 +43,7 @@ export const ReportSummaryCards = ({ reportData, isSmall, isClosed = false }: Re
       <Grid size={{ xs: 0, md: 2 }} sx={{ display: isSmall ? 'none' : 'grid' }}>
         <Card sx={{ bgcolor: 'background.paper', height: '100%' }}>
           <CardContent>
-            <Typography color="textSecondary" gutterBottom>Flux</Typography>
+            <Typography color="textSecondary" gutterBottom>{translate('app.dashboard.cards.flux')}</Typography>
             <Box display="flex" flexDirection="column">
               <Typography variant="body1" color="success.main" fontWeight="bold">
                 + {formatCurrency(reportData.totalIncome)}
@@ -61,8 +65,8 @@ export const ReportSummaryCards = ({ reportData, isSmall, isClosed = false }: Re
         }}>
           <CardContent>
             <Box display="flex" alignItems="center" gap={0.5}>
-              <Typography color="inherit" gutterBottom>Solde banque</Typography>
-              <Tooltip title="Solde pointé (correspondant à votre relevé bancaire actuel).">
+              <Typography color="inherit" gutterBottom>{translate('app.dashboard.cards.bank_balance')}</Typography>
+              <Tooltip title={translate('app.dashboard.tooltips.bank_balance')}>
                 <HelpOutlineIcon fontSize="small" sx={{ opacity: 0.7, mb: 0.5 }} />
               </Tooltip>
             </Box>
@@ -79,8 +83,8 @@ export const ReportSummaryCards = ({ reportData, isSmall, isClosed = false }: Re
           <Card sx={{ bgcolor: 'action.hover', height: '100%' }}>
             <CardContent>
               <Box display="flex" alignItems="center" gap={0.5}>
-                <Typography color="inherit" gutterBottom>À venir</Typography>
-                <Tooltip title="Total des opérations saisies mais non encore pointées (non débitées/créditées sur le compte).">
+                <Typography color="inherit" gutterBottom>{translate('app.dashboard.cards.pending')}</Typography>
+                <Tooltip title={translate('app.dashboard.tooltips.pending')}>
                   <HelpOutlineIcon fontSize="small" sx={{ opacity: 0.7, mb: 0.5 }} />
                 </Tooltip>
               </Box>
@@ -102,8 +106,8 @@ export const ReportSummaryCards = ({ reportData, isSmall, isClosed = false }: Re
           }}>
             <CardContent>
               <Box display="flex" alignItems="center" gap={0.5}>
-                <Typography color="inherit" gutterBottom>Solde opérations</Typography>
-                <Tooltip title="Solde réel en fin de période, basé sur toutes les opérations saisies (pointées et non pointées).">
+                <Typography color="inherit" gutterBottom>{translate('app.dashboard.cards.operations_balance')}</Typography>
+                <Tooltip title={translate('app.dashboard.tooltips.operations_balance')}>
                   <HelpOutlineIcon fontSize="small" sx={{ opacity: 0.7, mb: 0.5 }} />
                 </Tooltip>
               </Box>
@@ -121,8 +125,8 @@ export const ReportSummaryCards = ({ reportData, isSmall, isClosed = false }: Re
           <Card sx={{ bgcolor: 'info.light', color: 'info.contrastText', height: '100%' }}>
             <CardContent>
               <Box display="flex" alignItems="center" gap={0.5}>
-                <Typography color="inherit" gutterBottom>Prévisionnel</Typography>
-                <Tooltip title="Estimation du solde final en prenant en compte les budgets définis pour les catégories, si ceux-ci sont supérieurs aux montants réels.">
+                <Typography color="inherit" gutterBottom>{translate('app.dashboard.cards.projected_balance')}</Typography>
+                <Tooltip title={translate('app.dashboard.tooltips.projected_balance')}>
                   <HelpOutlineIcon fontSize="small" sx={{ opacity: 0.7, mb: 0.5 }} />
                 </Tooltip>
               </Box>

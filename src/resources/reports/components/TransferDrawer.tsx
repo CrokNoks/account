@@ -1,6 +1,6 @@
 import { Drawer, Box, Typography, IconButton } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
-import { CreateBase, SimpleForm, TextInput, NumberInput, DateInput, ReferenceInput, SelectInput, AutocompleteInput, required, useDataProvider, useNotify } from 'react-admin';
+import { CreateBase, SimpleForm, TextInput, NumberInput, DateInput, ReferenceInput, SelectInput, AutocompleteInput, required, useDataProvider, useNotify, useTranslate } from 'react-admin';
 import { useAccount } from '../../../context/AccountContext';
 import { useFormContext } from 'react-hook-form';
 
@@ -20,19 +20,19 @@ const FormFields = () => {
     <>
       <TextInput
         source="description"
-        label="Description"
+        label="resources.expenses.fields.description"
         validate={[required()]}
         fullWidth
       />
       <NumberInput
         source="amount"
-        label="Montant"
+        label="resources.expenses.fields.amount"
         validate={[required()]}
         fullWidth
       />
       <DateInput
         source="date"
-        label="Date"
+        label="resources.expenses.fields.date"
         validate={[required()]}
         defaultValue={new Date()}
         fullWidth
@@ -41,7 +41,7 @@ const FormFields = () => {
       <ReferenceInput
         source="source_account_id"
         reference="accounts"
-        label="Compte source"
+        label="app.drawers.transfer_source"
         defaultValue={selectedAccountId}
       >
         <SelectInput optionText="name" validate={[required()]} fullWidth />
@@ -50,7 +50,7 @@ const FormFields = () => {
       <ReferenceInput
         source="source_category_id"
         reference="categories"
-        label="Catégorie (dépense)"
+        label="resources.expenses.fields.category_id"
         filter={{ account_id: sourceAccountId }}
         perPage={100}
         sort={{ field: 'name', order: 'ASC' }}
@@ -66,7 +66,7 @@ const FormFields = () => {
       <ReferenceInput
         source="destination_account_id"
         reference="accounts"
-        label="Compte destination"
+        label="app.drawers.transfer_target"
       >
         <SelectInput optionText="name" validate={[required()]} fullWidth />
       </ReferenceInput>
@@ -74,7 +74,7 @@ const FormFields = () => {
       <ReferenceInput
         source="destination_category_id"
         reference="categories"
-        label="Catégorie (revenu)"
+        label="resources.expenses.fields.category_id"
         filter={{ account_id: targetAccountId }}
         perPage={100}
         sort={{ field: 'name', order: 'ASC' }}
@@ -89,7 +89,7 @@ const FormFields = () => {
 
       <TextInput
         source="notes"
-        label="Notes"
+        label="resources.expenses.fields.note"
         multiline
         fullWidth
       />
@@ -100,6 +100,7 @@ const FormFields = () => {
 export const TransferDrawer = ({ open, onClose, onSuccess }: TransferDrawerProps) => {
   const dataProvider = useDataProvider();
   const notify = useNotify();
+  const translate = useTranslate();
 
   const handleSubmit = async (data: any) => {
     try {
@@ -129,11 +130,11 @@ export const TransferDrawer = ({ open, onClose, onSuccess }: TransferDrawerProps
         },
       });
 
-      notify('Virement créé avec succès', { type: 'success' });
+      notify('app.messages.transfer_success', { type: 'success' });
       onSuccess();
     } catch (error) {
       console.error('Error creating transfer:', error);
-      notify('Erreur lors de la création du virement', { type: 'error' });
+      notify('app.messages.transfer_error', { type: 'error' });
     }
   };
 
@@ -146,7 +147,7 @@ export const TransferDrawer = ({ open, onClose, onSuccess }: TransferDrawerProps
       <Box sx={{ width: { xs: '100%', sm: 400 }, p: 2 }}>
         <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
           <Typography variant="h6">
-            Nouveau virement
+            {translate('app.drawers.new_transfer')}
           </Typography>
           <IconButton onClick={onClose}>
             <CloseIcon />

@@ -16,11 +16,18 @@ const componentOverrides = {
   },
   MuiTableCell: {
     styleOverrides: {
+      head: {
+        textWrap: 'nowrap'
+      },
       root: {
         // Réduire le padding des tableaux sur mobile pour afficher plus de données
         '@media (max-width:600px)': {
           padding: '8px 4px',
           fontSize: '0.875rem',
+        },
+
+        '&.column-amount': {
+          textWrap: 'nowrap',
         },
       },
     },
@@ -102,7 +109,7 @@ const componentOverrides = {
         },
       },
     },
-  },
+  }
 };
 
 const typographyOverrides = {
