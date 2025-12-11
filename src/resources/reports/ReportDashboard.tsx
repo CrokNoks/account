@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNotify, Loading } from 'react-admin';
-import { Card, CardContent, Typography, Grid, Box, Button } from '@mui/material';
+import { Card, CardContent, Typography, Grid, Box, Button, Accordion, AccordionSummary, AccordionDetails } from '@mui/material';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { useAccount } from '../../context/AccountContext';
 import { CategorySummaryTable } from '../../components/CategorySummaryTable';
 import { ExpenseList } from '../expenses';
@@ -8,9 +9,9 @@ import { useIsSmall } from '../../hooks/isSmall';
 import {
   ReportSummaryCards,
   ReportSelector,
-  CreateReportModal,
   CloseReportModal,
   AddExpenseDrawer,
+  EditExpenseDrawer,
   TransferDrawer
 } from './components';
 import { useReportData } from './hooks/useReportData';
@@ -26,13 +27,42 @@ const getFilter = ({ date_gte, date_lte }: { date_gte: string | null, date_lte: 
   return filter;
 }
 
+const CollapsibleSection = ({ title, children, isSmall }: { title: string, children: React.ReactNode, isSmall: boolean }) => {
+  if (isSmall) {
+    return (
+      <Accordion defaultExpanded={false} sx={{ mb: 2 }}>
+        <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+          <Typography variant="h6">{title}</Typography>
+        </AccordionSummary>
+        <AccordionDetails sx={{ p: 0 }}>
+          <Box p={1}>
+            {children}
+          </Box>
+        </AccordionDetails>
+      </Accordion>
+    );
+  }
+
+  return (
+    <Card sx={{ mb: 2 }}>
+      <CardContent>
+        <Typography variant="h6" gutterBottom>{title}</Typography>
+        {children}
+      </CardContent>
+    </Card>
+  );
+};
+
 export const ReportDashboard = () => {
   const { selectedAccountId } = useAccount();
   const notify = useNotify();
   const isSmall = useIsSmall();
 
-  // Expense Drawer state
-  const [isExpenseDrawerOpen, setExpenseDrawerOpen] = useState(false);
+  // Add Expense Drawer state
+  const [isAddExpenseDrawerOpen, setAddExpenseDrawerOpen] = useState(false);
+
+  // Edit Expense Drawer state
+  const [isEditExpenseDrawerOpen, setEditExpenseDrawerOpen] = useState(false);
   const [selectedExpenseId, setSelectedExpenseId] = useState<string | null>(null);
 
   // Transfer Drawer state
@@ -54,11 +84,6 @@ export const ReportDashboard = () => {
   } = useReportData(selectedAccountId);
 
   const {
-    isCreateModalOpen,
-    setCreateModalOpen,
-    newReportParams,
-    setNewReportParams,
-    handleGenerateReport,
     isCloseModalOpen,
     setCloseModalOpen,
     closingDate,
@@ -86,13 +111,18 @@ export const ReportDashboard = () => {
 
   const handleRowClick = (id: string): false => {
     setSelectedExpenseId(id);
-    setExpenseDrawerOpen(true);
+    setEditExpenseDrawerOpen(true);
     return false;
   };
 
-  const handleExpenseSuccess = () => {
-    notify(selectedExpenseId ? 'Opération modifiée' : 'Opération ajoutée', { type: 'success' });
-    setExpenseDrawerOpen(false);
+  const handleAddExpenseSuccess = () => {
+    notify('Opération ajoutée', { type: 'success' });
+    refreshCurrentReport();
+  };
+
+  const handleEditExpenseSuccess = () => {
+    notify('Opération modifiée', { type: 'success' });
+    setEditExpenseDrawerOpen(false);
     setSelectedExpenseId(null);
     refreshCurrentReport();
   };
@@ -114,38 +144,22 @@ export const ReportDashboard = () => {
 
   return (
     <Box p={2}>
-      <Box
-        display="flex"
-        flexDirection={{ xs: 'column', md: 'row' }}
-        justifyContent="space-between"
-        alignItems={{ xs: 'stretch', md: 'center' }}
-        gap={2}
-        mb={2}
+      <ReportSelector
+        selectedReportId={selectedReportId}
+        history={history}
+        onReportChange={handleReportChange}
       >
-        <ReportSelector
-          selectedReportId={selectedReportId}
-          history={history}
-          onReportChange={handleReportChange}
-        />
-
-        <Box display="flex" gap={1} justifyContent={{ xs: 'flex-end', md: 'flex-start' }}>
-          {selectedReportId === 'new' && (
-            <Button variant="contained" color="secondary" onClick={() => handleOpenCloseModal(reportData)}>
-              Clôturer
-            </Button>
-          )}
-          {selectedReportId && selectedReportId !== 'new' && (
-            <>
-              <Button variant="contained" color="primary" onClick={() => setCreateModalOpen(true)}>
-                Nouveau Rapport
-              </Button>
-              <Button variant="outlined" color="error" onClick={() => handleDeleteReport(selectedReportId)}>
-                Supprimer
-              </Button>
-            </>
-          )}
-        </Box>
-      </Box>
+        {selectedReportId === 'new' && (
+          <Button variant="contained" color="secondary" onClick={() => handleOpenCloseModal(reportData)}>
+            Clôturer
+          </Button>
+        )}
+        {selectedReportId && selectedReportId !== 'new' && (
+          <Button variant="outlined" color="error" onClick={() => handleDeleteReport(selectedReportId)}>
+            Supprimer
+          </Button>
+        )}
+      </ReportSelector>
 
       {reportData ? (
         <Grid container spacing={3}>
@@ -160,30 +174,30 @@ export const ReportDashboard = () => {
           </Grid>
 
           {/* Summary Cards */}
-          <ReportSummaryCards reportData={reportData} isSmall={isSmall} />
+          <ReportSummaryCards
+            reportData={reportData}
+            isSmall={isSmall}
+            isClosed={selectedReportId !== 'new'}
+          />
 
           {/* Category Tables - LEFT COLUMN */}
           <Grid size={{ xs: 12, md: 6 }}>
-            <Card>
-              <CardContent>
-                <CategorySummaryTable
-                  data={reportData.pieData}
-                  title="Dépenses par catégorie"
-                  type="expense"
-                />
-              </CardContent>
-            </Card>
+            <CollapsibleSection title="Dépenses par catégorie" isSmall={isSmall}>
+              <CategorySummaryTable
+                data={reportData.pieData}
+                title=""
+                type="expense"
+              />
+            </CollapsibleSection>
 
             {reportData.incomePieData && reportData.incomePieData.length > 0 && (
-              <Card sx={{ mt: 2 }}>
-                <CardContent>
-                  <CategorySummaryTable
-                    data={reportData.incomePieData}
-                    title="Revenus par catégorie"
-                    type="income"
-                  />
-                </CardContent>
-              </Card>
+              <CollapsibleSection title="Revenus par catégorie" isSmall={isSmall}>
+                <CategorySummaryTable
+                  data={reportData.incomePieData}
+                  title=""
+                  type="income"
+                />
+              </CollapsibleSection>
             )}
           </Grid>
 
@@ -198,24 +212,26 @@ export const ReportDashboard = () => {
                       {new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(reportData.totalIncome - reportData.totalExpense)}
                     </Typography>
                   </Box>
-                  <Box display="flex" gap={1}>
-                    <Button
-                      variant="outlined"
-                      color="primary"
-                      size="small"
-                      onClick={() => setTransferDrawerOpen(true)}
-                    >
-                      Virement
-                    </Button>
-                    <Button
-                      variant="contained"
-                      color="success"
-                      onClick={() => setExpenseDrawerOpen(true)}
-                      size="small"
-                    >
-                      Ajouter
-                    </Button>
-                  </Box>
+                  {selectedReportId === 'new' && (
+                    <Box display="flex" gap={1}>
+                      <Button
+                        variant="outlined"
+                        color="primary"
+                        size="small"
+                        onClick={() => setTransferDrawerOpen(true)}
+                      >
+                        Virement
+                      </Button>
+                      <Button
+                        variant="contained"
+                        color="success"
+                        onClick={() => setAddExpenseDrawerOpen(true)}
+                        size="small"
+                      >
+                        Ajouter
+                      </Button>
+                    </Box>
+                  )}
                 </Box>
                 <ExpenseList
                   embed
@@ -235,13 +251,7 @@ export const ReportDashboard = () => {
       )}
 
       {/* Modals and Drawers */}
-      <CreateReportModal
-        open={isCreateModalOpen}
-        onClose={() => setCreateModalOpen(false)}
-        onGenerate={handleGenerateReport}
-        params={newReportParams}
-        onParamsChange={setNewReportParams}
-      />
+
 
       <CloseReportModal
         open={isCloseModalOpen}
@@ -252,14 +262,21 @@ export const ReportDashboard = () => {
       />
 
       <AddExpenseDrawer
-        open={isExpenseDrawerOpen}
+        open={isAddExpenseDrawerOpen}
+        onClose={() => setAddExpenseDrawerOpen(false)}
+        selectedAccountId={selectedAccountId}
+        onSuccess={handleAddExpenseSuccess}
+      />
+
+      <EditExpenseDrawer
+        open={isEditExpenseDrawerOpen}
         onClose={() => {
-          setExpenseDrawerOpen(false);
+          setEditExpenseDrawerOpen(false);
           setSelectedExpenseId(null);
         }}
         selectedAccountId={selectedAccountId}
-        onSuccess={handleExpenseSuccess}
-        expenseId={selectedExpenseId}
+        onSuccess={handleEditExpenseSuccess}
+        expenseId={selectedExpenseId!}
       />
 
       <TransferDrawer

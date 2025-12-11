@@ -27,6 +27,7 @@ import {
   NullableBooleanInput,
 } from 'ra-ui-materialui';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import CancelIcon from '@mui/icons-material/Cancel';
 import { Card, CardContent, Switch, Typography } from '@mui/material';
 import { useAccount } from '../../context/AccountContext';
 import { ImportExpensesButton } from './ImportExpensesButton';
@@ -134,6 +135,7 @@ export const ExpenseList = ({ filter, embed = false, actions = <></>, onRowClick
       {isSmall ? (
         <SimpleList
           rowClick={onRowClick || false}
+          leftIcon={(record) => record.reconciled ? <CheckCircleIcon color="success" /> : <CancelIcon color="error" />}
           primaryText={(record) => record.description}
           secondaryText={(record) => new Date(record.date).toLocaleDateString()}
           tertiaryText={(record) => new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(record.amount)}

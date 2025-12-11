@@ -194,7 +194,7 @@ export const useReportData = (selectedAccountId: string | null) => {
 
   const refreshCurrentReport = useCallback(async () => {
     if (!reportData) return;
-    setLoading(true);
+    // Don't set global loading to avoid UI flash/unmount
     try {
       const data = await fetchAndCalculateReport(
         reportData.startDate,
@@ -204,8 +204,6 @@ export const useReportData = (selectedAccountId: string | null) => {
       setReportData(data);
     } catch (error) {
       console.error(error);
-    } finally {
-      setLoading(false);
     }
   }, [reportData, fetchAndCalculateReport]);
 
@@ -276,9 +274,13 @@ export const useReportData = (selectedAccountId: string | null) => {
             setReportData(report);
             setSelectedReportId('new');
           } else {
-            // Pas d'opération du tout
-            setSelectedReportId('');
-            setReportData(null);
+            // Pas d'opération du tout : initialiser un rapport vide à partir d'aujourd'hui
+            const startDate = new Date().toISOString().split('T')[0];
+            const initialBalance = account?.initial_balance || 0;
+
+            const report = await fetchAndCalculateReport(startDate, null, initialBalance);
+            setReportData(report);
+            setSelectedReportId('new');
           }
         } catch (e) {
           console.error(e);

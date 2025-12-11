@@ -143,7 +143,7 @@ export const TransferDrawer = ({ open, onClose, onSuccess }: TransferDrawerProps
       open={open}
       onClose={onClose}
     >
-      <Box sx={{ width: { xs: '100vw', sm: 400 }, p: 2 }}>
+      <Box sx={{ width: { xs: '100%', sm: 400 }, p: 2 }}>
         <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
           <Typography variant="h6">
             Nouveau virement

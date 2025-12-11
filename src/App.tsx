@@ -3,6 +3,7 @@ import { dataProvider } from './providers/dataProvider';
 import { authProvider } from './providers/authProvider';
 import { AccountProvider } from './context/AccountContext';
 import { CustomLayout } from './Layout';
+import { lightTheme, darkTheme } from './theme';
 
 // Import your resources
 import { ExpenseList, ExpenseEdit, ExpenseCreate } from './resources/expenses';
@@ -19,6 +20,8 @@ function App() {
         dataProvider={dataProvider}
         authProvider={authProvider}
         layout={CustomLayout}
+        theme={lightTheme}
+        darkTheme={darkTheme}
         requireAuth
       >
         {/* Rapports */}

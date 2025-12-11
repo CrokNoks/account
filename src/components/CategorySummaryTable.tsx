@@ -33,9 +33,11 @@ export const CategorySummaryTable = ({ data, title, type = 'expense' }: Category
 
   return (
     <Box>
-      <Typography variant="h6" gutterBottom>
-        {title}
-      </Typography>
+      {title && (
+        <Typography variant="h6" gutterBottom>
+          {title}
+        </Typography>
+      )}
       <TableContainer component={Paper} sx={{ overflowX: 'auto' }}>
         <Table stickyHeader size="small">
           <TableHead>

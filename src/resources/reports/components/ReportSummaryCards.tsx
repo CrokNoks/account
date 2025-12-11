@@ -14,16 +14,17 @@ interface ReportData {
 interface ReportSummaryCardsProps {
   reportData: ReportData;
   isSmall: boolean;
+  isClosed?: boolean;
 }
 
-export const ReportSummaryCards = ({ reportData, isSmall }: ReportSummaryCardsProps) => {
+export const ReportSummaryCards = ({ reportData, isSmall, isClosed = false }: ReportSummaryCardsProps) => {
   const formatCurrency = (amount: number) =>
     new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(amount);
 
   return (
     <>
       {/* Initial Balance */}
-      <Grid size={{ xs: 0, md: 2 }} sx={{ display: isSmall ? 'none' : 'grid' }}>
+      <Grid size={{ xs: 6, md: 2 }} sx={{ display: (isSmall && !isClosed) ? 'none' : 'grid' }}>
         <Card sx={{ bgcolor: 'action.hover', height: '100%' }}>
           <CardContent>
             <Typography color="textSecondary" gutterBottom>Solde initial</Typography>
@@ -52,7 +53,7 @@ export const ReportSummaryCards = ({ reportData, isSmall }: ReportSummaryCardsPr
       </Grid>
 
       {/* Bank Balance */}
-      <Grid size={{ xs: 12, md: 2 }}>
+      <Grid size={{ xs: 6, md: 2 }}>
         <Card sx={{
           bgcolor: (reportData.netResult - reportData.unreconciledBalance) >= 0 ? 'success.light' : 'error.light',
           color: (reportData.netResult - reportData.unreconciledBalance) >= 0 ? 'success.contrastText' : 'error.contrastText',
@@ -73,77 +74,83 @@ export const ReportSummaryCards = ({ reportData, isSmall }: ReportSummaryCardsPr
       </Grid>
 
       {/* Pending Operations */}
-      <Grid size={{ xs: 12, md: 2 }}>
-        <Card sx={{ bgcolor: 'action.hover', height: '100%' }}>
-          <CardContent>
-            <Box display="flex" alignItems="center" gap={0.5}>
-              <Typography color="inherit" gutterBottom>Opérations à venir</Typography>
-              <Tooltip title="Total des opérations saisies mais non encore pointées (non débitées/créditées sur le compte).">
-                <HelpOutlineIcon fontSize="small" sx={{ opacity: 0.7, mb: 0.5 }} />
-              </Tooltip>
-            </Box>
-            <Typography variant="h5" color={reportData.unreconciledBalance >= 0 ? 'success.main' : 'error.main'}>
-              {formatCurrency(reportData.unreconciledBalance)}
-            </Typography>
-          </CardContent>
-        </Card>
-      </Grid>
+      {!isClosed && (
+        <Grid size={{ xs: 6, md: 2 }}>
+          <Card sx={{ bgcolor: 'action.hover', height: '100%' }}>
+            <CardContent>
+              <Box display="flex" alignItems="center" gap={0.5}>
+                <Typography color="inherit" gutterBottom>À venir</Typography>
+                <Tooltip title="Total des opérations saisies mais non encore pointées (non débitées/créditées sur le compte).">
+                  <HelpOutlineIcon fontSize="small" sx={{ opacity: 0.7, mb: 0.5 }} />
+                </Tooltip>
+              </Box>
+              <Typography variant="h5" color={reportData.unreconciledBalance >= 0 ? 'success.main' : 'error.main'}>
+                {formatCurrency(reportData.unreconciledBalance)}
+              </Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+      )}
 
       {/* Final Balance */}
-      <Grid size={{ xs: 12, md: 2 }}>
-        <Card sx={{
-          bgcolor: reportData.netResult >= 0 ? 'success.light' : 'error.light',
-          color: reportData.netResult >= 0 ? 'success.contrastText' : 'error.contrastText',
-          height: '100%'
-        }}>
-          <CardContent>
-            <Box display="flex" alignItems="center" gap={0.5}>
-              <Typography color="inherit" gutterBottom>Solde final (Réel)</Typography>
-              <Tooltip title="Solde réel en fin de période, basé sur toutes les opérations saisies (pointées et non pointées).">
-                <HelpOutlineIcon fontSize="small" sx={{ opacity: 0.7, mb: 0.5 }} />
-              </Tooltip>
-            </Box>
-            <Typography variant="h5" color="inherit" fontWeight="bold">
-              {formatCurrency(reportData.netResult)}
-            </Typography>
-          </CardContent>
-        </Card>
-      </Grid>
+      {!isClosed && (
+        <Grid size={{ xs: 6, md: 2 }}>
+          <Card sx={{
+            bgcolor: reportData.netResult >= 0 ? 'success.light' : 'error.light',
+            color: reportData.netResult >= 0 ? 'success.contrastText' : 'error.contrastText',
+            height: '100%'
+          }}>
+            <CardContent>
+              <Box display="flex" alignItems="center" gap={0.5}>
+                <Typography color="inherit" gutterBottom>Solde opérations</Typography>
+                <Tooltip title="Solde réel en fin de période, basé sur toutes les opérations saisies (pointées et non pointées).">
+                  <HelpOutlineIcon fontSize="small" sx={{ opacity: 0.7, mb: 0.5 }} />
+                </Tooltip>
+              </Box>
+              <Typography variant="h5" color="inherit" fontWeight="bold">
+                {formatCurrency(reportData.netResult)}
+              </Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+      )}
 
       {/* Projected Balance */}
-      <Grid size={{ xs: 12, md: 2 }}>
-        <Card sx={{ bgcolor: 'info.light', color: 'info.contrastText', height: '100%' }}>
-          <CardContent>
-            <Box display="flex" alignItems="center" gap={0.5}>
-              <Typography color="inherit" gutterBottom>Solde prévisionnel</Typography>
-              <Tooltip title="Estimation du solde final en prenant en compte les budgets définis pour les catégories, si ceux-ci sont supérieurs aux montants réels.">
-                <HelpOutlineIcon fontSize="small" sx={{ opacity: 0.7, mb: 0.5 }} />
-              </Tooltip>
-            </Box>
-            <Typography variant="h5" color="inherit" fontWeight="bold">
-              {(() => {
-                const projectedIncome = (reportData.incomePieData || []).reduce((sum: number, cat: any) => {
-                  return sum + Math.max(cat.value, cat.budget || 0);
-                }, 0);
+      {!isClosed && (
+        <Grid size={{ xs: 6, md: 2 }}>
+          <Card sx={{ bgcolor: 'info.light', color: 'info.contrastText', height: '100%' }}>
+            <CardContent>
+              <Box display="flex" alignItems="center" gap={0.5}>
+                <Typography color="inherit" gutterBottom>Prévisionnel</Typography>
+                <Tooltip title="Estimation du solde final en prenant en compte les budgets définis pour les catégories, si ceux-ci sont supérieurs aux montants réels.">
+                  <HelpOutlineIcon fontSize="small" sx={{ opacity: 0.7, mb: 0.5 }} />
+                </Tooltip>
+              </Box>
+              <Typography variant="h5" color="inherit" fontWeight="bold">
+                {(() => {
+                  const projectedIncome = (reportData.incomePieData || []).reduce((sum: number, cat: any) => {
+                    return sum + Math.max(cat.value, cat.budget || 0);
+                  }, 0);
 
-                // If no income categories or budgets, fallback to totalIncome if it's greater than 0, else 0
-                const finalProjectedIncome = projectedIncome > 0 ? projectedIncome : reportData.totalIncome;
+                  // If no income categories or budgets, fallback to totalIncome if it's greater than 0, else 0
+                  const finalProjectedIncome = projectedIncome > 0 ? projectedIncome : reportData.totalIncome;
 
-                const projectedExpense = (reportData.pieData || []).reduce((sum: number, cat: any) => {
-                  return sum + Math.max(cat.value, cat.budget || 0);
-                }, 0);
+                  const projectedExpense = (reportData.pieData || []).reduce((sum: number, cat: any) => {
+                    return sum + Math.max(cat.value, cat.budget || 0);
+                  }, 0);
 
-                // If no expense categories or budgets, fallback to totalExpense
-                const finalProjectedExpense = projectedExpense > 0 ? projectedExpense : reportData.totalExpense;
+                  // If no expense categories or budgets, fallback to totalExpense
+                  const finalProjectedExpense = projectedExpense > 0 ? projectedExpense : reportData.totalExpense;
 
-                const projectedBalance = reportData.initialBalance + finalProjectedIncome - finalProjectedExpense;
+                  const projectedBalance = reportData.initialBalance + finalProjectedIncome - finalProjectedExpense;
 
-                return formatCurrency(projectedBalance);
-              })()}
-            </Typography>
-          </CardContent>
-        </Card>
-      </Grid>
+                  return formatCurrency(projectedBalance);
+                })()}
+              </Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+      )}
     </>
   );
 };
