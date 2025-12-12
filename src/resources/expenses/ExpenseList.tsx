@@ -34,6 +34,7 @@ import { ImportExpensesButton } from './ImportExpensesButton';
 import { useIsSmall } from '../../hooks/isSmall';
 import { ImportCreateToolbar } from '../../components/ImportCreateToolbar';
 import { AccountRequired } from '../../components/AccountRequired';
+import { CategoryShip } from '../../components/CategoryShip';
 
 const ExpenseListActions = () => (
   <ImportCreateToolbar importButton={<ImportExpensesButton />} />
@@ -161,7 +162,7 @@ export const ExpenseList = ({ filter, embed = false, actions = <></>, onRowClick
           <ReferenceField source="category_id" reference="categories" label="resources.expenses.fields.category_id">
             <FunctionField
               render={(record: any) => (
-                <TextField source="name" sx={{ color: 'text.primary', backgroundColor: record.color, padding: 1, borderRadius: 1 }} />
+                <CategoryShip cat={record} />
               )}
             />
           </ReferenceField>
