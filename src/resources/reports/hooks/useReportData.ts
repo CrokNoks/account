@@ -52,6 +52,7 @@ export const useReportData = (selectedAccountId: string | null) => {
     // Initialize maps with typed categories
     allCategories?.forEach(cat => {
       const catData = {
+        id: cat.id,
         name: cat.name,
         value: 0,
         color: cat.color,
@@ -97,12 +98,12 @@ export const useReportData = (selectedAccountId: string | null) => {
 
         if (amount > 0) {
           if (!incomeCategoryMap.has(catId)) {
-            incomeCategoryMap.set(catId, { name: catName, value: 0, color: catColor, budget: catBudget });
+            incomeCategoryMap.set(catId, { id: catId, name: catName, value: 0, color: catColor, budget: catBudget });
           }
           incomeCategoryMap.get(catId).value += amount;
         } else {
           if (!expenseCategoryMap.has(catId)) {
-            expenseCategoryMap.set(catId, { name: catName, value: 0, color: catColor, budget: catBudget });
+            expenseCategoryMap.set(catId, { id: catId, name: catName, value: 0, color: catColor, budget: catBudget });
           }
           expenseCategoryMap.get(catId).value += Math.abs(amount);
         }
