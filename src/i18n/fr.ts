@@ -134,6 +134,18 @@ export const fr = {
         pending: 'Total des opérations saisies mais non encore pointées (non débitées/créditées sur le compte).',
         operations_balance: 'Solde réel en fin de période, basé sur toutes les opérations saisies (pointées et non pointées).',
         projected_balance: 'Estimation du solde final en prenant en compte les budgets définis pour les catégories, si ceux-ci sont supérieurs aux montants réels.'
+      },
+      period: {
+        title: 'Période du %{start} %{end}',
+        to: 'au %{date}',
+        ongoing: "à aujourd'hui (En cours)"
+      },
+      buttons: {
+        close: 'Clôturer',
+        new_report: 'Nouveau Rapport',
+        delete: 'Supprimer',
+        transfer: 'Virement',
+        add: 'Ajouter'
       }
     },
     category_summary: {
@@ -203,32 +215,21 @@ export const fr = {
       transfer_success: 'Virement créé avec succès',
       transfer_error: 'Erreur lors de la création du virement',
       no_account_desc: "Choisissez un compte en haut de l'écran pour afficher vos rapports et vos opérations.",
-      period: {
-        title: 'Période du %{start} %{end}',
-        to: 'au %{date}',
-        ongoing: "à aujourd'hui (En cours)"
+
+    },
+    components: {
+      account_selector: {
+        label: 'Compte',
+        no_account: 'Aucun compte trouvé. Veuillez en créer un.'
       },
-      buttons: {
-        close: 'Clôturer',
-        new_report: 'Nouveau Rapport',
-        delete: 'Supprimer',
-        transfer: 'Virement',
-        add: 'Ajouter'
+      account_required: {
+        title: 'Compte requis',
+        message: 'Veuillez sélectionner un compte pour voir ces données.'
+      },
+      import: {
+        button: 'Importer CSV',
+        loading: 'Importation...'
       }
-    },
-  },
-  components: {
-    account_selector: {
-      label: 'Compte',
-      no_account: 'Aucun compte trouvé. Veuillez en créer un.'
-    },
-    account_required: {
-      title: 'Compte requis',
-      message: 'Veuillez sélectionner un compte pour voir ces données.'
-    },
-    import: {
-      button: 'Importer CSV',
-      loading: 'Importation...'
     }
   }
 };
