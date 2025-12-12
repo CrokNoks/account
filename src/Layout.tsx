@@ -1,6 +1,6 @@
 import { Layout, LayoutProps, AppBar, AppBarProps } from 'react-admin';
-import { AccountSelector } from './components/AccountSelector';
 import { Box } from '@mui/material';
+import { AccountSelector } from './components/AccountSelector';
 
 const CustomAppBar = (props: AppBarProps) => (
   <AppBar {...props}>

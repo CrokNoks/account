@@ -53,14 +53,14 @@ export const AccountSelector = () => {
 
   if (accounts.length === 0) {
     return (
-      <Box sx={{ minWidth: 200, mr: 2, color: 'white' }}>
+      <Box sx={{ minWidth: { xs: 120, sm: 200 }, mr: 2, color: 'white' }}>
         {translate('app.components.account_selector.no_account')}
       </Box>
     );
   }
 
   return (
-    <Box sx={{ minWidth: 200, mr: 2 }}>
+    <Box sx={{ minWidth: { xs: 120, sm: 200 }, mr: { xs: 1, sm: 2 } }}>
       <FormControl fullWidth size="small">
         <InputLabel id="account-select-label" sx={{ color: 'rgba(255, 255, 255, 0.7)' }}>
           {translate('app.components.account_selector.label')}

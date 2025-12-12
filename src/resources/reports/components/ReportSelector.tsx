@@ -33,7 +33,7 @@ export const ReportSelector = ({ selectedReportId, history, onReportChange, chil
 
   if (isSmall) {
     return (
-      <Box display="flex" alignItems="center" width="100%" mb={2}>
+      <Box display="flex" alignItems="center">
         <IconButton
           id="report-menu-button"
           aria-controls={open ? 'report-menu' : undefined}
@@ -86,7 +86,7 @@ export const ReportSelector = ({ selectedReportId, history, onReportChange, chil
   }
 
   return (
-    <Box display="flex" alignItems="center" gap={2} width="100%" mb={2}>
+    <Box display="flex" alignItems="center" gap={2}>
       <Typography variant="h5" sx={{ whiteSpace: 'nowrap' }}>
         {translate('app.dashboard.reports')}
       </Typography>

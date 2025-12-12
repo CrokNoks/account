@@ -113,9 +113,9 @@ export const ReportDashboard = () => {
     <Box p={2}>
       <Box
         display="flex"
-        flexDirection={{ xs: 'column', md: 'row' }}
+        flexDirection="row"
         justifyContent="space-between"
-        alignItems={{ xs: 'stretch', md: 'center' }}
+        alignItems="center"
         gap={2}
         mb={2}
       >
@@ -163,26 +163,20 @@ export const ReportDashboard = () => {
 
           {/* Category Tables - LEFT COLUMN */}
           <Grid size={{ xs: 12, md: 6 }}>
-            <Card>
-              <CardContent>
-                <CategorySummaryTable
-                  data={reportData.pieData}
-                  title={translate('app.dashboard.expenses_by_category')}
-                  type="expense"
-                />
-              </CardContent>
-            </Card>
+            <CategorySummaryTable
+              data={reportData.pieData}
+              title={translate('app.dashboard.expenses_by_category')}
+              type="expense"
+            />
 
             {reportData.incomePieData && reportData.incomePieData.length > 0 && (
-              <Card sx={{ mt: 2 }}>
-                <CardContent>
-                  <CategorySummaryTable
-                    data={reportData.incomePieData}
-                    title={translate('app.dashboard.income_by_category')}
-                    type="income"
-                  />
-                </CardContent>
-              </Card>
+
+              <CategorySummaryTable
+                sx={{ mt: 2 }}
+                data={reportData.incomePieData}
+                title={translate('app.dashboard.income_by_category')}
+                type="income"
+              />
             )}
           </Grid>
 

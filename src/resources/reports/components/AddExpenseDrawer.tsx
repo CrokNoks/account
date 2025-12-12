@@ -1,6 +1,6 @@
 import { Drawer, Box, Typography, IconButton } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
-import { CreateBase, EditBase, SimpleForm, TextInput, NumberInput, DateInput, ReferenceInput, SelectInput, BooleanInput, required } from 'react-admin';
+import { CreateBase, EditBase, SimpleForm, TextInput, DateInput, ReferenceInput, SelectInput, BooleanInput, required } from 'react-admin';
 
 interface AddExpenseDrawerProps {
   open: boolean;
@@ -32,12 +32,18 @@ export const AddExpenseDrawer = ({ open, onClose, selectedAccountId, onSuccess, 
           <EditBase
             resource="expenses"
             id={expenseId}
-            transform={(data: any) => ({ ...data, account_id: selectedAccountId })}
+            transform={(data: any) => ({ ...data, account_id: selectedAccountId, amount: Number(data.amount) })}
             mutationOptions={{ onSuccess }}
           >
             <SimpleForm>
               <TextInput source="description" label="Description" validate={[required()]} fullWidth />
-              <NumberInput source="amount" label="Montant" validate={[required()]} fullWidth />
+              <TextInput
+                source="amount"
+                label="Montant"
+                validate={[required(), (value) => (value && !/^-?\d*\.?\d*$/.test(value) ? 'Nombre invalide' : undefined)]}
+                fullWidth
+                inputProps={{ inputMode: 'text' }}
+              />
               <DateInput source="date" label="Date" validate={[required()]} fullWidth />
 
               <ReferenceInput
@@ -57,12 +63,18 @@ export const AddExpenseDrawer = ({ open, onClose, selectedAccountId, onSuccess, 
         ) : (
           <CreateBase
             resource="expenses"
-            transform={(data: any) => ({ ...data, account_id: selectedAccountId })}
+            transform={(data: any) => ({ ...data, account_id: selectedAccountId, amount: Number(data.amount) })}
             mutationOptions={{ onSuccess }}
           >
             <SimpleForm>
               <TextInput source="description" label="Description" validate={[required()]} fullWidth />
-              <NumberInput source="amount" label="Montant" validate={[required()]} fullWidth />
+              <TextInput
+                source="amount"
+                label="Montant"
+                validate={[required(), (value) => (value && !/^-?\d*\.?\d*$/.test(value) ? 'Nombre invalide' : undefined)]}
+                fullWidth
+                inputProps={{ inputMode: 'text' }}
+              />
               <DateInput source="date" label="Date" validate={[required()]} defaultValue={new Date()} fullWidth />
 
               <ReferenceInput
