@@ -134,6 +134,18 @@ export const en = {
         pending: 'Total of entered but not yet reconciled operations (not debited/credited on the account).',
         operations_balance: 'Real balance at the end of the period, based on all entered operations (reconciled and not).',
         projected_balance: 'Estimated final balance taking into account defined category budgets, if they are higher than actual amounts.'
+      },
+      period: {
+        title: 'Period from %{start} %{end}',
+        to: 'to %{date}',
+        ongoing: "until today (Ongoing)"
+      },
+      buttons: {
+        close: 'Close',
+        new_report: 'New Report',
+        delete: 'Delete',
+        transfer: 'Transfer',
+        add: 'Add'
       }
     },
     category_summary: {
@@ -203,32 +215,21 @@ export const en = {
       transfer_success: 'Transfer created successfully',
       transfer_error: 'Error creating transfer',
       no_account_desc: "Choose an account at the top of the screen to view your reports and operations.",
-      period: {
-        title: 'Period from %{start} %{end}',
-        to: 'to %{date}',
-        ongoing: "until today (Ongoing)"
+
+    },
+    components: {
+      account_selector: {
+        label: 'Account',
+        no_account: 'No accounts found. Please create one.'
       },
-      buttons: {
-        close: 'Close',
-        new_report: 'New Report',
-        delete: 'Delete',
-        transfer: 'Transfer',
-        add: 'Add'
+      account_required: {
+        title: 'Account Required',
+        message: 'Please select an account to view this data.'
+      },
+      import: {
+        button: 'Import CSV',
+        loading: 'Importing...'
       }
-    }
-  },
-  components: {
-    account_selector: {
-      label: 'Account',
-      no_account: 'No accounts found. Please create one.'
-    },
-    account_required: {
-      title: 'Account Required',
-      message: 'Please select an account to view this data.'
-    },
-    import: {
-      button: 'Import CSV',
-      loading: 'Importing...'
     }
   }
 };
