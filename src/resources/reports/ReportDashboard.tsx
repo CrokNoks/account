@@ -131,7 +131,7 @@ export const ReportDashboard = () => {
               {translate('app.dashboard.buttons.close')}
             </Button>
           )}
-          {selectedReportId && selectedReportId !== 'new' && (
+          {selectedReportId && selectedReportId !== 'new' && !isSmall && (
             <>
               <Button variant="contained" color="primary" onClick={() => setCreateModalOpen(true)}>
                 {translate('app.dashboard.buttons.new_report')}
@@ -159,7 +159,11 @@ export const ReportDashboard = () => {
           </Grid>
 
           {/* Summary Cards */}
-          <ReportSummaryCards reportData={reportData} isSmall={isSmall} />
+          <ReportSummaryCards
+            reportData={reportData}
+            isSmall={isSmall}
+            isClosed={selectedReportId !== 'new'}
+          />
 
           {/* Category Tables - LEFT COLUMN */}
           <Grid size={{ xs: 12, md: 6 }}>
@@ -181,43 +185,45 @@ export const ReportDashboard = () => {
           </Grid>
 
           {/* Operations List - RIGHT COLUMN */}
-          <Grid size={{ xs: 12, md: 6 }}>
-            <Card>
-              <CardContent>
-                <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-                  <Box>
-                    <Typography color="textSecondary">{translate('app.dashboard.operations')}</Typography>
-                    <Typography variant="h6">
-                      {new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(reportData.totalIncome - reportData.totalExpense)}
-                    </Typography>
+          {(!isSmall || selectedReportId === 'new') && (
+            <Grid size={{ xs: 12, md: 6 }}>
+              <Card>
+                <CardContent>
+                  <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+                    <Box>
+                      <Typography color="textSecondary">{translate('app.dashboard.operations')}</Typography>
+                      <Typography variant="h6">
+                        {new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(reportData.totalIncome - reportData.totalExpense)}
+                      </Typography>
+                    </Box>
+                    <Box display="flex" gap={1}>
+                      <Button
+                        variant="outlined"
+                        color="primary"
+                        size="small"
+                        onClick={() => redirect('/transfers/create')}
+                      >
+                        {translate('app.dashboard.buttons.transfer')}
+                      </Button>
+                      <Button
+                        variant="contained"
+                        color="success"
+                        onClick={() => setExpenseDrawerOpen(true)}
+                        size="small"
+                      >
+                        {translate('app.dashboard.buttons.add')}
+                      </Button>
+                    </Box>
                   </Box>
-                  <Box display="flex" gap={1}>
-                    <Button
-                      variant="outlined"
-                      color="primary"
-                      size="small"
-                      onClick={() => redirect('/transfers/create')}
-                    >
-                      {translate('app.dashboard.buttons.transfer')}
-                    </Button>
-                    <Button
-                      variant="contained"
-                      color="success"
-                      onClick={() => setExpenseDrawerOpen(true)}
-                      size="small"
-                    >
-                      {translate('app.dashboard.buttons.add')}
-                    </Button>
-                  </Box>
-                </Box>
-                <ExpenseList
-                  embed
-                  filter={getFilter({ date_gte: reportData.startDate, date_lte: reportData.endDate })}
-                  onRowClick={handleRowClick}
-                />
-              </CardContent>
-            </Card>
-          </Grid>
+                  <ExpenseList
+                    embed
+                    filter={getFilter({ date_gte: reportData.startDate, date_lte: reportData.endDate })}
+                    onRowClick={handleRowClick}
+                  />
+                </CardContent>
+              </Card>
+            </Grid>
+          )}
         </Grid>
       ) : (
         <Box display="flex" justifyContent="center" alignItems="center" minHeight="50vh">
