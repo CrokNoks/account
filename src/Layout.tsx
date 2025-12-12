@@ -1,4 +1,4 @@
-import { Layout, LayoutProps, AppBar, AppBarProps, LocalesMenuButton } from 'react-admin';
+import { Layout, LayoutProps, AppBar, AppBarProps } from 'react-admin';
 import { AccountSelector } from './components/AccountSelector';
 import { Box } from '@mui/material';
 
