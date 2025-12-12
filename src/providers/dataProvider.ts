@@ -148,6 +148,7 @@ export const dataProvider: DataProvider = {
         date: date || new Date().toISOString(),
         notes: notes || null,
         reconciled: false,
+        user_id: user.id,
       };
 
       const amountNumber = Number(amount);

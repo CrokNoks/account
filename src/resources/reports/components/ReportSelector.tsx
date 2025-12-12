@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Box, Typography, FormControl, InputLabel, Select, MenuItem, IconButton, Menu } from '@mui/material';
 import HistoryIcon from '@mui/icons-material/History';
+import { useTranslate, useLocale } from 'react-admin';
 import { useIsSmall } from '../../../hooks/isSmall';
 
 interface ReportSelectorProps {
@@ -12,6 +13,8 @@ interface ReportSelectorProps {
 
 export const ReportSelector = ({ selectedReportId, history, onReportChange, children }: ReportSelectorProps) => {
   const isSmall = useIsSmall();
+  const translate = useTranslate();
+  const locale = useLocale();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const open = Boolean(anchorEl);
 
@@ -44,7 +47,7 @@ export const ReportSelector = ({ selectedReportId, history, onReportChange, chil
         </IconButton>
 
         <Typography variant="h5" sx={{ whiteSpace: 'nowrap' }}>
-          Rapports
+          {translate('app.dashboard.reports')}
         </Typography>
 
         <Box flexGrow={1} />
@@ -66,7 +69,7 @@ export const ReportSelector = ({ selectedReportId, history, onReportChange, chil
             selected={selectedReportId === 'new'}
             onClick={() => handleMenuItemClick('new')}
           >
-            Rapport en cours (non sauvegardé)
+            {translate('app.report_selector.current_report')}
           </MenuItem>
           {history.map((report: any) => (
             <MenuItem
@@ -74,7 +77,7 @@ export const ReportSelector = ({ selectedReportId, history, onReportChange, chil
               selected={selectedReportId === report.id}
               onClick={() => handleMenuItemClick(report.id)}
             >
-              {new Date(report.start_date).toLocaleDateString()} - {new Date(report.end_date).toLocaleDateString()}
+              {new Date(report.start_date).toLocaleDateString(locale)} - {new Date(report.end_date).toLocaleDateString(locale)}
             </MenuItem>
           ))}
         </Menu>
@@ -85,22 +88,22 @@ export const ReportSelector = ({ selectedReportId, history, onReportChange, chil
   return (
     <Box display="flex" alignItems="center" gap={2} width="100%" mb={2}>
       <Typography variant="h5" sx={{ whiteSpace: 'nowrap' }}>
-        Rapports
+        {translate('app.dashboard.reports')}
       </Typography>
       <FormControl size="small" sx={{ minWidth: 200 }}>
-        <InputLabel id="report-select-label">Historique</InputLabel>
+        <InputLabel id="report-select-label">{translate('app.report_selector.history')}</InputLabel>
         <Select
           labelId="report-select-label"
           value={selectedReportId}
-          label="Historique"
+          label={translate('app.report_selector.history')}
           onChange={(e) => onReportChange(e.target.value as string)}
           displayEmpty
         >
-          <MenuItem value="" disabled>Sélectionner un rapport</MenuItem>
-          <MenuItem value="new">Rapport en cours (non sauvegardé)</MenuItem>
+          <MenuItem value="" disabled>{translate('app.report_selector.select_report')}</MenuItem>
+          <MenuItem value="new">{translate('app.report_selector.current_report')}</MenuItem>
           {history.map((report: any) => (
             <MenuItem key={report.id} value={report.id}>
-              {new Date(report.start_date).toLocaleDateString()} - {new Date(report.end_date).toLocaleDateString()}
+              {new Date(report.start_date).toLocaleDateString(locale)} - {new Date(report.end_date).toLocaleDateString(locale)}
             </MenuItem>
           ))}
         </Select>

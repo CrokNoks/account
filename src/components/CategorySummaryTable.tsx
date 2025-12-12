@@ -13,6 +13,8 @@ import {
 } from '@mui/material';
 import WarningIcon from '@mui/icons-material/Warning';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import { useTranslate, useLocale } from 'react-admin';
+import { CategoryShip } from './CategoryShip';
 
 interface CategoryData {
   name: string;
@@ -28,6 +30,8 @@ interface CategorySummaryTableProps {
 }
 
 export const CategorySummaryTable = ({ data, title, type = 'expense' }: CategorySummaryTableProps) => {
+  const translate = useTranslate();
+  const locale = useLocale();
   const total = data.reduce((sum, cat) => sum + cat.value, 0);
   const totalBudget = data.reduce((sum, cat) => sum + (cat.budget || 0), 0);
 
@@ -42,11 +46,11 @@ export const CategorySummaryTable = ({ data, title, type = 'expense' }: Category
         <Table stickyHeader size="small">
           <TableHead>
             <TableRow>
-              <TableCell>Catégorie</TableCell>
-              <TableCell align="right">Montant</TableCell>
-              <TableCell align="right" sx={{ display: { xs: 'none', sm: 'table-cell' } }}>Budget</TableCell>
-              <TableCell align="right" sx={{ display: { xs: 'none', sm: 'table-cell' } }}>% Total</TableCell>
-              <TableCell align="center" sx={{ display: { xs: 'none', sm: 'table-cell' } }}>Statut</TableCell>
+              <TableCell>{translate('app.category_summary.category')}</TableCell>
+              <TableCell align="right">{translate('app.category_summary.amount')}</TableCell>
+              <TableCell align="right" sx={{ display: { xs: 'none', sm: 'table-cell' } }}>{translate('app.category_summary.budget')}</TableCell>
+              <TableCell align="right" sx={{ display: { xs: 'none', sm: 'table-cell' } }}>{translate('app.category_summary.total_percent')}</TableCell>
+              <TableCell align="center" sx={{ display: { xs: 'none', sm: 'table-cell' } }}>{translate('app.category_summary.status')}</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -68,13 +72,13 @@ export const CategorySummaryTable = ({ data, title, type = 'expense' }: Category
                   if (isOverBudget) {
                     statusColor = 'error';
                     StatusIcon = WarningIcon;
-                    tooltipText = `Budget dépassé de ${budgetUsagePercent.toFixed(0)}%`;
+                    tooltipText = translate('app.category_summary.budget_exceeded', { percent: budgetUsagePercent.toFixed(0) });
                   } else if (budgetUsagePercent > 80) {
                     statusColor = 'warning';
-                    tooltipText = `${budgetUsagePercent.toFixed(0)}% du budget utilisé`;
+                    tooltipText = translate('app.category_summary.budget_used', { percent: budgetUsagePercent.toFixed(0) });
                   } else {
                     statusColor = 'success';
-                    tooltipText = `${budgetUsagePercent.toFixed(0)}% du budget utilisé`;
+                    tooltipText = translate('app.category_summary.budget_used', { percent: budgetUsagePercent.toFixed(0) });
                   }
                 } else {
                   // Income logic: Over budget (goal) is good (Green)
@@ -82,12 +86,12 @@ export const CategorySummaryTable = ({ data, title, type = 'expense' }: Category
                   if (isGoalMet) {
                     statusColor = 'success';
                     StatusIcon = CheckCircleIcon;
-                    tooltipText = `Objectif atteint (${budgetUsagePercent.toFixed(0)}%)`;
+                    tooltipText = translate('app.category_summary.goal_met', { percent: budgetUsagePercent.toFixed(0) });
                   } else {
                     // Under goal
                     statusColor = 'warning';
                     StatusIcon = WarningIcon;
-                    tooltipText = `Objectif non atteint (${budgetUsagePercent.toFixed(0)}%)`;
+                    tooltipText = translate('app.category_summary.goal_not_met', { percent: budgetUsagePercent.toFixed(0) });
                   }
                 }
               }
@@ -104,17 +108,7 @@ export const CategorySummaryTable = ({ data, title, type = 'expense' }: Category
                   }}
                 >
                   <TableCell>
-                    <Box display="flex" alignItems="center" gap={1}>
-                      <Box
-                        sx={{
-                          width: 16,
-                          height: 16,
-                          borderRadius: '50%',
-                          backgroundColor: category.color,
-                        }}
-                      />
-                      <Typography variant="body2">{category.name}</Typography>
-                    </Box>
+                    <CategoryShip cat={category} />
                   </TableCell>
                   <TableCell align="right">
                     <Typography
@@ -122,7 +116,7 @@ export const CategorySummaryTable = ({ data, title, type = 'expense' }: Category
                       fontWeight="medium"
                       color={(type === 'expense' && isOverBudget) ? 'error.dark' : 'inherit'}
                     >
-                      {new Intl.NumberFormat('fr-FR', {
+                      {new Intl.NumberFormat(locale, {
                         style: 'currency',
                         currency: 'EUR',
                       }).format(category.value)}
@@ -131,7 +125,7 @@ export const CategorySummaryTable = ({ data, title, type = 'expense' }: Category
                   <TableCell align="right" sx={{ display: { xs: 'none', sm: 'table-cell' } }}>
                     {hasBudget ? (
                       <Typography variant="body2" color="text.secondary">
-                        {new Intl.NumberFormat('fr-FR', {
+                        {new Intl.NumberFormat(locale, {
                           style: 'currency',
                           currency: 'EUR',
                         }).format(category.budget!)}
@@ -169,12 +163,12 @@ export const CategorySummaryTable = ({ data, title, type = 'expense' }: Category
             <TableRow sx={{ backgroundColor: 'action.hover' }}>
               <TableCell>
                 <Typography variant="body1" fontWeight="bold">
-                  Total
+                  {translate('app.category_summary.total')}
                 </Typography>
               </TableCell>
               <TableCell align="right">
                 <Typography variant="body1" fontWeight="bold">
-                  {new Intl.NumberFormat('fr-FR', {
+                  {new Intl.NumberFormat(locale, {
                     style: 'currency',
                     currency: 'EUR',
                   }).format(total)}
@@ -182,7 +176,7 @@ export const CategorySummaryTable = ({ data, title, type = 'expense' }: Category
               </TableCell>
               <TableCell align="right" sx={{ display: { xs: 'none', sm: 'table-cell' } }}>
                 <Typography variant="body1" fontWeight="bold">
-                  {new Intl.NumberFormat('fr-FR', {
+                  {new Intl.NumberFormat(locale, {
                     style: 'currency',
                     currency: 'EUR',
                   }).format(totalBudget)}

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useDataProvider, useNotify, Loading } from 'react-admin';
+import { useDataProvider, useNotify, Loading, useTranslate } from 'react-admin';
 import { Select, MenuItem, FormControl, InputLabel, Box } from '@mui/material';
 import { useAccount } from '../context/AccountContext';
 
@@ -12,6 +12,7 @@ export const AccountSelector = () => {
   const { selectedAccountId, setSelectedAccountId } = useAccount();
   const dataProvider = useDataProvider();
   const notify = useNotify();
+  const translate = useTranslate();
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -24,22 +25,22 @@ export const AccountSelector = () => {
           filter: {},
         });
         setAccounts(data);
-        
+
         // If no account is selected and we have accounts, select the first one
         if (!selectedAccountId && data.length > 0) {
           setSelectedAccountId(data[0].id);
         }
         // If selected account is not in the list (e.g. deleted), deselect it
         else if (selectedAccountId && !data.find((a: Account) => a.id === selectedAccountId)) {
-            if (data.length > 0) {
-                setSelectedAccountId(data[0].id);
-            } else {
-                setSelectedAccountId(null);
-            }
+          if (data.length > 0) {
+            setSelectedAccountId(data[0].id);
+          } else {
+            setSelectedAccountId(null);
+          }
         }
       } catch (error) {
         console.error('Error fetching accounts:', error);
-        notify('Error fetching accounts', { type: 'warning' });
+        notify(translate('resources.accounts.shares.notifications.load_error'), { type: 'warning' });
       } finally {
         setLoading(false);
       }
@@ -51,24 +52,24 @@ export const AccountSelector = () => {
   if (loading) return <Loading />;
 
   if (accounts.length === 0) {
-      return (
-          <Box sx={{ minWidth: 200, mr: 2, color: 'white' }}>
-              No accounts found. Please create one.
-          </Box>
-      );
+    return (
+      <Box sx={{ minWidth: 200, mr: 2, color: 'white' }}>
+        {translate('app.components.account_selector.no_account')}
+      </Box>
+    );
   }
 
   return (
     <Box sx={{ minWidth: 200, mr: 2 }}>
       <FormControl fullWidth size="small">
         <InputLabel id="account-select-label" sx={{ color: 'rgba(255, 255, 255, 0.7)' }}>
-          Compte
+          {translate('app.components.account_selector.label')}
         </InputLabel>
         <Select
           labelId="account-select-label"
           id="account-select"
           value={selectedAccountId || ''}
-          label="Compte"
+          label={translate('app.components.account_selector.label')}
           onChange={(e) => setSelectedAccountId(e.target.value)}
           sx={{
             color: 'white',

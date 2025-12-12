@@ -1,7 +1,6 @@
 import { useState } from 'react';
-import { useNotify, Loading } from 'react-admin';
-import { Card, CardContent, Typography, Grid, Box, Button, Accordion, AccordionSummary, AccordionDetails } from '@mui/material';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import { useNotify, Loading, useRedirect, useTranslate } from 'react-admin';
+import { Card, CardContent, Typography, Grid, Box, Button } from '@mui/material';
 import { useAccount } from '../../context/AccountContext';
 import { CategorySummaryTable } from '../../components/CategorySummaryTable';
 import { ExpenseList } from '../expenses';
@@ -9,10 +8,9 @@ import { useIsSmall } from '../../hooks/isSmall';
 import {
   ReportSummaryCards,
   ReportSelector,
+  CreateReportModal,
   CloseReportModal,
-  AddExpenseDrawer,
-  EditExpenseDrawer,
-  TransferDrawer
+  AddExpenseDrawer
 } from './components';
 import { useReportData } from './hooks/useReportData';
 import { useReportActions } from './hooks/useReportActions';
@@ -27,46 +25,16 @@ const getFilter = ({ date_gte, date_lte }: { date_gte: string | null, date_lte: 
   return filter;
 }
 
-const CollapsibleSection = ({ title, children, isSmall }: { title: string, children: React.ReactNode, isSmall: boolean }) => {
-  if (isSmall) {
-    return (
-      <Accordion defaultExpanded={false} sx={{ mb: 2 }}>
-        <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-          <Typography variant="h6">{title}</Typography>
-        </AccordionSummary>
-        <AccordionDetails sx={{ p: 0 }}>
-          <Box p={1}>
-            {children}
-          </Box>
-        </AccordionDetails>
-      </Accordion>
-    );
-  }
-
-  return (
-    <Card sx={{ mb: 2 }}>
-      <CardContent>
-        <Typography variant="h6" gutterBottom>{title}</Typography>
-        {children}
-      </CardContent>
-    </Card>
-  );
-};
-
 export const ReportDashboard = () => {
   const { selectedAccountId } = useAccount();
   const notify = useNotify();
+  const translate = useTranslate();
   const isSmall = useIsSmall();
+  const redirect = useRedirect();
 
-  // Add Expense Drawer state
-  const [isAddExpenseDrawerOpen, setAddExpenseDrawerOpen] = useState(false);
-
-  // Edit Expense Drawer state
-  const [isEditExpenseDrawerOpen, setEditExpenseDrawerOpen] = useState(false);
+  // Expense Drawer state
+  const [isExpenseDrawerOpen, setExpenseDrawerOpen] = useState(false);
   const [selectedExpenseId, setSelectedExpenseId] = useState<string | null>(null);
-
-  // Transfer Drawer state
-  const [isTransferDrawerOpen, setTransferDrawerOpen] = useState(false);
 
   // Use custom hooks
   const {
@@ -84,6 +52,11 @@ export const ReportDashboard = () => {
   } = useReportData(selectedAccountId);
 
   const {
+    isCreateModalOpen,
+    setCreateModalOpen,
+    newReportParams,
+    setNewReportParams,
+    handleGenerateReport,
     isCloseModalOpen,
     setCloseModalOpen,
     closingDate,
@@ -111,18 +84,13 @@ export const ReportDashboard = () => {
 
   const handleRowClick = (id: string): false => {
     setSelectedExpenseId(id);
-    setEditExpenseDrawerOpen(true);
+    setExpenseDrawerOpen(true);
     return false;
   };
 
-  const handleAddExpenseSuccess = () => {
-    notify('Opération ajoutée', { type: 'success' });
-    refreshCurrentReport();
-  };
-
-  const handleEditExpenseSuccess = () => {
-    notify('Opération modifiée', { type: 'success' });
-    setEditExpenseDrawerOpen(false);
+  const handleExpenseSuccess = () => {
+    notify(selectedExpenseId ? translate('app.action.operation_updated') : translate('app.action.operation_added'), { type: 'success' });
+    setExpenseDrawerOpen(false);
     setSelectedExpenseId(null);
     refreshCurrentReport();
   };
@@ -131,11 +99,10 @@ export const ReportDashboard = () => {
     return (
       <Box p={2}>
         <Typography variant="h6" gutterBottom>
-          Aucun compte sélectionné
+          {translate('app.dashboard.no_account_title')}
         </Typography>
         <Typography variant="body2" color="text.secondary">
-          Choisissez un compte en haut de l&apos;écran pour afficher vos rapports et vos
-          opérations.
+          {translate('app.dashboard.no_account_desc')}
         </Typography>
       </Box>
     );
@@ -144,60 +111,78 @@ export const ReportDashboard = () => {
 
   return (
     <Box p={2}>
-      <ReportSelector
-        selectedReportId={selectedReportId}
-        history={history}
-        onReportChange={handleReportChange}
+      <Box
+        display="flex"
+        flexDirection={{ xs: 'column', md: 'row' }}
+        justifyContent="space-between"
+        alignItems={{ xs: 'stretch', md: 'center' }}
+        gap={2}
+        mb={2}
       >
-        {selectedReportId === 'new' && (
-          <Button variant="contained" color="secondary" onClick={() => handleOpenCloseModal(reportData)}>
-            Clôturer
-          </Button>
-        )}
-        {selectedReportId && selectedReportId !== 'new' && (
-          <Button variant="outlined" color="error" onClick={() => handleDeleteReport(selectedReportId)}>
-            Supprimer
-          </Button>
-        )}
-      </ReportSelector>
+        <ReportSelector
+          selectedReportId={selectedReportId}
+          history={history}
+          onReportChange={handleReportChange}
+        />
+
+        <Box display="flex" gap={1} justifyContent={{ xs: 'flex-end', md: 'flex-start' }}>
+          {selectedReportId === 'new' && (
+            <Button variant="contained" color="secondary" onClick={() => handleOpenCloseModal(reportData)}>
+              {translate('app.dashboard.buttons.close')}
+            </Button>
+          )}
+          {selectedReportId && selectedReportId !== 'new' && (
+            <>
+              <Button variant="contained" color="primary" onClick={() => setCreateModalOpen(true)}>
+                {translate('app.dashboard.buttons.new_report')}
+              </Button>
+              <Button variant="outlined" color="error" onClick={() => handleDeleteReport(selectedReportId)}>
+                {translate('app.dashboard.buttons.delete')}
+              </Button>
+            </>
+          )}
+        </Box>
+      </Box>
 
       {reportData ? (
         <Grid container spacing={3}>
           {/* Header Info */}
           <Grid size={{ xs: 12 }}>
             <Typography variant="subtitle1" color="text.secondary" align="center">
-              Période du {new Date(reportData.startDate).toLocaleDateString('fr-FR')}
-              {reportData.endDate
-                ? ` au ${new Date(reportData.endDate).toLocaleDateString('fr-FR')}`
-                : ' à aujourd\'hui (En cours)'}
+              {translate('app.dashboard.period.title', {
+                start: new Date(reportData.startDate).toLocaleDateString('fr-FR'),
+                end: reportData.endDate
+                  ? translate('app.dashboard.period.to', { date: new Date(reportData.endDate).toLocaleDateString('fr-FR') })
+                  : translate('app.dashboard.period.ongoing')
+              })}
             </Typography>
           </Grid>
 
           {/* Summary Cards */}
-          <ReportSummaryCards
-            reportData={reportData}
-            isSmall={isSmall}
-            isClosed={selectedReportId !== 'new'}
-          />
+          <ReportSummaryCards reportData={reportData} isSmall={isSmall} />
 
           {/* Category Tables - LEFT COLUMN */}
           <Grid size={{ xs: 12, md: 6 }}>
-            <CollapsibleSection title="Dépenses par catégorie" isSmall={isSmall}>
-              <CategorySummaryTable
-                data={reportData.pieData}
-                title=""
-                type="expense"
-              />
-            </CollapsibleSection>
+            <Card>
+              <CardContent>
+                <CategorySummaryTable
+                  data={reportData.pieData}
+                  title={translate('app.dashboard.expenses_by_category')}
+                  type="expense"
+                />
+              </CardContent>
+            </Card>
 
             {reportData.incomePieData && reportData.incomePieData.length > 0 && (
-              <CollapsibleSection title="Revenus par catégorie" isSmall={isSmall}>
-                <CategorySummaryTable
-                  data={reportData.incomePieData}
-                  title=""
-                  type="income"
-                />
-              </CollapsibleSection>
+              <Card sx={{ mt: 2 }}>
+                <CardContent>
+                  <CategorySummaryTable
+                    data={reportData.incomePieData}
+                    title={translate('app.dashboard.income_by_category')}
+                    type="income"
+                  />
+                </CardContent>
+              </Card>
             )}
           </Grid>
 
@@ -207,31 +192,29 @@ export const ReportDashboard = () => {
               <CardContent>
                 <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
                   <Box>
-                    <Typography color="textSecondary">Opérations</Typography>
+                    <Typography color="textSecondary">{translate('app.dashboard.operations')}</Typography>
                     <Typography variant="h6">
                       {new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(reportData.totalIncome - reportData.totalExpense)}
                     </Typography>
                   </Box>
-                  {selectedReportId === 'new' && (
-                    <Box display="flex" gap={1}>
-                      <Button
-                        variant="outlined"
-                        color="primary"
-                        size="small"
-                        onClick={() => setTransferDrawerOpen(true)}
-                      >
-                        Virement
-                      </Button>
-                      <Button
-                        variant="contained"
-                        color="success"
-                        onClick={() => setAddExpenseDrawerOpen(true)}
-                        size="small"
-                      >
-                        Ajouter
-                      </Button>
-                    </Box>
-                  )}
+                  <Box display="flex" gap={1}>
+                    <Button
+                      variant="outlined"
+                      color="primary"
+                      size="small"
+                      onClick={() => redirect('/transfers/create')}
+                    >
+                      {translate('app.dashboard.buttons.transfer')}
+                    </Button>
+                    <Button
+                      variant="contained"
+                      color="success"
+                      onClick={() => setExpenseDrawerOpen(true)}
+                      size="small"
+                    >
+                      {translate('app.dashboard.buttons.add')}
+                    </Button>
+                  </Box>
                 </Box>
                 <ExpenseList
                   embed
@@ -245,13 +228,19 @@ export const ReportDashboard = () => {
       ) : (
         <Box display="flex" justifyContent="center" alignItems="center" minHeight="50vh">
           <Typography variant="body1" color="text.secondary">
-            Sélectionnez un rapport dans l'historique ou créez-en un nouveau.
+            {translate('app.dashboard.select_report_prompt')}
           </Typography>
         </Box>
       )}
 
       {/* Modals and Drawers */}
-
+      <CreateReportModal
+        open={isCreateModalOpen}
+        onClose={() => setCreateModalOpen(false)}
+        onGenerate={handleGenerateReport}
+        params={newReportParams}
+        onParamsChange={setNewReportParams}
+      />
 
       <CloseReportModal
         open={isCloseModalOpen}
@@ -262,30 +251,14 @@ export const ReportDashboard = () => {
       />
 
       <AddExpenseDrawer
-        open={isAddExpenseDrawerOpen}
-        onClose={() => setAddExpenseDrawerOpen(false)}
-        selectedAccountId={selectedAccountId}
-        onSuccess={handleAddExpenseSuccess}
-      />
-
-      <EditExpenseDrawer
-        open={isEditExpenseDrawerOpen}
+        open={isExpenseDrawerOpen}
         onClose={() => {
-          setEditExpenseDrawerOpen(false);
+          setExpenseDrawerOpen(false);
           setSelectedExpenseId(null);
         }}
         selectedAccountId={selectedAccountId}
-        onSuccess={handleEditExpenseSuccess}
-        expenseId={selectedExpenseId!}
-      />
-
-      <TransferDrawer
-        open={isTransferDrawerOpen}
-        onClose={() => setTransferDrawerOpen(false)}
-        onSuccess={() => {
-          setTransferDrawerOpen(false);
-          refreshCurrentReport();
-        }}
+        onSuccess={handleExpenseSuccess}
+        expenseId={selectedExpenseId}
       />
     </Box>
   );

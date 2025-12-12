@@ -6,21 +6,24 @@ import {
   SelectInput,
   required,
   useRedirect,
+  useTranslate,
 } from 'react-admin';
 import { ColorInput } from '../../components/ColorInput';
 import { useAccount } from '../../context/AccountContext';
+import { AccountRequired } from '../../components/AccountRequired';
 
 export const CategoryCreate = () => {
   const { selectedAccountId } = useAccount();
   const redirect = useRedirect();
 
+  const translate = useTranslate();
   const transform = (data: any) => ({
     ...data,
     account_id: selectedAccountId,
   });
 
   if (!selectedAccountId) {
-    return <div>Veuillez sélectionner un compte avant de créer une catégorie.</div>;
+    return <div><AccountRequired message="app.components.account_required.message" /></div>;
   }
 
   return (
@@ -33,22 +36,22 @@ export const CategoryCreate = () => {
       }}
     >
       <SimpleForm>
-        <TextInput source="name" label="Nom" validate={[required()]} />
-        <TextInput source="description" label="Description" />
-        <ColorInput source="color" label="Couleur" fullWidth />
+        <TextInput source="name" label="resources.categories.fields.name" validate={[required()]} />
+        <TextInput source="description" label="resources.categories.fields.description" />
+        <ColorInput source="color" label="resources.categories.fields.color" fullWidth />
         <SelectInput
           source="type"
-          label="Type"
+          label="resources.categories.fields.type"
           choices={[
-            { id: 'expense', name: 'Dépense' },
-            { id: 'income', name: 'Revenu' },
+            { id: 'expense', name: translate('resources.categories.fields.type_choices.expense') },
+            { id: 'income', name: translate('resources.categories.fields.type_choices.income') },
           ]}
-          helperText="Définit si le budget est une limite (Dépense) ou un objectif (Revenu)"
+          helperText="resources.categories.fields.type_helper"
         />
         <NumberInput
           source="budget"
-          label="Budget mensuel (optionnel)"
-          helperText="Définir un budget pour recevoir des alertes en cas de dépassement"
+          label="resources.categories.fields.budget_label"
+          helperText="resources.categories.fields.budget_helper"
           min={0}
         />
       </SimpleForm>

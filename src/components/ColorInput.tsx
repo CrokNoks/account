@@ -1,4 +1,4 @@
-import { useInput } from 'react-admin';
+import { useInput, useResourceContext, useTranslate } from 'react-admin';
 import { Box, TextField } from '@mui/material';
 
 interface ColorInputProps {
@@ -12,6 +12,8 @@ export const ColorInput = ({ source, label, fullWidth }: ColorInputProps) => {
     field,
     fieldState: { error },
   } = useInput({ source });
+  const translate = useTranslate();
+  const resource = useResourceContext();
 
   return (
     <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, width: fullWidth ? '100%' : 'auto' }}>
@@ -29,7 +31,7 @@ export const ColorInput = ({ source, label, fullWidth }: ColorInputProps) => {
       />
       <TextField
         {...field}
-        label={label}
+        label={label ? translate(label) : translate(`resources.${resource}.fields.${source}`)}
         error={!!error}
         helperText={error?.message}
         fullWidth={fullWidth}

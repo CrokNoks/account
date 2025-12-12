@@ -24,11 +24,11 @@ export const AccountList = () => {
         />
       ) : (
         <Datagrid rowClick="edit">
-          <TextField source="name" label="Nom du compte" />
-          <DateField source="created_at" label="Créé le" />
+          <TextField source="name" label="resources.accounts.fields.name" />
+          <DateField source="created_at" label="resources.accounts.fields.created_at" />
           <NumberField
             source="initial_balance"
-            label="Solde initial"
+            label="resources.accounts.fields.initial_balance"
             options={{ style: 'currency', currency: 'EUR' }}
           />
           <EditButton />

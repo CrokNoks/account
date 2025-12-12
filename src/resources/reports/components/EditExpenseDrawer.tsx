@@ -1,6 +1,6 @@
 import { Drawer, Box, Typography, IconButton } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
-import { EditBase, SimpleForm, TextInput, NumberInput, DateInput, ReferenceInput, AutocompleteInput, BooleanInput, required, Toolbar, SaveButton, DeleteButton } from 'react-admin';
+import { EditBase, SimpleForm, TextInput, NumberInput, DateInput, ReferenceInput, AutocompleteInput, BooleanInput, required, Toolbar, SaveButton, DeleteButton, useTranslate } from 'react-admin';
 
 interface EditExpenseDrawerProps {
   open: boolean;
@@ -18,6 +18,7 @@ const EditToolbar = () => (
 );
 
 export const EditExpenseDrawer = ({ open, onClose, selectedAccountId, onSuccess, expenseId }: EditExpenseDrawerProps) => {
+  const translate = useTranslate();
   return (
     <Drawer
       anchor="right"
@@ -27,7 +28,7 @@ export const EditExpenseDrawer = ({ open, onClose, selectedAccountId, onSuccess,
       <Box sx={{ width: { xs: '100%', sm: 400 }, p: 2 }}>
         <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
           <Typography variant="h6">
-            Modifier l'opération
+            {translate('app.drawers.edit_expense')}
           </Typography>
           <IconButton onClick={onClose}>
             <CloseIcon />
@@ -43,9 +44,9 @@ export const EditExpenseDrawer = ({ open, onClose, selectedAccountId, onSuccess,
             mutationOptions={{ onSuccess }}
           >
             <SimpleForm toolbar={<EditToolbar />}>
-              <TextInput source="description" label="Description" validate={[required()]} fullWidth />
-              <NumberInput source="amount" label="Montant" validate={[required()]} fullWidth />
-              <DateInput source="date" label="Date" validate={[required()]} fullWidth />
+              <TextInput source="description" label="resources.expenses.fields.description" validate={[required()]} fullWidth />
+              <NumberInput source="amount" label="resources.expenses.fields.amount" validate={[required()]} fullWidth />
+              <DateInput source="date" label="resources.expenses.fields.date" validate={[required()]} fullWidth />
 
               <ReferenceInput
                 source="category_id"
@@ -56,14 +57,14 @@ export const EditExpenseDrawer = ({ open, onClose, selectedAccountId, onSuccess,
               >
                 <AutocompleteInput
                   optionText="name"
-                  label="Catégorie"
+                  label="resources.expenses.fields.category_id"
                   filterToQuery={searchText => ({ name: searchText })}
                   fullWidth
                 />
               </ReferenceInput>
 
-              <TextInput source="notes" label="Notes" multiline fullWidth />
-              <BooleanInput source="reconciled" label="Pointé" />
+              <TextInput source="notes" label="resources.expenses.fields.note" multiline fullWidth />
+              <BooleanInput source="reconciled" label="resources.expenses.fields.reconciled" />
             </SimpleForm>
           </EditBase>
         )}

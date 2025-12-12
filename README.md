@@ -1,6 +1,6 @@
-# 💰 Mes Comptes - Gestionnaire de Finances Personnelles
+# 💰 My Accounts - Personal Finance Manager
 
-Une application moderne, rapide et mobile-first pour suivre vos dépenses et revenus, construite avec **React Admin** et **Supabase**.
+A modern, fast, and mobile-first application to track your expenses and income, built with **React Admin** and **Supabase**.
 
 ![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)
 ![Status](https://img.shields.io/badge/status-active-success.svg)
@@ -12,16 +12,24 @@ Une application moderne, rapide et mobile-first pour suivre vos dépenses et rev
 ![Material UI](https://img.shields.io/badge/Material--UI-5.15-007FFF.svg?style=flat&logo=mui&logoColor=white)
 ![PWA](https://img.shields.io/badge/PWA-Ready-purple.svg?style=flat&logo=pwa&logoColor=white)
 
-## ✨ Fonctionnalités
+## ✨ Features
 
-- **📱 Mobile First & PWA** : Interface optimisée pour mobile, installable comme une application native.
-- **📊 Rapports Mensuels** : Génération automatique de rapports avec suivi des soldes (initial, final, pointé).
-- **📈 Visualisation** : Graphiques d'évolution des dépenses et revenus par catégorie.
-- **🌗 Mode Sombre** : Support complet du thème clair et sombre.
-- **📥 Import CSV** : Import facile de vos relevés bancaires.
-- **🏷️ Catégorisation** : Gestion flexible des catégories avec budgets et couleurs.
-- **✅ Pointage** : Système de réconciliation bancaire (pointage des opérations).
-- **🔒 Sécurisé** : Authentification et Row Level Security (RLS) via Supabase.
+- **📱 Mobile First & PWA**: Optimized interface for mobile, installable as a native application.
+- **📊 Monthly Reports**: Automatic report generation with balance tracking (initial, final, reconciled).
+- **📈 Visualization**: Charts showing expense and income evolution by category.
+- **🌗 Dark Mode**: Full support for light and dark themes.
+- **📥 CSV Import**: Easy import of your bank statements.
+- **🏷️ Categorization**: Flexible category management with budgets and colors.
+- **✅ Reconciliation**: Bank reconciliation system (operation matching).
+- **🔒 Secure**: Authentication and Row Level Security (RLS) via Supabase.
+
+## 🎮 Demo
+
+A live demo is available at: [https://account-c6a3f.web.app](https://account-c6a3f.web.app)
+
+**Credentials:**
+- **Email:** `demo@mydomain.tld`
+- **Password:** `DemoPassword1!`
 
 ## 🚀 Technologies
 
@@ -31,7 +39,7 @@ Une application moderne, rapide et mobile-first pour suivre vos dépenses et rev
 
 ## 🛠️ Installation
 
-### 1. Cloner le projet
+### 1. Clone the project
 
 ```bash
 git clone https://github.com/CrokNoks/account.git
@@ -39,48 +47,54 @@ cd account
 npm install
 ```
 
-### 2. Configurer Supabase
+### 2. Configure Supabase
 
-1. Créez un projet sur [Supabase](https://supabase.com).
-2. Exécutez le script SQL fourni dans `supabase/schema.sql` via l'éditeur SQL de Supabase pour créer les tables et les politiques de sécurité.
+1. Create a project on [Supabase](https://supabase.com).
+2. Run the SQL script provided in `supabase/schema.sql` via the Supabase SQL editor to create tables and security policies.
 
-### 3. Variables d'environnement
+### 3. Environment Variables
 
-Créez un fichier `.env` à la racine du projet en copiant `.env.example` :
+Create a `.env` file at the root of the project by copying `.env.example`:
 
 ```bash
 cp .env.example .env
 ```
 
-Remplissez les variables avec vos identifiants Supabase :
+Fill in the variables with your Supabase credentials:
 
 ```env
-VITE_SUPABASE_URL=votre_url_supabase
-VITE_SUPABASE_ANON_KEY=votre_cle_anon_publique
+VITE_SUPABASE_URL=your_supabase_url
+VITE_SUPABASE_ANON_KEY=your_anon_public_key
 ```
 
-### 4. Lancer l'application
+### 4. Start the application
 
 ```bash
 npm run dev
 ```
 
-L'application sera accessible sur `http://localhost:5173`.
+The application will be accessible at `http://localhost:5173`.
 
 ## 📱 PWA (Progressive Web App)
 
-L'application est configurée comme une PWA. Une fois déployée (ou en local avec HTTPS), vous pouvez l'installer sur votre téléphone via le navigateur ("Ajouter à l'écran d'accueil").
+The application is configured as a PWA. Once deployed (or locally with HTTPS), you can install it on your phone via the browser ("Add to Home Screen").
 
-## 🤝 Contribuer
+## 📅 Roadmap
 
-Les contributions sont les bienvenues ! N'hésitez pas à ouvrir une issue ou une Pull Request.
+- [ ] Improve category display
+- [ ] OCR for receipts
+- [ ] PDF generation with customizable information
 
-1. Forker le projet
-2. Créer une branche (`git checkout -b feature/AmazingFeature`)
-3. Commiter vos changements (`git commit -m 'Add some AmazingFeature'`)
-4. Pusher la branche (`git push origin feature/AmazingFeature`)
-5. Ouvrir une Pull Request
+## 🤝 Contributing
 
-## 📄 Licence
+Contributions are welcome! Feel free to open an issue or a Pull Request.
 
-Distribué sous la licence MIT.
+1. Fork the project
+2. Create a branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
+
+## 📄 License
+
+Distributed under the MIT license.
