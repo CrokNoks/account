@@ -26,7 +26,8 @@ export const ReportSummaryCards = ({ reportData, isSmall, isClosed = false }: Re
     new Intl.NumberFormat(locale, { style: 'currency', currency: 'EUR' }).format(amount);
 
   return (
-    <>
+
+    <Grid container spacing={3}>
       {/* Initial Balance */}
       <Grid size={{ xs: 6, md: 2 }} sx={{ display: (isSmall && !isClosed) ? 'none' : 'grid' }}>
         <Card sx={{ bgcolor: 'action.hover', height: '100%' }}>
@@ -155,6 +156,6 @@ export const ReportSummaryCards = ({ reportData, isSmall, isClosed = false }: Re
           </Card>
         </Grid>
       )}
-    </>
+    </Grid>
   );
 };
