@@ -159,11 +159,13 @@ export const ReportDashboard = () => {
           </Grid>
 
           {/* Summary Cards */}
-          <ReportSummaryCards
-            reportData={reportData}
-            isSmall={isSmall}
-            isClosed={selectedReportId !== 'new'}
-          />
+          <Grid size={{ xs: 12 }} >
+            <ReportSummaryCards
+              reportData={reportData}
+              isSmall={isSmall}
+              isClosed={selectedReportId !== 'new'}
+            />
+          </Grid>
 
           {/* Category Tables - LEFT COLUMN */}
           <Grid size={{ xs: 12, md: 6 }}>
