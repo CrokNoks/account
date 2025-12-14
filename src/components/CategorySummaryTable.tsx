@@ -6,21 +6,6 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { CategoryShip } from './CategoryShip';
 
-interface CategoryData {
-  id: string;
-  name: string;
-  value: number;
-  color: string;
-  budget?: number;
-}
-
-interface CategorySummaryTableProps {
-  data: CategoryData[];
-  title: string;
-  type?: 'expense' | 'income';
-  sx?: any;
-}
-
 const CategoryStatusChip = ({ record, type }: { record: CategoryData, type: 'expense' | 'income' }) => {
   const translate = useTranslate();
 

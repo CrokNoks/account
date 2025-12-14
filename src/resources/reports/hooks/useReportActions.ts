@@ -59,7 +59,7 @@ export const useReportActions = (
 
     setLoading(true);
     try {
-      const finalReportData = await fetchAndCalculateReport(
+      const finalReportData: Omit<ReportData, 'pieData' | 'incomePieData'> | null = await fetchAndCalculateReport(
         reportData.startDate,
         closingDate,
         reportData.initialBalance
@@ -102,6 +102,7 @@ export const useReportActions = (
       }
     } catch (error: any) {
       notify(`Erreur: ${error.message}`, { type: 'error' });
+    } finally {
       setLoading(false);
     }
   };
@@ -120,10 +121,54 @@ export const useReportActions = (
       if (error) throw error;
 
       notify('Rapport supprimé.', { type: 'success' });
-      setSelectedReportId('');
-      setReportData(null);
+      notify('Rapport supprimé.', { type: 'success' });
 
-      await fetchHistory();
+      const historyData = await fetchHistory();
+
+      if (historyData && historyData.length > 0) {
+        const lastReport = historyData[0];
+        const lastEndDate = new Date(lastReport.end_date);
+        const nextStartDate = new Date(lastEndDate);
+        nextStartDate.setDate(nextStartDate.getDate() + 1);
+        const nextStartDateStr = nextStartDate.toISOString().split('T')[0];
+        const nextInitialBalance = lastReport.data?.netResult || 0;
+
+        const report = await fetchAndCalculateReport(nextStartDateStr, null, nextInitialBalance);
+        setReportData(report);
+        setSelectedReportId('new');
+        setNewReportParams({
+          startDate: nextStartDateStr,
+          endDate: '',
+          initialBalance: nextInitialBalance
+        });
+      } else {
+        const { data: account } = await supabaseClient
+          .from('accounts')
+          .select('initial_balance')
+          .eq('id', selectedAccountId)
+          .single();
+
+        const { data: firstExpense } = await supabaseClient
+          .from('expenses')
+          .select('date')
+          .eq('account_id', selectedAccountId)
+          .order('date', { ascending: true })
+          .limit(1)
+          .single();
+
+        let startDate = new Date().toISOString().split('T')[0];
+        if (firstExpense) startDate = firstExpense.date;
+        const initialBalance = account?.initial_balance || 0;
+
+        const report = await fetchAndCalculateReport(startDate, null, initialBalance);
+        setReportData(report);
+        setSelectedReportId('new');
+        setNewReportParams({
+          startDate,
+          endDate: '',
+          initialBalance
+        });
+      }
     } catch (error: any) {
       notify(`Erreur: ${error.message}`, { type: 'error' });
     } finally {

@@ -8,14 +8,13 @@ import { useIsSmall } from '../../hooks/isSmall';
 import {
   ReportSummaryCards,
   ReportSelector,
-  CreateReportModal,
   CloseReportModal,
   AddExpenseDrawer
 } from './components';
 import { useReportData } from './hooks/useReportData';
 import { useReportActions } from './hooks/useReportActions';
 
-const getFilter = ({ date_gte, date_lte }: { date_gte: string | null, date_lte: string }) => {
+const getFilter = ({ date_gte, date_lte }: { date_gte: string, date_lte: string | null }) => {
   const filter: any = {
     date_gte
   };
@@ -52,26 +51,20 @@ export const ReportDashboard = () => {
   } = useReportData(selectedAccountId);
 
   const {
-    isCreateModalOpen,
-    setCreateModalOpen,
-    newReportParams,
-    setNewReportParams,
-    handleGenerateReport,
     isCloseModalOpen,
     setCloseModalOpen,
     closingDate,
     setClosingDate,
     handleOpenCloseModal,
     handleConfirmCloseReport,
-    handleDeleteReport
+    handleDeleteReport,
   } = useReportActions(
     selectedAccountId,
     fetchAndCalculateReport,
     fetchHistory,
     setReportData,
     setSelectedReportId,
-    setLoading
-  );
+    setLoading);
 
   const handleReportChange = (reportId: string) => {
     if (reportId === 'new') {
@@ -83,6 +76,7 @@ export const ReportDashboard = () => {
   };
 
   const handleRowClick = (id: string): false => {
+    if (selectedReportId !== 'new') return false;
     setSelectedExpenseId(id);
     setExpenseDrawerOpen(true);
     return false;
@@ -131,11 +125,8 @@ export const ReportDashboard = () => {
               {translate('app.dashboard.buttons.close')}
             </Button>
           )}
-          {selectedReportId && selectedReportId !== 'new' && !isSmall && (
+          {selectedReportId && selectedReportId !== 'new' && !isSmall && history.length > 0 && selectedReportId === history[0].id && (
             <>
-              <Button variant="contained" color="primary" onClick={() => setCreateModalOpen(true)}>
-                {translate('app.dashboard.buttons.new_report')}
-              </Button>
               <Button variant="outlined" color="error" onClick={() => handleDeleteReport(selectedReportId)}>
                 {translate('app.dashboard.buttons.delete')}
               </Button>
@@ -170,7 +161,7 @@ export const ReportDashboard = () => {
           {/* Category Tables - LEFT COLUMN */}
           <Grid size={{ xs: 12, md: 6 }}>
             <CategorySummaryTable
-              data={reportData.pieData}
+              data={reportData.expensePieData}
               title={translate('app.dashboard.expenses_by_category')}
               type="expense"
             />
@@ -221,6 +212,8 @@ export const ReportDashboard = () => {
                     embed
                     filter={getFilter({ date_gte: reportData.startDate, date_lte: reportData.endDate })}
                     onRowClick={handleRowClick}
+                    onUpdate={refreshCurrentReport}
+                    readOnly={selectedReportId !== 'new'}
                   />
                 </CardContent>
               </Card>
@@ -235,15 +228,6 @@ export const ReportDashboard = () => {
         </Box>
       )}
 
-      {/* Modals and Drawers */}
-      <CreateReportModal
-        open={isCreateModalOpen}
-        onClose={() => setCreateModalOpen(false)}
-        onGenerate={handleGenerateReport}
-        params={newReportParams}
-        onParamsChange={setNewReportParams}
-      />
-
       <CloseReportModal
         open={isCloseModalOpen}
         onClose={() => setCloseModalOpen(false)}
@@ -257,6 +241,10 @@ export const ReportDashboard = () => {
         onClose={() => {
           setExpenseDrawerOpen(false);
           setSelectedExpenseId(null);
+          // Refresh report when drawer closes, just in case
+          if (selectedReportId === 'new') {
+            refreshCurrentReport();
+          }
         }}
         selectedAccountId={selectedAccountId}
         onSuccess={handleExpenseSuccess}

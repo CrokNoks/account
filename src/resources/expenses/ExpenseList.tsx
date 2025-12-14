@@ -61,7 +61,7 @@ const expenseFilters = (selectedAccountId: string | null, embed: boolean = false
   ]
 };
 
-const ReconciledToggle = () => {
+const ReconciledToggle = ({ onSuccess, readOnly = false }: { onSuccess?: () => void, readOnly?: boolean }) => {
   const record = useRecordContext();
   const notify = useNotify();
   const [update] = useUpdate();
@@ -71,6 +71,7 @@ const ReconciledToggle = () => {
   if (!record) return null;
 
   const handleToggle = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (readOnly) return;
     event.stopPropagation(); // Prevent row click
     const newValue = event.target.checked;
 
@@ -81,6 +82,7 @@ const ReconciledToggle = () => {
       );
       await refresh();
       notify(translate('app.expenses.notifications.status_updated'), { type: 'success' });
+      if (onSuccess) onSuccess();
     } catch (error) {
       notify(translate('app.expenses.notifications.update_error'), { type: 'error' });
     }
@@ -92,6 +94,7 @@ const ReconciledToggle = () => {
       onChange={handleToggle}
       onClick={(e) => e.stopPropagation()} // Prevent row click
       color="primary"
+      disabled={readOnly}
     />
   );
 };
@@ -118,7 +121,7 @@ export const ExpenseFilterSidebar = () => {
   );
 };
 
-export const ExpenseList = ({ filter, embed = false, actions = <></>, onRowClick }: { filter: any, embed?: boolean, actions?: any, onRowClick?: (id: any) => false }) => {
+export const ExpenseList = ({ filter, embed = false, actions = <></>, onRowClick, onUpdate, readOnly = false }: { filter: any, embed?: boolean, actions?: any, onRowClick?: (id: any) => false, onUpdate?: () => void, readOnly?: boolean }) => {
   const { selectedAccountId } = useAccount();
   const isSmall = useIsSmall();
 
@@ -173,9 +176,9 @@ export const ExpenseList = ({ filter, embed = false, actions = <></>, onRowClick
             label="resources.expenses.fields.amount"
             options={{ style: 'currency', currency: 'EUR' }}
           />
-          <FunctionField label="resources.expenses.fields.reconciled" render={() => <ReconciledToggle />} />
-          {embed ? <></> : <EditButton />}
-          {embed ? <></> : <DeleteButton />}
+          <FunctionField label="resources.expenses.fields.reconciled" render={() => <ReconciledToggle onSuccess={onUpdate} readOnly={readOnly} />} />
+          {embed && readOnly ? <></> : embed ? <></> : <EditButton />}
+          {embed && readOnly ? <></> : embed ? <></> : <DeleteButton />}
         </Datagrid>)}
     </List>
   );
