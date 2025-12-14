@@ -5,7 +5,7 @@ import {
   NumberInput,
   DateInput,
   ReferenceInput,
-  SelectInput,
+  AutocompleteInput,
   required,
   BooleanInput,
   useRedirect,
@@ -41,7 +41,7 @@ export const ExpenseCreate = () => {
         <DateInput source="date" label="resources.expenses.fields.date" validate={[required()]} defaultValue={new Date()} />
 
         <ReferenceInput source="category_id" reference="categories" filter={{ account_id: selectedAccountId }}>
-          <SelectInput optionText="name" label="resources.expenses.fields.category_id" />
+          <AutocompleteInput optionText="name" label="resources.expenses.fields.category_id" filterToQuery={searchText => ({ name: searchText })} />
         </ReferenceInput>
 
         <TextInput source="notes" label="resources.expenses.fields.note" multiline fullWidth />

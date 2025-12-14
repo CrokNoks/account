@@ -2,16 +2,6 @@ import { Card, CardContent, Typography, Grid, Tooltip, Box } from '@mui/material
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 import { useTranslate, useLocale } from 'react-admin';
 
-interface ReportData {
-  initialBalance: number;
-  totalIncome: number;
-  totalExpense: number;
-  netResult: number;
-  unreconciledBalance: number;
-  pieData?: any[];
-  incomePieData?: any[];
-}
-
 interface ReportSummaryCardsProps {
   reportData: ReportData;
   isSmall: boolean;
@@ -140,7 +130,7 @@ export const ReportSummaryCards = ({ reportData, isSmall, isClosed = false }: Re
                   // If no income categories or budgets, fallback to totalIncome if it's greater than 0, else 0
                   const finalProjectedIncome = projectedIncome > 0 ? projectedIncome : reportData.totalIncome;
 
-                  const projectedExpense = (reportData.pieData || []).reduce((sum: number, cat: any) => {
+                  const projectedExpense = (reportData.expensePieData || []).reduce((sum: number, cat: any) => {
                     return sum + Math.max(cat.value, cat.budget || 0);
                   }, 0);
 

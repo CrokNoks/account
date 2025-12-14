@@ -5,7 +5,7 @@ import { supabaseClient } from '../../../supabaseClient';
 export const useReportData = (selectedAccountId: string | null) => {
   const notify = useNotify();
   const [loading, setLoading] = useState(false);
-  const [reportData, setReportData] = useState<any>(null);
+  const [reportData, setReportData] = useState<ReportData | null>(null);
   const [history, setHistory] = useState<any[]>([]);
   const [selectedReportId, setSelectedReportId] = useState<string>('');
 
@@ -127,7 +127,7 @@ export const useReportData = (selectedAccountId: string | null) => {
       reconciledBalance,
       unreconciledBalance,
       unreconciledCount,
-      pieData: Array.from(expenseCategoryMap.values()).filter(c => c.value > 0 || (c.budget && c.budget > 0)), // Keep if value > 0 OR has budget
+      expensePieData: Array.from(expenseCategoryMap.values()).filter(c => c.value > 0 || (c.budget && c.budget > 0)), // Keep if value > 0 OR has budget
       incomePieData: Array.from(incomeCategoryMap.values()).filter(c => c.value > 0 || (c.budget && c.budget > 0)), // Keep if value > 0 OR has budget
       expenseCount: expenses?.length || 0
     };
@@ -194,14 +194,19 @@ export const useReportData = (selectedAccountId: string | null) => {
   }, [selectedAccountId, history, fetchAndCalculateReport, notify]);
 
   const refreshCurrentReport = useCallback(async () => {
+    // If no reportData, there's nothing to refresh relative to current dates
+    // BUT we need to check if we are in 'new' mode (current report) or 'archived'
     if (!reportData) return;
-    // Don't set global loading to avoid UI flash/unmount
+
     try {
       const data = await fetchAndCalculateReport(
         reportData.startDate,
         reportData.endDate,
         reportData.initialBalance
       );
+      // We need to spread to force React update if the reference check fails, though setReportData usually triggers rerender
+      // But if the object content is same, we want to be sure. 
+      // Actually fetchAndCalculateReport returns a new object.
       setReportData(data);
     } catch (error) {
       console.error(error);
@@ -313,13 +318,12 @@ export const useReportData = (selectedAccountId: string | null) => {
         if (error) throw error;
 
         let data = archivedReport.data;
-        if (!data.incomePieData) {
-          data = await fetchAndCalculateReport(
-            archivedReport.start_date,
-            archivedReport.end_date,
-            data.initialBalance
-          );
-        }
+
+        data = await fetchAndCalculateReport(
+          archivedReport.start_date,
+          archivedReport.end_date,
+          data.initialBalance
+        );
 
         setReportData(data);
       } catch (error) {

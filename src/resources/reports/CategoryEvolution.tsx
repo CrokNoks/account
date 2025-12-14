@@ -87,8 +87,8 @@ export const CategoryEvolution = () => {
           };
 
           // Process pie data from report
-          if (report.data?.pieData && Array.isArray(report.data.pieData)) {
-            report.data.pieData.forEach((cat: any) => {
+          if (report.data?.expensePieData && Array.isArray(report.data.expensePieData)) {
+            report.data.expensePieData.forEach((cat: any) => {
               const catKey = cat.name || translate('resources.categories.uncategorized');
               const catColor = cat.color || '#ccc';
               const catValue = cat.value || 0;
