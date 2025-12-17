@@ -1,5 +1,7 @@
 import { Card, CardContent, Typography, Grid, Tooltip, Box } from '@mui/material';
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
+import TrendingUpIcon from '@mui/icons-material/TrendingUp';
+import TrendingDownIcon from '@mui/icons-material/TrendingDown';
 import { useTranslate, useLocale } from 'react-admin';
 
 interface ReportSummaryCardsProps {
@@ -121,27 +123,43 @@ export const ReportSummaryCards = ({ reportData, isSmall, isClosed = false }: Re
                   <HelpOutlineIcon fontSize="small" sx={{ opacity: 0.7, mb: 0.5 }} />
                 </Tooltip>
               </Box>
-              <Typography variant="h5" color="inherit" fontWeight="bold">
-                {(() => {
-                  const projectedIncome = (reportData.incomePieData || []).reduce((sum: number, cat: any) => {
-                    return sum + Math.max(cat.value, cat.budget || 0);
-                  }, 0);
+              {(() => {
+                const projectedIncome = (reportData.incomePieData || []).reduce((sum: number, cat: any) => {
+                  return sum + Math.max(cat.value, cat.budget || 0);
+                }, 0);
 
-                  // If no income categories or budgets, fallback to totalIncome if it's greater than 0, else 0
-                  const finalProjectedIncome = projectedIncome > 0 ? projectedIncome : reportData.totalIncome;
+                // If no income categories or budgets, fallback to totalIncome if it's greater than 0, else 0
+                const finalProjectedIncome = projectedIncome > 0 ? projectedIncome : reportData.totalIncome;
 
-                  const projectedExpense = (reportData.expensePieData || []).reduce((sum: number, cat: any) => {
-                    return sum + Math.max(cat.value, cat.budget || 0);
-                  }, 0);
+                const projectedExpense = (reportData.expensePieData || []).reduce((sum: number, cat: any) => {
+                  return sum + Math.max(cat.value, cat.budget || 0);
+                }, 0);
 
-                  // If no expense categories or budgets, fallback to totalExpense
-                  const finalProjectedExpense = projectedExpense > 0 ? projectedExpense : reportData.totalExpense;
+                // If no expense categories or budgets, fallback to totalExpense
+                const finalProjectedExpense = projectedExpense > 0 ? projectedExpense : reportData.totalExpense;
 
-                  const projectedBalance = reportData.initialBalance + finalProjectedIncome - finalProjectedExpense;
+                const projectedBalance = reportData.initialBalance + finalProjectedIncome - finalProjectedExpense;
+                const diff = projectedBalance - reportData.initialBalance;
+                const isPositive = diff >= 0;
 
-                  return formatCurrency(projectedBalance);
-                })()}
-              </Typography>
+                return (
+                  <Box>
+                    <Typography variant="h5" color="inherit" fontWeight="bold">
+                      {formatCurrency(projectedBalance)}
+                    </Typography>
+                    <Box display="flex" alignItems="center" gap={0.5} mt={0.5} sx={{ opacity: 0.9 }}>
+                      {isPositive ? (
+                        <TrendingUpIcon fontSize="small" sx={{ color: 'success.main' }} />
+                      ) : (
+                        <TrendingDownIcon fontSize="small" sx={{ color: 'error.main' }} />
+                      )}
+                      <Typography variant="body2" color={isPositive ? 'success.main' : 'error.main'} fontWeight="bold">
+                        {isPositive ? '+' : ''}{formatCurrency(diff)}
+                      </Typography>
+                    </Box>
+                  </Box>
+                );
+              })()}
             </CardContent>
           </Card>
         </Grid>
