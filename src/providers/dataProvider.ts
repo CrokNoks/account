@@ -136,19 +136,11 @@ export const dataProvider: DataProvider = {
         throw new Error('Champs manquants pour le virement');
       }
 
-      const { data: authData } = await supabaseClient.auth.getUser();
-      const user = authData?.user;
-
-      if (!user) {
-        throw new Error('Utilisateur non connecté');
-      }
-
       const baseFields = {
         description: description || 'Virement entre comptes',
         date: date || new Date().toISOString(),
         notes: notes || null,
         reconciled: false,
-        user_id: user.id,
       };
 
       const amountNumber = Number(amount);
