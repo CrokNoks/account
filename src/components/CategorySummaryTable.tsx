@@ -66,25 +66,37 @@ export const CategorySummaryTable = ({ data, title, type = 'expense', sx = {} }:
   const totalBudget = data.reduce((sum, cat) => sum + (cat.budget || 0), 0);
 
   // State for sorting
-  const [sort, setSort] = useState<SortPayload>({ field: 'value', order: 'DESC' });
+  const [sort, setSort] = useState<SortPayload>({ field: 'budgetUsage', order: 'ASC' });
 
   // Memoized sorted data
   const sortedData = useMemo(() => {
     if (!sort.field) return data;
 
     return [...data].sort((a, b) => {
-      const field = sort.field as keyof CategoryData;
+      const field = sort.field as string;
       const order = sort.order === 'ASC' ? 1 : -1;
 
-      const valA = a[field];
-      const valB = b[field];
+      // Helper to get budget percentage
+      const getBudgetPercent = (item: CategoryData) => {
+        if (!item.budget || item.budget === 0) return -2;
+        return (item.value / item.budget) * 100;
+      };
 
-      // Handle properties
-      if (field === 'name') {
-        return order * (valA as string || '').localeCompare(valB as string || '');
+      if (field === 'budgetUsage') {
+        const percentA = getBudgetPercent(a);
+        const percentB = getBudgetPercent(b);
+        return order * (percentA - percentB);
       }
 
-      // Handle numbers (value, budget)
+      if (field === 'name') {
+        const valA = a.name;
+        const valB = b.name;
+        return order * (valA || '').localeCompare(valB || '');
+      }
+
+      // Handle other number fields (value, budget)
+      const valA = a[field as keyof CategoryData];
+      const valB = b[field as keyof CategoryData];
       const numA = (valA as number) || 0;
       const numB = (valB as number) || 0;
 
@@ -193,7 +205,7 @@ export const CategorySummaryTable = ({ data, title, type = 'expense', sx = {} }:
               <FunctionField
                 label="app.category_summary.status"
                 textAlign="center"
-                sortable={false}
+                sortBy="budgetUsage"
                 render={(record: CategoryData) => <CategoryStatusChip record={record} type={type} />}
               />
             </Datagrid>
