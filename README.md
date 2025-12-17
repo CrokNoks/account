@@ -19,6 +19,7 @@ A modern, fast, and mobile-first application to track your expenses and income, 
 - **📈 Visualization**: Charts showing expense and income evolution by category.
 - **🌗 Dark Mode**: Full support for light and dark themes.
 - **📥 CSV Import**: Easy import of your bank statements.
+- **📸 OCR Receipt Scanner**: Scan and extract data from receipts automatically.
 - **🏷️ Categorization**: Flexible category management with budgets and colors.
 - **✅ Reconciliation**: Bank reconciliation system (operation matching).
 - **🔒 Secure**: Authentication and Row Level Security (RLS) via Supabase.
@@ -33,7 +34,7 @@ A live demo is available at: [https://account-c6a3f.web.app](https://account-c6a
 
 ## 🚀 Technologies
 
-- **Frontend**: React, TypeScript, React Admin, Material UI, Recharts
+- **Frontend**: React, TypeScript, React Admin, Material UI, Recharts, Tesseract.js
 - **Backend**: Supabase (PostgreSQL, Auth, Edge Functions)
 - **Build**: Vite, Vite PWA
 
@@ -82,7 +83,7 @@ The application is configured as a PWA. Once deployed (or locally with HTTPS), y
 ## 📅 Roadmap
 
 - [ ] Improve category display
-- [ ] OCR for receipts
+- [x] OCR for receipts
 - [ ] PDF generation with customizable information
 
 ## 🤝 Contributing

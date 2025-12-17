@@ -229,6 +229,12 @@ export const fr = {
       import: {
         button: 'Importer CSV',
         loading: 'Importation...'
+      },
+      ocr: {
+        scan_button: 'Scanner un ticket de caisse',
+        processing: 'Lecture du ticket en cours...',
+        error: 'Erreur lors de la lecture du ticket. Veuillez réessayer.',
+        success: 'Données extraites du ticket !'
       }
     }
   }
