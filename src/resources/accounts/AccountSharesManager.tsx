@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useDataProvider, useNotify, useRecordContext, useRefresh, useTranslate } from 'react-admin';
+import { useRecordContext, useTranslate } from 'react-admin';
 import {
   Box,
   Button,
@@ -13,82 +13,30 @@ import {
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { ReferenceInput, AutocompleteInput } from 'react-admin';
-
-interface ShareFormState {
-  user_id?: string;
-  permission: 'read' | 'write';
-}
+import { useAccountShares, ShareFormState } from './hooks/useAccountShares';
 
 export const AccountSharesManager = () => {
   const record = useRecordContext();
-  const dataProvider = useDataProvider();
-  const notify = useNotify();
-  const refresh = useRefresh();
   const translate = useTranslate();
+  const { shares, loading, loadShares, addShare, removeShare } = useAccountShares(record?.id);
 
-  const [shares, setShares] = useState<any[]>([]);
-  const [loading, setLoading] = useState(false);
   const [formState, setFormState] = useState<ShareFormState>({
     user_id: undefined,
     permission: 'write',
   });
 
-  const loadShares = async () => {
-    if (!record) return;
-    setLoading(true);
-    try {
-      const { data } = await dataProvider.getList('account_shares', {
-        filter: { account_id: record.id },
-        pagination: { page: 1, perPage: 100 },
-        sort: { field: 'created_at', order: 'ASC' },
-      });
-      setShares(data);
-    } catch (error) {
-      notify(translate('resources.accounts.shares.notifications.load_error'), { type: 'warning' });
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
     loadShares();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [record?.id]);
+  }, [loadShares]);
 
-  const handleAdd = async () => {
-    if (!record) return;
-    if (!formState.user_id) {
-      notify(translate('resources.accounts.shares.notifications.choose_user'), { type: 'warning' });
-      return;
-    }
-    try {
-      await dataProvider.create('account_shares', {
-        data: {
-          account_id: record.id,
-          user_id: formState.user_id,
-          permission: formState.permission,
-        },
-      });
+  const handleAdd = () => {
+    addShare(formState, () => {
       setFormState({ user_id: undefined, permission: 'write' });
-      notify(translate('resources.accounts.shares.notifications.add_success'), { type: 'success' });
-      loadShares();
-      refresh();
-    } catch (error: any) {
-      console.error(error);
-      notify(error?.message || translate('resources.accounts.shares.notifications.add_error'), { type: 'warning' });
-    }
+    });
   };
 
-  const handleDelete = async (id: string) => {
-    try {
-      await dataProvider.delete('account_shares', { id });
-      notify(translate('resources.accounts.shares.notifications.delete_success'), { type: 'info' });
-      loadShares();
-      refresh();
-    } catch (error: any) {
-      console.error(error);
-      notify(error?.message || translate('resources.accounts.shares.notifications.delete_error'), { type: 'warning' });
-    }
+  const handleDelete = (id: string) => {
+    removeShare(id);
   };
 
   if (!record) return null;

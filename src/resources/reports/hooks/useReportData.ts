@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNotify } from 'react-admin';
 import { supabaseClient } from '../../../supabaseClient';
+import { calculateReportTotals } from '../../../utils/reportCalculations';
 
 export const useReportData = (selectedAccountId: string | null) => {
   const notify = useNotify();
@@ -39,97 +40,18 @@ export const useReportData = (selectedAccountId: string | null) => {
     const { data: expenses, error: expensesError } = await query;
     if (expensesError) throw expensesError;
 
-    // Calculate Totals
-    let totalIncome = 0;
-    let totalExpense = 0;
-    let reconciledBalance = 0;
-    let unreconciledBalance = 0;
-    let unreconciledCount = 0;
-
-    const expenseCategoryMap = new Map();
-    const incomeCategoryMap = new Map();
-
-    // Initialize maps with typed categories
-    allCategories?.forEach(cat => {
-      const catData = {
-        id: cat.id,
-        name: cat.name,
-        value: 0,
-        color: cat.color,
-        budget: cat.budget
-      };
-
-      if (cat.type === 'income') {
-        incomeCategoryMap.set(cat.id, catData);
-      } else if (cat.type === 'expense') {
-        expenseCategoryMap.set(cat.id, catData);
-      }
-      // Categories with no type are not pre-initialized, they will be added based on transaction sign
-    });
-
-    expenses?.forEach((exp: any) => {
-      const amount = Number(exp.amount);
-      const catId = exp.category_id;
-      const category = allCategories?.find(c => c.id === catId);
-
-      // Update global totals (based on raw amount sign)
-      if (amount > 0) {
-        totalIncome += amount;
-      } else {
-        totalExpense += Math.abs(amount);
-      }
-
-      // Update Category Maps
-      if (category && category.type === 'income') {
-        // It's a known income category
-        if (incomeCategoryMap.has(catId)) {
-          incomeCategoryMap.get(catId).value += amount;
-        }
-      } else if (category && category.type === 'expense') {
-        // It's a known expense category
-        if (expenseCategoryMap.has(catId)) {
-          expenseCategoryMap.get(catId).value += -amount; // Invert sign for expense view (positive value = cost)
-        }
-      } else {
-        // No type or unknown category: fallback to amount sign
-        const catName = category?.name || 'Sans catégorie';
-        const catColor = category?.color || '#ccc';
-        const catBudget = category?.budget || null;
-
-        if (amount > 0) {
-          if (!incomeCategoryMap.has(catId)) {
-            incomeCategoryMap.set(catId, { id: catId, name: catName, value: 0, color: catColor, budget: catBudget });
-          }
-          incomeCategoryMap.get(catId).value += amount;
-        } else {
-          if (!expenseCategoryMap.has(catId)) {
-            expenseCategoryMap.set(catId, { id: catId, name: catName, value: 0, color: catColor, budget: catBudget });
-          }
-          expenseCategoryMap.get(catId).value += Math.abs(amount);
-        }
-      }
-
-      if (exp.reconciled) {
-        reconciledBalance += amount;
-      } else {
-        unreconciledBalance += amount;
-        unreconciledCount++;
-      }
-    });
+    // Use utility for calculation
+    const totals = calculateReportTotals(
+      expenses || [],
+      allCategories || [],
+      Number(initialBalance)
+    );
 
     return {
       startDate,
       endDate: endDate || null,
       initialBalance: Number(initialBalance),
-      totalIncome,
-      totalExpense,
-      netResult: Number(initialBalance) + totalIncome - totalExpense,
-      reconciledBalance,
-      unreconciledBalance,
-      unreconciledCount,
-      expensePieData: Array.from(expenseCategoryMap.values()).filter(c => c.value > 0 || (c.budget && c.budget > 0)), // Keep if value > 0 OR has budget
-      incomePieData: Array.from(incomeCategoryMap.values()).filter(c => c.value > 0 || (c.budget && c.budget > 0)), // Keep if value > 0 OR has budget
-      expenseCount: expenses?.length || 0
+      ...totals
     };
   }, [selectedAccountId]);
 
