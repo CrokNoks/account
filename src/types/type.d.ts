@@ -7,6 +7,7 @@ interface CategoryData {
   budget?: number;
 }
 
+
 interface CategorySummaryTableProps {
   data: CategoryData[];
   title: string;
@@ -27,4 +28,5 @@ interface ReportData {
   expensePieData: CategoryData[];
   incomePieData: CategoryData[];
   expenseCount: number;
+  rawExpenses?: { amount: number; date: string }[];
 }

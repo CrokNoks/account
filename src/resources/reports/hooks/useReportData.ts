@@ -51,6 +51,7 @@ export const useReportData = (selectedAccountId: string | null) => {
       startDate,
       endDate: endDate || null,
       initialBalance: Number(initialBalance),
+      rawExpenses: expenses || [],
       ...totals
     };
   }, [selectedAccountId]);
