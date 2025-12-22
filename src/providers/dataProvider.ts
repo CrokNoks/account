@@ -33,6 +33,13 @@ export const dataProvider: DataProvider = {
       // Apply filters
       Object.keys(filter).forEach(key => {
         const value = (filter as any)[key];
+
+        // Explicitly handle "is null" check
+        if (value === 'is:null') {
+          query = query.is(key, null);
+          return;
+        }
+
         // Ignore undefined/null filters to avoid invalid casts (e.g., reconciled undefined)
         if (value === undefined || value === null) {
           return;
