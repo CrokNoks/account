@@ -1,11 +1,15 @@
 import Papa from 'papaparse';
 
+
 export interface ExpenseImportData {
   date: string;
   description: string;
   amount: number;
   category_id: null;
   reconciled: boolean;
+  payment_method?: string;
+  confidence?: number;
+  metadata?: any;
 }
 
 export interface CategoryImportData {
@@ -51,10 +55,12 @@ export const parseExpenseCSV = (fileContent: string): Promise<{ expenses: Expens
     Papa.parse(csvContent, {
       header: true,
       skipEmptyLines: true,
-      complete: (results: any) => {
+      complete: async (results: any) => {
         try {
           const rows = results.data;
           const expenses: ExpenseImportData[] = [];
+
+
 
           for (const row of rows) {
             // Support multiple formats
@@ -101,12 +107,54 @@ export const parseExpenseCSV = (fileContent: string): Promise<{ expenses: Expens
               continue;
             }
 
+            // Parse multi-line description
+            const rawDescription = description || '';
+            const descLines = rawDescription.split('\n').filter((l: string) => l.trim().length > 0);
+
+            // First line is often the type (e.g., 'PRLV SEPA', 'CB')
+            // Second line is usually the main description/label
+            let mainDescription = rawDescription;
+            let metadata: any = { raw_import: rawDescription };
+
+            if (descLines.length > 1) {
+              // If we have multiple lines
+              const typeHint = descLines[0];
+              const realLabel = descLines[1];
+              const references = descLines.slice(2);
+
+              mainDescription = realLabel;
+              metadata = {
+                ...metadata,
+                import_type_hint: typeHint.trim(),
+                import_references: references
+              };
+            } else {
+              // Single line case: try to be smart or just store it
+              metadata = {
+                ...metadata,
+                import_type_hint: null // No distinct type hint line
+              };
+            }
+
+            // Simple Mapper Logic
+            const hint = (metadata.import_type_hint || rawDescription).toUpperCase();
+            let finalMethod = 'other';
+
+            if (hint.includes('REGLEMENT') || hint.includes('PRELEVEMENT')) finalMethod = 'direct_debit';
+            else if (hint.includes('CB') || hint.includes('CARTE') || hint.includes('PAIEMENT PAR CARTE')) finalMethod = 'credit_card';
+            else if (hint.includes('VIR') || hint.includes('VIREMENT')) finalMethod = 'transfer';
+            else if (hint.includes('CHEQUE')) finalMethod = 'check';
+            else if (hint.includes('RETRAIT')) finalMethod = 'cash';
+
             expenses.push({
               date: parsedDate.toISOString(),
-              description: description || '',
+              description: mainDescription,
               amount: amount,
               category_id: null,
               reconciled: false,
+              payment_method: finalMethod,
+              confidence: 1, // Deterministic
+              metadata: metadata
             });
           }
 

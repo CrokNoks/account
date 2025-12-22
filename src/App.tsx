@@ -7,7 +7,7 @@ import { CustomLayout } from './Layout';
 import { i18nProvider } from './i18nProvider';
 
 // Import your resources
-import { ExpenseList, ExpenseEdit, ExpenseCreate } from './resources/expenses';
+import { ExpenseList, ExpenseEdit, ExpenseCreate, ExpenseShow } from './resources/expenses';
 import { CategoryList, CategoryEdit, CategoryCreate } from './resources/categories';
 import { AccountList, AccountCreate, AccountEdit } from './resources/accounts';
 import { ReportDashboard, CategoryEvolution } from './resources/reports';
@@ -44,6 +44,7 @@ function App() {
           list={ExpenseList}
           edit={ExpenseEdit}
           create={ExpenseCreate}
+          show={ExpenseShow}
         />
 
         {/* Catégories */}
