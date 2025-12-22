@@ -11,6 +11,7 @@ import {
   useRedirect,
 } from 'react-admin';
 import { useAccount } from '../../context/AccountContext';
+import { useTransferActions } from '../reports/hooks/useTransferActions';
 
 export const TransferCreate = () => {
   const { selectedAccountId } = useAccount();
@@ -24,12 +25,16 @@ export const TransferCreate = () => {
     defaultValues.source_account_id = selectedAccountId;
   }
 
+  const { createTransfer } = useTransferActions();
+
   return (
     <Create
       resource="transfers"
       mutationOptions={{
-        onSuccess: () => {
-          redirect('/reports');
+        onSuccess: (data: any) => {
+          createTransfer(data, () => {
+            redirect('/reports');
+          });
         },
       }}
     >

@@ -1,8 +1,9 @@
 import { Drawer, Box, Typography, IconButton } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
-import { CreateBase, SimpleForm, TextInput, NumberInput, DateInput, ReferenceInput, SelectInput, AutocompleteInput, required, useDataProvider, useNotify, useTranslate } from 'react-admin';
+import { CreateBase, SimpleForm, TextInput, NumberInput, DateInput, ReferenceInput, SelectInput, AutocompleteInput, required, useTranslate } from 'react-admin';
 import { useAccount } from '../../../context/AccountContext';
 import { useFormContext } from 'react-hook-form';
+import { useTransferActions } from '../hooks/useTransferActions';
 
 interface TransferDrawerProps {
   open: boolean;
@@ -98,44 +99,11 @@ const FormFields = () => {
 };
 
 export const TransferDrawer = ({ open, onClose, onSuccess }: TransferDrawerProps) => {
-  const dataProvider = useDataProvider();
-  const notify = useNotify();
   const translate = useTranslate();
+  const { createTransfer } = useTransferActions();
 
-  const handleSubmit = async (data: any) => {
-    try {
-      // Créer la dépense sur le compte source
-      await dataProvider.create('expenses', {
-        data: {
-          description: data.description,
-          amount: -Math.abs(data.amount), // Montant négatif pour la dépense
-          date: data.date,
-          account_id: data.source_account_id,
-          category_id: data.source_category_id || null,
-          notes: data.notes || '',
-          reconciled: false,
-        },
-      });
-
-      // Créer le revenu sur le compte cible
-      await dataProvider.create('expenses', {
-        data: {
-          description: data.description,
-          amount: Math.abs(data.amount), // Montant positif pour le revenu
-          date: data.date,
-          account_id: data.destination_account_id,
-          category_id: data.destination_category_id || null,
-          notes: data.notes || '',
-          reconciled: false,
-        },
-      });
-
-      notify('app.messages.transfer_success', { type: 'success' });
-      onSuccess();
-    } catch (error) {
-      console.error('Error creating transfer:', error);
-      notify('app.messages.transfer_error', { type: 'error' });
-    }
+  const handleSubmit = (data: any) => {
+    createTransfer(data, onSuccess);
   };
 
   return (

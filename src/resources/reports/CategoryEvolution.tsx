@@ -1,143 +1,30 @@
-import { useState, useEffect } from 'react';
-import { useNotify, useTranslate, useLocale } from 'react-admin';
+import { useState } from 'react';
+import { useTranslate, useLocale } from 'react-admin';
 import { CircularProgress } from '@mui/material';
 import {
   Card, CardContent, Typography, Box, FormControl, InputLabel, Select, MenuItem, Grid
 } from '@mui/material';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { useAccount } from '../../context/AccountContext';
-import { supabaseClient } from '../../supabaseClient';
 import { useIsSmall } from '../../hooks/isSmall';
 import { CategoryShip } from '../../components/CategoryShip';
-
-interface CategoryData {
-  categoryId: string;
-  name: string;
-  color: string;
-  totalExpense: number;
-  totalRevenue: number;
-  reportCount: number;
-  min: number;
-  max: number;
-}
-
-interface ReportPoint {
-  reportId: string;
-  reportLabel: string;
-  [key: string]: any; // For dynamic category amounts
-}
-
-const getFirstAndLastReport = (reports: any[]) => {
-  if (reports.length === 0) return { firstReport: null, lastReport: null };
-  const firstReport = reports[0];
-  const lastReport = reports[reports.length - 1];
-  return { firstReport: firstReport.start_date, lastReport: lastReport.end_date };
-}
+import { useCategoryEvolution } from './hooks/useCategoryEvolution';
 
 export const CategoryEvolution = () => {
   const { selectedAccountId } = useAccount();
-  const notify = useNotify();
   const isSmall = useIsSmall();
   const translate = useTranslate();
   const locale = useLocale();
-  const [loading, setLoading] = useState(false);
-  const [reports, setReports] = useState<any[]>([]);
-  const [categoryData, setCategoryData] = useState<CategoryData[]>([]);
-  const [chartData, setChartData] = useState<ReportPoint[]>([]);
   const [selectedView, setSelectedView] = useState<'expenses' | 'revenues'>('expenses');
-  const [firstReport, setFirstReport] = useState<string | null>(null);
-  const [lastReport, setLastReport] = useState<string | null>(null);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      if (!selectedAccountId) return;
-
-      setLoading(true);
-      try {
-        // Fetch all archived reports
-        const { data: reportsData, error: reportsError } = await supabaseClient
-          .from('reports')
-          .select('id, start_date, end_date, data')
-          .eq('account_id', selectedAccountId)
-          .order('end_date', { ascending: true });
-
-        if (reportsError) throw reportsError;
-
-        if (!reportsData || reportsData.length === 0) {
-          notify('app.evolution.no_reports', { type: 'info' });
-          setLoading(false);
-          return;
-        }
-
-        setReports(reportsData);
-
-        const { firstReport, lastReport } = getFirstAndLastReport(reportsData);
-        setFirstReport(firstReport);
-        setLastReport(lastReport);
-
-        // Aggregate category data across all reports
-        const categoryMap = new Map<string, CategoryData>();
-        const chartPoints: ReportPoint[] = [];
-
-        reportsData.forEach((report: any) => {
-          const reportLabel = `${new Date(report.start_date).toLocaleDateString(locale, { month: 'short', year: '2-digit' })} - ${new Date(report.end_date).toLocaleDateString(locale, { month: 'short', year: '2-digit' })}`;
-          const point: ReportPoint = {
-            reportId: report.id,
-            reportLabel
-          };
-
-          // Process pie data from report
-          if (report.data?.expensePieData && Array.isArray(report.data.expensePieData)) {
-            report.data.expensePieData.forEach((cat: any) => {
-              const catKey = cat.name || translate('resources.categories.uncategorized');
-              const catColor = cat.color || '#ccc';
-              const catValue = cat.value || 0;
-
-              // Update category summary
-              if (!categoryMap.has(catKey)) {
-                categoryMap.set(catKey, {
-                  categoryId: catKey,
-                  name: catKey,
-                  color: catColor,
-                  totalExpense: 0,
-                  totalRevenue: 0,
-                  reportCount: 0,
-                  min: Infinity,
-                  max: -Infinity
-                });
-              }
-
-              const catData = categoryMap.get(catKey)!;
-              catData.totalExpense += catValue;
-              catData.reportCount++;
-              catData.min = Math.min(catData.min, catValue);
-              catData.max = Math.max(catData.max, catValue);
-
-              // Add to chart point
-              point[`expense_${catKey}`] = catValue;
-            });
-          }
-
-          // Process revenues (positive amounts)
-          const totalRevenue = report.data?.totalIncome || 0;
-          point['revenue_Total'] = totalRevenue;
-
-          chartPoints.push(point);
-        });
-
-        setCategoryData(Array.from(categoryMap.values()).sort((a, b) => a.name.localeCompare(b.name)));
-        setChartData(chartPoints);
-
-      } catch (error: any) {
-        console.error('Error fetching evolution data:', error);
-        notify('app.messages.error_loading', { type: 'error' });
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchData();
-  }, [selectedAccountId, notify, locale]);
+  const {
+    loading,
+    reports,
+    categoryData,
+    chartData,
+    firstReport,
+    lastReport
+  } = useCategoryEvolution();
 
   if (!selectedAccountId) {
     return <Box p={2}>{translate('app.messages.no_account')}</Box>;

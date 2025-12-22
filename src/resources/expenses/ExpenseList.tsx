@@ -8,13 +8,12 @@ import {
   ReferenceField,
   EditButton,
   DeleteButton,
-  useUpdate,
   useRecordContext,
-  useNotify,
-  useRefresh,
   useTranslate,
+  useResourceContext,
 } from 'react-admin';
 import {
+  CreateButton,
   TextInput,
   ReferenceInput,
   SelectInput,
@@ -29,7 +28,7 @@ import {
 } from 'ra-ui-materialui';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import CancelIcon from '@mui/icons-material/Cancel';
-import { Card, CardContent, Switch, Typography } from '@mui/material';
+import { Box, Card, CardContent, Switch, Typography } from '@mui/material';
 import { useAccount } from '../../context/AccountContext';
 import { ImportExpensesButton } from './ImportExpensesButton';
 import { useIsSmall } from '../../hooks/isSmall';
@@ -61,31 +60,18 @@ const expenseFilters = (selectedAccountId: string | null, embed: boolean = false
   ]
 };
 
+import { useExpenseActions } from './hooks/useExpenseActions';
+
 const ReconciledToggle = ({ onSuccess, readOnly = false }: { onSuccess?: () => void, readOnly?: boolean }) => {
   const record = useRecordContext();
-  const notify = useNotify();
-  const [update] = useUpdate();
-  const refresh = useRefresh();
-  const translate = useTranslate();
+  const { toggleReconciled } = useExpenseActions();
 
   if (!record) return null;
 
-  const handleToggle = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleToggle = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (readOnly) return;
     event.stopPropagation(); // Prevent row click
-    const newValue = event.target.checked;
-
-    try {
-      await update(
-        'expenses',
-        { id: record.id, data: { reconciled: newValue }, previousData: record }
-      );
-      await refresh();
-      notify(translate('app.expenses.notifications.status_updated'), { type: 'success' });
-      if (onSuccess) onSuccess();
-    } catch (error) {
-      notify(translate('app.expenses.notifications.update_error'), { type: 'error' });
-    }
+    toggleReconciled(record, onSuccess);
   };
 
   return (
@@ -121,6 +107,22 @@ export const ExpenseFilterSidebar = () => {
   );
 };
 
+const ExpenseListEmpty = () => {
+  const translate = useTranslate();
+  const resource = useResourceContext();
+  return (
+    <Box textAlign="center" m={1} mt={4} data-testid="expense-list-empty">
+      <Typography variant="body1" paragraph color="textSecondary">
+        {translate('ra.page.empty', { name: resource })}
+      </Typography>
+      <Box mt={2} display="flex" justifyContent="center" gap={2}>
+        <CreateButton />
+        <ImportExpensesButton />
+      </Box>
+    </Box>
+  );
+};
+
 export const ExpenseList = ({ filter, embed = false, actions = <></>, onRowClick, onUpdate, readOnly = false }: { filter: any, embed?: boolean, actions?: any, onRowClick?: (id: any) => false, onUpdate?: () => void, readOnly?: boolean }) => {
   const { selectedAccountId } = useAccount();
   const isSmall = useIsSmall();
@@ -138,7 +140,7 @@ export const ExpenseList = ({ filter, embed = false, actions = <></>, onRowClick
       filters={expenseFilters(selectedAccountId, embed)}
       filterDefaultValues={{ reconciled: undefined }}
       aside={embed ? undefined : <ExpenseFilterSidebar />}
-      {...(embed ? { empty: false } : {})}
+      empty={embed ? false : <ExpenseListEmpty />}
     >
 
       {isSmall ? (
