@@ -12,7 +12,15 @@ export const fr = {
         category_id: 'Catégorie',
         note: 'Note',
         reconciled: 'Pointé',
-        payment_method: 'Moyen de paiement'
+        payment_method: 'Moyen de paiement',
+        payment_methods: {
+          credit_card: 'Carte bancaire',
+          direct_debit: 'Prélèvement',
+          transfer: 'Virement',
+          check: 'Chèque',
+          cash: 'Espèces',
+          other: 'Autre'
+        }
       }
     },
     categories: {
@@ -100,6 +108,10 @@ export const fr = {
         import_success: '%{count} dépenses importées avec succès',
         import_error: "Erreur lors de l'import: %{error}",
         no_valid_data: 'Aucune dépense valide trouvée'
+      },
+      import: {
+        correction_title: 'Vérification des moyens de paiement',
+        correction_desc: 'Certaines opérations ont un moyen de paiement incertain (certitude < 75%). Veuillez les vérifier ou les corriger avant l\'importation.',
       }
     },
     action: {

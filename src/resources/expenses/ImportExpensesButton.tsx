@@ -4,10 +4,14 @@ import { useTranslate } from 'react-admin';
 import UploadIcon from '@mui/icons-material/Upload';
 import { useExpenseImport } from './hooks/useExpenseImport';
 
+
 export const ImportExpensesButton = () => {
   const translate = useTranslate();
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const { importFile, loading } = useExpenseImport();
+  const {
+    importFile,
+    loading
+  } = useExpenseImport();
 
   const handleClick = () => {
     fileInputRef.current?.click();

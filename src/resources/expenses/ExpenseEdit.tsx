@@ -8,6 +8,7 @@ import {
   AutocompleteInput,
   required,
   BooleanInput,
+  SelectInput,
 } from 'react-admin';
 import { useAccount } from '../../context/AccountContext';
 
@@ -26,6 +27,18 @@ export const ExpenseEdit = () => {
         </ReferenceInput>
 
         <TextInput source="notes" label="resources.expenses.fields.note" multiline fullWidth />
+        <SelectInput
+          source="payment_method"
+          label="resources.expenses.fields.payment_method"
+          choices={[
+            { id: 'credit_card', name: 'resources.expenses.fields.payment_methods.credit_card' },
+            { id: 'direct_debit', name: 'resources.expenses.fields.payment_methods.direct_debit' },
+            { id: 'transfer', name: 'resources.expenses.fields.payment_methods.transfer' },
+            { id: 'check', name: 'resources.expenses.fields.payment_methods.check' },
+            { id: 'cash', name: 'resources.expenses.fields.payment_methods.cash' },
+            { id: 'other', name: 'resources.expenses.fields.payment_methods.other' },
+          ]}
+        />
         <BooleanInput source="reconciled" label="resources.expenses.fields.reconciled" />
       </SimpleForm>
     </Edit>

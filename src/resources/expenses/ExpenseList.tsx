@@ -11,6 +11,7 @@ import {
   useRecordContext,
   useTranslate,
   useResourceContext,
+  SelectField,
 } from 'react-admin';
 import {
   CreateButton,
@@ -163,7 +164,7 @@ export const ExpenseList = ({ filter, embed = false, actions = <></>, onRowClick
           }}
         />
       ) : (
-        <Datagrid {...(embed ? { bulkActionButtons: false, rowClick: onRowClick || false } : { rowClick: 'edit' })}>
+        <Datagrid {...(embed ? { bulkActionButtons: false, rowClick: onRowClick || false } : { rowClick: 'show' })}>
           <DateField source="date" label="resources.expenses.fields.date" />
           <TextField source="description" label="resources.expenses.fields.description" />
           <ReferenceField source="category_id" reference="categories" label="resources.expenses.fields.category_id">
@@ -177,6 +178,18 @@ export const ExpenseList = ({ filter, embed = false, actions = <></>, onRowClick
             source="amount"
             label="resources.expenses.fields.amount"
             options={{ style: 'currency', currency: 'EUR' }}
+          />
+          <SelectField
+            source="payment_method"
+            label="resources.expenses.fields.payment_method"
+            choices={[
+              { id: 'credit_card', name: 'resources.expenses.fields.payment_methods.credit_card' },
+              { id: 'direct_debit', name: 'resources.expenses.fields.payment_methods.direct_debit' },
+              { id: 'transfer', name: 'resources.expenses.fields.payment_methods.transfer' },
+              { id: 'check', name: 'resources.expenses.fields.payment_methods.check' },
+              { id: 'cash', name: 'resources.expenses.fields.payment_methods.cash' },
+              { id: 'other', name: 'resources.expenses.fields.payment_methods.other' },
+            ]}
           />
           <FunctionField label="resources.expenses.fields.reconciled" render={() => <ReconciledToggle onSuccess={onUpdate} readOnly={readOnly} />} />
           {embed && readOnly ? <></> : embed ? <></> : <EditButton />}
