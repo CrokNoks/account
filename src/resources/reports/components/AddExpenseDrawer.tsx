@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { Drawer, Box, Typography, IconButton } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
-import { CreateBase, EditBase, SimpleForm, TextInput, DateInput, ReferenceInput, AutocompleteInput, BooleanInput, required, useNotify } from 'react-admin';
+import { CreateBase, EditBase, useNotify } from 'react-admin';
 import { ReceiptOCR } from '../../../components/ReceiptOCR';
+import { ExpenseForm } from '../../expenses/ExpenseForm';
 
 interface AddExpenseDrawerProps {
   open: boolean;
@@ -64,33 +65,10 @@ export const AddExpenseDrawer = ({ open, onClose, selectedAccountId, onSuccess, 
           <EditBase
             resource="expenses"
             id={expenseId}
-            transform={(data: any) => ({ ...data, account_id: selectedAccountId, amount: Number(data.amount) })}
+            transform={(data: any) => ({ ...data, account_id: selectedAccountId, amount: Number(data.amount.toString().replace(',', '.')) })}
             mutationOptions={{ onSuccess }}
           >
-            <SimpleForm>
-              <TextInput source="description" label="Description" validate={[required()]} fullWidth />
-              <TextInput
-                source="amount"
-                label="Montant"
-                validate={[required(), (value) => (value && !/^-?\d*\.?\d*$/.test(value) ? 'Nombre invalide' : undefined)]}
-                fullWidth
-                inputProps={{ inputMode: 'text' }}
-              />
-              <DateInput source="date" label="Date" validate={[required()]} fullWidth />
-
-              <ReferenceInput
-                source="category_id"
-                reference="categories"
-                filter={{ account_id: selectedAccountId }}
-                perPage={100}
-                sort={{ field: 'name', order: 'ASC' }}
-              >
-                <AutocompleteInput optionText="name" label="Catégorie" fullWidth filterToQuery={searchText => ({ name: searchText })} />
-              </ReferenceInput>
-
-              <TextInput source="notes" label="Notes" multiline fullWidth />
-              <BooleanInput source="reconciled" label="Pointé" />
-            </SimpleForm>
+            <ExpenseForm selectedAccountId={selectedAccountId} />
           </EditBase>
         ) : (
           <>
@@ -109,40 +87,20 @@ export const AddExpenseDrawer = ({ open, onClose, selectedAccountId, onSuccess, 
                 )}
                 <CreateBase
                   resource="expenses"
-                  transform={(data: any) => ({ ...data, account_id: selectedAccountId, amount: Number(data.amount) })}
+                  transform={(data: any) => ({ ...data, account_id: selectedAccountId, amount: Number(data.amount.toString().replace(',', '.')) })}
                   mutationOptions={{ onSuccess }}
                 >
-                  <SimpleForm
+                  <ExpenseForm
+                    selectedAccountId={selectedAccountId}
                     key={JSON.stringify(ocrData)}
                     defaultValues={{
                       description: ocrData.description || '',
                       amount: ocrData.amount?.toString() || '',
                       date: ocrData.date || new Date(),
                       notes: ocrData.notes || '',
+                      reconciled: false
                     }}
-                  >
-                    <TextInput source="description" label="Description" validate={[required()]} fullWidth />
-                    <TextInput
-                      source="amount"
-                      label="Montant"
-                      validate={[required(), (value) => (value && !/^-?\d*\.?\d*$/.test(value) ? 'Nombre invalide' : undefined)]}
-                      fullWidth
-                    />
-                    <DateInput source="date" label="Date" validate={[required()]} fullWidth />
-
-                    <ReferenceInput
-                      source="category_id"
-                      reference="categories"
-                      filter={{ account_id: selectedAccountId }}
-                      perPage={100}
-                      sort={{ field: 'name', order: 'ASC' }}
-                    >
-                      <AutocompleteInput optionText="name" label="Catégorie" fullWidth filterToQuery={searchText => ({ name: searchText })} />
-                    </ReferenceInput>
-
-                    <TextInput source="notes" label="Notes" multiline fullWidth />
-                    <BooleanInput source="reconciled" label="Pointé" defaultValue={false} />
-                  </SimpleForm>
+                  />
                 </CreateBase>
               </>
             )}
@@ -152,3 +110,4 @@ export const AddExpenseDrawer = ({ open, onClose, selectedAccountId, onSuccess, 
     </Drawer>
   );
 };
+
