@@ -44,12 +44,6 @@ export const useReportActions = (
 
   const handleOpenCloseModal = (reportData: any) => {
     if (!reportData) return;
-
-    if (reportData.unreconciledCount > 0) {
-      notify(`Impossible de clôturer : il reste ${reportData.unreconciledCount} opération(s) non pointée(s).`, { type: 'warning' });
-      return;
-    }
-
     setClosingDate(new Date().toISOString().split('T')[0]);
     setCloseModalOpen(true);
   };
@@ -66,6 +60,11 @@ export const useReportActions = (
       );
 
       if (!finalReportData) throw new Error("Erreur lors du calcul du rapport");
+
+      // Verify reconciliation after date selection
+      if (finalReportData.unreconciledCount > 0) {
+        throw new Error(`Impossible de clôturer : il reste ${finalReportData.unreconciledCount} opération(s) non pointée(s) sur la période.`);
+      }
 
       const { error: reportError } = await supabaseClient
         .from('reports')
@@ -101,7 +100,7 @@ export const useReportActions = (
         });
       }
     } catch (error: any) {
-      notify(`Erreur: ${error.message}`, { type: 'error' });
+      notify(error.message, { type: 'warning' }); // Changed to warning for validation error, or stick to error? Warning is better for logic check.
     } finally {
       setLoading(false);
     }
