@@ -1,6 +1,7 @@
 import { Drawer, Box, Typography, IconButton } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
-import { EditBase, SimpleForm, TextInput, NumberInput, DateInput, ReferenceInput, AutocompleteInput, BooleanInput, required, Toolbar, SaveButton, DeleteButton, useTranslate } from 'react-admin';
+import { EditBase, Toolbar, SaveButton, DeleteButton, useTranslate } from 'react-admin';
+import { ExpenseForm } from '../../expenses/ExpenseForm';
 
 interface EditExpenseDrawerProps {
   open: boolean;
@@ -42,30 +43,9 @@ export const EditExpenseDrawer = ({ open, onClose, selectedAccountId, onSuccess,
             redirect={false}
             mutationMode="optimistic"
             mutationOptions={{ onSuccess }}
+            transform={(data: any) => ({ ...data, amount: Number(data.amount.toString().replace(',', '.')) })}
           >
-            <SimpleForm toolbar={<EditToolbar />}>
-              <TextInput source="description" label="resources.expenses.fields.description" validate={[required()]} fullWidth />
-              <NumberInput source="amount" label="resources.expenses.fields.amount" validate={[required()]} fullWidth />
-              <DateInput source="date" label="resources.expenses.fields.date" validate={[required()]} fullWidth />
-
-              <ReferenceInput
-                source="category_id"
-                reference="categories"
-                filter={{ account_id: selectedAccountId }}
-                perPage={100}
-                sort={{ field: 'name', order: 'ASC' }}
-              >
-                <AutocompleteInput
-                  optionText="name"
-                  label="resources.expenses.fields.category_id"
-                  filterToQuery={searchText => ({ name: searchText })}
-                  fullWidth
-                />
-              </ReferenceInput>
-
-              <TextInput source="notes" label="resources.expenses.fields.note" multiline fullWidth />
-              <BooleanInput source="reconciled" label="resources.expenses.fields.reconciled" />
-            </SimpleForm>
+            <ExpenseForm selectedAccountId={selectedAccountId} toolbar={<EditToolbar />} />
           </EditBase>
         )}
       </Box>
