@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Create, SimpleForm, DateInput, ArrayInput, SimpleFormIterator, ReferenceInput, SelectInput, NumberInput, useNotify, Button, useRedirect, useDataProvider, Toolbar, SaveButton } from 'react-admin';
+import { Create, SimpleForm, DateInput, ArrayInput, SimpleFormIterator, ReferenceInput, SelectInput, NumberInput, useNotify, Button, useDataProvider, Toolbar, SaveButton } from 'react-admin';
 import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh';
 import { Box, Typography, CircularProgress, TextField } from '@mui/material';
 import { useAccount } from '../../context/AccountContext';
