@@ -12,6 +12,9 @@ import { CategoryList, CategoryEdit, CategoryCreate } from './resources/categori
 import { AccountList, AccountCreate, AccountEdit } from './resources/accounts';
 import { ReportDashboard, CategoryEvolution } from './resources/reports';
 import { TransferCreate } from './resources/transfers';
+import { BudgetTemplateList, BudgetTemplateCreate, BudgetTemplateEdit } from './resources/budget-templates';
+import { PeriodList, PeriodCreate, PeriodShow } from './resources/periods';
+
 // app_users est utilisé pour les listes de sélection (partage de comptes)
 
 function App() {
@@ -75,6 +78,23 @@ function App() {
           name="app_users"
           options={{ label: 'Utilisateurs' }}
         />
+
+        {/* Périodes & Budgets (NestJS) */}
+        <Resource
+          name="periods"
+          list={PeriodList}
+          create={PeriodCreate}
+          show={PeriodShow}
+          options={{ label: 'Périodes' }}
+        />
+        <Resource
+          name="budget-templates"
+          list={BudgetTemplateList}
+          create={BudgetTemplateCreate}
+          edit={BudgetTemplateEdit}
+          options={{ label: 'Modèles de Budget' }}
+        />
+        <Resource name="budgets" />
       </Admin>
     </AccountProvider>
   );

@@ -8,7 +8,69 @@ const baseDataProvider = supabaseDataProvider({
   supabaseClient,
 });
 
+import { nestDataProvider } from './nestDataProvider';
+
+const backendResources = ['periods', 'budget-templates', 'budgets'];
+
 export const dataProvider: DataProvider = {
+  getList: (resource, params) => {
+    if (backendResources.includes(resource)) {
+      return nestDataProvider.getList(resource, params);
+    }
+    return supabaseDataProviderInstance.getList(resource, params);
+  },
+  getOne: (resource, params) => {
+    if (backendResources.includes(resource)) {
+      return nestDataProvider.getOne(resource, params);
+    }
+    return supabaseDataProviderInstance.getOne(resource, params);
+  },
+  getMany: (resource, params) => {
+    if (backendResources.includes(resource)) {
+      return nestDataProvider.getMany(resource, params);
+    }
+    return supabaseDataProviderInstance.getMany(resource, params);
+  },
+  getManyReference: (resource, params) => {
+    if (backendResources.includes(resource)) {
+      return nestDataProvider.getManyReference(resource, params);
+    }
+    return supabaseDataProviderInstance.getManyReference(resource, params);
+  },
+  update: (resource, params) => {
+    if (backendResources.includes(resource)) {
+      return nestDataProvider.update(resource, params);
+    }
+    return supabaseDataProviderInstance.update(resource, params);
+  },
+  updateMany: (resource, params) => {
+    if (backendResources.includes(resource)) {
+      // Not fully implemented in backend yet, but route strictly
+      return nestDataProvider.updateMany(resource, params);
+    }
+    return supabaseDataProviderInstance.updateMany(resource, params);
+  },
+  create: (resource, params) => {
+    if (backendResources.includes(resource)) {
+      return nestDataProvider.create(resource, params);
+    }
+    return supabaseDataProviderInstance.create(resource, params);
+  },
+  delete: (resource, params) => {
+    if (backendResources.includes(resource)) {
+      return nestDataProvider.delete(resource, params);
+    }
+    return supabaseDataProviderInstance.delete(resource, params);
+  },
+  deleteMany: (resource, params) => {
+    if (backendResources.includes(resource)) {
+      return nestDataProvider.deleteMany(resource, params);
+    }
+    return supabaseDataProviderInstance.deleteMany(resource, params);
+  },
+};
+
+const supabaseDataProviderInstance: DataProvider = {
   ...baseDataProvider,
   getList: async (resource, params) => {
     if (resource === 'transfers') {
@@ -33,6 +95,13 @@ export const dataProvider: DataProvider = {
       // Apply filters
       Object.keys(filter).forEach(key => {
         const value = (filter as any)[key];
+
+        // Explicitly handle "is null" check
+        if (value === 'is:null') {
+          query = query.is(key, null);
+          return;
+        }
+
         // Ignore undefined/null filters to avoid invalid casts (e.g., reconciled undefined)
         if (value === undefined || value === null) {
           return;
@@ -87,6 +156,11 @@ export const dataProvider: DataProvider = {
           query = query.eq('account_id', filter[key]);
         } else if (key === 'name') {
           query = query.ilike('name', `%${filter[key]}%`);
+        } else if (key === 'id_nin') {
+          if (Array.isArray(filter[key]) && filter[key].length > 0) {
+            // PostgREST syntax for "not in" requires parentheses around the list
+            query = query.filter('id', 'not.in', `(${filter[key].join(',')})`);
+          }
         } else {
           query = query.eq(key, filter[key]);
         }

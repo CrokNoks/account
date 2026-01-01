@@ -1,93 +1,108 @@
 import { useState } from 'react';
-import { useNotify, Loading, useRedirect, useTranslate } from 'react-admin';
-import { Card, CardContent, Typography, Grid, Box, Button } from '@mui/material';
+import { Loading, useTranslate, useDelete, useNotify, useRefresh, Confirm, useRedirect, Button, useGetList } from 'react-admin';
+import { Typography, Grid, Box, IconButton, Tooltip } from '@mui/material';
+import DeleteIcon from '@mui/icons-material/Delete';
+import CloseIcon from '@mui/icons-material/Close';
+import AddIcon from '@mui/icons-material/Add';
 import { useAccount } from '../../context/AccountContext';
-import { CategorySummaryTable } from '../../components/CategorySummaryTable';
+import { PeriodSelector } from './components/PeriodSelector';
+import { usePeriodReport } from './hooks/usePeriodReport';
+import { CategoryBudgetTable } from './components/CategoryBudgetTable';
+import { ReportSummaryCards } from './components/ReportSummaryCards';
 import { ExpenseList } from '../expenses';
-import { useIsSmall } from '../../hooks/isSmall';
-import {
-  ReportSummaryCards,
-  ReportSelector,
-  CloseReportModal,
-  AddExpenseDrawer
-} from './components';
-import { useReportData } from './hooks/useReportData';
-import { useReportActions } from './hooks/useReportActions';
-
-const getFilter = ({ date_gte, date_lte }: { date_gte: string, date_lte: string | null }) => {
-  const filter: any = {
-    date_gte
-  };
-  if (date_lte) {
-    filter.date_lte = date_lte;
-  }
-  return filter;
-}
 
 export const ReportDashboard = () => {
   const { selectedAccountId } = useAccount();
-  const notify = useNotify();
   const translate = useTranslate();
-  const isSmall = useIsSmall();
+  const notify = useNotify();
+  const refresh = useRefresh();
   const redirect = useRedirect();
+  const [deleteOne, { isLoading: isDeleting }] = useDelete();
 
-  // Expense Drawer state
-  const [isExpenseDrawerOpen, setExpenseDrawerOpen] = useState(false);
-  const [selectedExpenseId, setSelectedExpenseId] = useState<string | null>(null);
+  // Selected Period State
+  const [selectedPeriodId, setSelectedPeriodId] = useState<string | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [closeDialogOpen, setCloseDialogOpen] = useState(false);
 
-  // Use custom hooks
-  const {
-    loading,
-    setLoading,
-    reportData,
-    setReportData,
-    history,
-    selectedReportId,
-    setSelectedReportId,
-    fetchAndCalculateReport,
-    loadCurrentReport,
-    refreshCurrentReport,
-    fetchHistory
-  } = useReportData(selectedAccountId);
+  // Fetch Data from Backend
+  const { data: reportData, loading } = usePeriodReport(selectedPeriodId);
 
-  const {
-    isCloseModalOpen,
-    setCloseModalOpen,
-    closingDate,
-    setClosingDate,
-    handleOpenCloseModal,
-    handleConfirmCloseReport,
-    handleDeleteReport,
-  } = useReportActions(
-    selectedAccountId,
-    fetchAndCalculateReport,
-    fetchHistory,
-    setReportData,
-    setSelectedReportId,
-    setLoading);
+  // Check for any active period to determine if "New Period" button should be shown
+  const { data: activePeriods } = useGetList('periods', {
+    filter: { account_id: selectedAccountId, is_active: true },
+    pagination: { page: 1, perPage: 1 }
+  });
+  const hasActivePeriod = activePeriods && activePeriods.length > 0;
 
-  const handleReportChange = (reportId: string) => {
-    if (reportId === 'new') {
-      setSelectedReportId('new');
-      loadCurrentReport();
-    } else {
-      setSelectedReportId(reportId);
+  const handlePeriodChange = (periodId: string) => {
+    setSelectedPeriodId(periodId);
+  };
+
+  const handleDeleteClick = () => {
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDeleteConfirm = () => {
+    if (selectedPeriodId) {
+      deleteOne(
+        'periods',
+        { id: selectedPeriodId, previousData: reportData?.period },
+        {
+          onSuccess: () => {
+            notify('ra.notification.deleted', { type: 'info', messageArgs: { smart_count: 1 } });
+            setSelectedPeriodId(null);
+            setDeleteDialogOpen(false);
+            refresh();
+          },
+          onError: (error: any) => {
+            notify(`Error: ${error.message}`, { type: 'warning' });
+            setDeleteDialogOpen(false);
+          }
+        }
+      );
     }
   };
 
-  const handleRowClick = (id: string): false => {
-    if (selectedReportId !== 'new') return false;
-    setSelectedExpenseId(id);
-    setExpenseDrawerOpen(true);
-    return false;
+  const handleCloseClick = () => {
+    setCloseDialogOpen(true);
   };
 
-  const handleExpenseSuccess = () => {
-    notify(selectedExpenseId ? translate('app.action.operation_updated') : translate('app.action.operation_added'), { type: 'success' });
-    setExpenseDrawerOpen(false);
-    setSelectedExpenseId(null);
-    refreshCurrentReport();
+  const handleCloseConfirm = async () => {
+    if (!selectedPeriodId) return;
+
+    try {
+      const apiUrl = import.meta.env.VITE_NEST_API_URL || 'http://127.0.0.1:5001/account/us-central1/api';
+
+      // Hack: Use supabase client directly to get token
+      const { supabaseClient } = await import('../../supabaseClient');
+      const { data: { session } } = await supabaseClient.auth.getSession();
+      const token = session?.access_token;
+
+      const response = await fetch(`${apiUrl}/periods/${selectedPeriodId}/close`, {
+        method: 'POST',
+        headers: {
+          'Authorization': token ? `Bearer ${token}` : '',
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) throw new Error('Failed to close period');
+
+      notify('Période cloturée avec succès', { type: 'success' });
+      setCloseDialogOpen(false);
+      redirect('/periods/create');
+
+    } catch (error: any) {
+      notify(`Erreur: ${error.message}`, { type: 'error' });
+      setCloseDialogOpen(false);
+    }
   };
+
+  const handleCreateNext = () => {
+    redirect('/periods/create');
+  };
+
+
 
   if (!selectedAccountId) {
     return (
@@ -95,130 +110,105 @@ export const ReportDashboard = () => {
         <Typography variant="h6" gutterBottom>
           {translate('app.dashboard.no_account_title')}
         </Typography>
-        <Typography variant="body2" color="text.secondary">
-          {translate('app.dashboard.no_account_desc')}
-        </Typography>
       </Box>
     );
   }
+
   if (loading) return <Loading />;
 
   return (
     <Box p={2}>
-      <Box
-        display="flex"
-        flexDirection="row"
-        justifyContent="space-between"
-        alignItems="center"
-        gap={2}
-        mb={2}
-      >
-        <ReportSelector
-          selectedReportId={selectedReportId}
-          history={history}
-          onReportChange={handleReportChange}
-        />
-
-        <Box display="flex" gap={1} justifyContent={{ xs: 'flex-end', md: 'flex-start' }}>
-          {selectedReportId === 'new' && (
-            <Button variant="contained" color="secondary" onClick={() => handleOpenCloseModal(reportData)}>
-              {translate('app.dashboard.buttons.close')}
-            </Button>
+      {/* Top Bar: Selector */}
+      <Box mb={3} display="flex" justifyContent="space-between" alignItems="center">
+        <Box display="flex" alignItems="center" gap={2}>
+          <PeriodSelector
+            selectedPeriodId={selectedPeriodId}
+            onPeriodChange={handlePeriodChange}
+          />
+          {selectedPeriodId && (
+            <Tooltip title={translate('ra.action.delete')}>
+              <IconButton onClick={handleDeleteClick} color="error" disabled={isDeleting}>
+                <DeleteIcon />
+              </IconButton>
+            </Tooltip>
           )}
-          {selectedReportId && selectedReportId !== 'new' && !isSmall && history.length > 0 && selectedReportId === history[0].id && (
-            <>
-              <Button variant="outlined" color="error" onClick={() => handleDeleteReport(selectedReportId)}>
-                {translate('app.dashboard.buttons.delete')}
-              </Button>
-            </>
+        </Box>
+        <Box display="flex" gap={2}>
+          {reportData?.period?.is_active && (
+            <Button
+              label="Cloturer la période"
+              onClick={handleCloseClick}
+              color="primary"
+              variant="outlined"
+              startIcon={<CloseIcon />}
+            />
+          )}
+          {!hasActivePeriod && (
+            <Button
+              label="Nouvelle Période"
+              onClick={handleCreateNext}
+              color="primary"
+              variant="contained"
+              startIcon={<AddIcon />}
+            />
           )}
         </Box>
       </Box>
 
+      <Confirm
+        isOpen={deleteDialogOpen}
+        title={translate('ra.message.delete_title', { name: 'Period' })}
+        content={translate('ra.message.delete_content', { name: 'Period' })}
+        onConfirm={handleDeleteConfirm}
+        onClose={() => setDeleteDialogOpen(false)}
+      />
+
+      <Confirm
+        isOpen={closeDialogOpen}
+        title="Cloturer la période"
+        content="Êtes-vous sûr de vouloir cloturer cette période ? Cela vous redirigera vers la création de la prochaine période."
+        onConfirm={handleCloseConfirm}
+        onClose={() => setCloseDialogOpen(false)}
+      />
+
       {reportData ? (
         <Grid container spacing={3}>
-          {/* Header Info */}
-          <Grid size={{ xs: 12 }}>
-            <Typography variant="subtitle1" color="text.secondary" align="center">
-              {translate('app.dashboard.period.title', {
-                start: new Date(reportData.startDate).toLocaleDateString('fr-FR'),
-                end: reportData.endDate
-                  ? translate('app.dashboard.period.to', { date: new Date(reportData.endDate).toLocaleDateString('fr-FR') })
-                  : translate('app.dashboard.period.ongoing')
-              })}
-            </Typography>
-          </Grid>
-
           {/* Summary Cards */}
-          <Grid size={{ xs: 12 }} >
-            <ReportSummaryCards
-              reportData={reportData}
-              isSmall={isSmall}
-              isClosed={selectedReportId !== 'new'}
-            />
-          </Grid>
+          <ReportSummaryCards reportData={reportData} />
 
-          {/* Category Tables - LEFT COLUMN */}
+          {/* Category Budget Table & Operations List */}
           <Grid size={{ xs: 12, md: 6 }}>
-            <CategorySummaryTable
-              data={reportData.expensePieData}
-              title={translate('app.dashboard.expenses_by_category')}
-              type="expense"
+            {/* Expense Categories */}
+            <Typography variant="h6" gutterBottom color="error.main">
+              {translate('app.menu.categories')} - {translate('app.evolution.expenses')}
+            </Typography>
+            <CategoryBudgetTable
+              data={reportData.categoryBreakdown.filter(item =>
+                item.type === 'expense'
+              )}
+              globalType="expense"
             />
 
-            {reportData.incomePieData && reportData.incomePieData.length > 0 && (
-
-              <CategorySummaryTable
-                sx={{ mt: 2 }}
-                data={reportData.incomePieData}
-                title={translate('app.dashboard.income_by_category')}
-                type="income"
+            {/* Income Categories */}
+            <Box mt={4}>
+              <Typography variant="h6" gutterBottom color="success.main">
+                {translate('app.menu.categories')} - {translate('app.evolution.revenues')}
+              </Typography>
+              <CategoryBudgetTable
+                data={reportData.categoryBreakdown.filter(item =>
+                  item.type === 'income'
+                )}
+                globalType="income"
               />
-            )}
+            </Box>
           </Grid>
 
-          {/* Operations List - RIGHT COLUMN */}
-          {(!isSmall || selectedReportId === 'new') && (
-            <Grid size={{ xs: 12, md: 6 }}>
-              <Card>
-                <CardContent>
-                  <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-                    <Box>
-                      <Typography color="textSecondary">{translate('app.dashboard.operations')}</Typography>
-                      <Typography variant="h6">
-                        {new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(reportData.totalIncome - reportData.totalExpense)}
-                      </Typography>
-                    </Box>
-                    <Box display="flex" gap={1}>
-                      <Button
-                        variant="outlined"
-                        color="primary"
-                        size="small"
-                        onClick={() => redirect('/transfers/create')}
-                      >
-                        {translate('app.dashboard.buttons.transfer')}
-                      </Button>
-                      <Button
-                        variant="contained"
-                        color="success"
-                        onClick={() => setExpenseDrawerOpen(true)}
-                        size="small"
-                      >
-                        {translate('app.dashboard.buttons.add')}
-                      </Button>
-                    </Box>
-                  </Box>
-                  <ExpenseList
-                    embed
-                    filter={getFilter({ date_gte: reportData.startDate, date_lte: reportData.endDate })}
-                    onRowClick={handleRowClick}
-                    onUpdate={refreshCurrentReport}
-                    readOnly={selectedReportId !== 'new'}
-                  />
-                </CardContent>
-              </Card>
-            </Grid>
-          )}
+          <Grid size={{ xs: 12, md: 6 }}>
+            <Typography variant="h6" gutterBottom>
+              {translate('app.menu.expenses')}
+            </Typography>
+            <ExpenseList embed filter={{ date_gte: reportData.period.start_date, date_lte: reportData.period.end_date }} />
+          </Grid>
         </Grid>
       ) : (
         <Box display="flex" justifyContent="center" alignItems="center" minHeight="50vh">
@@ -227,29 +217,6 @@ export const ReportDashboard = () => {
           </Typography>
         </Box>
       )}
-
-      <CloseReportModal
-        open={isCloseModalOpen}
-        onClose={() => setCloseModalOpen(false)}
-        onConfirm={() => handleConfirmCloseReport(reportData)}
-        closingDate={closingDate}
-        onDateChange={setClosingDate}
-      />
-
-      <AddExpenseDrawer
-        open={isExpenseDrawerOpen}
-        onClose={() => {
-          setExpenseDrawerOpen(false);
-          setSelectedExpenseId(null);
-          // Refresh report when drawer closes, just in case
-          if (selectedReportId === 'new') {
-            refreshCurrentReport();
-          }
-        }}
-        selectedAccountId={selectedAccountId}
-        onSuccess={handleExpenseSuccess}
-        expenseId={selectedExpenseId}
-      />
     </Box>
   );
 };

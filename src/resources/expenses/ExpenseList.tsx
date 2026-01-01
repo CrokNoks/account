@@ -12,8 +12,6 @@ import {
   useTranslate,
   useResourceContext,
   SelectField,
-} from 'react-admin';
-import {
   CreateButton,
   TextInput,
   ReferenceInput,
@@ -26,7 +24,7 @@ import {
   FunctionField,
   SimpleList,
   NullableBooleanInput,
-} from 'ra-ui-materialui';
+} from 'react-admin';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import CancelIcon from '@mui/icons-material/Cancel';
 import { Box, Card, CardContent, Switch, Typography } from '@mui/material';
@@ -37,8 +35,39 @@ import { ImportCreateToolbar } from '../../components/ImportCreateToolbar';
 import { AccountRequired } from '../../components/AccountRequired';
 import { CategoryShip } from '../../components/CategoryShip';
 
+import { Button } from '@mui/material';
+import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
+
+import { CategorizationModal } from './CategorizationModal';
+import { useState } from 'react';
+
+const CategorizeButton = () => {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <>
+      <Button
+        variant="outlined"
+        startIcon={<AutoAwesomeIcon />}
+        onClick={() => setOpen(true)}
+        sx={{ mr: 1 }}
+      >
+        Categorize
+      </Button>
+      {open && <CategorizationModal open={open} onClose={() => setOpen(false)} />}
+    </>
+  );
+};
+
 const ExpenseListActions = () => (
-  <ImportCreateToolbar importButton={<ImportExpensesButton />} />
+  <ImportCreateToolbar
+    importButton={
+      <>
+        <CategorizeButton />
+        <ImportExpensesButton />
+      </>
+    }
+  />
 );
 
 const expenseFilters = (selectedAccountId: string | null, embed: boolean = false) => {

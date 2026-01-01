@@ -95,9 +95,25 @@ export const fr = {
     },
   },
   app: {
+    menu: {
+      categories: 'Catégories',
+      expenses: 'Opérations'
+    },
+    budget: {
+      fields: {
+        budgeted: 'Budget',
+        spent: 'Dépensé',
+        remaining_percent: 'Reste (%)',
+        date: 'Date',
+        description: 'Description',
+        amount: 'Montant',
+        expense: 'Dépense',
+        income: 'Revenu'
+      }
+    },
     expenses: {
       filter: {
-        description: 'Affinez l\'affichage par texte, période et statut de pointage.',
+        description: "Affinez l'affichage par texte, période et statut de pointage.",
         filters: 'Filtrer les opérations',
         title: 'Filtres des opérations',
         subtitle: 'Affinez l\'affichage par texte, période et statut de pointage.'
