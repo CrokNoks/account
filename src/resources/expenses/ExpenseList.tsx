@@ -12,8 +12,6 @@ import {
   useTranslate,
   useResourceContext,
   SelectField,
-} from 'react-admin';
-import {
   CreateButton,
   TextInput,
   ReferenceInput,
@@ -26,7 +24,7 @@ import {
   FunctionField,
   SimpleList,
   NullableBooleanInput,
-} from 'ra-ui-materialui';
+} from 'react-admin';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import CancelIcon from '@mui/icons-material/Cancel';
 import { Box, Card, CardContent, Switch, Typography } from '@mui/material';

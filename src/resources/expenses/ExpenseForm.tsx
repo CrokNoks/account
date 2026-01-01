@@ -2,12 +2,11 @@ import {
   SimpleForm,
   TextInput,
   DateInput,
-  ReferenceInput,
-  AutocompleteInput,
   BooleanInput,
   required,
   SelectInput,
 } from 'react-admin';
+import { SmartCategoryInput } from './components/SmartCategoryInput';
 
 export const ExpenseForm = (props: any) => {
   const { selectedAccountId, toolbar, ...rest } = props;
@@ -24,9 +23,7 @@ export const ExpenseForm = (props: any) => {
       />
       <DateInput source="date" label="resources.expenses.fields.date" validate={[required()]} fullWidth />
 
-      <ReferenceInput source="category_id" reference="categories" filter={{ account_id: selectedAccountId }} perPage={100} sort={{ field: 'name', order: 'ASC' }}>
-        <AutocompleteInput optionText="name" label="resources.expenses.fields.category_id" filterToQuery={searchText => ({ name: searchText })} fullWidth />
-      </ReferenceInput>
+      <SmartCategoryInput source="category_id" selectedAccountId={selectedAccountId} />
 
       <TextInput source="notes" label="resources.expenses.fields.note" multiline fullWidth />
 

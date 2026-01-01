@@ -146,7 +146,7 @@ export class CategoryClassifier {
     return true;
   }
 
-  async predict(input: ClassificationInput): Promise<{ id: string; score: number } | null> {
+  async predict(input: ClassificationInput): Promise<{ id: string; name: string; score: number } | null> {
     if (!this.isTrained || !this.model) return null;
 
     const text = this.extractTextFeatures(input);
@@ -185,6 +185,7 @@ export class CategoryClassifier {
       // Always return top prediction, regardless of confidence, for assistance
       return {
         id: this.categories[maxIdx].id,
+        name: this.categories[maxIdx].name,
         score: data[maxIdx]
       };
     }

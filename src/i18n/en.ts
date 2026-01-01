@@ -87,6 +87,22 @@ export const en = {
     }
   },
   app: {
+    menu: {
+      categories: 'Categories',
+      expenses: 'Operations'
+    },
+    budget: {
+      fields: {
+        budgeted: 'Budget',
+        spent: 'Spent',
+        remaining_percent: 'Remaining (%)',
+        date: 'Date',
+        description: 'Description',
+        amount: 'Amount',
+        expense: 'Expense',
+        income: 'Income'
+      }
+    },
     expenses: {
       filter: {
         description: 'Refine the display by text, period and reconciliation status.',
