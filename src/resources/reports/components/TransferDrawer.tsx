@@ -3,7 +3,7 @@ import CloseIcon from '@mui/icons-material/Close';
 import { CreateBase, SimpleForm, TextInput, NumberInput, DateInput, ReferenceInput, SelectInput, AutocompleteInput, required, useTranslate } from 'react-admin';
 import { useAccount } from '../../../context/AccountContext';
 import { useFormContext } from 'react-hook-form';
-import { useTransferActions } from '../hooks/useTransferActions';
+
 
 interface TransferDrawerProps {
   open: boolean;
@@ -100,11 +100,6 @@ const FormFields = () => {
 
 export const TransferDrawer = ({ open, onClose, onSuccess }: TransferDrawerProps) => {
   const translate = useTranslate();
-  const { createTransfer } = useTransferActions();
-
-  const handleSubmit = (data: any) => {
-    createTransfer(data, onSuccess);
-  };
 
   return (
     <Drawer
@@ -127,8 +122,8 @@ export const TransferDrawer = ({ open, onClose, onSuccess }: TransferDrawerProps
           transform={(data: any) => data}
           redirect={false}
           mutationOptions={{
-            onSuccess: (data) => {
-              handleSubmit(data);
+            onSuccess: () => {
+              onSuccess();
             }
           }}
         >

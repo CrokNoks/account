@@ -5,7 +5,7 @@ import { AiBudgetService } from '../budgets/ai-budget.service';
 export interface CreatePeriodDto {
   account_id: string;
   start_date: string;
-  end_date: string;
+  end_date?: string;
   estimated_end_date?: string;
   budgets: {
     category_id: string;
@@ -94,8 +94,8 @@ export class PeriodsService {
       .insert({
         account_id: dto.account_id,
         start_date: dto.start_date,
-        end_date: dto.end_date,
-        estimated_end_date: dto.estimated_end_date || dto.end_date,
+        end_date: dto.end_date || null,
+        estimated_end_date: dto.estimated_end_date || dto.end_date || null,
         is_active: true,
       })
       .select()
@@ -138,6 +138,7 @@ export class PeriodsService {
     if (error) throw new Error(error.message);
     return data;
   }
+
   async getReport(periodId: string, token: string) {
     const supabase = this.supabase.getClientWithToken(token);
 
@@ -184,20 +185,27 @@ export class PeriodsService {
 
     if (accountError) throw new Error(accountError.message);
 
-    // 5b. Sum Previous Operations
-    // Note: We should ideally respect 'reconciled' for Bank Balance history, but simplified here as single stream.
-    // For specific Bank Balance, we might need checking reconciled status of ALL previous ops.
-    // Assuming 'initial_balance' is clean bank balance start.
-    const { data: previousOps, error: prevError } = await supabase
-      .from('expenses')
-      .select('amount')
-      .eq('account_id', period.account_id)
-      .lt('date', period.start_date); // Strictly before start date
+    // 5b. Sum Previous Operations using RPC for performance and correctness
+    const { data: balanceHistory, error: historyError } = await supabase
+      .rpc('get_balance_history', {
+        p_account_id: period.account_id,
+        p_date: period.start_date,
+      })
+      .single();
 
-    if (prevError) throw new Error(prevError.message);
+    if (historyError) throw new Error(historyError.message);
 
-    const previousOpsSum = previousOps?.reduce((sum, op) => sum + Number(op.amount), 0) || 0;
-    const initialBalance = (account?.initial_balance || 0) + previousOpsSum;
+    const previousReconciledSum = Number((balanceHistory as any)?.reconciled_sum || 0);
+    const previousUnreconciledSum = Number((balanceHistory as any)?.unreconciled_sum || 0);
+
+    console.log(`[DEBUG] Period ${period.id} start: ${period.start_date}`);
+    console.log(`[DEBUG] Account Initial Balance: ${account?.initial_balance}`);
+    console.log(`[DEBUG] Previous Reconciled Sum: ${previousReconciledSum}`);
+    console.log(`[DEBUG] Previous Unreconciled Sum: ${previousUnreconciledSum}`);
+
+    // Initial Balance = Account Initial + Reconciled History
+    // This matches the "Bank Balance" of the previous day
+    const initialBalance = (account?.initial_balance || 0) + previousReconciledSum;
 
     // 6. Aggregate Data
     let totalIncome = 0;
@@ -268,11 +276,11 @@ export class PeriodsService {
     const bankBalance = initialBalance + reconciledSum;
 
     // 2. Future Balance (Solde à venir)
-    // = Initial Balance + Total Income - Total Expense (All operations)
-    const futureBalance = initialBalance + totalIncome - totalExpense;
+    // = Initial Balance (Bank) + Previous Unreconciled + Current Income - Current Expense
+    const futureBalance = initialBalance + previousUnreconciledSum + totalIncome - totalExpense;
 
     // 3. Projected Balance (Solde Théorique)
-    // = Initial Balance + Projected Income - Projected Expenses
+    // = Initial Balance (Bank) + Previous Unreconciled + Projected Income - Projected Expenses
     // Projected for Category = Max(Budget, Actual)
     let projectedIncome = 0;
     let projectedExpense = 0;
@@ -286,7 +294,7 @@ export class PeriodsService {
       }
     }
 
-    const projectedBalance = initialBalance + projectedIncome - projectedExpense;
+    const projectedBalance = initialBalance + previousUnreconciledSum + projectedIncome - projectedExpense;
 
     return {
       period,
@@ -296,6 +304,8 @@ export class PeriodsService {
       projectedBalance,
       totalIncome,
       totalExpense,
+      projectedIncome,
+      projectedExpense,
       netResult: totalIncome - totalExpense,
       categoryBreakdown: Array.from(categoryStats.values()),
     };

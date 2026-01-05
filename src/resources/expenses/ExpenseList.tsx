@@ -27,7 +27,7 @@ import {
 } from 'react-admin';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import CancelIcon from '@mui/icons-material/Cancel';
-import { Box, Card, CardContent, Switch, Typography } from '@mui/material';
+import { Box, Card, CardContent, Switch, Tooltip, Typography } from '@mui/material';
 import { useAccount } from '../../context/AccountContext';
 import { ImportExpensesButton } from './ImportExpensesButton';
 import { useIsSmall } from '../../hooks/isSmall';
@@ -195,7 +195,14 @@ export const ExpenseList = ({ filter, embed = false, actions = <></>, onRowClick
       ) : (
         <Datagrid {...(embed ? { bulkActionButtons: false, rowClick: onRowClick || false } : { rowClick: 'show' })}>
           <DateField source="date" label="resources.expenses.fields.date" />
-          <TextField source="description" label="resources.expenses.fields.description" />
+          {embed ? (<FunctionField
+            render={(record: any) => (
+              <Tooltip title={record.description}>
+                {record.description.slice(0, 20)}
+              </Tooltip>
+            )}
+          />) : (
+            <TextField source="description" label="resources.expenses.fields.description" />)}
           <ReferenceField source="category_id" reference="categories" label="resources.expenses.fields.category_id">
             <FunctionField
               render={(record: any) => (
