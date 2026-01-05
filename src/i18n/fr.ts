@@ -159,7 +159,8 @@ export const fr = {
         pending: 'À venir',
         operations_balance: 'Solde opérations',
         projected_balance: 'Prévisionnel',
-        flux: 'Flux'
+        flux: 'Flux',
+        including_savings: "Dont %{amount} d'épargne"
       },
       tooltips: {
         bank_balance: 'Solde pointé (correspondant à votre relevé bancaire actuel).',

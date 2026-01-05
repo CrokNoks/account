@@ -28,6 +28,9 @@ export const CategoryBudgetTable = ({ data, globalType }: CategoryBudgetTablePro
       if (row.budgeted > 0) {
         percentage = Math.ceil((spentAbs / row.budgeted) * 100);
       }
+      if (globalType === 'expense' || globalType === 'transfer') {
+        percentage = 100 - percentage;
+      }
       return {
         id: row.category.id, // Datagrid needs an id
         ...row,
