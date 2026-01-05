@@ -27,7 +27,9 @@ export const en = {
         budget_label: 'Monthly Budget (optional)',
         type_choices: {
           expense: 'Expense',
-          income: 'Income'
+          income: 'Income',
+          transfer: 'Transfer',
+          savings: 'Savings'
         },
         type_helper: 'Defines if the budget is a limit (Expense) or a goal (Income)',
         budget_helper: 'Set a budget to receive alerts when exceeded'
@@ -100,7 +102,9 @@ export const en = {
         description: 'Description',
         amount: 'Amount',
         expense: 'Expense',
-        income: 'Income'
+        income: 'Income',
+        transfer: 'Transfer',
+        savings: 'Savings'
       }
     },
     expenses: {
@@ -195,6 +199,8 @@ export const en = {
       view: 'View',
       expenses: 'Expenses',
       revenues: 'Income',
+      savings: 'Savings',
+      transfers: 'Transfers',
       global_stats: 'Global Statistics',
       period_analyzed: 'Analyzed Period',
       active_categories: 'Active Categories',

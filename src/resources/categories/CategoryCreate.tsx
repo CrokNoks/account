@@ -45,6 +45,8 @@ export const CategoryCreate = () => {
           choices={[
             { id: 'expense', name: translate('resources.categories.fields.type_choices.expense') },
             { id: 'income', name: translate('resources.categories.fields.type_choices.income') },
+            { id: 'transfer', name: translate('resources.categories.fields.type_choices.transfer') },
+            { id: 'savings', name: translate('resources.categories.fields.type_choices.savings') },
           ]}
           helperText="resources.categories.fields.type_helper"
         />
