@@ -147,7 +147,8 @@ export const en = {
         pending: 'Pending',
         operations_balance: 'Operations Balance',
         projected_balance: 'Projected Balance',
-        flux: 'Cash Flow'
+        flux: 'Cash Flow',
+        including_savings: 'Including %{amount} savings'
       },
       tooltips: {
         bank_balance: 'Reconciled balance (matching your current bank statement).',

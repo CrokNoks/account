@@ -1,4 +1,4 @@
-import { Card, CardContent, Typography, Grid, Tooltip } from '@mui/material';
+import { Card, CardContent, Typography, Grid, Tooltip, Box } from '@mui/material';
 import { useTranslate } from 'react-admin';
 
 interface ReportSummaryCardsProps {
@@ -11,6 +11,11 @@ interface ReportSummaryCardsProps {
     totalExpense: number;
     projectedIncome: number;
     projectedExpense: number;
+    categoryBreakdown: {
+      budgeted: number;
+      spent: number;
+      type: string;
+    }[];
     period: {
       is_active: boolean;
     };
@@ -27,6 +32,11 @@ export const ReportSummaryCards = ({ reportData }: ReportSummaryCardsProps) => {
   // Active: 5 cards. Grid xs=12 md=4 (3 on first row, 2 on second).
   // Inactive: 4 cards (Projected hidden). Grid xs=12 md=3 (4 on first row).
   const gridSize = reportData.period.is_active ? 3 : 4;
+
+  // Calculate projected savings
+  const projectedSavings = reportData.categoryBreakdown
+    .filter((c: any) => c.type === 'savings')
+    .reduce((acc: number, c: any) => acc + Math.max(c.budgeted, Math.abs(c.spent)), 0);
 
   return (
     <>
@@ -63,23 +73,29 @@ export const ReportSummaryCards = ({ reportData }: ReportSummaryCardsProps) => {
       </Grid>
 
       <Grid size={{ xs: 12, md: gridSize }}>
-        <Tooltip title={translate('app.dashboard.tooltips.bank_balance')}>
-          <Card sx={{ height: '100%', bgcolor: 'background.paper' }}>
-            <CardContent>
-              <Typography color="textSecondary" gutterBottom>
+        <Card sx={{ height: '100%', bgcolor: 'background.paper' }}>
+          <CardContent>
+            <Tooltip title={translate('app.dashboard.tooltips.bank_balance')}>
+              <><Typography color="textSecondary" gutterBottom>
                 {translate('app.dashboard.cards.bank_balance')}
               </Typography>
-              <Typography variant="h5" color={reportData.bankBalance >= 0 ? 'success.main' : 'error.main'}>
-                {formatCurrency(reportData.bankBalance)}
-              </Typography>
-              {(reportData.period.is_active && reportData.futureBalance !== reportData.bankBalance) && (
-                <Typography variant="h5" color={reportData.futureBalance >= 0 ? 'success.main' : 'error.main'}>
+                <Typography variant="h5" color={reportData.bankBalance >= 0 ? 'success.main' : 'error.main'}>
+                  {formatCurrency(reportData.bankBalance)}
+                </Typography>
+              </>
+            </Tooltip>
+            {(reportData.period.is_active && reportData.futureBalance !== reportData.bankBalance) && (
+              <Box mt={1}>
+                <Typography variant="caption" color="textSecondary" display="block">
+                  {translate('app.dashboard.cards.operations_balance')}
+                </Typography>
+                <Typography variant="h6" color={reportData.futureBalance >= 0 ? 'success.main' : 'error.main'} sx={{ lineHeight: 1.2 }}>
                   {formatCurrency(reportData.futureBalance)}
                 </Typography>
-              )}
-            </CardContent>
-          </Card>
-        </Tooltip>
+              </Box>
+            )}
+          </CardContent>
+        </Card>
       </Grid>
 
       {reportData.period.is_active && (<>
@@ -93,6 +109,11 @@ export const ReportSummaryCards = ({ reportData }: ReportSummaryCardsProps) => {
                 <Typography variant="h5" fontWeight="bold">
                   {formatCurrency(reportData.projectedBalance)}
                 </Typography>
+                {projectedSavings > 0 && (
+                  <Typography variant="body2" sx={{ opacity: 0.9, mt: 0.5, fontStyle: 'italic' }}>
+                    {translate('app.dashboard.cards.including_savings', { amount: formatCurrency(projectedSavings) })}
+                  </Typography>
+                )}
               </CardContent>
             </Card>
           </Tooltip>
