@@ -263,7 +263,7 @@ export class PeriodsService {
       const stat = categoryStats.get(catId)!;
       stat.spent += amount;
 
-      stat.type = stat.spent < 0 ? 'expense' : 'income';
+      stat.type = ['transfer', 'savings'].includes(stat.type) ? stat.type : amount < 0 ? 'expense' : 'income';
 
 
       stat.remaining = stat.budgeted - Math.abs(stat.spent);

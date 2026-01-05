@@ -35,7 +35,9 @@ export const fr = {
         budget_label: 'Budget mensuel (optionnel)',
         type_choices: {
           expense: 'Dépense',
-          income: 'Revenu'
+          income: 'Revenu',
+          transfer: 'Virement',
+          savings: 'Épargne'
         },
         type_helper: 'Définit si le budget est une limite (Dépense) ou un objectif (Revenu)',
         budget_helper: 'Définir un budget pour recevoir des alertes en cas de dépassement'
@@ -108,7 +110,9 @@ export const fr = {
         description: 'Description',
         amount: 'Montant',
         expense: 'Dépense',
-        income: 'Revenu'
+        income: 'Revenu',
+        transfer: 'Virement',
+        savings: 'Épargne'
       }
     },
     expenses: {
@@ -207,6 +211,8 @@ export const fr = {
       view: 'Vue',
       expenses: 'Dépenses',
       revenues: 'Revenus',
+      savings: 'Épargne',
+      transfers: 'Virements',
       global_stats: 'Statistiques Globales',
       period_analyzed: 'Période analysée',
       active_categories: 'Catégories Actives',

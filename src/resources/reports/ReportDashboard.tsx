@@ -250,6 +250,32 @@ export const ReportDashboard = () => {
                 globalType="income"
               />
             </Box>
+
+            {/* Savings Categories */}
+            {reportData.categoryBreakdown.some(item => item.type === 'savings') && (
+              <Box mt={4}>
+                <Typography variant="h6" gutterBottom color="primary.main">
+                  {translate('app.menu.categories')} - {translate('app.evolution.savings')}
+                </Typography>
+                <CategoryBudgetTable
+                  data={reportData.categoryBreakdown.filter(item => item.type === 'savings')}
+                  globalType="savings"
+                />
+              </Box>
+            )}
+
+            {/* Transfer Categories */}
+            {reportData.categoryBreakdown.some(item => item.type === 'transfer') && (
+              <Box mt={4}>
+                <Typography variant="h6" gutterBottom color="info.main">
+                  {translate('app.menu.categories')} - {translate('app.evolution.transfers')}
+                </Typography>
+                <CategoryBudgetTable
+                  data={reportData.categoryBreakdown.filter(item => item.type === 'transfer')}
+                  globalType="transfer"
+                />
+              </Box>
+            )}
           </Grid>
 
           <Grid size={{ xs: 12, md: 6 }}>
