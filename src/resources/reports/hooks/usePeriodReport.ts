@@ -20,6 +20,8 @@ export interface ReportData {
   bankBalance: number;
   futureBalance: number;
   projectedBalance: number;
+  projectedIncome: number;
+  projectedExpense: number;
 }
 
 export const usePeriodReport = (periodId: string | null) => {

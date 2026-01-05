@@ -5,11 +5,23 @@ import { Box, Typography, CircularProgress, TextField } from '@mui/material';
 import { useAccount } from '../../context/AccountContext';
 import { supabaseClient } from '../../supabaseClient';
 
-const PeriodCreateToolbar = (props: any) => (
-  <Toolbar {...props}>
-    <SaveButton alwaysEnable />
-  </Toolbar>
-);
+import RefreshIcon from '@mui/icons-material/Refresh';
+
+const PeriodCreateToolbar = (props: any) => {
+  const { onRefresh, loading, ...rest } = props;
+  return (
+    <Toolbar {...rest}>
+      <SaveButton alwaysEnable />
+      <Button
+        label="Rafrachir l'IA"
+        onClick={onRefresh}
+        disabled={loading}
+        startIcon={<RefreshIcon />}
+        sx={{ ml: 2 }}
+      />
+    </Toolbar>
+  );
+};
 
 export const PeriodCreate = () => {
   const { selectedAccountId } = useAccount();
@@ -30,7 +42,7 @@ export const PeriodCreate = () => {
     dataProvider.getList('periods', {
       pagination: { page: 1, perPage: 1 },
       sort: { field: 'start_date', order: 'DESC' },
-      filter: { accountId: selectedAccountId }
+      filter: { account_id: selectedAccountId }
     })
       .then(({ total }) => setHasHistory((total ?? 0) > 0))
       .catch(() => setHasHistory(false));
@@ -39,9 +51,9 @@ export const PeriodCreate = () => {
   const fetchPreview = async () => {
     if (!selectedAccountId) return;
 
-    // If no history and missing dates, block
-    if (hasHistory === false && (!initialDates.start || !initialDates.end)) {
-      notify('Veuillez renseigner les dates pour la première période', { type: 'warning' });
+    // If no history and missing start dates, block (End date is optional)
+    if (hasHistory === false && !initialDates.start) {
+      notify('Veuillez renseigner la date de début pour la première période', { type: 'warning' });
       return;
     }
 
@@ -67,25 +79,20 @@ export const PeriodCreate = () => {
         body: JSON.stringify(body),
       });
 
-      // Wait, we need the token for the preview endpoint too! 
-      // Accessing supabase client directly to get session?
-      // Or use dataProvider.create? But this is a custom endpoint...
-      // Let's rely on the user having a session, but typically we need to pass it.
-      // Since I don't have easy access to token here without supabaseClient, 
-      // I'll skip adding it for now and assume the user might have RLS issues with preview if I don't fixing it.
-      // BUT I AM FIXING "account_id" issue first.
-
       if (!response.ok) throw new Error('Failed to fetch preview');
       const data = await response.json();
 
-      let finalData = { ...data, account_id: selectedAccountId };
+      let finalData = {
+        ...data,
+        account_id: selectedAccountId,
+        start_date: data.startDate, // Map backend camelCase to React Admin snake_case
+        end_date: data.endDate
+      };
 
-      // Override with manual dates if provided
+      // Override with manual dates if provided (only if no history, otherwise use AI/Backend dates)
       if (hasHistory === false && initialDates.start && initialDates.end) {
         finalData.start_date = initialDates.start;
         finalData.end_date = initialDates.end;
-        // We might want to re-run AI for budgets based on these dates? 
-        // For now, assume budget templates don't depend strictly on exact date duration for the base amount.
       }
 
       setPreviewData(finalData);
@@ -146,12 +153,12 @@ export const PeriodCreate = () => {
   // 2. Preview/Edit State: React Admin Form
   return (
     <Create title="Nouvelle Période">
-      <SimpleForm defaultValues={previewData} toolbar={<PeriodCreateToolbar />}>
+      <SimpleForm defaultValues={previewData} toolbar={<PeriodCreateToolbar onRefresh={fetchPreview} loading={loading} />}>
         <Typography variant="h6" sx={{ mb: 2 }}>Configuration de la Période</Typography>
 
         <Box display="flex" gap={2}>
           <DateInput source="start_date" label="Date de début" validate={(v) => v ? undefined : 'Requis'} />
-          <DateInput source="end_date" label="Date de fin" validate={(v) => v ? undefined : 'Requis'} />
+          <DateInput source="end_date" label="Date de fin" />
         </Box>
 
         <Typography variant="subtitle1" sx={{ mt: 2, mb: 1 }}>Suggestions de Budget</Typography>
@@ -161,7 +168,7 @@ export const PeriodCreate = () => {
             <ReferenceInput source="category_id" reference="categories" filter={{ account_id: selectedAccountId }}>
               <SelectInput optionText="name" label="Catégorie" />
             </ReferenceInput>
-            <NumberInput source="amount_allocated" label="Montant" />
+            <NumberInput source="amount_allocated" label="Retenu" helperText="Montant final" />
           </SimpleFormIterator>
         </ArrayInput>
 

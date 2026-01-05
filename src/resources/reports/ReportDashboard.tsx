@@ -11,6 +11,10 @@ import { CategoryBudgetTable } from './components/CategoryBudgetTable';
 import { ReportSummaryCards } from './components/ReportSummaryCards';
 import { ExpenseList } from '../expenses';
 
+import { AddExpenseDrawer } from './components/AddExpenseDrawer';
+import { TransferDrawer } from './components/TransferDrawer';
+import SwapHorizIcon from '@mui/icons-material/SwapHoriz';
+
 export const ReportDashboard = () => {
   const { selectedAccountId } = useAccount();
   const translate = useTranslate();
@@ -23,9 +27,11 @@ export const ReportDashboard = () => {
   const [selectedPeriodId, setSelectedPeriodId] = useState<string | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [closeDialogOpen, setCloseDialogOpen] = useState(false);
+  const [createExpenseDrawerOpen, setCreateExpenseDrawerOpen] = useState(false);
+  const [transferDrawerOpen, setTransferDrawerOpen] = useState(false);
 
   // Fetch Data from Backend
-  const { data: reportData, loading } = usePeriodReport(selectedPeriodId);
+  const { data: reportData, loading, refetch } = usePeriodReport(selectedPeriodId);
 
   // Check for any active period to determine if "New Period" button should be shown
   const { data: activePeriods } = useGetList('periods', {
@@ -102,7 +108,13 @@ export const ReportDashboard = () => {
     redirect('/periods/create');
   };
 
+  const handleAddExpense = () => {
+    setCreateExpenseDrawerOpen(true);
+  };
 
+  const handleTransfer = () => {
+    setTransferDrawerOpen(true);
+  };
 
   if (!selectedAccountId) {
     return (
@@ -135,13 +147,29 @@ export const ReportDashboard = () => {
         </Box>
         <Box display="flex" gap={2}>
           {reportData?.period?.is_active && (
-            <Button
-              label="Cloturer la période"
-              onClick={handleCloseClick}
-              color="primary"
-              variant="outlined"
-              startIcon={<CloseIcon />}
-            />
+            <>
+              <Button
+                label="Virement"
+                onClick={handleTransfer}
+                color="secondary"
+                variant="outlined"
+                startIcon={<SwapHorizIcon />}
+              />
+              <Button
+                label="Ajouter opération"
+                onClick={handleAddExpense}
+                color="primary"
+                variant="contained"
+                startIcon={<AddIcon />}
+              />
+              <Button
+                label="Cloturer la période"
+                onClick={handleCloseClick}
+                color="primary"
+                variant="outlined"
+                startIcon={<CloseIcon />}
+              />
+            </>
           )}
           {!hasActivePeriod && (
             <Button
@@ -169,6 +197,27 @@ export const ReportDashboard = () => {
         content="Êtes-vous sûr de vouloir cloturer cette période ? Cela vous redirigera vers la création de la prochaine période."
         onConfirm={handleCloseConfirm}
         onClose={() => setCloseDialogOpen(false)}
+      />
+
+      <AddExpenseDrawer
+        open={createExpenseDrawerOpen}
+        onClose={() => setCreateExpenseDrawerOpen(false)}
+        selectedAccountId={selectedAccountId}
+        onSuccess={() => {
+          setCreateExpenseDrawerOpen(false);
+          refresh();
+          refetch();
+        }}
+      />
+
+      <TransferDrawer
+        open={transferDrawerOpen}
+        onClose={() => setTransferDrawerOpen(false)}
+        onSuccess={() => {
+          setTransferDrawerOpen(false);
+          refresh();
+          refetch();
+        }}
       />
 
       {reportData ? (
