@@ -70,7 +70,7 @@ export const CategoryEvolution = () => {
       const allCategoryIds = categoryData.map(c => c.categoryId);
       const toHide = allCategoryIds.filter(id => !top5.includes(id));
 
-      setHiddenCategories(prev => {
+      setHiddenCategories((_prev) => {
         // If this is a purely automatic update (e.g. initial load or threshold change seeking new defaults), we might want to override.
         // However, simply overriding 'prev' might discard user's manual toggles.
         // But for the purpose of "seeing the effect of threshold", we probably want to re-apply the logic.
