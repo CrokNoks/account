@@ -209,6 +209,13 @@ export const en = {
         avg: 'Avg',
         max: 'Max'
       },
+      variance: {
+        label: 'Variance',
+        all: 'All',
+        stable: 'Stable',
+        variable: 'Variable',
+        threshold: 'Threshold'
+      },
       no_reports: 'No archived reports available. Close at least one report to see evolution.'
     },
     drawers: {
