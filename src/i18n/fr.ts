@@ -221,6 +221,13 @@ export const fr = {
         avg: 'Moy',
         max: 'Max'
       },
+      variance: {
+        label: 'Variance',
+        all: 'Tout',
+        stable: 'Stable',
+        variable: 'Variable',
+        threshold: 'Seuil'
+      },
       no_reports: 'Aucun rapport archivé disponible. Clôturez au moins un rapport pour voir l\'évolution.'
     },
     drawers: {

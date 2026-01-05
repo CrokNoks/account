@@ -13,8 +13,14 @@ import { useIsSmall } from '../../hooks/isSmall';
 import { ImportCreateToolbar } from '../../components/ImportCreateToolbar';
 import { AccountRequired } from '../../components/AccountRequired';
 
+import { AutoColorCategoriesButton } from './AutoColorCategoriesButton';
+
 const CategoryListActions = () => (
-  <ImportCreateToolbar importButton={<ImportCategoriesButton />} />
+  <ImportCreateToolbar
+    importButton={<ImportCategoriesButton />}
+  >
+    <AutoColorCategoriesButton />
+  </ImportCreateToolbar>
 );
 
 export const CategoryList = () => {
