@@ -48,11 +48,12 @@ const FormFields = () => {
         <SelectInput optionText="name" validate={[required()]} fullWidth />
       </ReferenceInput>
 
+
       <ReferenceInput
         source="source_category_id"
         reference="categories"
         label="resources.expenses.fields.category_id"
-        filter={{ account_id: sourceAccountId }}
+        filter={{ account_id: sourceAccountId, type: 'transfer' }}
         perPage={100}
         sort={{ field: 'name', order: 'ASC' }}
         key={`source-cat-${sourceAccountId}`}
@@ -76,7 +77,7 @@ const FormFields = () => {
         source="destination_category_id"
         reference="categories"
         label="resources.expenses.fields.category_id"
-        filter={{ account_id: targetAccountId }}
+        filter={{ account_id: targetAccountId, type: 'transfer' }}
         perPage={100}
         sort={{ field: 'name', order: 'ASC' }}
         key={`target-cat-${targetAccountId}`}
