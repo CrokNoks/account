@@ -263,8 +263,8 @@ export class PeriodsService {
       const stat = categoryStats.get(catId)!;
       stat.spent += amount;
 
-      stat.type = ['transfer', 'savings'].includes(stat.type) ? stat.type : amount < 0 ? 'expense' : 'income';
-
+      // REMOVED: type inference based on transaction direction. We trust the category type.
+      // (stat.type was initialized from category.type)
 
       stat.remaining = stat.budgeted - Math.abs(stat.spent);
     });

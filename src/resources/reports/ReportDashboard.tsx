@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Loading, useTranslate, useDelete, useNotify, useRefresh, Confirm, useRedirect, Button, useGetList } from 'react-admin';
 import { Typography, Grid, Box, IconButton, Tooltip } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -25,6 +25,12 @@ export const ReportDashboard = () => {
 
   // Selected Period State
   const [selectedPeriodId, setSelectedPeriodId] = useState<string | null>(null);
+
+  // Reset period when account changes
+  useEffect(() => {
+    setSelectedPeriodId(null);
+  }, [selectedAccountId]);
+
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [closeDialogOpen, setCloseDialogOpen] = useState(false);
   const [createExpenseDrawerOpen, setCreateExpenseDrawerOpen] = useState(false);
