@@ -165,7 +165,7 @@ export class AiBudgetService {
         finalAmount = 0;
       }
 
-      if (template.is_fixed) {
+      if (template?.is_fixed) {
         finalAmount = template.amount_base;
       }
 
