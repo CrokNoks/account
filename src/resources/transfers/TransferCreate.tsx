@@ -73,7 +73,7 @@ export const TransferCreate = () => {
               source="source_category_id"
               reference="categories"
               label="resources.transfers.fields.source_category_id"
-              filter={{ account_id: formData.source_account_id }}
+              filter={{ account_id: formData.source_account_id, type: 'transfer' }}
               {...rest}
             >
               <SelectInput optionText="name" validate={[required()]} />
@@ -96,7 +96,7 @@ export const TransferCreate = () => {
               source="destination_category_id"
               reference="categories"
               label="resources.transfers.fields.destination_category_id"
-              filter={{ account_id: formData.destination_account_id }}
+              filter={{ account_id: formData.destination_account_id, type: 'transfer' }}
               {...rest}
             >
               <SelectInput optionText="name" validate={[required()]} />
