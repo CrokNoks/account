@@ -18,6 +18,9 @@ A modern, fast, and mobile-first application to track your expenses and income, 
 - **📊 Monthly Reports**: Automatic report generation with balance tracking (initial, final, reconciled).
 - **📈 Visualization**: Charts showing expense and income evolution by category.
 - **🌗 Dark Mode**: Full support for light and dark themes.
+- **🚀 High Performance**: Optimized with React Query, code splitting, and intelligent caching.
+- **🔍 Advanced Search**: Debounced search with highlighting and history management.
+- **💾 Smart Loading**: Content-specific skeleton screens for better UX.
 - **📥 CSV Import**: Easy import of your bank statements.
 - **📸 OCR Receipt Scanner**: Scan and extract data from receipts automatically.
 - **🏷️ Categorization**: Flexible category management with budgets and colors.
@@ -37,6 +40,12 @@ A live demo is available at: [https://account-c6a3f.web.app](https://account-c6a
 - **Frontend**: React, TypeScript, React Admin, Material UI, Recharts, Tesseract.js
 - **Backend**: Supabase (PostgreSQL, Auth, Edge Functions)
 - **Build**: Vite, Vite PWA
+
+## 📚 Documentation
+
+- **[Performance Optimizations](./docs/PERFORMANCE_OPTIMIZATIONS.md)** - Complete guide to implemented performance improvements
+- **[React Best Practices](./AGENTS.md)** - Development guidelines and performance patterns
+- **[API Documentation](./docs/)** - Technical documentation and API references
 
 ## 🛠️ Installation
 
