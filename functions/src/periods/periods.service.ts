@@ -287,7 +287,9 @@ export class PeriodsService {
 
     for (const stat of categoryStats.values()) {
       const projectedAmt = Math.max(stat.budgeted, Math.abs(stat.spent));
-      if (stat.type === 'income') {
+
+      // Treat as income if type is 'income' OR if it's a transfer with positive actuals (net inflow)
+      if (stat.type === 'income' || (stat.type === 'transfer' && stat.spent > 0)) {
         projectedIncome += projectedAmt;
       } else {
         projectedExpense += projectedAmt;
