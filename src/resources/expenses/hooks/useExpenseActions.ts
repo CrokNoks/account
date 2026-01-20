@@ -1,3 +1,4 @@
+import { useCallback } from 'react';
 import { useNotify, useUpdate, useRefresh, useTranslate } from 'react-admin';
 
 export const useExpenseActions = () => {
@@ -6,7 +7,7 @@ export const useExpenseActions = () => {
   const refresh = useRefresh();
   const translate = useTranslate();
 
-  const toggleReconciled = async (record: any, onSuccess?: () => void) => {
+  const toggleReconciled = useCallback(async (record: any, onSuccess?: () => void) => {
     const newValue = !record.reconciled;
     try {
       await update(
@@ -19,7 +20,7 @@ export const useExpenseActions = () => {
     } catch (error) {
       notify(translate('app.expenses.notifications.update_error'), { type: 'error' });
     }
-  };
+  }, [update, refresh, notify, translate]);
 
   return {
     toggleReconciled

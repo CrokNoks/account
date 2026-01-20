@@ -9,14 +9,22 @@ const AccountContext = createContext<AccountContextType | undefined>(undefined);
 
 export const AccountProvider = ({ children }: { children: ReactNode }) => {
   const [selectedAccountId, setSelectedAccountId] = useState<string | null>(() => {
-    return localStorage.getItem('selectedAccountId');
+    try {
+      return localStorage.getItem('selectedAccountId');
+    } catch {
+      return null;
+    }
   });
 
   useEffect(() => {
-    if (selectedAccountId) {
-      localStorage.setItem('selectedAccountId', selectedAccountId);
-    } else {
-      localStorage.removeItem('selectedAccountId');
+    try {
+      if (selectedAccountId) {
+        localStorage.setItem('selectedAccountId', selectedAccountId);
+      } else {
+        localStorage.removeItem('selectedAccountId');
+      }
+    } catch {
+      // Handle localStorage errors gracefully
     }
   }, [selectedAccountId]);
 

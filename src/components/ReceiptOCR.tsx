@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Button, Box, CircularProgress, Alert, IconButton } from '@mui/material';
 import PhotoCameraIcon from '@mui/icons-material/PhotoCamera';
 import CloseIcon from '@mui/icons-material/Close';
@@ -23,11 +23,11 @@ export const ReceiptOCR = ({ onExtract, onLoadingChange }: ReceiptOCRProps) => {
   const [isMobile, setIsMobile] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Detect if device is mobile
+  // Detect if device is mobile - hoisted to avoid recreation on every render
+  const detectMobile = () => /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+  
   useEffect(() => {
-    // Check if mobile
-    const mobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-    setIsMobile(mobile);
+    setIsMobile(detectMobile());
   }, []);
 
   // Notify parent when loading state changes
@@ -169,7 +169,8 @@ export const ReceiptOCR = ({ onExtract, onLoadingChange }: ReceiptOCRProps) => {
   };
 
 
-  const extractReceiptData = (text: string): {
+  // Memoize extraction function to avoid recreation
+  const extractReceiptData = useCallback((text: string): {
     amount?: number;
     description?: string;
     date?: string;
@@ -381,7 +382,7 @@ export const ReceiptOCR = ({ onExtract, onLoadingChange }: ReceiptOCRProps) => {
 
     console.log('=== Extracted data ===', data);
     return data;
-  };
+  }, []);
 
   const clearPreview = () => {
     setPreview(null);
