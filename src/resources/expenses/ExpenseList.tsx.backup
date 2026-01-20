@@ -1,4 +1,5 @@
-import React, { useState, useCallback, useMemo } from 'react';
+
+import React, { useState, useCallback } from 'react';
 import {
   List,
   Datagrid,
@@ -37,7 +38,6 @@ import { AccountRequired } from '../../components/AccountRequired';
 import { CategoryShip } from '../../components/CategoryShip';
 import { CategorizationModal } from './CategorizationModal';
 import { useExpenseActions } from './hooks/useExpenseActions';
-import { formatDate, formatCurrency } from '../../utils/formatters';
 
 // Hoist static choices array to avoid recreation
 const PAYMENT_METHOD_CHOICES = [
@@ -48,57 +48,6 @@ const PAYMENT_METHOD_CHOICES = [
   { id: 'cash', name: 'resources.expenses.fields.payment_methods.cash' },
   { id: 'other', name: 'resources.expenses.fields.payment_methods.other' },
 ];
-
-const CategorizeButton = React.memo(() => {
-  const [open, setOpen] = useState(false);
-
-  const handleOpen = useCallback(() => setOpen(true), []);
-  const handleClose = useCallback(() => setOpen(false), []);
-
-  return (
-    <>
-      <Button
-        variant="outlined"
-        startIcon={<AutoAwesomeIcon />}
-        onClick={handleOpen}
-        sx={{ mr: 1 }}
-      >
-        Categorize
-      </Button>
-      {open && <CategorizationModal open={open} onClose={handleClose} />}
-    </>
-  );
-});
-
-const ExpenseListActions = () => (
-  <ImportCreateToolbar
-    importButton={
-      <>
-        <CategorizeButton />
-        <ImportExpensesButton />
-      </>
-    }
-  />
-);
-
-const expenseFilters = (selectedAccountId: string | null, embed: boolean = false) => {
-  const defaultProps = embed ? {} : { alwaysOn: true };
-  return [
-    <TextInput source="description" label="resources.expenses.fields.description" {...defaultProps} />,
-    <ReferenceInput
-      source="category_id"
-      reference="categories"
-      label="resources.expenses.fields.category_id"
-      filter={{ account_id: selectedAccountId }}
-      {...defaultProps}
-    >
-      <SelectInput optionText="name" />
-    </ReferenceInput>,
-    <DateInput source="date_gte" label="app.filters.date_gte"  {...defaultProps} />,
-    <DateInput source="date_lte" label="app.filters.date_lte" {...defaultProps} />,
-    <NullableBooleanInput nullLabel="app.filters.reconciled.all" trueLabel="app.filters.reconciled.true" falseLabel="app.filters.reconciled.false" source="reconciled" label="resources.expenses.fields.reconciled" {...defaultProps} {...(embed ? { alwaysOn: true } : {})} />,
-  ]
-};
 
 const ReconciledToggle = React.memo(({ onSuccess, readOnly = false }: { onSuccess?: () => void, readOnly?: boolean }) => {
   const record = useRecordContext();
@@ -161,13 +110,9 @@ const ExpenseListEmpty = () => {
   );
 };
 
-export const ExpenseList = React.memo(({ filter, embed = false, actions = <></>, onRowClick, onUpdate, readOnly = false }: { filter: any, embed?: boolean, actions?: any, onRowClick?: (id: any) => false, onUpdate?: () => void, readOnly?: boolean }) => {
+export const ExpenseList = ({ filter, embed = false, actions = <></>, onRowClick, onUpdate, readOnly = false }: { filter: any, embed?: boolean, actions?: any, onRowClick?: (id: any) => false, onUpdate?: () => void, readOnly?: boolean }) => {
   const { selectedAccountId } = useAccount();
   const isSmall = useIsSmall();
-
-  // Memoize filters and actions to prevent recreation
-  const memoFilters = useMemo(() => expenseFilters(selectedAccountId, embed), [selectedAccountId, embed]);
-  const memoActions = useMemo(() => embed ? actions : <ExpenseListActions />, [embed, actions]);
 
   if (!selectedAccountId) {
     return <AccountRequired message="app.components.account_required.message" />;
@@ -178,18 +123,19 @@ export const ExpenseList = React.memo(({ filter, embed = false, actions = <></>,
       resource='expenses'
       filter={{ account_id: selectedAccountId, ...filter }}
       sort={{ field: 'date', order: 'DESC' }}
-      actions={memoActions}
-      filters={memoFilters}
+      actions={embed ? actions : <ExpenseListActions />}
+      filters={expenseFilters(selectedAccountId, embed)}
       filterDefaultValues={{ reconciled: undefined }}
       aside={embed ? undefined : <ExpenseFilterSidebar />}
       empty={embed ? false : <ExpenseListEmpty />}
     >
+
       {isSmall ? (
         <SimpleList
           rowClick={onRowClick || false}
           primaryText={(record) => record.description}
-          secondaryText={(record) => formatDate(record.date)}
-          tertiaryText={(record) => formatCurrency(record.amount)}
+          secondaryText={(record) => new Date(record.date).toLocaleDateString()}
+          tertiaryText={(record) => new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(record.amount)}
           leftIcon={(record) => record.reconciled ? <CheckCircleIcon color="success" /> : <CancelIcon color="error" />}
           sx={{
             '& .MuiListItem-root': {
@@ -232,9 +178,9 @@ export const ExpenseList = React.memo(({ filter, embed = false, actions = <></>,
             choices={PAYMENT_METHOD_CHOICES}
           />
           <FunctionField label="resources.expenses.fields.reconciled" render={() => <ReconciledToggle onSuccess={onUpdate} readOnly={readOnly} />} />
-          {embed && readOnly ? null : embed ? null : <EditButton />}
-          {embed && readOnly ? null : embed ? null : <DeleteButton />}
+          {embed && readOnly ? <></> : embed ? <></> : <EditButton />}
+          {embed && readOnly ? <></> : embed ? <></> : <DeleteButton />}
         </Datagrid>)}
     </List>
   );
-});
+};
