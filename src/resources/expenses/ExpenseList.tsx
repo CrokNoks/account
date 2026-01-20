@@ -1,4 +1,5 @@
 
+import React, { useState, useCallback } from 'react';
 import {
   List,
   Datagrid,
@@ -27,82 +28,38 @@ import {
 } from 'react-admin';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import CancelIcon from '@mui/icons-material/Cancel';
-import { Box, Card, CardContent, Switch, Tooltip, Typography } from '@mui/material';
+import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
+import { Box, Card, CardContent, Switch, Tooltip, Typography, Button } from '@mui/material';
 import { useAccount } from '../../context/AccountContext';
 import { ImportExpensesButton } from './ImportExpensesButton';
 import { useIsSmall } from '../../hooks/isSmall';
 import { ImportCreateToolbar } from '../../components/ImportCreateToolbar';
 import { AccountRequired } from '../../components/AccountRequired';
 import { CategoryShip } from '../../components/CategoryShip';
-
-import { Button } from '@mui/material';
-import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
-
 import { CategorizationModal } from './CategorizationModal';
-import { useState } from 'react';
-
-const CategorizeButton = () => {
-  const [open, setOpen] = useState(false);
-
-  return (
-    <>
-      <Button
-        variant="outlined"
-        startIcon={<AutoAwesomeIcon />}
-        onClick={() => setOpen(true)}
-        sx={{ mr: 1 }}
-      >
-        Categorize
-      </Button>
-      {open && <CategorizationModal open={open} onClose={() => setOpen(false)} />}
-    </>
-  );
-};
-
-const ExpenseListActions = () => (
-  <ImportCreateToolbar
-    importButton={
-      <>
-        <CategorizeButton />
-        <ImportExpensesButton />
-      </>
-    }
-  />
-);
-
-const expenseFilters = (selectedAccountId: string | null, embed: boolean = false) => {
-  const defaultProps = embed ? {} : { alwaysOn: true };
-  return [
-    <TextInput source="description" label="resources.expenses.fields.description" {...defaultProps} />,
-    <ReferenceInput
-      source="category_id"
-      reference="categories"
-      label="resources.expenses.fields.category_id"
-      filter={{ account_id: selectedAccountId }}
-      {...defaultProps}
-    >
-      <SelectInput optionText="name" />
-    </ReferenceInput>,
-    <DateInput source="date_gte" label="app.filters.date_gte"  {...defaultProps} />,
-    <DateInput source="date_lte" label="app.filters.date_lte" {...defaultProps} />,
-
-    <NullableBooleanInput nullLabel="app.filters.reconciled.all" trueLabel="app.filters.reconciled.true" falseLabel="app.filters.reconciled.false" source="reconciled" label="resources.expenses.fields.reconciled" {...defaultProps} {...(embed ? { alwaysOn: true } : {})} />,
-  ]
-};
-
 import { useExpenseActions } from './hooks/useExpenseActions';
 
-const ReconciledToggle = ({ onSuccess, readOnly = false }: { onSuccess?: () => void, readOnly?: boolean }) => {
+// Hoist static choices array to avoid recreation
+const PAYMENT_METHOD_CHOICES = [
+  { id: 'credit_card', name: 'resources.expenses.fields.payment_methods.credit_card' },
+  { id: 'direct_debit', name: 'resources.expenses.fields.payment_methods.direct_debit' },
+  { id: 'transfer', name: 'resources.expenses.fields.payment_methods.transfer' },
+  { id: 'check', name: 'resources.expenses.fields.payment_methods.check' },
+  { id: 'cash', name: 'resources.expenses.fields.payment_methods.cash' },
+  { id: 'other', name: 'resources.expenses.fields.payment_methods.other' },
+];
+
+const ReconciledToggle = React.memo(({ onSuccess, readOnly = false }: { onSuccess?: () => void, readOnly?: boolean }) => {
   const record = useRecordContext();
   const { toggleReconciled } = useExpenseActions();
 
   if (!record) return null;
 
-  const handleToggle = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleToggle = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
     if (readOnly) return;
     event.stopPropagation(); // Prevent row click
     toggleReconciled(record, onSuccess);
-  };
+  }, [readOnly, record, toggleReconciled, onSuccess]);
 
   return (
     <Switch
@@ -113,7 +70,7 @@ const ReconciledToggle = ({ onSuccess, readOnly = false }: { onSuccess?: () => v
       disabled={readOnly}
     />
   );
-};
+});
 
 export const ExpenseFilterSidebar = () => {
   const translate = useTranslate();
@@ -218,14 +175,7 @@ export const ExpenseList = ({ filter, embed = false, actions = <></>, onRowClick
           <SelectField
             source="payment_method"
             label="resources.expenses.fields.payment_method"
-            choices={[
-              { id: 'credit_card', name: 'resources.expenses.fields.payment_methods.credit_card' },
-              { id: 'direct_debit', name: 'resources.expenses.fields.payment_methods.direct_debit' },
-              { id: 'transfer', name: 'resources.expenses.fields.payment_methods.transfer' },
-              { id: 'check', name: 'resources.expenses.fields.payment_methods.check' },
-              { id: 'cash', name: 'resources.expenses.fields.payment_methods.cash' },
-              { id: 'other', name: 'resources.expenses.fields.payment_methods.other' },
-            ]}
+            choices={PAYMENT_METHOD_CHOICES}
           />
           <FunctionField label="resources.expenses.fields.reconciled" render={() => <ReconciledToggle onSuccess={onUpdate} readOnly={readOnly} />} />
           {embed && readOnly ? <></> : embed ? <></> : <EditButton />}

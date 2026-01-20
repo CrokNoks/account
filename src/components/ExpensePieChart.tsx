@@ -1,3 +1,4 @@
+import { useMemo, useCallback } from 'react';
 import { Box, Typography } from '@mui/material';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
 
@@ -12,15 +13,19 @@ interface Props {
   data: DataPoint[];
 }
 
-export const ExpensePieChart = ({ data }: Props) => {
-  if (!data || data.length === 0) {
-    return <div>Aucune donnée à afficher</div>;
-  }
+// Memoize currency formatter to avoid recreation
+const formatCurrency = (value: number) => 
+  new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(value);
 
-  // Custom Legend to match the previous design
-  const renderLegend = (props: any) => {
+export const ExpensePieChart = ({ data }: Props) => {
+  const total = useMemo(() => 
+    data.reduce((sum, item) => sum + item.value, 0), 
+    [data]
+  );
+
+  // Memoize renderLegend to avoid recreation
+  const renderLegend = useCallback((props: any) => {
     const { payload } = props;
-    const total = data.reduce((sum, item) => sum + item.value, 0);
 
     return (
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, ml: 2 }}>
@@ -36,7 +41,7 @@ export const ExpensePieChart = ({ data }: Props) => {
                     <Typography variant="body2" sx={{ fontWeight: 500 }}>{entry.value}</Typography>
                     <Box sx={{ textAlign: 'right' }}>
                         <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                            {new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(value)}
+                            {formatCurrency(value)}
                         </Typography>
                         <Typography variant="caption" color="text.secondary">
                             {percentage}%
@@ -48,7 +53,13 @@ export const ExpensePieChart = ({ data }: Props) => {
         })}
       </Box>
     );
-  };
+  }, [data, total]);
+
+  const tooltipFormatter = useCallback((value: number) => formatCurrency(value), []);
+
+  if (!data || data.length === 0) {
+    return <div>Aucune donnée à afficher</div>;
+  }
 
   return (
     <Box sx={{ width: '100%', height: 400, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -68,7 +79,7 @@ export const ExpensePieChart = ({ data }: Props) => {
             ))}
           </Pie>
           <Tooltip 
-            formatter={(value: number) => new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(value)}
+            formatter={tooltipFormatter}
           />
           <Legend 
             layout="vertical" 
