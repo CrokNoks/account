@@ -37,6 +37,13 @@ jobs:
       - name: 'Set up Cloud SDK'
         uses: 'google-github-actions/setup-gcloud@v2'
 
+      - name: Create functions .env
+        working-directory: functions
+        run: |
+          echo "VITE_SUPABASE_URL=${{ secrets.VITE_SUPABASE_URL }}" > .env
+          echo "VITE_SUPABASE_ANON_KEY=${{ secrets.VITE_SUPABASE_ANON_KEY }}" >> .env
+          echo "VITE_NEST_API_URL=${{ secrets.VITE_NEST_API_URL }}" >> .env
+
       - name: Deploy to Firebase
         run: npx firebase-tools deploy --only functions --project ${{ secrets.FIREBASE_PROJECT_ID }}
         env:
