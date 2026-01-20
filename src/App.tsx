@@ -2,6 +2,7 @@ import { Admin, Resource } from 'react-admin';
 import { dataProvider } from './providers/dataProvider';
 import { authProvider } from './providers/authProvider';
 import { AccountProvider } from './context/AccountContext';
+import { QueryProvider } from './providers/QueryProvider';
 import { CustomLayout } from './Layout';
 
 import { i18nProvider } from './i18nProvider';
@@ -19,8 +20,9 @@ import { PeriodList, PeriodCreate, PeriodShow } from './resources/periods';
 
 function App() {
   return (
-    <AccountProvider>
-      <Admin
+    <QueryProvider>
+      <AccountProvider>
+        <Admin
         dataProvider={dataProvider}
         authProvider={authProvider}
         i18nProvider={i18nProvider}
@@ -94,9 +96,10 @@ function App() {
           edit={BudgetTemplateEdit}
           options={{ label: 'Modèles de Budget' }}
         />
-        <Resource name="budgets" />
+        <Resource name="budgets"         />
       </Admin>
     </AccountProvider>
+    </QueryProvider>
   );
 }
 
