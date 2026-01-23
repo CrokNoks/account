@@ -1,81 +1,145 @@
-import { Controller, Get, Post, Delete, Body, Param, Query, Headers } from '@nestjs/common';
+import { Controller, Get, Post, Delete, Body, Param, Query, BadRequestException, UseGuards, Request } from '@nestjs/common';
 import { PeriodsService, CreatePeriodDto } from './periods.service';
+import { FirebaseAuthGuard } from '../core/guards/firebase-auth.guard';
 
+/**
+ * Controller for period-related operations
+ * Manages period CRUD and business logic like budget generation
+ */
 @Controller('periods')
+@UseGuards(FirebaseAuthGuard)
 export class PeriodsController {
-  constructor(private readonly periodsService: PeriodsService) { }
+  constructor(private readonly periodsService: PeriodsService) {}
 
+  /**
+   * Get all periods for an account
+   * Optionally filter by active status
+   * @param accountId - Account ID (required)
+   * @param isActive - Filter by active status (optional)
+   * @param token - Authorization token
+   * @returns Array of periods
+   */
   @Get()
-  findAll(
+  async findAll(
     @Query('account_id') accountId: string,
     @Query('is_active') isActive: string,
-    @Headers('authorization') token: string,
+    @Request() req: any,
   ) {
     if (!accountId) {
-      throw new Error('Account ID is required');
+      throw new BadRequestException('Account ID is required');
     }
+    const token = req.headers.authorization;
     return this.periodsService.findAll(accountId, isActive, token);
   }
 
+  /**
+   * Get the active period for an account
+   * @param accountId - Account ID (required)
+   * @param token - Authorization token
+   * @returns Active period or null
+   */
   @Get('active')
-  findActive(
+  async findActive(
     @Query('account_id') accountId: string,
-    @Headers('authorization') token: string,
+    @Request() req: any,
   ) {
     if (!accountId) {
-      throw new Error('Account ID is required');
+      throw new BadRequestException('Account ID is required');
     }
+    const token = req.headers.authorization;
     return this.periodsService.findActive(accountId, token);
   }
 
-  @Get(':id/report')
-  getReport(
-    @Param('id') id: string,
-    @Headers('authorization') token: string,
-  ) {
-    return this.periodsService.getReport(id, token);
-  }
-
+  /**
+   * Get a period by ID
+   * @param id - Period ID
+   * @param token - Authorization token
+   * @returns Period data
+   */
   @Get(':id')
-  findOne(
+  async findOne(
     @Param('id') id: string,
-    @Headers('authorization') token: string,
+    @Request() req: any,
   ) {
+    const token = req.headers.authorization;
     return this.periodsService.findOne(id, token);
   }
 
+  /**
+   * Get a financial report for a period
+   * @param id - Period ID
+   * @param token - Authorization token
+   * @returns Period financial report
+   */
+  @Get(':id/report')
+  async getReport(
+    @Param('id') id: string,
+    @Request() req: any,
+  ) {
+    const token = req.headers.authorization;
+    return this.periodsService.getReport(id, token);
+  }
+
+  /**
+   * Preview the next period with AI-generated suggestions
+   * @param accountId - Account ID (required in body)
+   * @param token - Authorization token
+   * @returns Preview of next period including dates and budgets
+   */
   @Post('preview')
-  previewNextPeriod(
+  async previewNextPeriod(
     @Body('account_id') accountId: string,
-    @Headers('authorization') token: string,
+    @Request() req: any,
   ) {
     if (!accountId) {
-      throw new Error('Account ID is required in body');
+      throw new BadRequestException('Account ID is required in body');
     }
+    const token = req.headers.authorization;
     return this.periodsService.previewNextPeriod(accountId, token);
   }
 
+  /**
+   * Create a new period with budgets
+   * @param createPeriodDto - Period creation data
+   * @param token - Authorization token
+   * @returns Created period
+   */
   @Post()
-  create(
+  async create(
     @Body() createPeriodDto: CreatePeriodDto,
-    @Headers('authorization') token: string,
+    @Request() req: any,
   ) {
+    const token = req.headers.authorization;
     return this.periodsService.createPeriodWithBudgets(createPeriodDto, token);
   }
 
-  @Delete(':id')
-  remove(
+  /**
+   * Close an active period
+   * @param id - Period ID
+   * @param token - Authorization token
+   * @returns Updated period with is_active set to false
+   */
+  @Post(':id/close')
+  async close(
     @Param('id') id: string,
-    @Headers('authorization') token: string,
+    @Request() req: any,
   ) {
-    return this.periodsService.remove(id, token);
+    const token = req.headers.authorization;
+    return this.periodsService.closePeriod(id, token);
   }
 
-  @Post(':id/close')
-  close(
+  /**
+   * Delete a period
+   * @param id - Period ID
+   * @param token - Authorization token
+   * @returns Delete result
+   */
+  @Delete(':id')
+  async remove(
     @Param('id') id: string,
-    @Headers('authorization') token: string,
+    @Request() req: any,
   ) {
-    return this.periodsService.closePeriod(id, token);
+    const token = req.headers.authorization;
+    return this.periodsService.remove(id, token);
   }
 }

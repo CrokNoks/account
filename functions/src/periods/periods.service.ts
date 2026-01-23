@@ -1,7 +1,10 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, Logger, InternalServerErrorException } from '@nestjs/common';
 import { SupabaseService } from '../supabase/supabase.service';
 import { AiBudgetService } from '../budgets/ai-budget.service';
 
+/**
+ * DTO for creating a new period with budgets
+ */
 export interface CreatePeriodDto {
   account_id: string;
   start_date: string;
@@ -13,15 +16,35 @@ export interface CreatePeriodDto {
   }[];
 }
 
+/**
+ * Service for managing period operations
+ * Handles period CRUD, budget generation, and financial reporting
+ */
 @Injectable()
 export class PeriodsService {
+  private readonly logger = new Logger(PeriodsService.name);
+
   constructor(
     private readonly supabase: SupabaseService,
     private readonly aiBudgetService: AiBudgetService,
-  ) { }
+  ) {}
 
-  async findAll(accountId: string, isActive: string | undefined, token: string) {
-    let query = this.supabase.getClientWithToken(token)
+  /**
+   * Retrieve all periods for an account
+   * Optionally filter by active status
+   * @param accountId - The account ID
+   * @param isActive - Filter by active status (optional)
+   * @param token - Authorization token
+   * @returns Array of periods
+   * @throws InternalServerErrorException if query fails
+   */
+  async findAll(
+    accountId: string,
+    isActive: string | undefined,
+    token: string,
+  ): Promise<any[]> {
+    let query = this.supabase
+      .getClientWithToken(token)
       .from('periods')
       .select('*')
       .eq('account_id', accountId)
@@ -33,36 +56,78 @@ export class PeriodsService {
 
     const { data, error } = await query;
 
-    if (error) throw new Error(error.message);
-    return data;
+    if (error) {
+      this.logger.error(`Failed to fetch periods for account ${accountId}:`, error);
+      throw new InternalServerErrorException('Failed to fetch periods');
+    }
+
+    return data || [];
   }
 
-  async findOne(id: string, token: string) {
-    const { data, error } = await this.supabase.getClientWithToken(token)
+  /**
+   * Retrieve a single period by ID
+   * @param id - Period ID
+   * @param token - Authorization token
+   * @returns Period data
+   * @throws NotFoundException if period not found
+   * @throws InternalServerErrorException if query fails
+   */
+  async findOne(id: string, token: string): Promise<any> {
+    const { data, error } = await this.supabase
+      .getClientWithToken(token)
       .from('periods')
       .select('*')
       .eq('id', id)
       .single();
 
-    if (error || !data) throw new NotFoundException('Period not found');
+    if (error && error.code !== 'PGRST116') {
+      this.logger.error(`Failed to fetch period ${id}:`, error);
+      throw new InternalServerErrorException('Failed to fetch period');
+    }
+
+    if (!data) {
+      throw new NotFoundException('Period not found');
+    }
+
     return data;
   }
 
-  async findActive(accountId: string, token: string) {
-    const { data, error } = await this.supabase.getClientWithToken(token)
+  /**
+   * Retrieve the currently active period for an account
+   * @param accountId - The account ID
+   * @param token - Authorization token
+   * @returns Active period data or null if no active period
+   * @throws InternalServerErrorException if query fails
+   */
+  async findActive(accountId: string, token: string): Promise<any | null> {
+    const { data, error } = await this.supabase
+      .getClientWithToken(token)
       .from('periods')
       .select('*')
       .eq('account_id', accountId)
       .eq('is_active', true)
       .single();
 
-    if (error && error.code !== 'PGRST116') throw new Error(error.message); // PGRST116 is 'not found'
-    return data;
+    if (error && error.code !== 'PGRST116') {
+      this.logger.error(`Failed to fetch active period for account ${accountId}:`, error);
+      throw new InternalServerErrorException('Failed to fetch active period');
+    }
+
+    return data || null;
   }
 
-  async previewNextPeriod(accountId: string, token: string) {
-    // 1. Determine Start Date
-    const { data: lastPeriod } = await this.supabase.getClientWithToken(token)
+  /**
+   * Preview the next period with AI-generated suggestions
+   * Determines start date from last period and calls AI service for budget predictions
+   * @param accountId - The account ID
+   * @param token - Authorization token
+   * @returns Next period preview with AI-generated budgets and end date
+   * @throws InternalServerErrorException if query or AI service fails
+   */
+  async previewNextPeriod(accountId: string, token: string): Promise<any> {
+    // Determine Start Date
+    const { data: lastPeriod, error: periodError } = await this.supabase
+      .getClientWithToken(token)
       .from('periods')
       .select('end_date')
       .eq('account_id', accountId)
@@ -70,16 +135,21 @@ export class PeriodsService {
       .limit(1)
       .single();
 
-    let startDate: string;
-    if (lastPeriod && lastPeriod.end_date) {
-      const lastEnd = new Date(lastPeriod.end_date);
-      lastEnd.setDate(lastEnd.getDate() + 1); // Start next day
-      startDate = lastEnd.toISOString().split('T')[0];
-    } else {
-      startDate = new Date().toISOString().split('T')[0]; // Default to today if no previous period
+    if (periodError && periodError.code !== 'PGRST116') {
+      this.logger.error(`Failed to fetch last period for account ${accountId}:`, periodError);
+      throw new InternalServerErrorException('Failed to preview next period');
     }
 
-    // 2. Call AI service for End Date and Budgets
+    let startDate: string;
+
+    if (lastPeriod && lastPeriod.end_date) {
+      const lastEnd = new Date(lastPeriod.end_date);
+      lastEnd.setDate(lastEnd.getDate() + 1);
+      startDate = lastEnd.toISOString().split('T')[0];
+    } else {
+      startDate = new Date().toISOString().split('T')[0];
+    }
+
     return this.aiBudgetService.predictPeriodParams(accountId, startDate, token);
   }
 

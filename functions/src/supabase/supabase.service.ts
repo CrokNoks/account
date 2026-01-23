@@ -4,20 +4,20 @@ import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
 @Injectable()
 export class SupabaseService {
-  private supabase: SupabaseClient;
+  private supabase: SupabaseClient | null = null;
 
   constructor(private configService: ConfigService) { }
 
   getClient(): SupabaseClient {
     if (!this.supabase) {
-      const supabaseUrl = this.configService.get<string>('VITE_SUPABASE_URL') || this.configService.get<string>('SUPABASE_URL');
+      const supabaseUrl = this.configService.get<string>('SUPABASE_URL') || 
+                        this.configService.get<string>('VITE_SUPABASE_URL');
 
-      const supabaseKey = this.configService.get<string>('SUPABASE_SERVICE_ROLE_KEY') ||
-        this.configService.get<string>('VITE_SUPABASE_ANON_KEY') ||
-        this.configService.get<string>('SUPABASE_KEY');
+      // Use service role key for server-side operations
+      const supabaseKey = this.configService.get<string>('SUPABASE_SERVICE_ROLE_KEY');
 
       if (!supabaseUrl || !supabaseKey) {
-        throw new Error('Supabase configuration missing!');
+        throw new Error('Supabase configuration missing! Required: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY');
       }
 
       this.supabase = createClient(supabaseUrl, supabaseKey);
@@ -25,18 +25,21 @@ export class SupabaseService {
     return this.supabase;
   }
   getClientWithToken(token: string): SupabaseClient {
-    const supabaseUrl = this.configService.get<string>('VITE_SUPABASE_URL') || this.configService.get<string>('SUPABASE_URL');
-    const supabaseKey = this.configService.get<string>('VITE_SUPABASE_ANON_KEY') || this.configService.get<string>('SUPABASE_KEY');
+    const supabaseUrl = this.configService.get<string>('SUPABASE_URL') || 
+                        this.configService.get<string>('VITE_SUPABASE_URL');
+    const supabaseKey = this.configService.get<string>('VITE_SUPABASE_ANON_KEY') || 
+                        this.configService.get<string>('SUPABASE_ANON_KEY');
 
     if (!supabaseUrl || !supabaseKey) {
-      throw new Error('Supabase configuration missing!');
+      throw new Error('Supabase configuration missing! Required: SUPABASE_URL, VITE_SUPABASE_ANON_KEY');
     }
 
-    // Extract Bearer token if needed, or pass as is if already formatted
-    // nestDataProvider sends "Bearer <token>", so we pass it directly to Authorization header
+    // Ensure token is properly formatted for Authorization header
+    const formattedToken = token.startsWith('Bearer ') ? token : `Bearer ${token}`;
+    
     return createClient(supabaseUrl, supabaseKey, {
       global: {
-        headers: { Authorization: token },
+        headers: { Authorization: formattedToken },
       },
     });
   }

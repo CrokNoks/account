@@ -78,21 +78,20 @@ export class AiBudgetService {
       periods.sort((a, b) => new Date(a.start_date).getTime() - new Date(b.start_date).getTime());
 
       // Fetch expenses for these periods
-      // Since 'period_id' is unreliable, use date ranges
-      const expensesPromises = periods.map(async (period, index) => {
-        const { data: periodExpenses } = await supabase
-          .from('expenses')
-          .select('category_id, amount')
-          .gte('date', period.start_date)
-          .lte('date', period.end_date)
-          .eq('account_id', accountId)
-          .not('category_id', 'is', null);
+      // Optimized: Single query instead of N+1 queries
+      const periodIds = periods.map(p => p.id);
+      const { data: allExpenses } = await supabase
+        .from('expenses')
+        .select('category_id, amount, date, period_id')
+        .in('period_id', periodIds)
+        .eq('account_id', accountId)
+        .not('category_id', 'is', null);
 
-        return (periodExpenses || []).map(e => ({ ...e, pIndex: index }));
+      // Map expenses to period index for processing
+      const flatExpenses = (allExpenses || []).map(expense => {
+        const periodIndex = periods.findIndex(p => p.id === expense.period_id);
+        return { ...expense, pIndex: periodIndex >= 0 ? periodIndex : 0 };
       });
-
-      const results = await Promise.all(expensesPromises);
-      const flatExpenses = results.flat();
 
       // Aggregate by Category & Period Index
       const history = new Map<string, Map<number, number>>();

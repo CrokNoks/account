@@ -4,8 +4,10 @@ import { BudgetTemplatesController } from './budget-templates.controller';
 import { BudgetsService } from './budgets.service';
 import { BudgetsController } from './budgets.controller';
 import { AiBudgetService } from './ai-budget.service';
+import { SupabaseModule } from '../supabase/supabase.module';
 
 @Module({
+  imports: [SupabaseModule],
   providers: [BudgetTemplatesService, BudgetsService, AiBudgetService],
   controllers: [BudgetTemplatesController, BudgetsController],
   exports: [AiBudgetService, BudgetsService], // Export AI service for Periods
