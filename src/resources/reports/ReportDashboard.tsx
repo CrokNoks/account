@@ -288,7 +288,10 @@ export const ReportDashboard = () => {
             <Typography variant="h6" gutterBottom>
               {translate('app.menu.expenses')}
             </Typography>
-            <ExpenseList embed filter={{ date_gte: reportData.period.start_date, date_lte: reportData.period.end_date }} />
+            <ExpenseList 
+              filter={{ date_gte: reportData.period?.start_date, date_lte: reportData.period?.end_date }}
+              perPage={5}
+            />
           </Grid>
         </Grid>
       ) : (
