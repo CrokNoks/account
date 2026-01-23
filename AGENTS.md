@@ -75,6 +75,10 @@ Comprehensive performance optimization guide for React and Next.js applications,
 8. [Advanced Patterns](#8-advanced-patterns) — **LOW**
    - 8.1 [Store Event Handlers in Refs](#81-store-event-handlers-in-refs)
    - 8.2 [useLatest for Stable Callback Refs](#82-uselatest-for-stable-callback-refs)
+9. [Firebase Functions + NestJS](#9-firebase-functions--nestjs) — **ARCHITECTURE**
+   - 9.1 [NestJS General Principles](#91-nestjs-general-principles)
+   - 9.2 [NestJS Architecture](#92-nestjs-architecture)
+   - 9.3 [Firebase Functions Integration](#93-firebase-functions-integration)
 
 ---
 
@@ -2399,12 +2403,468 @@ function SearchInput({ onSearch }: { onSearch: (q: string) => void }) {
 
 ---
 
+## 9. Firebase Functions + NestJS
+
+**Impact: ARCHITECTURE**
+
+Building scalable server-side applications with Firebase Functions and NestJS requires following clean code principles and a well-organized modular architecture.
+
+### 9.1 NestJS General Principles
+
+**Code Quality & Documentation**
+
+Always declare types for variables and functions. Use JSDoc for public classes and methods:
+
+```typescript
+/**
+ * Manages user accounts and profile information
+ * @class UserService
+ */
+@Injectable()
+export class UserService {
+  /**
+   * Creates a new user account
+   * @param createUserDto - User creation data
+   * @returns Created user
+   * @throws BadRequestException if email already exists
+   */
+  async createUser(createUserDto: CreateUserDto): Promise<UserType> {
+    const existingUser = await this.findByEmail(createUserDto.email)
+    
+    if (existingUser) {
+      throw new BadRequestException('Email already in use')
+    }
+    
+    return this.userRepository.save(createUserDto)
+  }
+}
+```
+
+**Nomenclature Standards**
+
+- Classes: `PascalCase` (`UserService`, `CreateUserDto`)
+- Functions/methods: `camelCase` (`createUser`, `findByEmail`)
+- Files/directories: `kebab-case` (`user-service.ts`, `create-user.dto.ts`)
+- Constants: `UPPERCASE` (`MAX_RETRIES`, `DEFAULT_TIMEOUT`)
+- Booleans: `isX`, `hasX`, `canX` (`isActive`, `hasPermission`, `canDelete`)
+- No abbreviations except standard ones: `API`, `URL`, `DTO`, `req`, `res`
+
+**Functions**
+
+Write small functions with a single purpose (< 20 instructions). Use early returns to avoid nesting:
+
+**Incorrect: deeply nested**
+
+```typescript
+function processPayment(order: Order, user: User): PaymentResult {
+  if (order) {
+    if (order.total > 0) {
+      if (user.hasPaymentMethod()) {
+        if (user.balance >= order.total) {
+          return chargeUser(user, order.total)
+        } else {
+          throw new Error('Insufficient balance')
+        }
+      } else {
+        throw new Error('No payment method')
+      }
+    } else {
+      throw new Error('Invalid order total')
+    }
+  } else {
+    throw new Error('Order required')
+  }
+}
+```
+
+**Correct: early returns**
+
+```typescript
+function processPayment(order: Order, user: User): PaymentResult {
+  if (!order) {
+    throw new BadRequestException('Order required')
+  }
+  
+  if (order.total <= 0) {
+    throw new BadRequestException('Invalid order total')
+  }
+  
+  if (!user.hasPaymentMethod()) {
+    throw new BadRequestException('No payment method')
+  }
+  
+  if (user.balance < order.total) {
+    throw new BadRequestException('Insufficient balance')
+  }
+  
+  return chargeUser(user, order.total)
+}
+```
+
+**Classes**
+
+Follow SOLID principles. Keep classes small (< 200 instructions, < 10 public methods):
+
+**Incorrect: God class**
+
+```typescript
+@Injectable()
+export class AdminService {
+  constructor(
+    private userRepository: Repository<User>,
+    private productRepository: Repository<Product>,
+    private orderRepository: Repository<Order>,
+    private emailService: EmailService,
+    private smsService: SmsService,
+    private analyticsService: AnalyticsService,
+    private storageService: StorageService
+  ) {}
+  
+  // 50+ methods doing everything...
+}
+```
+
+**Correct: single responsibility**
+
+```typescript
+@Injectable()
+export class UserService {
+  constructor(private userRepository: Repository<User>) {}
+  
+  async findById(id: string): Promise<User | null> {
+    return this.userRepository.findOne({ where: { id } })
+  }
+  
+  async create(createUserDto: CreateUserDto): Promise<User> {
+    return this.userRepository.save(createUserDto)
+  }
+}
+
+@Injectable()
+export class OrderService {
+  constructor(
+    private orderRepository: Repository<Order>,
+    private userService: UserService
+  ) {}
+  
+  async createOrder(createOrderDto: CreateOrderDto): Promise<Order> {
+    const user = await this.userService.findById(createOrderDto.userId)
+    
+    if (!user) {
+      throw new NotFoundException('User not found')
+    }
+    
+    return this.orderRepository.save(createOrderDto)
+  }
+}
+```
+
+Reference: [nestjs-typescript-general.md](rules/nestjs-typescript-general.md)
+
+### 9.2 NestJS Architecture
+
+**Modular Structure**
+
+Organize code by domain features, not technical layers:
+
+```
+functions/src/
+├── app.module.ts                 # Root module
+├── app.service.ts                # Root service
+├── app.controller.ts             # Root controller (health check)
+├── core/                         # Global services & utilities
+│   ├── core.module.ts
+│   ├── filters/
+│   │   └── http-exception.filter.ts
+│   ├── interceptors/
+│   │   └── logging.interceptor.ts
+│   └── guards/
+│       └── firebase-auth.guard.ts
+├── shared/                       # Shared across modules
+│   ├── shared.module.ts
+│   └── services/
+│       └── logger.service.ts
+├── users/                        # Feature module: Users
+│   ├── users.module.ts
+│   ├── users.controller.ts
+│   ├── users.service.ts
+│   ├── entities/
+│   │   └── user.entity.ts
+│   ├── models/
+│   │   ├── create-user.dto.ts
+│   │   ├── update-user.dto.ts
+│   │   └── user.type.ts
+│   └── utils/
+│       └── user-validator.ts
+└── index.ts                      # Firebase Functions exports
+```
+
+**DTOs and Validation**
+
+Use `class-validator` for input validation:
+
+```typescript
+import { IsEmail, IsStrongPassword, IsNotEmpty } from 'class-validator'
+
+export class CreateUserDto {
+  @IsNotEmpty()
+  @IsEmail()
+  email: string
+
+  @IsNotEmpty()
+  @IsStrongPassword({
+    minLength: 8,
+    minNumbers: 1,
+    minSymbols: 1,
+    minUppercase: 1,
+    minLowercase: 1
+  })
+  password: string
+
+  @IsNotEmpty()
+  name: string
+}
+```
+
+**Error Handling**
+
+Use global exception filters to normalize error responses:
+
+```typescript
+import { ExceptionFilter, Catch, ArgumentsHost, HttpException, HttpStatus } from '@nestjs/common'
+
+@Catch()
+export class HttpExceptionFilter implements ExceptionFilter {
+  catch(exception: unknown, host: ArgumentsHost) {
+    const ctx = host.switchToHttp()
+    const response = ctx.getResponse()
+
+    let status = HttpStatus.INTERNAL_SERVER_ERROR
+    let message = 'Internal server error'
+
+    if (exception instanceof HttpException) {
+      status = exception.getStatus()
+      const response = exception.getResponse()
+      message = typeof response === 'string' ? response : (response as any).message
+    }
+
+    response.status(status).json({
+      statusCode: status,
+      message,
+      timestamp: new Date().toISOString()
+    })
+  }
+}
+```
+
+Register in app module:
+
+```typescript
+import { Module } from '@nestjs/common'
+import { APP_FILTER } from '@nestjs/core'
+import { HttpExceptionFilter } from './core/filters/http-exception.filter'
+
+@Module({
+  providers: [
+    {
+      provide: APP_FILTER,
+      useClass: HttpExceptionFilter
+    }
+  ]
+})
+export class AppModule {}
+```
+
+**Testing**
+
+Test each service and controller with the Arrange-Act-Assert pattern:
+
+```typescript
+describe('UserService', () => {
+  let service: UserService
+  let repository: Repository<User>
+
+  beforeEach(async () => {
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        UserService,
+        {
+          provide: getRepositoryToken(User),
+          useClass: Repository
+        }
+      ]
+    }).compile()
+
+    service = module.get<UserService>(UserService)
+    repository = module.get<Repository<User>>(getRepositoryToken(User))
+  })
+
+  describe('createUser', () => {
+    it('should create and return a user', async () => {
+      // Arrange
+      const inputUserDto: CreateUserDto = {
+        email: 'test@example.com',
+        password: 'SecurePass123!',
+        name: 'Test User'
+      }
+      const expectedUser = { id: '1', ...inputUserDto, createdAt: new Date() }
+
+      const mockSave = jest.spyOn(repository, 'save').mockResolvedValue(expectedUser)
+
+      // Act
+      const actualUser = await service.createUser(inputUserDto)
+
+      // Assert
+      expect(mockSave).toHaveBeenCalledWith(inputUserDto)
+      expect(actualUser).toEqual(expectedUser)
+    })
+  })
+})
+```
+
+Reference: [nestjs-architecture.md](rules/nestjs-architecture.md)
+
+### 9.3 Firebase Functions Integration
+
+**Exporting HTTP Functions**
+
+Firebase Functions need efficient initialization to minimize cold start times:
+
+```typescript
+// functions/src/index.ts
+import * as functions from 'firebase-functions'
+import { NestFactory } from '@nestjs/core'
+import { AppModule } from './app.module'
+
+let cachedApp: any
+
+async function bootstrap() {
+  if (!cachedApp) {
+    cachedApp = await NestFactory.create(AppModule)
+    await cachedApp.init()
+  }
+  return cachedApp
+}
+
+export const api = functions.https.onRequest(async (req, res) => {
+  const app = await bootstrap()
+  const handler = app.getHttpAdapter().getInstance()
+  handler(req, res)
+})
+```
+
+**Firestore Triggers**
+
+Handle Firestore document changes with services:
+
+```typescript
+export const onCreateUser = functions.firestore
+  .document('users/{userId}')
+  .onCreate(async (snap, context) => {
+    const app = await bootstrap()
+    const userService = app.get(UserService)
+    await userService.handleNewUser(snap.data(), context.params.userId)
+  })
+```
+
+**Authentication Guard**
+
+Verify Firebase tokens in API handlers:
+
+```typescript
+import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common'
+import * as admin from 'firebase-admin'
+
+@Injectable()
+export class FirebaseAuthGuard implements CanActivate {
+  async canActivate(context: ExecutionContext): Promise<boolean> {
+    const request = context.switchToHttp().getRequest()
+    const token = this.extractToken(request)
+
+    if (!token) {
+      return false
+    }
+
+    try {
+      const decodedToken = await admin.auth().verifyIdToken(token)
+      request.user = decodedToken
+      return true
+    } catch (error) {
+      return false
+    }
+  }
+
+  private extractToken(request: any): string | null {
+    const authHeader = request.headers.authorization
+    return authHeader?.split(' ')[1] || null
+  }
+}
+```
+
+Use on protected routes:
+
+```typescript
+@Controller('users')
+export class UserController {
+  constructor(private userService: UserService) {}
+
+  @UseGuards(FirebaseAuthGuard)
+  @Get('profile')
+  async getProfile(@Request() req: any) {
+    return this.userService.getProfile(req.user.uid)
+  }
+}
+```
+
+**Performance Optimization**
+
+Allocate sufficient memory and configure timeouts:
+
+```typescript
+export const longRunningTask = functions
+  .runWith({
+    timeoutSeconds: 540,  // 9 minutes max
+    memory: '512MB'
+  })
+  .https
+  .onRequest(async (req, res) => {
+    const app = await bootstrap()
+    const handler = app.getHttpAdapter().getInstance()
+    handler(req, res)
+  })
+```
+
+**Environment Configuration**
+
+Use ConfigService for environment variables:
+
+```typescript
+import { ConfigService } from '@nestjs/config'
+
+@Injectable()
+export class AppService {
+  constructor(private configService: ConfigService) {}
+
+  getProjectId(): string {
+    return this.configService.get<string>('GCLOUD_PROJECT') || 'unknown'
+  }
+
+  isDevelopment(): boolean {
+    return this.configService.get<string>('ENVIRONMENT') === 'development'
+  }
+}
+```
+
+Reference: [firebase-functions-nestjs.md](rules/firebase-functions-nestjs.md)
+
+---
+
 ## References
 
 1. [https://react.dev](https://react.dev)
 2. [https://nextjs.org](https://nextjs.org)
 3. [https://swr.vercel.app](https://swr.vercel.app)
-4. [https://github.com/shuding/better-all](https://github.com/shuding/better-all)
+4. [https://github.com/shuding/better-all](https://github.com/shuiding/better-all)
 5. [https://github.com/isaacs/node-lru-cache](https://github.com/isaacs/node-lru-cache)
 6. [https://vercel.com/blog/how-we-optimized-package-imports-in-next-js](https://vercel.com/blog/how-we-optimized-package-imports-in-next-js)
 7. [https://vercel.com/blog/how-we-made-the-vercel-dashboard-twice-as-fast](https://vercel.com/blog/how-we-made-the-vercel-dashboard-twice-as-fast)
