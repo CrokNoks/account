@@ -1,35 +1,30 @@
-import {
-  Create,
-  useRedirect,
-} from 'react-admin';
-import { useAccount } from '../../context/AccountContext';
-import { AccountRequired } from '../../components/AccountRequired';
-import { ExpenseForm } from './ExpenseForm';
 
+import { Create, SimpleForm, useTranslate } from 'react-admin'
+import { Transaction } from '../../types/transaction.types'
+import { TransactionFormFields } from './components/TransactionFormFields'
+import { useAccount } from '../../context/AccountContext'
+
+/**
+ * Expense Create Component
+ * Create new transaction
+ */
 export const ExpenseCreate = () => {
-  const { selectedAccountId } = useAccount();
-  const redirect = useRedirect();
-
-  const transform = (data: any) => ({
-    ...data,
-    account_id: selectedAccountId,
-    amount: Number(data.amount.toString().replace(',', '.'))
-  });
-
-  if (!selectedAccountId) {
-    return <div><AccountRequired message="app.components.account_required.message" /></div>;
-  }
+  const translate = useTranslate()
+  const { selectedAccountId } = useAccount()
 
   return (
-    <Create
-      transform={transform}
-      mutationOptions={{
-        onSuccess: () => {
-          redirect('/reports');
-        },
-      }}
+    <Create<Transaction>
+      title={translate('resources.expenses.actions.create')}
+      transform={data => ({
+        ...data,
+        account_id: selectedAccountId,
+        // Ensure amount is always positive, type determines semantics
+        amount: Math.abs(Number(data.amount)),
+      })}
     >
-      <ExpenseForm selectedAccountId={selectedAccountId} />
+      <SimpleForm>
+        <TransactionFormFields isEdit={false} />
+      </SimpleForm>
     </Create>
-  );
-};
+  )
+}

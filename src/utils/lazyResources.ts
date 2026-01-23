@@ -1,4 +1,4 @@
-import { lazy, ComponentType } from 'react';
+import { lazy } from 'react';
 
 // Create a simple wrapper for lazy loading React Admin components
 const lazyLoadRA = (importFunc: () => Promise<any>) => {

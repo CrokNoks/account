@@ -16,9 +16,9 @@ interface ReportSummaryCardsProps {
       spent: number;
       type: string;
     }[];
-    period: {
-      is_active: boolean;
-    };
+    period?: {
+      is_active?: boolean;
+    } | null;
   };
 }
 
@@ -31,7 +31,7 @@ export const ReportSummaryCards = ({ reportData }: ReportSummaryCardsProps) => {
   // Logical Sizing:
   // Active: 5 cards. Grid xs=12 md=4 (3 on first row, 2 on second).
   // Inactive: 4 cards (Projected hidden). Grid xs=12 md=3 (4 on first row).
-  const gridSize = reportData.period.is_active ? 3 : 4;
+  const gridSize = reportData.period?.is_active ? 3 : 4;
 
   // Calculate projected savings
   const projectedSavings = reportData.categoryBreakdown
@@ -84,7 +84,7 @@ export const ReportSummaryCards = ({ reportData }: ReportSummaryCardsProps) => {
                 </Typography>
               </>
             </Tooltip>
-            {(reportData.period.is_active && reportData.futureBalance !== reportData.bankBalance) && (
+            {(reportData.period?.is_active && reportData.futureBalance !== reportData.bankBalance) && (
               <Box mt={1}>
                 <Typography variant="caption" color="textSecondary" display="block">
                   {translate('app.dashboard.cards.operations_balance')}
@@ -98,7 +98,7 @@ export const ReportSummaryCards = ({ reportData }: ReportSummaryCardsProps) => {
         </Card>
       </Grid>
 
-      {reportData.period.is_active && (<>
+      {reportData.period?.is_active && (<>
         <Grid size={{ xs: 12, md: gridSize }}>
           <Tooltip title={translate('app.dashboard.tooltips.projected_balance')}>
             <Card sx={{ height: '100%', bgcolor: (reportData.projectedBalance) >= 0 ? 'success.light' : 'error.light', color: (reportData.projectedBalance) >= 0 ? 'success.contrastText' : 'error.contrastText' }}>

@@ -30,12 +30,29 @@ export const usePeriodReport = (periodId: string | null) => {
   const notify = useNotify();
 
   const fetchReport = useCallback(async () => {
-    if (!periodId) return;
-
     setLoading(true);
     try {
       const { data: sessionData } = await supabaseClient.auth.getSession();
       const token = sessionData.session?.access_token;
+
+      if (!periodId) {
+        // Return empty data structure when no period is selected
+        setData({
+          period: null,
+          initialBalance: 0,
+          totalIncome: 0,
+          totalExpense: 0,
+          netResult: 0,
+          categoryBreakdown: [],
+          bankBalance: 0,
+          futureBalance: 0,
+          projectedBalance: 0,
+          projectedIncome: 0,
+          projectedExpense: 0
+        });
+        setLoading(false);
+        return;
+      }
 
       const response = await fetch(`${apiUrl}/periods/${periodId}/report`, {
         headers: {

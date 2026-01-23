@@ -2,46 +2,75 @@ import {
   SimpleForm,
   TextInput,
   DateInput,
-  BooleanInput,
   required,
-  SelectInput,
-} from 'react-admin';
-import { SmartCategoryInput } from './components/SmartCategoryInput';
+} from 'react-admin'
+import { SmartCategoryInput } from './components/SmartCategoryInput'
+import { TransactionTypeSelect } from './components/TransactionTypeSelect'
+import { ReconciliationStatusSelect } from './components/ReconciliationStatusSelect'
+import { PaymentMethodSelect } from './components/PaymentMethodSelect'
 
+/**
+ * Expense/Transaction Form Component
+ * Handles creation and editing of transactions
+ * Uses new transaction types and reconciliation workflow
+ */
 export const ExpenseForm = (props: any) => {
-  const { selectedAccountId, toolbar, ...rest } = props;
+  const { selectedAccountId, toolbar, ...rest } = props
+
+  const validateAmount = (value: any) => {
+    if (!value) return 'required'
+    const amount = parseFloat(String(value).replace(',', '.'))
+    if (isNaN(amount)) return 'Nombre invalide'
+    if (amount <= 0) return 'Le montant doit être positif'
+    return undefined
+  }
 
   return (
     <SimpleForm toolbar={toolbar} {...rest}>
-      <TextInput source="description" label="resources.expenses.fields.description" validate={[required()]} fullWidth />
+      {/* Transaction Type Selection */}
+      <TransactionTypeSelect source="type" validate={[required()]} fullWidth />
+
+      {/* Description (required) */}
+      <TextInput
+        source="description"
+        label="resources.expenses.fields.description"
+        validate={[required()]}
+        fullWidth
+      />
+
+      {/* Amount (always positive, type determines sign) */}
       <TextInput
         source="amount"
         label="resources.expenses.fields.amount"
-        validate={[required(), (value) => (value && !/^-?\d*[.,]?\d*$/.test(value) ? 'Nombre invalide' : undefined)]}
+        validate={[validateAmount]}
         inputProps={{ inputMode: 'decimal' }}
         fullWidth
       />
-      <DateInput source="date" label="resources.expenses.fields.date" validate={[required()]} fullWidth />
 
-      <SmartCategoryInput source="category_id" selectedAccountId={selectedAccountId} />
-
-      <TextInput source="notes" label="resources.expenses.fields.note" multiline fullWidth />
-
-      <SelectInput
-        source="payment_method"
-        label="resources.expenses.fields.payment_method"
-        choices={[
-          { id: 'credit_card', name: 'resources.expenses.fields.payment_methods.credit_card' },
-          { id: 'direct_debit', name: 'resources.expenses.fields.payment_methods.direct_debit' },
-          { id: 'transfer', name: 'resources.expenses.fields.payment_methods.transfer' },
-          { id: 'check', name: 'resources.expenses.fields.payment_methods.check' },
-          { id: 'cash', name: 'resources.expenses.fields.payment_methods.cash' },
-          { id: 'other', name: 'resources.expenses.fields.payment_methods.other' },
-        ]}
+      {/* Date */}
+      <DateInput
+        source="date"
+        label="resources.expenses.fields.date"
+        validate={[required()]}
         fullWidth
       />
 
-      <BooleanInput source="reconciled" label="resources.expenses.fields.reconciled" />
+      {/* Category */}
+      <SmartCategoryInput source="category_id" selectedAccountId={selectedAccountId} />
+
+      {/* Notes (optional) */}
+      <TextInput
+        source="notes"
+        label="resources.expenses.fields.note"
+        multiline
+        fullWidth
+      />
+
+      {/* Payment Method (dynamic from DB) */}
+      <PaymentMethodSelect accountId={selectedAccountId} fullWidth />
+
+      {/* Reconciliation Status (workflow aware) */}
+      <ReconciliationStatusSelect source="reconciliation_status" fullWidth />
     </SimpleForm>
-  );
-};
+  )
+}

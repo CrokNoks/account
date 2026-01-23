@@ -95,6 +95,54 @@ export const fr = {
     app_users: {
       name: 'Utilisateur |||| Utilisateurs'
     },
+    budgets: {
+      name: 'Budget |||| Budgets',
+      dashboard: 'Tableau de Bord Budgétaire',
+      fields: {
+        budgeted: 'Budget',
+        spent: 'Dépensé',
+        remaining: 'Restant',
+        percentage: 'Pourcentage',
+        status: 'Statut',
+        alerts: 'Alertes',
+        total_budget: 'Budget Total',
+        total_spent: 'Total Dépensé',
+        total_remaining: 'Total Restant',
+        over_budget: 'Dépassement',
+        warning_threshold: 'Seuil d\'avertissement',
+        enable_over_budget_alerts: 'Alertes de dépassement',
+        enable_warning_alerts: 'Avertissements'
+      },
+      status: {
+        success: 'Dans le budget',
+        warning: 'Attention',
+        error: 'Dépassement',
+        info: 'Information'
+      },
+      alerts: {
+        over_budget: 'Dépassement de budget',
+        warning: 'Seuil d\'avertissement atteint',
+        good_performance: 'Objectif bien parti',
+        no_alerts: 'Tous les budgets sont dans les limites',
+        critical_count: '%{count} critique|||%{count} critiques',
+        warning_count: '%{count} avertissement|||%{count} avertissements',
+        info_count: '%{count} info|||%{count} infos'
+      },
+      summary: {
+        categories_with_budget: 'catégories avec budget',
+        of_budget_used: '% du budget utilisé',
+        available: 'disponible',
+        over_budget_count: 'dépassements',
+        warning_count: 'avertissements'
+      },
+      messages: {
+        no_period: 'Aucune période active',
+        create_period: 'Créez une nouvelle période pour commencer le suivi budgétaire.',
+        no_budgets: 'Aucun budget défini',
+        create_budgets: 'Commencez par définir des budgets pour vos catégories afin de suivre vos dépenses.',
+        select_account: 'Veuillez sélectionner un compte pour voir votre tableau de bord budgétaire.'
+      }
+    },
   },
   app: {
     menu: {

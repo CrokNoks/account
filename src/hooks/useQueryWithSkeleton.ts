@@ -4,9 +4,6 @@ import { supabaseClient } from '../supabaseClient';
 interface UseQueryWithSkeletonProps<T> {
   queryKey: any[];
   queryFn: () => Promise<T>;
-  skeletonType: 'expense' | 'expenses' | 'category' | 'categories' | 'report' | 'account' | 'accounts' | 'form' | 'table';
-  skeletonCount?: number;
-  skeletonColumns?: number;
   enabled?: boolean;
   staleTime?: number;
   gcTime?: number;
@@ -16,9 +13,6 @@ interface UseQueryWithSkeletonProps<T> {
 export const useQueryWithSkeleton = <T>({
   queryKey,
   queryFn,
-  skeletonType,
-  skeletonCount,
-  skeletonColumns,
   enabled = true,
   staleTime,
   gcTime,
@@ -41,46 +35,30 @@ export const useQueryWithSkeleton = <T>({
 
 // Specific hooks for common use cases
 export const useExpensesWithSkeleton = (
-  accountId: string | null,
-  skeletonCount = 5,
-  startDate?: string,
-  endDate?: string
+  accountId: string | null
 ) => {
   return useQueryWithSkeleton({
-    queryKey: accountId ? 
-    [`expenses`, accountId, startDate, endDate] :
-    ['expenses'], // Fallback query key
+    queryKey: accountId ? ['expenses', accountId] : ['expenses'],
     queryFn: async () => {
       if (!accountId) return [];
       
-      let query = supabaseClient
+      const { data, error } = await supabaseClient
         .from('expenses')
         .select('*')
-        .eq('account_id', accountId);
-      
-      if (startDate) {
-        query = query.gte('date', startDate);
-      }
-      
-      if (endDate) {
-        query = query.lte('date', endDate);
-      }
-      
-      const { data, error } = await query.order('date', { ascending: false });
+        .eq('account_id', accountId)
+        .order('date', { ascending: false });
       
       if (error) throw error;
       return data;
     },
-    skeletonType: 'expenses',
-    skeletonCount,
+
     enabled: !!accountId,
     staleTime: 1000 * 60 * 2 // 2 minutes
   });
 };
 
 export const useCategoriesWithSkeleton = (
-  accountId: string | null,
-  skeletonCount = 5
+  accountId: string | null
 ) => {
   return useQueryWithSkeleton({
     queryKey: accountId ? ['categories', accountId] : ['categories'],
@@ -96,14 +74,13 @@ export const useCategoriesWithSkeleton = (
       if (error) throw error;
       return data;
     },
-    skeletonType: 'categories',
-    skeletonCount,
+
     enabled: !!accountId,
     staleTime: 1000 * 60 * 5 // 5 minutes
   });
 };
 
-export const useAccountsWithSkeleton = (skeletonCount = 3) => {
+export const useAccountsWithSkeleton = () => {
   return useQueryWithSkeleton({
     queryKey: ['accounts'],
     queryFn: async () => {
@@ -115,8 +92,7 @@ export const useAccountsWithSkeleton = (skeletonCount = 3) => {
       if (error) throw error;
       return data;
     },
-    skeletonType: 'accounts',
-    skeletonCount,
+
     enabled: true,
     staleTime: 1000 * 60 * 5 // 5 minutes
   });

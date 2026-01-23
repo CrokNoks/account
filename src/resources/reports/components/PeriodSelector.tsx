@@ -75,7 +75,7 @@ export const PeriodSelector = ({ selectedPeriodId, onPeriodChange }: PeriodSelec
       >
         {periods.map((period: any) => (
           <MenuItem key={period.id} value={period.id}>
-            {`${new Date(period.start_date).toLocaleDateString()} - ${period.end_date ? new Date(period.end_date).toLocaleDateString() : 'En cours'}`}
+            {`${period.start_date ? new Date(period.start_date).toLocaleDateString() : 'N/A'} - ${period.end_date ? new Date(period.end_date).toLocaleDateString() : 'En cours'}`}
           </MenuItem>
         ))}
       </TextField>

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Create, SimpleForm, DateInput, ArrayInput, SimpleFormIterator, ReferenceInput, SelectInput, NumberInput, useNotify, Button, useDataProvider, Toolbar, SaveButton } from 'react-admin';
+import { Create, SimpleForm, DateInput, ArrayInput, SimpleFormIterator, ReferenceInput, SelectInput, NumberInput, useNotify, Button, useDataProvider, Toolbar, SaveButton, useGetList } from 'react-admin';
 import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh';
 import { Box, Typography, CircularProgress, TextField } from '@mui/material';
 import { useAccount } from '../../context/AccountContext';
@@ -28,6 +28,13 @@ export const PeriodCreate = () => {
   const dataProvider = useDataProvider();
   const notify = useNotify();
 
+  // Get categories for budget pre-filling
+  const { data: categories } = useGetList('categories', {
+    filter: { account_id: selectedAccountId },
+    pagination: { page: 1, perPage: 100 },
+    sort: { field: 'name', order: 'ASC' }
+  });
+
   // State
   const [hasHistory, setHasHistory] = useState<boolean | null>(null);
   const [initialDates, setInitialDates] = useState<{ start: string; end: string }>({ start: '', end: '' });
@@ -35,6 +42,16 @@ export const PeriodCreate = () => {
   const [loading, setLoading] = useState(false);
 
   const apiUrl = import.meta.env.VITE_NEST_API_URL || 'http://127.0.0.1:5001/account/us-central1/api';
+
+  // Generate default budgets from categories
+  const generateDefaultBudgets = () => {
+    if (!categories || categories.length === 0) return [];
+    
+    return categories.map(category => ({
+      category_id: category.id,
+      amount_allocated: category.budget || 0, // Use existing category budget if available
+    }));
+  };
 
   // Check for history on mount
   useEffect(() => {
@@ -86,7 +103,9 @@ export const PeriodCreate = () => {
         ...data,
         account_id: selectedAccountId,
         start_date: data.startDate, // Map backend camelCase to React Admin snake_case
-        end_date: data.endDate
+        end_date: data.endDate,
+        // Pre-fill budgets with categories if no AI suggestions
+        budgets: data.budgets && data.budgets.length > 0 ? data.budgets : generateDefaultBudgets()
       };
 
       // Override with manual dates if provided (only if no history, otherwise use AI/Backend dates)
@@ -150,10 +169,57 @@ export const PeriodCreate = () => {
     );
   }
 
+  // Custom save function to handle budgets properly
+  const handleSave = async (values: any) => {
+    try {
+      setLoading(true);
+      
+      // Get token from Supabase
+      const { data: sessionData } = await supabaseClient.auth.getSession();
+      const token = sessionData.session?.access_token;
+
+      if (!token) {
+        notify('Erreur d\'authentification', { type: 'error' });
+        return;
+      }
+
+      const response = await fetch(`${apiUrl}/periods`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          account_id: selectedAccountId,
+          start_date: values.start_date,
+          end_date: values.end_date,
+          budgets: values.budgets || generateDefaultBudgets()
+        })
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to create period');
+      }
+
+      const newPeriod = await response.json();
+      notify('Période créée avec succès', { type: 'success' });
+      
+      // Redirect to the new period
+      window.location.href = `/periods/${newPeriod.id}/show`;
+      
+    } catch (error: any) {
+      console.error('Save error:', error);
+      notify(`Erreur: ${error.message}`, { type: 'error' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // 2. Preview/Edit State: React Admin Form
   return (
     <Create title="Nouvelle Période">
-      <SimpleForm defaultValues={previewData} toolbar={<PeriodCreateToolbar onRefresh={fetchPreview} loading={loading} />}>
+      <SimpleForm defaultValues={previewData} onSubmit={handleSave} toolbar={<PeriodCreateToolbar onRefresh={fetchPreview} loading={loading} />}>
         <Typography variant="h6" sx={{ mb: 2 }}>Configuration de la Période</Typography>
 
         <Box display="flex" gap={2}>
@@ -161,16 +227,50 @@ export const PeriodCreate = () => {
           <DateInput source="end_date" label="Date de fin" />
         </Box>
 
-        <Typography variant="subtitle1" sx={{ mt: 2, mb: 1 }}>Suggestions de Budget</Typography>
+        <Box display="flex" justifyContent="space-between" alignItems="center" sx={{ mt: 2, mb: 1 }}>
+          <Typography variant="subtitle1">Budgets par Catégorie</Typography>
+          <Button
+            label="Ajouter toutes les catégories"
+            onClick={() => {
+              if (categories && categories.length > 0) {
+                // Set the budgets in the form state
+                const allBudgets = generateDefaultBudgets();
+                setPreviewData((prev: any) => ({ ...prev, budgets: allBudgets }));
+                notify(`${categories.length} catégories ajoutées au budget`, { type: 'success' });
+              }
+            }}
+            size="small"
+            variant="outlined"
+            disabled={!categories || categories.length === 0}
+          />
+        </Box>
 
         <ArrayInput source="budgets" label="Budgets alloués">
           <SimpleFormIterator inline>
             <ReferenceInput source="category_id" reference="categories" filter={{ account_id: selectedAccountId }}>
               <SelectInput optionText="name" label="Catégorie" />
             </ReferenceInput>
-            <NumberInput source="amount_allocated" label="Retenu" helperText="Montant final" />
+            <NumberInput source="amount_allocated" label="Montant alloué" helperText="Budget pour cette catégorie" />
           </SimpleFormIterator>
         </ArrayInput>
+
+        {categories && categories.length > 0 && (!previewData?.budgets || previewData.budgets.length === 0) && (
+          <Box sx={{ mt: 2, p: 2, bgcolor: 'info.lighter', borderRadius: 1 }}>
+            <Typography variant="body2" color="info.main">
+              💡 Astuce : {categories.length} catégories trouvées. 
+              Cliquez sur "Ajouter toutes les catégories" pour pré-remplir automatiquement les budgets.
+            </Typography>
+          </Box>
+        )}
+
+        {(!categories || categories.length === 0) && (
+          <Box sx={{ mt: 2, p: 2, bgcolor: 'warning.lighter', borderRadius: 1 }}>
+            <Typography variant="body2" color="warning.main">
+              ⚠️ Aucune catégorie trouvée. 
+              Créez d'abord des catégories avant de définir des budgets.
+            </Typography>
+          </Box>
+        )}
 
       </SimpleForm>
     </Create>

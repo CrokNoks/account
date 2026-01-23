@@ -1,15 +1,25 @@
-import {
-  Edit,
-} from 'react-admin';
-import { useAccount } from '../../context/AccountContext';
-import { ExpenseForm } from './ExpenseForm';
 
+import { Edit, useTranslate } from 'react-admin'
+import { Transaction } from '../../types/transaction.types'
+import { ExpenseForm } from './ExpenseForm'
+
+/**
+ * Expense Edit Component
+ * Edit transaction via form
+ */
 export const ExpenseEdit = () => {
-  const { selectedAccountId } = useAccount();
+  const translate = useTranslate()
 
   return (
-    <Edit transform={(data: any) => ({ ...data, amount: Number(data.amount.toString().replace(',', '.')) })}>
-      <ExpenseForm selectedAccountId={selectedAccountId} />
+    <Edit<Transaction>
+      title={translate('ra.action.edit')}
+      transform={data => ({
+        ...data,
+        // Ensure amount is always positive, type determines semantics
+        amount: Math.abs(Number(data.amount)),
+      })}
+    >
+      <ExpenseForm />
     </Edit>
-  );
-};
+  )
+}

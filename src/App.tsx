@@ -15,6 +15,7 @@ import { ReportDashboard, CategoryEvolution } from './resources/reports';
 import { TransferCreate } from './resources/transfers';
 import { BudgetTemplateList, BudgetTemplateCreate, BudgetTemplateEdit } from './resources/budget-templates';
 import { PeriodList, PeriodCreate, PeriodShow } from './resources/periods';
+import { BudgetDashboard } from './resources/budgets';
 
 // app_users est utilisé pour les listes de sélection (partage de comptes)
 
@@ -96,7 +97,11 @@ function App() {
           edit={BudgetTemplateEdit}
           options={{ label: 'Modèles de Budget' }}
         />
-        <Resource name="budgets"         />
+        <Resource
+          name="budgets"
+          list={BudgetDashboard}
+          options={{ label: 'Tableau de Bord Budgétaire' }}
+        />
       </Admin>
     </AccountProvider>
     </QueryProvider>

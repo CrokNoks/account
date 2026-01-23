@@ -102,9 +102,9 @@ export const ReportSelector = ({ selectedReportId, history, onReportChange, chil
           <MenuItem value="" disabled>{translate('app.report_selector.select_report')}</MenuItem>
           <MenuItem value="new">{translate('app.report_selector.current_report')}</MenuItem>
           {history.map((report: any) => (
-            <MenuItem key={report.id} value={report.id}>
-              {new Date(report.start_date).toLocaleDateString(locale)} - {new Date(report.end_date).toLocaleDateString(locale)}
-            </MenuItem>
+              <MenuItem key={report.id} value={report.id}>
+               {report.start_date ? new Date(report.start_date).toLocaleDateString(locale) : 'N/A'} - {report.end_date ? new Date(report.end_date).toLocaleDateString(locale) : 'En cours'}
+             </MenuItem>
           ))}
         </Select>
       </FormControl>

@@ -124,7 +124,13 @@ export const CategoryBudgetTable = ({ data, globalType }: CategoryBudgetTablePro
                 color={color}
                 size="small"
                 variant={variant}
-                sx={{ fontWeight: 'bold' }}
+                sx={{ 
+                  fontWeight: 'bold',
+                  minWidth: '50px',
+                  '& .MuiChip-label': {
+                    px: 1
+                  }
+                }}
               />
             );
           }}

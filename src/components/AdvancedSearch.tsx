@@ -43,7 +43,6 @@ export const AdvancedSearch = <T extends Record<string, any>>({
   placeholder = 'Search...',
   showHistory = true,
   showSettings: showSettingsProp = true,
-  debounceMs = 300,
 }: AdvancedSearchProps<T>) => {
   const [anchorEl, setAnchorEl] = useState<HTMLButtonElement | null>(null);
   const [showSettings, setShowSettings] = useState(false);
