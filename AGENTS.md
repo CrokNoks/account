@@ -4,7 +4,7 @@
 Account v2 Development Team  
 January 2026
 
-> **Note for AI Agents:** This guide contains project-specific development patterns, build commands, and coding standards for Account v2 finance management application. Combine these with React optimization rules from skills directory for comprehensive development guidance.
+> **Note for AI Agents:** This guide contains project-specific development patterns, build commands, and coding standards for Account v2 finance management application.
 
 ---
 
@@ -32,14 +32,12 @@ npm run logs                # View function logs
 ```bash
 npm run test                 # Run all tests
 npm run test:watch          # Watch mode
-npm run test:coverage       # Generate coverage report
+npm run test:unit           # Run unit tests only
 ```
 
 ---
 
-## 📁 Project Structure & Aliases
-
-### Path Aliases
+## 📁 Path Aliases
 ```typescript
 '@'              → src/
 '@components'     → src/components/
@@ -67,7 +65,6 @@ import { Admin, Resource } from 'react-admin';
 // 3. Internal imports (use aliases)
 import { ExpenseList } from '@resources/expenses';
 import { LoadingSkeleton } from '@components';
-import { useIsSmall } from '@hooks';
 import { dataProvider } from '@providers/dataProvider';
 ```
 
@@ -165,7 +162,7 @@ const handleSave = async (data: Expense) => {
 
 ## 🚀 Performance Guidelines
 
-### Bundle Optimization (configured in vite.config.ts)
+### Bundle Optimization (configured)
 - Manual chunks: react-vendor, ra-vendor, mui-vendor, utils-vendor
 - Source maps enabled for debugging
 - Heavy utilities isolated (OCR, TensorFlow)
@@ -199,6 +196,13 @@ const calculateTotalAmount = (expenses: Expense[]): number => {
 const isSmall = useIsSmall();
 const hasExpenses = expenses.length > 0;
 const canEdit = user.permissions.includes('edit');
+```
+
+### Constants
+```typescript
+const API_BASE_URL = 'https://api.example.com';
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+const DEFAULT_CURRENCY = 'EUR';
 ```
 
 ---
@@ -239,8 +243,7 @@ if (import.meta.env.DEV) {
 - **Performance Rules**: `.agents/skills/vercel-react-best-practices/`
 - **Documentation**: `docs/` directory
 - **Backend Patterns**: `docs/architecture/`
-- **AI Skills**: `.agents/skills/` directory
 
 ---
 
-**Remember**: This is a finance application handling sensitive user data. Prioritize security, performance, and user experience in all development decisions.
+**Remember**: This is a finance application handling sensitive user data. Prioritize security, performance, and user experience.
