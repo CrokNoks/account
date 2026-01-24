@@ -105,20 +105,6 @@ export const LoadingSkeleton: React.FC<LoadingSkeletonProps> = ({
 };
 ```
 
-### Custom Hooks
-```typescript
-export const useIsSmall = (): boolean => {
-  return useMediaQuery<Theme>((theme) => theme.breakpoints.down("sm"));
-};
-
-export const useExpenses = (filters?: ExpenseFilter) => {
-  return useQuery({
-    queryKey: ['expenses', filters],
-    queryFn: () => dataProvider.getList('expenses', { filter: filters })
-  });
-};
-```
-
 ---
 
 ## 🏗️ React Admin Patterns
@@ -137,9 +123,6 @@ export const ExpenseCreate = () => (
     <SimpleForm>{/* Form fields */}</SimpleForm>
   </Create>
 );
-
-export { ExpenseEdit } from './ExpenseEdit';
-export { ExpenseShow } from './ExpenseShow';
 ```
 
 ### Data Provider Integration
@@ -194,21 +177,6 @@ import React, { memo } from 'react';
 export const ExpenseChart = memo(({ data }: ExpenseChartProps) => {
   // Heavy chart rendering
 });
-
-const { data: expenses } = useQuery({
-  queryKey: ['expenses'],
-  queryFn: fetchExpenses,
-  staleTime: 5 * 60 * 1000, // 5 minutes
-});
-```
-
-### Skeleton Loading Patterns
-```typescript
-{isLoading ? (
-  <ExpenseListSkeleton count={5} />
-) : (
-  <ExpenseList />
-)}
 ```
 
 ---
@@ -231,13 +199,6 @@ const calculateTotalAmount = (expenses: Expense[]): number => {
 const isSmall = useIsSmall();
 const hasExpenses = expenses.length > 0;
 const canEdit = user.permissions.includes('edit');
-```
-
-### Constants
-```typescript
-const API_BASE_URL = 'https://api.example.com';
-const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
-const DEFAULT_CURRENCY = 'EUR';
 ```
 
 ---
