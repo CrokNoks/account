@@ -6,6 +6,7 @@ Welcome to the comprehensive documentation center for Account v2. This directory
 
 ### 🎯 **Project Status & Roadmap**
 - **[📋 Development Roadmap](./ROADMAP.md)** - Complete development timeline and feature planning
+- **[🤖 AI Skills Guide](./AI_SKILLS.md)** - Automated development assistance and optimization
 - **Current Status**: Major performance optimizations completed ✅
 - **Next Milestone**: Testing suite and budget tracking features
 
@@ -16,6 +17,7 @@ Welcome to the comprehensive documentation center for Account v2. This directory
 
 ### 🏗️ **Development Guidelines**
 - **[📖 React Best Practices](../AGENTS.md)** - Comprehensive optimization rules and patterns
+- **[🤖 AI Skills Integration](../.agents/skills/)** - Automated development assistance and code review
 - **Performance Patterns**: Memoization, lazy loading, bundle optimization
 - **Code Quality**: TypeScript integration and error handling patterns
 
@@ -44,6 +46,29 @@ docs/
 │   ├── nestjs-architecture.md
 │   └── nestjs-typescript-general.md
 └── [future]                       # Additional documentation (testing, API, etc.)
+
+## 🤖 AI Skills & Automation
+
+The project includes comprehensive AI agent skills for automated development assistance:
+
+### Skills Available
+- **[Vercel React Best Practices](../.agents/skills/vercel-react-best-practices/)** - 57 rules for React/Next.js optimization
+- **[Web Design Guidelines](../.agents/skills/web-design-guidelines/)** - UI/UX best practices and design patterns
+
+### Multi-Platform Support
+```
+.agents/skills/         # OpenCode AI platform
+.gemini/skills/         # Google Gemini AI  
+.github/skills/         # GitHub Copilot
+.opencode/skills/       # OpenCode CLI
+```
+
+### Usage in Development
+AI agents can automatically:
+- Apply performance optimization patterns during code reviews
+- Generate optimized React components following best practices
+- Refactor existing code for better performance
+- Ensure consistency with Vercel engineering standards
 ```
 
 ## 🎯 Key Achievements
@@ -64,21 +89,18 @@ docs/
 ## 🛠️ Development Resources
 
 ### Getting Started
-- **[Installation Guide](../README.md#-installation)** - Local development setup
-- **[Technology Stack](../README.md#-technologies)** - Architecture overview
-- **[Environment Configuration](../README.md#-environment-variables)** - Setup instructions
-
-### Implementation Details
-- **[Performance Implementation](./PERFORMANCE_OPTIMIZATIONS.md)** - Technical details and code examples
-- **[React Best Practices](../AGENTS.md)** - Optimization patterns and guidelines
-- **[Bundle Optimization](./PERFORMANCE_OPTIMIZATIONS.md#bundle-size-optimization)** - Vite configuration and strategies
-
-### Future Development
-- **[Development Roadmap](./ROADMAP.md)** - Complete feature planning and timeline
-- **[Testing Strategy](./ROADMAP.md#-testing-infrastructure)** - Planned testing implementation
-- **[Feature Planning](./ROADMAP.md#core-features)** - Upcoming features and priorities
+1. **Performance Overview**: Read [Performance Optimizations](./PERFORMANCE_OPTIMIZATIONS.md) for understanding current optimizations
+2. **Development Planning**: Check [Roadmap](./ROADMAP.md) for upcoming features and timeline
+3. **Local Setup**: Follow [Installation Guide](../README.md#-installation) to start development
+4. **Best Practices**: Review [React Best Practices](../AGENTS.md) for development guidelines
+5. **AI Assistance**: Use [AI Skills](../.agents/skills/) for automated optimization suggestions
 
 ## 🔍 Popular Topics
+
+### AI-Assisted Development
+- **[AI Skills Overview](./AI_SKILLS.md)** - Complete guide to automated development
+- **[Skill Integration](./AI_SKILLS.md#-integration-examples)** - Platform-specific usage
+- **[Performance Rules](./AI_SKILLS.md#-rule-categories--impact)** - 57 optimization patterns
 
 ### Performance Optimization
 - **[Cache Strategy](./PERFORMANCE_OPTIMIZATIONS.md#1-data-caching-strategy)** - React Query implementation
@@ -89,13 +111,6 @@ docs/
 - **[Loading Skeletons](./PERFORMANCE_OPTIMIZATIONS.md#2-loading-skeletons-for-better-ux)** - Better loading states
 - **[Search Implementation](./PERFORMANCE_OPTIMIZATIONS.md#3-implement-search-functionality)** - Advanced search patterns
 - **[Error Handling](./PERFORMANCE_OPTIMIZATIONS.md#6-error-boundaries)** - Comprehensive error management
-
-## 🚀 Quick Start
-
-1. **Performance Overview**: Read [Performance Optimizations](./PERFORMANCE_OPTIMIZATIONS.md) for understanding current optimizations
-2. **Development Planning**: Check [Roadmap](./ROADMAP.md) for upcoming features and timeline
-3. **Local Setup**: Follow [Installation Guide](../README.md#-installation) to start development
-4. **Best Practices**: Review [React Best Practices](../AGENTS.md) for development guidelines
 
 ## 📞 Support & Contributing
 
@@ -113,5 +128,5 @@ docs/
 
 *This documentation hub is continuously updated as the application evolves. For the most current information, check the individual guide update timestamps or the main project [README](../README.md).*
 
-**Last Updated**: 2025-01-20
-**Documentation Version**: 2.0 (Post-Performance-Optimization)
+**Last Updated**: 2026-01-24
+**Documentation Version**: 2.1 (With AI Skills Integration)
