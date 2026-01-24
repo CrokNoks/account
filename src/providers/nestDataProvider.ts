@@ -24,18 +24,43 @@ export const nestDataProvider: DataProvider = {
     const { page, perPage } = params.pagination || { page: 1, perPage: 10 };
     const { field, order } = params.sort || { field: 'id', order: 'ASC' };
 
-    const query = {
+    // Build query with proper filtering for all resources
+    const query: any = {
       sort: JSON.stringify([field, order]),
       range: JSON.stringify([(page - 1) * perPage, page * perPage - 1]),
       filter: JSON.stringify(params.filter),
-      ...params.filter
     };
+
+    // Add resource-specific filters directly to query params
+    if (params.filter.account_id) {
+      query.account_id = params.filter.account_id;
+    }
+    if (params.filter.date_gte) {
+      query.date_gte = params.filter.date_gte;
+    }
+    if (params.filter.date_lte) {
+      query.date_lte = params.filter.date_lte;
+    }
+    if (params.filter.amount_gte) {
+      query.amount_gte = params.filter.amount_gte;
+    }
+    if (params.filter.amount_lte) {
+      query.amount_lte = params.filter.amount_lte;
+    }
+
     const url = `${apiUrl}/${resource}?${stringify(query)}`;
 
-    return httpClient(url).then(({ json }) => ({
-      data: json,
-      total: json.length, // TODO: Implement real pagination in backend
-    }));
+    return httpClient(url).then(({ json, headers }) => {
+      // Try to get total count from headers if available
+      const total = headers.get('content-range') 
+        ? parseInt(headers.get('content-range')!.split('/').pop() || '0', 10)
+        : Array.isArray(json) ? json.length : 0;
+
+      return {
+        data: Array.isArray(json) ? json : [],
+        total,
+      };
+    });
   },
 
   getOne: (resource, params) =>
@@ -92,6 +117,16 @@ export const nestDataProvider: DataProvider = {
   },
 
   create: (resource, params) => {
+    // Handle transfers as a special case
+    if (resource === 'transfers') {
+      return httpClient(`${apiUrl}/transactions/transfers`, {
+        method: 'POST',
+        body: JSON.stringify(params.data),
+      }).then(({ json }) => ({
+        data: json,
+      }));
+    }
+
     const query = {
       accountId: params.data.account_id,
     };

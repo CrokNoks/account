@@ -1,8 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabaseClient } from '../supabaseClient';
 import { useNotify } from 'react-admin';
+import { dataProvider } from '../providers/dataProvider';
 
-// Types
+// Types - Réutiliser les mêmes interfaces pour compatibilité
 export interface Account {
   id: string;
   name: string;
@@ -29,7 +29,7 @@ export interface Expense {
   account_id: string;
 }
 
-// Query keys
+// Query keys - Garder les mêmes pour compatibilité cache
 export const queryKeys = {
   accounts: ['accounts'] as const,
   categories: (accountId: string) => ['categories', accountId] as const,
@@ -43,12 +43,10 @@ export const useAccounts = () => {
   return useQuery({
     queryKey: queryKeys.accounts,
     queryFn: async () => {
-      const { data, error } = await supabaseClient
-        .from('accounts')
-        .select('*')
-        .order('created_at', { ascending: false });
-      
-      if (error) throw error;
+      const { data } = await dataProvider.getList('accounts', {
+        pagination: { page: 1, perPage: 100 },
+        sort: { field: 'created_at', order: 'DESC' }
+      });
       return data as Account[];
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
@@ -63,13 +61,11 @@ export const useCategories = (accountId: string | null) => {
     queryFn: async () => {
       if (!accountId) return [];
       
-      const { data, error } = await supabaseClient
-        .from('categories')
-        .select('*')
-        .eq('account_id', accountId)
-        .order('name', { ascending: true });
-      
-      if (error) throw error;
+      const { data } = await dataProvider.getList('categories', {
+        filter: { account_id: accountId },
+        pagination: { page: 1, perPage: 100 },
+        sort: { field: 'name', order: 'ASC' }
+      });
       return data as Category[];
     },
     enabled: !!accountId,
@@ -88,22 +84,15 @@ export const useExpenses = (
     queryFn: async () => {
       if (!accountId) return [];
       
-      let query = supabaseClient
-        .from('expenses')
-        .select('*')
-        .eq('account_id', accountId);
+      const filter: any = { account_id: accountId };
+      if (startDate) filter.date_gte = startDate;
+      if (endDate) filter.date_lte = endDate;
       
-      if (startDate) {
-        query = query.gte('date', startDate);
-      }
-      
-      if (endDate) {
-        query = query.lte('date', endDate);
-      }
-      
-      const { data, error } = await query.order('date', { ascending: false });
-      
-      if (error) throw error;
+      const { data } = await dataProvider.getList('expenses', {
+        filter,
+        pagination: { page: 1, perPage: 500 },
+        sort: { field: 'date', order: 'DESC' }
+      });
       return data as Expense[];
     },
     enabled: !!accountId,
@@ -118,13 +107,11 @@ export const useReports = (accountId: string | null) => {
     queryFn: async () => {
       if (!accountId) return [];
       
-      const { data, error } = await supabaseClient
-        .from('reports')
-        .select('*')
-        .eq('account_id', accountId)
-        .order('end_date', { ascending: false });
-      
-      if (error) throw error;
+      const { data } = await dataProvider.getList('periods', {
+        filter: { account_id: accountId },
+        pagination: { page: 1, perPage: 100 },
+        sort: { field: 'end_date', order: 'DESC' }
+      });
       return data;
     },
     enabled: !!accountId,
@@ -145,12 +132,11 @@ export const useUpdateExpense = () => {
       id: string; 
       data: Partial<Expense> 
     }) => {
-      const { error } = await supabaseClient
-        .from('expenses')
-        .update(data)
-        .eq('id', id);
-      
-      if (error) throw error;
+      await dataProvider.update('expenses', {
+        id,
+        data,
+        previousData: {} as Expense
+      });
       return { id, data };
     },
     onSuccess: () => {
@@ -162,7 +148,7 @@ export const useUpdateExpense = () => {
         undoable: false 
       });
     },
-    onError: (error) => {
+    onError: (error: any) => {
       notify(`Error updating expense: ${error.message}`, { 
         type: 'error' 
       });
@@ -176,20 +162,14 @@ export const useCreateExpense = () => {
 
   return useMutation({
     mutationFn: async (data: Omit<Expense, 'id' | 'created_at'>) => {
-      const { data: result, error } = await supabaseClient
-        .from('expenses')
-        .insert(data)
-        .select()
-        .single();
-      
-      if (error) throw error;
-      return result;
+      const result = await dataProvider.create('expenses', { data });
+      return result.data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['expenses'] });
       notify('Expense created successfully', { type: 'success' });
     },
-    onError: (error) => {
+    onError: (error: any) => {
       notify(`Error creating expense: ${error.message}`, { type: 'error' });
     },
   });
@@ -201,19 +181,14 @@ export const useDeleteExpense = () => {
 
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabaseClient
-        .from('expenses')
-        .delete()
-        .eq('id', id);
-      
-      if (error) throw error;
+      await dataProvider.delete('expenses', { id, previousData: {} as Expense });
       return id;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['expenses'] });
       notify('Expense deleted successfully', { type: 'success' });
     },
-    onError: (error) => {
+    onError: (error: any) => {
       notify(`Error deleting expense: ${error.message}`, { type: 'error' });
     },
   });
@@ -232,19 +207,18 @@ export const useOptimisticExpenseUpdate = () => {
       id: string; 
       data: Partial<Expense>;
     }) => {
-      const { error } = await supabaseClient
-        .from('expenses')
-        .update(data)
-        .eq('id', id);
-      
-      if (error) throw error;
+      await dataProvider.update('expenses', {
+        id,
+        data,
+        previousData: {} as Expense
+      });
       return { id, data };
     },
     onMutate: async ({ id, data }) => {
       // Cancel any outgoing refetches
       await queryClient.cancelQueries({ queryKey: ['expenses'] });
       
-      // Snapshot the previous value
+      // Snapshot previous value
       const previousExpenses = queryClient.getQueriesData({ queryKey: ['expenses'] });
       
       // Optimistically update to the new value
@@ -262,7 +236,7 @@ export const useOptimisticExpenseUpdate = () => {
       
       return { previousExpenses };
     },
-    onError: (error, _variables, context) => {
+    onError: (error: any, _variables, context) => {
       // Rollback to previous value
       if (context?.previousExpenses) {
         queryClient.setQueriesData(

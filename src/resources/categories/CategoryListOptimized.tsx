@@ -13,7 +13,7 @@ import { ImportCategoriesButton } from './ImportCategoriesButton';
 import { useIsSmall } from '../../hooks/isSmall';
 import { ImportCreateToolbar } from '../../components/ImportCreateToolbar';
 import { AccountRequired } from '../../components/AccountRequired';
-import { useCategories } from '../../hooks/useSupabaseQuery';
+import { useCategories } from '../../hooks/useApiQuery';
 import { formatCurrency } from '../../utils/formatters';
 import { AutoColorCategoriesButton } from './AutoColorCategoriesButton';
 

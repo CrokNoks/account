@@ -8,10 +8,15 @@ import {
   Param,
   Query,
   UseGuards,
+  UploadedFile,
+  UseInterceptors,
+  BadRequestException,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { TransactionsService } from './transactions.service';
 import { CreateTransactionDto } from './dtos/create-transaction.dto';
 import { UpdateTransactionDto } from './dtos/update-transaction.dto';
+import { CreateTransferDto } from './dto/create-transfer.dto';
 import { FirebaseAuthGuard } from '../core/guards/firebase-auth.guard';
 
 // Enhanced interfaces following TypeScript guidelines
@@ -112,6 +117,40 @@ export class TransactionsController {
   @Get('balance/:accountId')
   async getBalance(@Param('accountId') accountId: string): Promise<any> {
     return this.transactionsService.getBalance(accountId);
+  }
+
+  /**
+   * Creates a transfer between two accounts
+   * Creates dual expense records (debit and credit)
+   * @param createDto - Transfer creation data
+   * @returns Transfer result with both expense records
+   */
+  @Post('transfers')
+  async createTransfer(@Body() createDto: CreateTransferDto): Promise<any> {
+    return this.transactionsService.createTransfer(createDto);
+  }
+
+  /**
+   * Imports expenses from CSV file
+   * @param file - CSV file to import
+   * @param accountId - Account ID for expenses
+   * @returns Import result with statistics
+   */
+  @Post('import-csv')
+  @UseInterceptors(FileInterceptor('file'))
+  async importCsv(
+    @UploadedFile() file: Express.Multer.File,
+    @Query('account_id') accountId: string,
+  ): Promise<any> {
+    if (!file) {
+      throw new BadRequestException('No file uploaded');
+    }
+
+    if (!accountId) {
+      throw new BadRequestException('Account ID is required');
+    }
+
+    return this.transactionsService.importCsv(file.buffer, accountId);
   }
 
   /**

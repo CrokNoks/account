@@ -36,7 +36,7 @@ import { ImportCreateToolbar } from '../../components/ImportCreateToolbar';
 import { AccountRequired } from '../../components/AccountRequired';
 import { CategoryShip } from '../../components/CategoryShip';
 import { CategorizationModal } from './CategorizationModal';
-import { useOptimisticExpenseUpdate } from '../../hooks/useSupabaseQuery';
+import { useOptimisticExpenseUpdate } from '../../hooks/useApiQuery';
 import { formatDate, formatCurrency } from '../../utils/formatters';
 
 // Hoist static choices array to avoid recreation

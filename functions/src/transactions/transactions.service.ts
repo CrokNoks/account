@@ -2,6 +2,8 @@ import { Injectable, NotFoundException, BadRequestException, Logger } from '@nes
 import { SupabaseService } from '../supabase/supabase.service';
 import { CreateTransactionDto } from './dtos/create-transaction.dto';
 import { UpdateTransactionDto } from './dtos/update-transaction.dto';
+import { CreateTransferDto } from './dto/create-transfer.dto';
+import Papa from 'papaparse';
 
 /**
  * Service for managing transactions with enhanced error handling
@@ -336,5 +338,184 @@ export class TransactionsService {
     if (updateData.amount > 1000000) {
       throw new BadRequestException('Amount cannot exceed 1000000 EUR');
     }
+  }
+
+  /**
+   * Creates a transfer between two accounts
+   * Creates dual expense records (debit from source, credit to destination)
+   * @param createDto - Transfer creation data
+   * @returns Transfer result with both expense records
+   */
+  async createTransfer(createDto: CreateTransferDto): Promise<any> {
+    this.logger.debug('Creating transfer', {
+      source_account_id: createDto.source_account_id,
+      destination_account_id: createDto.destination_account_id,
+      amount: createDto.amount,
+      operation: 'createTransfer'
+    });
+
+    try {
+      const baseFields = {
+        description: createDto.description || 'Virement entre comptes',
+        date: createDto.date || new Date().toISOString(),
+        notes: createDto.notes || null,
+        reconciled: false,
+      };
+
+      const absAmount = Math.abs(createDto.amount);
+
+      const transferRows = [
+        // Debit from source account
+        {
+          ...baseFields,
+          account_id: createDto.source_account_id,
+          category_id: createDto.source_category_id,
+          amount: -absAmount,
+        },
+        // Credit to destination account
+        {
+          ...baseFields,
+          account_id: createDto.destination_account_id,
+          category_id: createDto.destination_category_id,
+          amount: absAmount,
+        },
+      ];
+
+      const { data, error } = await this.supabase.getClient()
+        .from('expenses')
+        .insert(transferRows)
+        .select();
+
+      if (error) {
+        this.logger.error('Failed to create transfer', {
+          error: error.message,
+          createDto,
+          operation: 'createTransfer'
+        });
+        throw new BadRequestException(`Transfer creation failed: ${error.message}`);
+      }
+
+      this.logger.log('Transfer created successfully', {
+        source_account_id: createDto.source_account_id,
+        destination_account_id: createDto.destination_account_id,
+        amount: absAmount,
+        created_records: data?.length || 0,
+        operation: 'createTransfer'
+      });
+
+      // Return a logical transfer object for frontend
+      return {
+        id: data?.[0]?.id,
+        source_account_id: createDto.source_account_id,
+        destination_account_id: createDto.destination_account_id,
+        amount: absAmount,
+        description: baseFields.description,
+        date: baseFields.date,
+        created_records: data,
+      };
+
+    } catch (error) {
+      this.logger.error('Unexpected error during transfer creation', {
+        error: error instanceof Error ? error.message : 'Unknown error',
+        createDto,
+        operation: 'createTransfer'
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Imports expenses from CSV file
+   * @param csvBuffer - CSV file buffer
+   * @param accountId - Account ID for expenses
+   * @returns Import result with statistics
+   */
+  async importCsv(csvBuffer: Buffer, accountId: string): Promise<any> {
+    this.logger.debug('Starting CSV import', {
+      accountId,
+      fileSize: csvBuffer.length,
+      operation: 'importCsv'
+    });
+
+    const csvString = csvBuffer.toString('utf-8');
+    const result = Papa.parse(csvString, {
+      header: true,
+      skipEmptyLines: true,
+      transformHeader: (header) => header.trim().toLowerCase().replace(/\s+/g, '_'),
+    });
+
+    const rows = result.data as any[];
+    const importResult = {
+      total_rows: rows.length,
+      imported_count: 0,
+      skipped_count: 0,
+      errors: [] as string[],
+      imported_ids: [] as string[],
+    };
+
+    const expensesToInsert = rows
+      .filter((row, index) => {
+        // Validate required fields
+        if (!row.date || !row.amount || !row.description) {
+          importResult.errors.push(`Row ${index + 1}: Missing required fields (date, amount, description)`);
+          importResult.skipped_count++;
+          return false;
+        }
+        return true;
+      })
+      .map((row) => ({
+        account_id: accountId,
+        date: this.parseDate(row.date),
+        amount: parseFloat(row.amount.toString().replace(',', '.')),
+        description: row.description?.toString().trim(),
+        notes: row.notes?.toString().trim() || null,
+        reconciled: false,
+        category_id: row.category_id || null,
+        payment_method_id: row.payment_method_id || null,
+      }));
+
+    try {
+      if (expensesToInsert.length > 0) {
+        const { data, error } = await this.supabase.getClient()
+          .from('expenses')
+          .insert(expensesToInsert)
+          .select('id');
+
+        if (error) {
+          throw new BadRequestException(`CSV import failed: ${error.message}`);
+        }
+
+        importResult.imported_count = data?.length || 0;
+        importResult.imported_ids = data?.map((item: any) => item.id) || [];
+      }
+    } catch (error) {
+      this.logger.error('CSV import database error', {
+        error: error instanceof Error ? error.message : 'Unknown error',
+        accountId,
+        operation: 'importCsv'
+      });
+      throw error;
+    }
+
+    this.logger.log('CSV import completed', {
+      accountId,
+      ...importResult,
+      operation: 'importCsv'
+    });
+
+    return importResult;
+  }
+
+  /**
+   * Parses date from various formats
+   * @param dateString - Date string to parse
+   * @returns ISO date string
+   */
+  private parseDate(dateString: string): string {
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) {
+      throw new BadRequestException(`Invalid date format: ${dateString}`);
+    }
+    return date.toISOString();
   }
 }

@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { supabaseClient } from '../supabaseClient';
+import { dataProvider } from '../providers/dataProvider';
 
 interface UseQueryWithSkeletonProps<T> {
   queryKey: any[];
@@ -42,13 +42,12 @@ export const useExpensesWithSkeleton = (
     queryFn: async () => {
       if (!accountId) return [];
       
-      const { data, error } = await supabaseClient
-        .from('expenses')
-        .select('*')
-        .eq('account_id', accountId)
-        .order('date', { ascending: false });
+      const { data } = await dataProvider.getList('expenses', {
+        filter: { account_id: accountId },
+        pagination: { page: 1, perPage: 500 },
+        sort: { field: 'date', order: 'DESC' }
+      });
       
-      if (error) throw error;
       return data;
     },
 
@@ -65,13 +64,12 @@ export const useCategoriesWithSkeleton = (
     queryFn: async () => {
       if (!accountId) return [];
       
-      const { data, error } = await supabaseClient
-        .from('categories')
-        .select('*')
-        .eq('account_id', accountId)
-        .order('name', { ascending: true });
+      const { data } = await dataProvider.getList('categories', {
+        filter: { account_id: accountId },
+        pagination: { page: 1, perPage: 100 },
+        sort: { field: 'name', order: 'ASC' }
+      });
       
-      if (error) throw error;
       return data;
     },
 
@@ -84,12 +82,11 @@ export const useAccountsWithSkeleton = () => {
   return useQueryWithSkeleton({
     queryKey: ['accounts'],
     queryFn: async () => {
-      const { data, error } = await supabaseClient
-        .from('accounts')
-        .select('*')
-        .order('created_at', { ascending: false });
+      const { data } = await dataProvider.getList('accounts', {
+        pagination: { page: 1, perPage: 100 },
+        sort: { field: 'created_at', order: 'DESC' }
+      });
       
-      if (error) throw error;
       return data;
     },
 

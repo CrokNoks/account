@@ -10,6 +10,10 @@ import { SupabaseModule } from './supabase/supabase.module';
 import { BudgetsModule } from './budgets/budgets.module';
 import { PeriodsModule } from './periods/periods.module';
 import { TransactionsModule } from './transactions/transactions.module';
+import { AccountsModule } from './accounts/accounts.module';
+import { CategoriesModule } from './categories/categories.module';
+import { PaymentMethodsModule } from './payment-methods/payment-methods.module';
+import { AuthModule } from './auth/auth.module';
 
 /**
  * Root module of the application
@@ -27,6 +31,10 @@ import { TransactionsModule } from './transactions/transactions.module';
     BudgetsModule,
     PeriodsModule,
     TransactionsModule,
+    AccountsModule,
+    CategoriesModule,
+    PaymentMethodsModule,
+    AuthModule,
   ],
   controllers: [AppController],
   providers: [

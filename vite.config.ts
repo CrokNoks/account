@@ -63,8 +63,7 @@ export default defineConfig({
           // Data and utilities
           'data-vendor': [
             '@tanstack/react-query',
-            '@supabase/supabase-js',
-            'ra-supabase'
+            '@supabase/supabase-js'
           ],
           
           // Charts and visualization

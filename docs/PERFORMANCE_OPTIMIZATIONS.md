@@ -10,7 +10,8 @@
 - **Deduplication**: Automatic request deduplication across components
 
 **Key Files:**
-- `/src/hooks/useSupabaseQuery.ts` - Core data fetching hooks
+- `/src/hooks/useApiQuery.ts` - Core data fetching hooks (API unifiée)
+- `/src/hooks/useQueryWithSkeleton.ts` - Query hooks with skeleton loading
 - `/src/providers/QueryProvider.tsx` - React Query configuration
 
 ### 2. Loading Skeletons System ✅
