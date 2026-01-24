@@ -26,6 +26,113 @@
 
 ## 🏗️ Architecture & Code Quality
 
+### React-Admin Optimization - HIGH PRIORITY ⚡
+**Status**: Next major milestone - Addresses technical debt & performance
+**Timeline**: 4-6 weeks (4 sprints)
+**Bundle Target**: -25% (874KB → 650KB)
+**Custom Code Reduction**: -57% (70% → 30%)
+**Performance Target**: -32% (2.8s → 1.9s LCP)
+
+#### Phase 1: Data Layer Consolidation (Sprint 1 - 2 weeks)
+**Goal**: Eliminate TanStack Query redundancy and unify data providers
+
+**Step 1.1: Audit and Map Custom Hooks** (Days 1-2)
+- [ ] Inventory all `useTransactions()` usages across codebase
+- [ ] Document data flow patterns
+- [ ] Identify replacement patterns with `useGetList()`
+
+**Step 1.2: Create Unified DataProvider** (Days 3-5)
+- [ ] Design routing logic for Supabase vs NestJS backends
+- [ ] Implement conditional provider selection
+- [ ] Add backward compatibility layer
+- [ ] Test all resource types with unified provider
+
+**Step 1.3: Migrate Custom Hooks to Native** (Days 6-10)
+- [ ] Replace `useTransactions()` with `useGetList('transactions')`
+- [ ] Update all hook calls across components
+- [ ] Remove TanStack Query dependencies
+- [ ] Test data fetching and caching behavior
+
+**Step 1.4: Remove TanStack Query Package** (Days 11-12)
+- [ ] Remove @tanstack/react-query from package.json
+- [ ] Clean unused imports across codebase
+- [ ] Verify bundle size reduction (-40KB)
+- [ ] Test complete application functionality
+
+**Step 1.5: Performance Validation** (Days 13-14)
+- [ ] Measure LCP improvements
+- [ ] Verify bundle size reduction
+- [ ] Test caching behavior
+- [ ] Document performance gains
+
+#### Phase 2: Native Feature Exploitation (Sprint 2-3 - 2 weeks)
+**Goal**: Replace custom implementations with react-admin native features
+
+**Step 2.1: Migrate TransactionListEnhanced** (Days 15-18)
+- [ ] Replace custom table with `<Datagrid>` component
+- [ ] Implement built-in sorting with `<SortButton>`
+- [ ] Add native pagination with `<Pagination>`
+- [ ] Configure row click behavior for edit navigation
+
+**Step 2.2: Implement Advanced Filtering** (Days 19-22)
+- [ ] Create `<Filter>` component with native filters
+- [ ] Add `<DateInput>` for date range filtering
+- [ ] Implement `<SelectInput>` for transaction type
+- [ ] Add `<ReferenceInput>` for category filtering
+
+**Step 2.3: Enable Bulk Actions** (Days 23-25)
+- [ ] Add `<BulkDeleteButton>` for multi-select delete
+- [ ] Implement `<BulkExportButton>` for CSV export
+- [ ] Configure selection behavior with `<CheckboxGroup>`
+- [ ] Test bulk operations with large datasets
+
+**Step 2.4: Standardize All Resource Lists** (Days 26-28)
+- [ ] Apply Datagrid pattern to CategoryList, AccountList
+- [ ] Implement consistent filtering across all resources
+- [ ] Add ReferenceField for related data display
+- [ ] Ensure uniform pagination behavior
+
+**Step 2.5: Optimize Performance** (Days 29-30)
+- [ ] Enable react-admin built-in caching
+- [ ] Optimize re-render behavior with proper memoization
+- [ ] Test performance with large datasets (1000+ records)
+- [ ] Document performance improvements
+
+#### Phase 3: Form Standardization (Sprint 3 - 1 week)
+**Goal**: Convert custom forms to react-admin native patterns
+
+**Step 3.1: Audit Custom Form Components** (Days 31-32)
+- [ ] Inventory all custom form implementations
+- [ ] Document validation patterns
+- [ ] Identify SimpleForm conversion opportunities
+
+**Step 3.2: Migrate Expense Forms** (Days 33-35)
+- [ ] Convert ExpenseCreate to `<SimpleForm>` pattern
+- [ ] Convert ExpenseEdit to `<SimpleForm>` pattern
+- [ ] Implement react-admin validation (required(), minLength(), etc.)
+- [ ] Add automatic form state management
+
+**Step 3.3: Standardize Validation** (Days 36-37)
+- [ ] Replace custom validation with react-admin validators
+- [ ] Implement field-level validation
+- [ ] Add form-level validation for business rules
+- [ ] Test validation behavior and error messages
+
+#### Phase 4: Performance & Bundle Optimization (Sprint 4 - 1 week)
+**Goal**: Final optimization and validation
+
+**Step 4.1: Remove Unused Dependencies** (Days 38-40)
+- [ ] Remove @tanstack/react-query from package.json
+- [ ] Clean up unused imports across codebase
+- [ ] Optimize bundle splitting configuration
+- [ ] Verify bundle size improvements
+
+**Step 4.2: Performance Validation** (Days 41-42)
+- [ ] Measure final bundle size (target: 650KB)
+- [ ] Test LCP performance (target: 1.9s)
+- [ ] Verify React-Admin feature usage (target: 85%)
+- [ ] Document all performance improvements
+
 ### React Components
 - [x] **Audit remaining components for performance issues**
   - ✅ Optimized ExpenseList with React.memo and useMemo
@@ -173,22 +280,36 @@
   - Performance monitoring
   - User analytics and usage patterns
 
+## 🧪 Test Preparation (Parallel to React-Admin Optimization)
+**Goal**: Prepare testing infrastructure for React-Admin optimization
+
+### Component Testing Setup (Parallel to Phases 1-2)
+- [ ] Set up React Testing Library configuration
+- [ ] Create test utilities for react-admin components
+- [ ] Write tests for migrated components during optimization
+- [ ] Implement snapshot testing for UI consistency
+
+### E2E Testing Strategy (Parallel to Phases 3-4)
+- [ ] Define critical user journeys to preserve
+- [ ] Set up Playwright/Cypress configuration
+- [ ] Create baseline tests before optimization
+- [ ] Validate no regressions during migration
+
 ## 🔍 Quick Wins (High Impact, Low Effort)
 
-- [ ] **Add number formatting for currencies**
-  - Localized number formatting
-  - Currency symbol support
-  - Consistent formatting across app
+- [x] **Add number formatting for currencies** ✅ **COMPLETED**
+- [x] **Add toast notifications for feedback** ✅ **COMPLETED**
+
+- [ ] **React-Admin immediate wins** 🆕
+  - Enable built-in bulk actions (2-3 days)
+  - Add Filter components to existing lists (1-2 days)
+  - Implement standard pagination (1 day)
+  - Replace manual sorting with native sort (1 day)
 
 - [ ] **Implement keyboard shortcuts**
   - Common actions (Ctrl+N, Ctrl+S, etc.)
   - Modal/escape key handling
   - Accessibility improvements
-
-- [ ] **Add toast notifications for feedback**
-  - Success/error message system
-  - Auto-dismiss timers
-  - Stack management for multiple toasts
 
 ## 📝 Documentation - COMPLETED ✅
 
@@ -213,6 +334,15 @@
 
 ---
 
+## 🎯 React-Admin Optimization Metrics
+| Metric | Current | Target | Improvement |
+|--------|---------|--------|-------------|
+| Bundle Size | 874KB | 650KB | -25% |
+| Custom Code | 70% | 30% | -57% |
+| LCP Performance | 2.8s | 1.9s | -32% |
+| React-Admin Usage | 30% | 85% | +183% |
+| Maintenance Effort | High | Low | -60% |
+
 ## 🎯 Priority Matrix - UPDATED
 
 ### ✅ COMPLETED (High Priority - 2025-01-20)
@@ -222,12 +352,20 @@
 4. ✅ Bundle size optimization with code splitting - Vite optimization
 5. ✅ Error boundaries implementation - Comprehensive error handling
 
-### 🚀 HIGH PRIORITY (Next Sprint - 2025 Q1)
-1. **Test suite implementation** - Critical for maintainability
-2. ~~**Budget tracking features** - High user demand~~ ✅ **COMPLETED**
+### 🚀 IMMEDIATE NEXT (2025 Q1 - 6 weeks)
+1. **React-Admin Optimization Suite** 🆕
+   - Phase 1: Data Layer Consolidation (2 weeks)
+   - Phase 2: Native Feature Exploitation (2 weeks)  
+   - Phase 3: Form Standardization (1 week)
+   - Phase 4: Performance Optimization (1 week)
+   - Bundle size target: -25% (874KB → 650KB)
+   - Custom code reduction: -57% (70% → 30%)
+   - Performance improvement: -32% (2.8s → 1.9s LCP)
+   - React-Admin feature usage: +183% (30% → 85%)
+
+2. **Test suite implementation** - Critical for maintainability
 3. **Export/import features** - Data management capabilities
-4. ~~**Enhanced reports dashboard** - Analytics improvements~~ ✅ **COMPLETED** 
-5. **Security audits** - Dependencies and flow review
+4. **Security audits** - Dependencies and flow review
 
 ### 📋 MEDIUM PRIORITY (2025 Q2)
 1. Performance monitoring integration
@@ -245,6 +383,7 @@
 
 ---
 
-*Last updated: 2025-01-21 11:30*
-*Status: Major performance optimizations completed ✅ | Budget tracking features implemented ✅ | Period selection enhanced ✅ | Budget display logic fixed ✅ | Bug fixes for period creation ✅ | Documentation reorganized ✅*
-*Next milestone: Test suite implementation and export/import features*
+*Last updated: 2025-01-23 15:45*
+*Status: Major performance optimizations completed ✅ | Budget tracking features implemented ✅ | Period selection enhanced ✅ | Budget display logic fixed ✅ | Bug fixes for period creation ✅ | Documentation reorganized ✅ | React-Admin optimization plan added ✅*
+*Next milestone: React-Admin Optimization Suite (6 weeks) | Test suite preparation (parallel)*
+*Timeline: Feb 2025 - Mar 2025 | Bundle size target: 874KB → 650KB | Performance target: 2.8s → 1.9s LCP*

@@ -79,6 +79,10 @@ Comprehensive performance optimization guide for React and Next.js applications,
    - 9.1 [NestJS General Principles](#91-nestjs-general-principles)
    - 9.2 [NestJS Architecture](#92-nestjs-architecture)
    - 9.3 [Firebase Functions Integration](#93-firebase-functions-integration)
+10. [Documentation Practices](#10-documentation-practices) — **MEDIUM**
+   - 10.1 [Maintain Living Documentation Synchronized with Code](#101-maintain-living-documentation-synchronized-with-code)
+   - 10.2 [Create Roadmap-Driven Documentation](#102-create-roadmap-driven-documentation)
+   - 10.3 [Document Architectural Decisions (ADRs)](#103-document-architectural-decisions-adrs)
 
 ---
 
@@ -2858,6 +2862,122 @@ export class AppService {
 Reference: [firebase-functions-nestjs.md](rules/firebase-functions-nestjs.md)
 
 ---
+
+## 10. Documentation Practices
+
+**Impact: MEDIUM**
+
+Documentation practices that reduce knowledge decay and improve developer onboarding efficiency.
+
+### 10.1 Maintain Living Documentation Synchronized with Code
+
+**Impact: MEDIUM (reduces knowledge decay, improves developer onboarding)**
+
+Keep documentation as living documents that evolve with codebase, not static artifacts that become outdated quickly.
+
+**Incorrect: Static documentation that diverges from code**
+```markdown
+# README.md shows outdated API examples
+# Component docs reference old prop names
+# Setup instructions mention deprecated dependencies
+# Migration guides don't match current architecture
+```
+
+**Correct: Living documentation synchronized with implementation**
+```markdown
+# Update docs with every breaking change
+# Include working examples that match current code
+# Version documentation alongside features
+# Keep migration guides up-to-date with actual patterns
+# Include decision records (ADRs) for architectural choices
+```
+
+**Implementation Pattern:**
+```typescript
+// docs/COMPONENT_PATTERNS.md
+## Current Pattern: React-Admin Optimization (v2.0)
+### Last Updated: 2025-01-23
+### Status: In Progress (6 weeks timeline)
+
+## Before (React-Admin v5.13.2)
+- 70% custom components
+- TanStack Query + react-admin dual data layer
+- Manual pagination and filtering
+- Custom form validation
+
+## After (Target v6.0 - Q1 2025)
+- 30% custom components (target)
+- Native react-admin patterns only
+- Built-in pagination, filtering, bulk actions
+- React-admin validation system
+- Bundle size: -25% (874KB → 650KB)
+```
+
+### 10.2 Create Roadmap-Driven Documentation
+
+**Impact: HIGH (provides clear migration path, reduces uncertainty)**
+
+Structure documentation as roadmap that reflects actual development timeline, not ideal future features.
+
+**Incorrect: Feature-based documentation**
+```markdown
+## Features
+- Dark mode (planned)
+- Mobile app (future)
+- Advanced analytics (someday)
+```
+
+**Correct: Timeline-driven documentation with concrete phases**
+```markdown
+## Roadmap Q1 2025
+### Phase 1: Data Layer Consolidation (Weeks 1-2)
+### Phase 2: Native Features (Weeks 3-4)
+### Phase 3: Form Standardization (Week 5)
+### Phase 4: Performance Optimization (Week 6)
+
+## Migration Guides
+### React-Admin Optimization: Complete Step-by-Step
+### Testing Infrastructure Setup: Parallel Implementation
+### Bundle Size Monitoring: Automated Checks
+```
+
+### 10.3 Document Architectural Decisions (ADRs)
+
+**Impact: MEDIUM (preserves context, enables informed future decisions)**
+
+Create Architecture Decision Records for major technical choices to document rationale and trade-offs.
+
+**Incorrect: No decision history**
+```markdown
+// Why React-Admin chosen? Unknown
+// Why TanStack Query added? Unclear
+// Why dual DataProvider? Forgotten reasons
+```
+
+**Correct: Structured ADRs**
+```markdown
+## ADR-001: React-Admin Framework Selection
+**Date:** 2025-01-15
+**Status:** Accepted
+**Context:** Need admin interface for financial tracking app
+**Decision:** Use React-Admin over custom implementation
+**Alternatives:** Custom React Router + TanStack Query, MUI X
+**Consequences:** 
+  ✅ Faster CRUD development
+  ✅ Built-in authentication/authorization
+  ❌ Bundle size overhead (~200KB)
+  ❌ Framework constraints on customization
+
+## ADR-002: Dual DataProvider Architecture
+**Date:** 2025-01-20
+**Status:** Technical Debt (Target for removal)
+**Context:** Support both Supabase and NestJS backends
+**Decision:** Implement routing DataProvider
+**Consequences:**
+  ✅ Supports phased backend migration
+  ❌ Added complexity
+  ❌ Performance overhead from routing logic
+```
 
 ## References
 
