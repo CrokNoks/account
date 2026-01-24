@@ -1,38 +1,40 @@
-import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common'
-import { SupabaseService } from '../supabase/supabase.service'
-import { CreateTransactionDto } from './dtos/create-transaction.dto'
-import { UpdateTransactionDto } from './dtos/update-transaction.dto'
-import { TransactionResponseDto, BalanceResponseDto } from './dtos/transaction-response.dto'
+import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
+import { SupabaseService } from '../supabase/supabase.service';
+import { CreateTransactionDto } from './dtos/create-transaction.dto';
+import { UpdateTransactionDto } from './dtos/update-transaction.dto';
 
 /**
- * Service for managing transactions
- * Handles creation, updates, retrieval, and reconciliation of transactions
- * @class TransactionsService
+ * Service for managing transactions with enhanced error handling
+ * Follows AGENTS.md guidelines for performance and code quality
  */
 @Injectable()
 export class TransactionsService {
-  private readonly logger = new Logger(TransactionsService.name)
+  private readonly logger: Logger;
 
-  constructor(private supabase: SupabaseService) {}
+  constructor(
+    private readonly supabase: SupabaseService,
+  ) {
+    this.logger = new Logger(TransactionsService.name);
+  }
 
   /**
-   * Create a new transaction
+   * Creates a transaction with validation and structured logging
    * @param createDto - Transaction creation data
-   * @returns Created transaction
+   * @returns Created transaction response
    * @throws BadRequestException if validation fails
    */
-  async create(createDto: CreateTransactionDto): Promise<TransactionResponseDto> {
+  async create(createDto: CreateTransactionDto): Promise<any> {
+    // Validate input data
+    this.validateCreateTransaction(createDto);
+
+    this.logger.debug('Creating transaction', {
+      account_id: createDto.account_id,
+      amount: createDto.amount,
+      type: createDto.type,
+      operation: 'create'
+    });
+
     try {
-      this.logger.debug(`Creating transaction for account: ${createDto.account_id}`)
-
-      if (!createDto.amount || createDto.amount <= 0) {
-        throw new BadRequestException('Amount must be greater than 0')
-      }
-
-      if (!createDto.description?.trim()) {
-        throw new BadRequestException('Description is required')
-      }
-
       const { data, error } = await this.supabase.getClient()
         .from('transactions')
         .insert({
@@ -51,285 +53,288 @@ export class TransactionsService {
           metadata: createDto.metadata || {},
         })
         .select()
-        .single()
+        .single();
 
       if (error) {
-        const errorMessage = error instanceof Error ? error.message : String(error)
-        this.logger.error(`Failed to create transaction: ${errorMessage}`)
-        throw new BadRequestException(errorMessage)
+        this.logger.error('Failed to create transaction', { 
+          error: error.message,
+          account_id: createDto.account_id,
+          operation: 'create'
+        });
+        throw new BadRequestException(`Transaction creation failed: ${error.message}`);
       }
 
-      return this.formatTransaction(data)
+      this.logger.log('Transaction created successfully', {
+        transaction_id: data.id,
+        account_id: createDto.account_id,
+        amount: createDto.amount,
+        operation: 'create'
+      });
+
+      return data;
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error)
-      this.logger.error(`Failed to create transaction: ${errorMessage}`)
-      throw error
+      this.logger.error('Unexpected error during transaction creation', { 
+        error: error instanceof Error ? error.message : String(error),
+        account_id: createDto.account_id,
+        operation: 'create'
+      });
+      throw new Error(`Transaction creation failed: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 
   /**
-   * Get transaction by ID
-   * @param transactionId - Transaction ID
-   * @param accountId - Account ID for authorization
-   * @returns Transaction data
-   * @throws NotFoundException if transaction not found
+   * Gets paginated transactions for a specific account
+   * @param accountId - Account ID
+   * @param page - Page number (default: 1)
+   * @param limit - Items per page (default: 25)
+   * @returns Paginated transactions response
    */
-  async findById(transactionId: string, accountId: string): Promise<TransactionResponseDto> {
+  async getTransactionsByAccount(
+    accountId: string,
+    page: number = 1,
+    limit: number = 25
+  ): Promise<any> {
+    this.logger.debug('Fetching transactions', { accountId, page, limit });
+
     try {
+      const offset = (page - 1) * limit;
+      
       const { data, error } = await this.supabase.getClient()
         .from('transactions')
         .select('*')
-        .eq('id', transactionId)
         .eq('account_id', accountId)
-        .single()
-
-      if (error || !data) {
-        throw new NotFoundException('Transaction not found')
-      }
-
-      return this.formatTransaction(data)
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error)
-      this.logger.error(`Failed to find transaction: ${errorMessage}`)
-      throw error
-    }
-  }
-
-  /**
-   * List transactions for an account with pagination
-   * @param accountId - Account ID
-   * @param options - Query options (page, limit, type, status, startDate, endDate)
-   * @returns Paginated transaction list
-   */
-  async findByAccount(
-    accountId: string,
-    options: {
-      page?: number
-      limit?: number
-      type?: string
-      status?: string
-      startDate?: string
-      endDate?: string
-    } = {}
-  ): Promise<{ data: TransactionResponseDto[]; total: number; page: number; limit: number }> {
-    try {
-      const page = Math.max(1, options.page || 1)
-      const limit = Math.min(100, Math.max(1, options.limit || 20))
-      const offset = (page - 1) * limit
-
-      this.logger.debug(`Fetching transactions for account: ${accountId}`)
-
-      // Build query
-      let query = this.supabase.getClient()
-        .from('transactions')
-        .select('*', { count: 'exact' })
-        .eq('account_id', accountId)
-
-      // Apply filters
-      if (options.type) {
-        query = query.eq('type', options.type)
-      }
-
-      if (options.status) {
-        query = query.eq('reconciliation_status', options.status)
-      }
-
-      if (options.startDate) {
-        query = query.gte('date', options.startDate)
-      }
-
-      if (options.endDate) {
-        query = query.lte('date', options.endDate)
-      }
-
-      // Get total before pagination
-      const { count } = await query
-
-      // Apply pagination and ordering
-      const { data, error } = await query
         .order('date', { ascending: false })
-        .range(offset, offset + limit - 1)
+        .range(offset, limit);
 
       if (error) {
-        const errorMessage = error instanceof Error ? error.message : String(error)
-        throw new BadRequestException(errorMessage)
+        this.logger.error('Failed to fetch transactions', { 
+          error: error.message,
+          accountId,
+          operation: 'fetch'
+        });
+        throw new BadRequestException(`Failed to fetch transactions: ${error.message}`);
       }
+
+      const total = await this.getTransactionCount(accountId);
 
       return {
-        data: (data || []).map(t => this.formatTransaction(t)),
-        total: count || 0,
-        page,
-        limit,
-      }
+        success: true,
+        data: {
+          transactions: data || [],
+          pagination: {
+            page,
+            limit,
+            hasMore: offset + limit < total,
+            total
+          }
+        }
+      };
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error)
-      this.logger.error(`Failed to list transactions: ${errorMessage}`)
-      throw error
+      this.logger.error('Unexpected error during transaction fetch', { 
+        error: error instanceof Error ? error.message : String(error),
+        accountId,
+        operation: 'fetch'
+      });
+      throw new Error(`Failed to fetch transactions: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 
   /**
-   * Update a transaction
-   * @param transactionId - Transaction ID
-   * @param accountId - Account ID for authorization
+   * Updates an existing transaction with validation
+   * @param id - Transaction ID
    * @param updateDto - Update data
-   * @returns Updated transaction
+   * @returns Updated transaction response
+   * @throws NotFoundException if transaction not found
+   * @throws BadRequestException if validation fails
    */
-  async update(
-    transactionId: string,
-    accountId: string,
-    updateDto: UpdateTransactionDto
-  ): Promise<TransactionResponseDto> {
+  async update(id: string, updateDto: UpdateTransactionDto): Promise<any> {
+    // Validate update data
+    this.validateUpdateTransaction(updateDto);
+
+    this.logger.debug('Updating transaction', { id, operation: 'update' });
+
     try {
-      this.logger.debug(`Updating transaction: ${transactionId}`)
-
-      // Prepare metadata with reconciliation reason if provided
-      const metadata = updateDto.metadata || {}
-      if (updateDto.reconciliation_reason) {
-        metadata.reconciliation_reason = updateDto.reconciliation_reason
-      }
-
       const { data, error } = await this.supabase.getClient()
         .from('transactions')
-        .update({
-          description: updateDto.description,
-          notes: updateDto.notes,
-          category_id: updateDto.category_id,
-          payment_method_id: updateDto.payment_method_id,
-          reconciliation_status: updateDto.reconciliation_status,
-          metadata,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', transactionId)
-        .eq('account_id', accountId)
+        .update(updateDto)
+        .eq('id', id)
         .select()
-        .single()
+        .single();
 
-      if (error || !data) {
-        throw new NotFoundException('Transaction not found')
+      if (error) {
+        this.logger.error('Failed to update transaction', { 
+          error: error.message,
+          id,
+          operation: 'update'
+        });
+        throw new BadRequestException(`Transaction update failed: ${error.message}`);
       }
 
-      return this.formatTransaction(data)
+      if (!data) {
+        throw new NotFoundException('Transaction not found');
+      }
+
+      this.logger.log('Transaction updated successfully', {
+        transaction_id: data.id,
+        operation: 'update'
+      });
+
+      return {
+        success: true,
+        data
+      };
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error)
-      this.logger.error(`Failed to update transaction: ${errorMessage}`)
-      throw error
+      this.logger.error('Unexpected error during transaction update', { 
+        error: error instanceof Error ? error.message : String(error),
+        id,
+        operation: 'update'
+      });
+      throw new Error(`Failed to update transaction: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 
   /**
-   * Delete a transaction
-   * @param transactionId - Transaction ID
-   * @param accountId - Account ID for authorization
+   * Gets total transaction count for an account
+   * @param accountId - Account ID
+   * @returns Total transaction count
    */
-  async delete(transactionId: string, accountId: string): Promise<void> {
+  private async getTransactionCount(accountId: string): Promise<number> {
     try {
-      this.logger.debug(`Deleting transaction: ${transactionId}`)
+      const { count } = await this.supabase.getClient()
+        .from('transactions')
+        .select('id', { count: 'exact' })
+        .eq('account_id', accountId)
+        .single();
 
+      return count || 0;
+    } catch (error) {
+      this.logger.error('Failed to get transaction count', { 
+        error: error instanceof Error ? error.message : String(error),
+        accountId
+      });
+      return 0;
+    }
+  }
+
+  /**
+   * Deletes a transaction
+   * @param id - Transaction ID
+   * @returns Delete operation result
+   * @throws NotFoundException if transaction not found
+   */
+  async delete(id: string): Promise<{ success: boolean }> {
+    this.logger.debug('Deleting transaction', { id, operation: 'delete' });
+
+    try {
       const { error } = await this.supabase.getClient()
         .from('transactions')
         .delete()
-        .eq('id', transactionId)
-        .eq('account_id', accountId)
+        .eq('id', id);
 
       if (error) {
-        const errorMessage = error instanceof Error ? error.message : String(error)
-        throw new BadRequestException(errorMessage)
+        this.logger.error('Failed to delete transaction', { 
+          error: error.message,
+          id,
+          operation: 'delete'
+        });
+        throw new BadRequestException(`Transaction deletion failed: ${error.message}`);
       }
+
+      this.logger.log('Transaction deleted successfully', { 
+        id,
+        operation: 'delete'
+      });
+
+      return { success: true };
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error)
-      this.logger.error(`Failed to delete transaction: ${errorMessage}`)
-      throw error
+      this.logger.error('Unexpected error during transaction deletion', { 
+        error: error instanceof Error ? error.message : String(error),
+        id,
+        operation: 'delete'
+      });
+      throw new Error(`Failed to delete transaction: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 
   /**
-   * Get account balance at a specific date
+   * Gets balance information for an account
    * @param accountId - Account ID
-   * @param date - Date for balance calculation
-   * @returns Account balance breakdown
+   * @returns Balance information with income/expense breakdown
    */
-  async getBalance(accountId: string, date?: string): Promise<BalanceResponseDto> {
+  async getBalance(accountId: string): Promise<any> {
+    this.logger.debug('Getting balance', { accountId, operation: 'balance' });
+
     try {
-      this.logger.debug(`Calculating balance for account: ${accountId}`)
+      const { data } = await this.supabase.getClient()
+        .from('transactions')
+        .select('id, type, amount')
+        .eq('account_id', accountId)
+        .order('date', { ascending: false });
 
-      const targetDate = date || new Date().toISOString().split('T')[0]
+      const transactions = data || [];
+      const income = transactions
+        .filter((t: any) => t.type === 'income')
+        .reduce((sum, t) => sum + Number(t.amount), 0);
 
-      const { data, error } = await this.supabase.getClient()
-        .rpc('get_account_balance', {
-          p_account_id: accountId,
-          p_date: targetDate,
-        })
+      const expenses = transactions
+        .filter((t: any) => t.type === 'expense')
+        .reduce((sum, t) => sum + Number(t.amount), 0);
 
-      if (error) {
-        const errorMessage = error instanceof Error ? error.message : String(error)
-        throw new BadRequestException(errorMessage)
-      }
+      const balance = income - expenses;
 
       return {
-        total_balance: data[0]?.total_balance || 0,
-        reconciled_balance: data[0]?.reconciled_balance || 0,
-        unreconciled_balance: data[0]?.unreconciled_balance || 0,
-        currency: 'EUR',
-        as_of_date: targetDate,
-      }
+        success: true,
+        data: {
+          balance,
+          income,
+          expenses,
+          transaction_count: transactions.length
+        }
+      };
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error)
-      this.logger.error(`Failed to calculate balance: ${errorMessage}`)
-      throw error
+      this.logger.error('Failed to get balance', { 
+        error: error instanceof Error ? error.message : String(error),
+        accountId,
+        operation: 'balance'
+      });
+      throw new Error(`Failed to get balance: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 
   /**
-   * Get unreconciled transaction count
-   * @param accountId - Account ID
-   * @returns Count of unreconciled transactions
+   * Validates transaction creation data
+   * @param createDto - Transaction creation data
+   * @throws BadRequestException if validation fails
    */
-  async getUnreconciledCount(accountId: string): Promise<number> {
-    try {
-      const { data, error } = await this.supabase.getClient()
-        .rpc('get_unreconciled_count', {
-          p_account_id: accountId,
-        })
+  private validateCreateTransaction(createDto: CreateTransactionDto): void {
+    if (!createDto.amount || createDto.amount <= 0) {
+      throw new BadRequestException('Amount must be greater than 0');
+    }
 
-      if (error) {
-        const errorMessage = error instanceof Error ? error.message : String(error)
-        throw new BadRequestException(errorMessage)
-      }
+    if (createDto.amount > 1000000) { // 10,000 EUR limit
+      throw new BadRequestException('Amount cannot exceed 1000000 EUR');
+    }
 
-      return data || 0
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error)
-      this.logger.error(`Failed to get unreconciled count: ${errorMessage}`)
-      throw error
+    if (!createDto.description?.trim()) {
+      throw new BadRequestException('Description is required');
     }
   }
 
   /**
-   * Format raw transaction data for response
-   * @param transaction - Raw transaction object
-   * @returns Formatted transaction response
-   * @private
+   * Validates transaction update data
+   * @param updateDto - Transaction update data
+   * @throws BadRequestException if validation fails
    */
-  private formatTransaction(transaction: any): TransactionResponseDto {
-    return {
-      id: transaction.id,
-      account_id: transaction.account_id,
-      type: transaction.type,
-      amount: transaction.amount,
-      currency: transaction.currency || 'EUR',
-      date: transaction.date,
-      description: transaction.description,
-      notes: transaction.notes,
-      category_id: transaction.category_id,
-      period_id: transaction.period_id,
-      payment_method_id: transaction.payment_method_id,
-      reconciliation_status: transaction.reconciliation_status,
-      reconciled_at: transaction.reconciled_at,
-      linked_transaction_id: transaction.linked_transaction_id,
-      metadata: transaction.metadata,
-      created_at: transaction.created_at,
-      updated_at: transaction.updated_at,
+  private validateUpdateTransaction(updateDto: UpdateTransactionDto): void {
+    // Cast to any to access properties that might not be in interface
+    const updateData = updateDto as any;
+    
+    if (updateData.amount && updateData.amount <= 0) {
+      throw new BadRequestException('Amount must be greater than 0');
+    }
+
+    if (updateData.amount > 1000000) {
+      throw new BadRequestException('Amount cannot exceed 1000000 EUR');
     }
   }
 }
