@@ -26,6 +26,23 @@ docs/
 ├── README.md                      # This file - Documentation hub
 ├── ROADMAP.md                     # Development roadmap and planning
 ├── PERFORMANCE_OPTIMIZATIONS.md     # Complete performance implementation guide
+├── PHASE1/                        # Phase 1 documentation
+│   ├── PHASE1_README.md
+│   ├── PHASE1_COMPLETION_REPORT.md
+│   ├── PHASE1_BEFORE_AFTER.md
+│   ├── PHASE1_CHECKLIST.md
+│   ├── PHASE1_COMPLETE_INDEX.md
+│   ├── PHASE1_FILE_MANIFEST.md
+│   ├── PHASE1_QUICK_START.md
+│   ├── PHASE1_RESUME_FR.md
+│   ├── PHASE1_SUMMARY.md
+│   ├── FRONTEND_ADAPTATION_SUMMARY.md
+│   └── PHASE1_TRANSACTIONS_COMPLETE.md
+├── architecture/                    # Backend and architecture documentation
+│   ├── README.md
+│   ├── firebase-functions-nestjs.md
+│   ├── nestjs-architecture.md
+│   └── nestjs-typescript-general.md
 └── [future]                       # Additional documentation (testing, API, etc.)
 ```
 

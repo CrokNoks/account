@@ -1,4 +1,30 @@
-# Firebase Functions - Code Structure
+# 📚 Account v2 Backend Architecture Documentation
+
+Welcome to the comprehensive backend documentation for Account v2. This directory contains technical guides, implementation details, and architectural patterns for the NestJS backend services.
+
+## 📁 Structure
+
+- **[firebase-functions-nestjs.md](./firebase-functions-nestjs.md)** - Firebase Functions integration with NestJS
+- **[nestjs-architecture.md](./nestjs-architecture.md)** - NestJS architectural patterns and best practices
+- **[nestjs-typescript-general.md](./nestjs-typescript-general.md)** - TypeScript coding standards and patterns
+
+## 🎯 Focus Areas
+
+### Firebase Functions + NestJS Integration
+- Serverless deployment strategies
+- Authentication and authorization patterns
+- Data validation and error handling
+- Performance optimization techniques
+
+### NestJS Architecture
+- Module organization and dependency injection
+- Controller, service, and repository patterns
+- Testing strategies and best practices
+
+### TypeScript Standards
+- Type safety patterns and interfaces
+- Configuration and compilation options
+- Code quality and linting rules
 
 ## Overview
 
