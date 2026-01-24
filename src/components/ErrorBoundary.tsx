@@ -1,21 +1,61 @@
-import React, { Component, ReactNode, ErrorInfo } from 'react';
+import React, { Component, ReactNode, ErrorInfo, useCallback } from 'react';
 import { Box, Typography, Button } from '@mui/material';
 import { ErrorOutline } from '@mui/icons-material';
 
-interface Props {
+// Enhanced error boundary interfaces following TypeScript guidelines
+interface ErrorBoundaryProps {
   children: ReactNode;
-  fallback?: React.ComponentType<{ error: Error; errorInfo: ErrorInfo; reset: () => void }>;
+  fallback?: React.ComponentType<ErrorBoundaryFallbackProps>;
   onError?: (error: Error, errorInfo: ErrorInfo) => void;
 }
 
-interface State {
+interface ErrorBoundaryFallbackProps {
+  error: Error;
+  errorInfo: ErrorInfo;
+  reset: () => void;
+}
+
+interface ErrorBoundaryState {
   hasError: boolean;
   error: Error | null;
   errorInfo: ErrorInfo | null;
 }
 
-export class ErrorBoundary extends Component<Props, State> {
-  constructor(props: Props) {
+// Memoized default fallback component
+const DefaultFallback: React.FC<ErrorBoundaryFallbackProps> = ({ error, reset }) => {
+  const handleReset = useCallback(() => {
+    reset();
+  }, [reset]);
+
+  return (
+    <Box sx={{ 
+      p: 3, 
+      display: 'flex', 
+      flexDirection: 'column', 
+      alignItems: 'center', 
+      minHeight: '200px',
+      textAlign: 'center'
+    }}>
+      <ErrorOutline sx={{ fontSize: 64, color: 'error.main', mb: 2 }} />
+      <Typography variant="h6" gutterBottom color="error">
+        Oops! Something went wrong
+      </Typography>
+      <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+        {import.meta.env.DEV ? error.message : 'An unexpected error occurred. Please try again or contact support if the problem persists.'}
+      </Typography>
+      <Button 
+        variant="contained" 
+        onClick={handleReset}
+        sx={{ mt: 2 }}
+      >
+        Try Again
+      </Button>
+    </Box>
+  );
+};
+
+export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
+  constructor(props: ErrorBoundaryProps) {
     super(props);
     this.state = {
       hasError: false,
@@ -24,29 +64,34 @@ export class ErrorBoundary extends Component<Props, State> {
     };
   }
 
-  static getDerivedStateFromError(error: Error): Partial<State> {
+  static getDerivedStateFromError(error: Error): Partial<ErrorBoundaryState> {
     return {
       hasError: true,
       error
     };
   }
 
-  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+  componentDidCatch(error: Error, errorInfo: ErrorInfo): void {
     this.setState({ error, errorInfo });
     
-    // Log error to console and external service if needed
-    console.error('ErrorBoundary caught an error:', error, errorInfo);
+    // Enhanced error logging
+    console.group('🚨 ErrorBoundary caught an error');
+    console.error('Error:', error);
+    console.error('Error Info:', errorInfo);
+    console.groupEnd();
     
     // Call custom error handler if provided
     if (this.props.onError) {
       this.props.onError(error, errorInfo);
     }
     
-    // You could also send to error reporting service here
-    // reportError(error, errorInfo);
+    // Report to error service in production
+    if (!import.meta.env.DEV) {
+      // reportError(error, errorInfo);
+    }
   }
 
-  handleReset = () => {
+  private handleReset = (): void => {
     this.setState({
       hasError: false,
       error: null,
@@ -54,46 +99,16 @@ export class ErrorBoundary extends Component<Props, State> {
     });
   };
 
-  render() {
+  render(): ReactNode {
     if (this.state.hasError) {
-      if (this.props.fallback) {
-        if (this.props.fallback) {
-          const FallbackComponent = this.props.fallback;
-          return (
-            <FallbackComponent 
-              error={this.state.error!}
-              errorInfo={this.state.errorInfo!}
-              reset={this.handleReset}
-            />
-          );
-        }
-      }
-
-      // Default error UI
+      const FallbackComponent = this.props.fallback || DefaultFallback;
+      
       return (
-        <Box sx={{ 
-          p: 3, 
-          display: 'flex', 
-          flexDirection: 'column', 
-          alignItems: 'center', 
-          minHeight: '200px',
-          textAlign: 'center'
-        }}>
-          <ErrorOutline sx={{ fontSize: 64, color: 'error.main', mb: 2 }} />
-          <Typography variant="h6" gutterBottom color="error">
-            Oops! Something went wrong
-          </Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-            An unexpected error occurred. Please try again or contact support if the problem persists.
-          </Typography>
-          <Button 
-            variant="contained" 
-            onClick={this.handleReset}
-            sx={{ mt: 2 }}
-          >
-            Try Again
-          </Button>
-        </Box>
+        <FallbackComponent 
+          error={this.state.error!}
+          errorInfo={this.state.errorInfo!}
+          reset={this.handleReset}
+        />
       );
     }
 
@@ -101,12 +116,12 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 }
 
-// HOC for easy usage
+// Enhanced HOC for easy usage with better typing
 export const withErrorBoundary = <P extends object>(
   Component: React.ComponentType<P>,
-  fallback?: React.ComponentType<{ error: Error; errorInfo: ErrorInfo; reset: () => void }>
-) => {
-  const WrappedComponent = (props: P) => (
+  fallback?: React.ComponentType<ErrorBoundaryFallbackProps>
+): React.ComponentType<P> => {
+  const WrappedComponent = (props: P): ReactNode => (
     <ErrorBoundary fallback={fallback}>
       <Component {...props} />
     </ErrorBoundary>

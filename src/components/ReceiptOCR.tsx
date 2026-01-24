@@ -23,12 +23,13 @@ export const ReceiptOCR = ({ onExtract, onLoadingChange }: ReceiptOCRProps) => {
   const [isMobile, setIsMobile] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Detect if device is mobile - hoisted to avoid recreation on every render
-  const detectMobile = () => /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+  // Detect if device is mobile - memoized to avoid recreation on every render
+  const detectMobile = useCallback(() => /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent), []);
   
+  // Memoize mobile detection state
   useEffect(() => {
     setIsMobile(detectMobile());
-  }, []);
+  }, [detectMobile]);
 
   // Notify parent when loading state changes
   useEffect(() => {
@@ -54,16 +55,17 @@ export const ReceiptOCR = ({ onExtract, onLoadingChange }: ReceiptOCRProps) => {
         // Set canvas size
         // For mobile photos (often 4000x3000), processing full res causes memory crashes
         // We reduce max dimension to 1024px which is sufficient for receipts and safe for mobile
+        const IMAGE_MAX_DIMENSION = 1024;
+        const IMAGE_MID_DIMENSION = 800;
+        
         let width = img.width;
         let height = img.height;
-        const MAX_DIMENSION = 1024;
-        const MID_DIMENSION = 800;
 
         let scale = 1;
-        if (Math.max(width, height) > MAX_DIMENSION) {
+        if (Math.max(width, height) > IMAGE_MAX_DIMENSION) {
           // Scale down if too big to save memory
-          scale = MAX_DIMENSION / Math.max(width, height);
-        } else if (Math.max(width, height) < MID_DIMENSION) {
+          scale = IMAGE_MAX_DIMENSION / Math.max(width, height);
+        } else if (Math.max(width, height) < IMAGE_MID_DIMENSION) {
           // Scale up if too small for better OCR
           scale = 2;
         }

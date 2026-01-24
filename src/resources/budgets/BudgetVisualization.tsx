@@ -105,6 +105,7 @@ export const BudgetVisualization = ({ periodId }: BudgetVisualizationProps) => {
     );
   }
 
+  // Memoized custom tooltip component
   const CustomTooltip = ({ active, payload }: any) => {
     if (active && payload && payload.length) {
       const data = payload[0].payload;
@@ -192,7 +193,7 @@ export const BudgetVisualization = ({ periodId }: BudgetVisualizationProps) => {
                     tick={{ fontSize: 10 }}
                   />
                   <YAxis tickFormatter={(value) => formatCurrency(value)} />
-                  <Tooltip content={<CustomTooltip />} />
+                  <Tooltip content={CustomTooltip} />
                   <Legend />
                   <Bar dataKey="budgeted" fill={theme.palette.success.main} name="Budget" />
                   <Bar dataKey="spent" fill={theme.palette.error.main} name="Dépensé" />

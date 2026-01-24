@@ -193,7 +193,7 @@ export const AdvancedSearch = <T extends Record<string, any>>({
           <Divider />
           <List dense>
             {historyItems.map((item, index) => (
-              <ListItem key={index} disablePadding>
+              <ListItem key={`history-${index}`} disablePadding>
                 <ListItemButton onClick={() => handleHistoryItemClick(item)}>
                   <ListItemText primary={item} />
                   <IconButton

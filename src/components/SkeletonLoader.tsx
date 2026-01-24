@@ -158,9 +158,11 @@ export const SkeletonLoader = ({ type, count = 5, columns = 4, children, isLoadi
       case 'table':
         return <TableSkeleton rows={count} columns={columns} />;
       default:
-        return <Box sx={{ p: 2, textAlign: 'center' }}>
-          <Typography>Loading...</Typography>
-        </Box>;
+        return (
+          <Box sx={{ p: 2, textAlign: 'center' }}>
+            <Typography>Loading...</Typography>
+          </Box>
+        );
     }
   }
 
