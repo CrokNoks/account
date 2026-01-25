@@ -139,7 +139,7 @@ export class TransactionsController {
   @Post('import-csv')
   @UseInterceptors(FileInterceptor('file'))
   async importCsv(
-    @UploadedFile() file: Express.Multer.File,
+    @UploadedFile() file: any,
     @Query('account_id') accountId: string,
   ): Promise<any> {
     if (!file) {
