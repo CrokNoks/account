@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import { execSync } from 'child_process';
-import { readFileSync } from 'fs';
+import { writeFileSync, readFileSync } from 'fs';
 import { createInterface } from 'readline';
 
 // Get current version from package.json
@@ -69,7 +69,7 @@ async function createRelease() {
     
     // Update package.json version
     packageJson.version = newVersion;
-    require('fs').writeFileSync('./package.json', JSON.stringify(packageJson, null, 2) + '\n');
+    writeFileSync('./package.json', JSON.stringify(packageJson, null, 2) + '\n');
     
     // Commit version change
     execSync('git add package.json', { stdio: 'inherit' });
