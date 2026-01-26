@@ -41,6 +41,11 @@ export const ReceiptOCR = ({ onExtract, onLoadingChange }: ReceiptOCRProps) => {
   // Preprocess image to improve OCR accuracy (especially for crumpled receipts)
   const preprocessImage = (imageFile: File | Blob): Promise<Blob> => {
     return new Promise((resolve, reject) => {
+      // Add timeout to prevent infinite processing
+      const timeout = setTimeout(() => {
+        reject(new Error('Image processing timeout (10s)'));
+      }, 10000);
+      
       const img = new Image();
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d');
@@ -64,8 +69,13 @@ export const ReceiptOCR = ({ onExtract, onLoadingChange }: ReceiptOCRProps) => {
           // Scale down if too big to save memory
           scale = MAX_DIMENSION / Math.max(width, height);
         } else if (Math.max(width, height) < MID_DIMENSION) {
-          // Scale up if too small for better OCR
-          scale = 2;
+          // Scale up if too small for better OCR, but limit to 1.5x to prevent memory issues
+          scale = Math.min(1.5, MID_DIMENSION / Math.max(width, height));
+        }
+        
+        // Validate image size to prevent memory issues
+        if (width * height * scale * scale > 4000000) { // 4MP limit
+          throw new Error(`Image too large after scaling: ${Math.round(width * scale)}x${Math.round(height * scale)}`);
         }
 
         canvas.width = Math.floor(width * scale);
@@ -100,8 +110,13 @@ export const ReceiptOCR = ({ onExtract, onLoadingChange }: ReceiptOCRProps) => {
 
         // Convert canvas to blob
         canvas.toBlob((blob) => {
-          // Free memory
+          clearTimeout(timeout); // Clear timeout when processing completes
+          
+          // Free memory more thoroughly
           img.src = '';
+          img.onload = null;
+          img.onerror = null;
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
           canvas.width = 1;
           canvas.height = 1;
 
@@ -113,12 +128,19 @@ export const ReceiptOCR = ({ onExtract, onLoadingChange }: ReceiptOCRProps) => {
         }, 'image/jpeg', 0.85); // Slightly lower quality to save memory
       };
 
-      img.onerror = () => reject(new Error('Failed to load image'));
+      img.onerror = () => {
+        clearTimeout(timeout);
+        reject(new Error('Failed to load image'));
+      };
 
       // Load the image
       const reader = new FileReader();
       reader.onload = (e) => {
         img.src = e.target?.result as string;
+      };
+      reader.onerror = () => {
+        clearTimeout(timeout);
+        reject(new Error('Failed to read file'));
       };
       reader.readAsDataURL(imageFile);
     });

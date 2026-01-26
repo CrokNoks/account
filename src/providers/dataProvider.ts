@@ -1,6 +1,7 @@
 import { supabaseDataProvider } from 'ra-supabase';
 import { supabaseClient } from '../supabaseClient';
 import { DataProvider } from 'react-admin';
+import { nestDataProvider } from './nestDataProvider';
 
 const baseDataProvider = supabaseDataProvider({
   instanceUrl: import.meta.env.VITE_SUPABASE_URL,
@@ -8,7 +9,104 @@ const baseDataProvider = supabaseDataProvider({
   supabaseClient,
 });
 
-import { nestDataProvider } from './nestDataProvider';
+// Utility functions to reduce code duplication
+const applyExpenseFilters = (query: any, filter: any) => {
+  Object.keys(filter).forEach(key => {
+    const value = filter[key];
+
+    if (value === 'is:null') {
+      query.is(key, null);
+      return;
+    }
+
+    if (value === undefined || value === null) {
+      return;
+    }
+    if (key === 'date_gte') {
+      query.gte('date', value);
+    } else if (key === 'date_lte') {
+      query.lte('date', value);
+    } else if (key === 'account_id') {
+      query.eq('account_id', value);
+    } else if (key === 'amount_gte') {
+      query.gte('amount', value);
+    } else if (key === 'amount_lte') {
+      query.lte('amount', value);
+    } else if (key === 'description') {
+      query.ilike('description', `%${value}%`);
+    } else {
+      query.eq(key, value);
+    }
+  });
+  return query;
+};
+
+const applyCategoryFilters = (query: any, filter: any) => {
+  Object.keys(filter).forEach(key => {
+    if (key === 'account_id') {
+      query.eq('account_id', filter[key]);
+    } else if (key === 'name') {
+      query.ilike('name', `%${filter[key]}%`);
+    } else if (key === 'id_nin') {
+      if (Array.isArray(filter[key]) && filter[key].length > 0) {
+        query.filter('id', 'not.in', `(${filter[key].join(',')})`);
+      }
+    } else {
+      query.eq(key, filter[key]);
+    }
+  });
+  return query;
+};
+
+const handleTransfers = async (data: any) => {
+  const {
+    source_account_id,
+    source_category_id,
+    destination_account_id,
+    destination_category_id,
+    amount,
+    description,
+    date,
+    notes,
+  } = data;
+
+  if (!source_account_id || !destination_account_id || !source_category_id || !destination_category_id || !amount) {
+    throw new Error('Champs manquants pour le virement');
+  }
+
+  const baseFields = {
+    description: description || 'Virement entre comptes',
+    date: date || new Date().toISOString(),
+    notes: notes || null,
+    reconciled: false,
+  };
+
+  const amountNumber = Number(amount);
+  const absAmount = Math.abs(amountNumber);
+
+  const rows = [
+    { ...baseFields, account_id: source_account_id, category_id: source_category_id, amount: -absAmount },
+    { ...baseFields, account_id: destination_account_id, category_id: destination_category_id, amount: absAmount },
+  ];
+
+  const { data: result, error } = await supabaseClient.from('expenses').insert(rows).select();
+
+  if (error) {
+    console.error('Erreur création virement (expenses):', error);
+    throw new Error(error.message);
+  }
+
+  return {
+    data: {
+      id: result[0]?.id,
+      source_account_id,
+      destination_account_id,
+      amount: absAmount,
+      description: baseFields.description,
+      date: baseFields.date,
+    },
+  };
+};
 
 const backendResources = ['periods', 'budget-templates', 'budgets'];
 
@@ -87,49 +185,14 @@ const supabaseDataProviderInstance: DataProvider = {
       const { page, perPage } = pagination;
       const { field, order } = sort;
 
-      // Pas d'embed pour éviter l'erreur "not an embedded resource"
-      let query = supabaseClient
-        .from(resource)
-        .select('*', { count: 'exact' });
+      let query = supabaseClient.from(resource).select('*', { count: 'exact' });
+      
+      // Apply filters using utility function
+      query = applyExpenseFilters(query, filter);
 
-      // Apply filters
-      Object.keys(filter).forEach(key => {
-        const value = (filter as any)[key];
-
-        // Explicitly handle "is null" check
-        if (value === 'is:null') {
-          query = query.is(key, null);
-          return;
-        }
-
-        // Ignore undefined/null filters to avoid invalid casts (e.g., reconciled undefined)
-        if (value === undefined || value === null) {
-          return;
-        }
-        if (key === 'date_gte') {
-          query = query.gte('date', value);
-        } else if (key === 'date_lte') {
-          query = query.lte('date', value);
-        } else if (key === 'account_id') {
-          query = query.eq('account_id', value);
-        } else if (key === 'amount_gte') {
-          query = query.gte('amount', value);
-        } else if (key === 'amount_lte') {
-          query = query.lte('amount', value);
-        } else if (key === 'description') {
-          query = query.ilike('description', `%${value}%`);
-        } else {
-          query = query.eq(key, value);
-        }
-      });
-
-      // Apply sorting
-      query = query.order(field, { ascending: order === 'ASC' });
-
-      // Apply pagination
-      const from = (page - 1) * perPage;
-      const to = from + perPage - 1;
-      query = query.range(from, to);
+      // Apply sorting and pagination
+      query = query.order(field, { ascending: order === 'ASC' })
+                   .range((page - 1) * perPage, (page - 1) * perPage + perPage - 1);
 
       const { data, error, count } = await query;
 
@@ -150,27 +213,13 @@ const supabaseDataProviderInstance: DataProvider = {
       const { field, order } = sort;
 
       let query = supabaseClient.from(resource).select('*', { count: 'exact' });
+      
+      // Apply filters using utility function
+      query = applyCategoryFilters(query, filter);
 
-      Object.keys(filter).forEach((key) => {
-        if (key === 'account_id') {
-          query = query.eq('account_id', filter[key]);
-        } else if (key === 'name') {
-          query = query.ilike('name', `%${filter[key]}%`);
-        } else if (key === 'id_nin') {
-          if (Array.isArray(filter[key]) && filter[key].length > 0) {
-            // PostgREST syntax for "not in" requires parentheses around the list
-            query = query.filter('id', 'not.in', `(${filter[key].join(',')})`);
-          }
-        } else {
-          query = query.eq(key, filter[key]);
-        }
-      });
-
-      query = query.order(field, { ascending: order === 'ASC' });
-
-      const from = (page - 1) * perPage;
-      const to = from + perPage - 1;
-      query = query.range(from, to);
+      // Apply sorting and pagination
+      query = query.order(field, { ascending: order === 'ASC' })
+                   .range((page - 1) * perPage, (page - 1) * perPage + perPage - 1);
 
       const { data, error, count } = await query;
 
@@ -189,73 +238,7 @@ const supabaseDataProviderInstance: DataProvider = {
   },
   create: async (resource, params) => {
     if (resource === 'transfers') {
-      const {
-        source_account_id,
-        source_category_id,
-        destination_account_id,
-        destination_category_id,
-        amount,
-        description,
-        date,
-        notes,
-      } = params.data as any;
-
-      if (
-        !source_account_id ||
-        !destination_account_id ||
-        !source_category_id ||
-        !destination_category_id ||
-        !amount
-      ) {
-        throw new Error('Champs manquants pour le virement');
-      }
-
-      const baseFields = {
-        description: description || 'Virement entre comptes',
-        date: date || new Date().toISOString(),
-        notes: notes || null,
-        reconciled: false,
-      };
-
-      const amountNumber = Number(amount);
-      const absAmount = Math.abs(amountNumber);
-
-      const rows = [
-        {
-          ...baseFields,
-          account_id: source_account_id,
-          category_id: source_category_id,
-          amount: -absAmount,
-        },
-        {
-          ...baseFields,
-          account_id: destination_account_id,
-          category_id: destination_category_id,
-          amount: absAmount,
-        },
-      ];
-
-      const { data, error } = await supabaseClient
-        .from('expenses')
-        .insert(rows)
-        .select();
-
-      if (error) {
-        console.error('Erreur création virement (expenses):', error);
-        throw new Error(error.message);
-      }
-
-      // On retourne un objet logique de "virement"
-      return {
-        data: {
-          id: data[0]?.id,
-          source_account_id,
-          destination_account_id,
-          amount: absAmount,
-          description: baseFields.description,
-          date: baseFields.date,
-        },
-      };
+      return await handleTransfers(params.data);
     }
 
     // Pour les ressources liées à un compte

@@ -17,6 +17,20 @@ export class CategoryClassifier {
 
   constructor() { }
 
+  /**
+   * Dispose of all tensors and model to prevent memory leaks
+   */
+  dispose(): void {
+    if (this.model) {
+      this.model.dispose();
+      this.model = null;
+    }
+    this.vocab.clear();
+    this.categories = [];
+    this.currentAccountId = null;
+    this.isTrained = false;
+  }
+
   private tokenize(text: string): string[] {
     return text.toLowerCase()
       .replace(/[^a-z0-9\s]/g, ' ') // Replace punctuation with space
@@ -42,11 +56,10 @@ export class CategoryClassifier {
   async init(accountId: string, force = false): Promise<boolean> {
     if (this.currentAccountId === accountId && this.isTrained && !force) return true;
 
-    // Reset
+    // Clean up previous model to prevent memory leaks
+    this.dispose();
+    
     this.currentAccountId = accountId;
-    this.isTrained = false;
-    // Don't nullify model if we want to potentially reuse weights, but here we rebuild from scratch for full vocab update.
-    this.model = null;
 
     const { data: cats } = await supabaseClient
       .from('categories')
@@ -165,32 +178,39 @@ export class CategoryClassifier {
     vec.push(normAmount);
 
     const inputTensor = tf.tensor2d([vec]);
-    const predTensor = this.model.predict(inputTensor) as tf.Tensor;
-    const data = await predTensor.data();
+    let predTensor: tf.Tensor | null = null;
+    
+    try {
+      predTensor = this.model.predict(inputTensor) as tf.Tensor;
+      const data = await predTensor.data();
 
-    // Log top predictions
-    const topIndices = Array.from(data)
-      .map((score, i) => ({ score, i }))
-      .sort((a, b) => b.score - a.score)
-      .slice(0, 3);
+      // Log top predictions
+      const topIndices = Array.from(data)
+        .map((score, i) => ({ score, i }))
+        .sort((a, b) => b.score - a.score)
+        .slice(0, 3);
 
-    console.log("CategoryClassifier: Prediction for", text.substring(0, 30), "...", topIndices.map(x => `${this.categories[x.i].name} (${(x.score * 100).toFixed(1)}%)`).join(', '));
+      console.log("CategoryClassifier: Prediction for", text.substring(0, 30), "...", topIndices.map(x => `${this.categories[x.i].name} (${(x.score * 100).toFixed(1)}%)`).join(', '));
 
-    const maxIdx = data.indexOf(Math.max(...data));
+      const maxIdx = data.indexOf(Math.max(...data));
 
-    inputTensor.dispose();
-    predTensor.dispose();
+      if (maxIdx >= 0 && maxIdx < this.categories.length) {
+        // Always return top prediction, regardless of confidence, for assistance
+        return {
+          id: this.categories[maxIdx].id,
+          name: this.categories[maxIdx].name,
+          score: data[maxIdx]
+        };
+      }
 
-    if (maxIdx >= 0 && maxIdx < this.categories.length) {
-      // Always return top prediction, regardless of confidence, for assistance
-      return {
-        id: this.categories[maxIdx].id,
-        name: this.categories[maxIdx].name,
-        score: data[maxIdx]
-      };
+      return null;
+    } finally {
+      // Always dispose tensors to prevent memory leaks
+      inputTensor.dispose();
+      if (predTensor) {
+        predTensor.dispose();
+      }
     }
-
-    return null;
   }
 }
 
