@@ -29,7 +29,7 @@ export const CategoryBudgetTable = ({ data, globalType }: CategoryBudgetTablePro
         percentage = Math.ceil((spentAbs / row.budgeted) * 100);
       }
       if (globalType === 'expense' || globalType === 'transfer') {
-        percentage = 100 - percentage;
+        percentage = Math.round(((row.budgeted - spentAbs) / row.budgeted) * 100);
       }
       return {
         id: row.category.id, // Datagrid needs an id
@@ -107,10 +107,20 @@ export const CategoryBudgetTable = ({ data, globalType }: CategoryBudgetTablePro
 
             if (record.budgeted > 0) {
               label = `${record.percentage}%`;
-              const isOverBudget = record.percentage > 100;
               if (globalType === 'expense' || globalType === 'transfer') {
-                color = isOverBudget ? 'error' : 'success';
-                variant = isOverBudget ? 'filled' : 'outlined';
+                if (record.percentage > 0.5) {
+                  // Reste positif (> +0.5%)
+                  color = 'success';
+                  variant = 'outlined';
+                } else if (record.percentage >= -0.5 && record.percentage <= 0.5) {
+                  // Reste ≈ 0 (-0.5% à +0.5%)
+                  color = 'default';
+                  variant = 'outlined';
+                } else {
+                  // Reste négatif (< -0.5%)
+                  color = 'error';
+                  variant = 'filled';
+                }
               } else {
                 // Income & Savings: >100% is good
                 color = record.percentage >= 100 ? 'success' : 'error';

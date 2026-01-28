@@ -69,6 +69,18 @@ export class PaymentClassifier {
     this.vocab = new Map();
   }
 
+  /**
+   * Dispose of all tensors and model to prevent memory leaks
+   */
+  dispose(): void {
+    if (this.model) {
+      this.model.dispose();
+      this.model = tf.sequential(); // Create fresh model
+    }
+    this.vocab.clear();
+    this.isTrained = false;
+  }
+
   // Tokenize text into words
   private tokenize(text: string): string[] {
     return text.toLowerCase()
@@ -109,19 +121,8 @@ export class PaymentClassifier {
   async init(forceRetrain = false) {
     if (this.isTrained && !forceRetrain) return;
 
-    if (this.model) {
-      try {
-        // Disposing model if it exists to avoid memory leaks on retrain
-        // Actually tf.sequential() creates a new generic container, 
-        // but we should dispose tensors if we can. 
-        // There isn't a simple model.dispose() that clears everything safely in all versions,
-        // but we will create a NEW model instance anyway.
-        this.model.dispose();
-      } catch (e) { /* ignore */ }
-    }
-
-    // Re-create model container
-    this.model = tf.sequential();
+    // Clean up previous model to prevent memory leaks
+    this.dispose();
 
     // Fetch existing data from Supabase if not already fetched? 
     // For simplicity, we fetch every time or we could cache. 
@@ -236,15 +237,22 @@ export class PaymentClassifier {
     if (!this.isTrained) await this.init();
 
     const input = tf.tensor2d([this.textToSequence(text)]);
-    const prediction = this.model.predict(input) as tf.Tensor;
-    const data = await prediction.data();
-    const maxVal = Math.max(...data);
-    const index = data.indexOf(maxVal);
+    let prediction: tf.Tensor | null = null;
+    
+    try {
+      prediction = this.model.predict(input) as tf.Tensor;
+      const data = await prediction.data();
+      const maxVal = Math.max(...data);
+      const index = data.indexOf(maxVal);
 
-    input.dispose();
-    prediction.dispose();
-
-    return { label: LABELS[index], confidence: maxVal };
+      return { label: LABELS[index], confidence: maxVal };
+    } finally {
+      // Always dispose tensors to prevent memory leaks
+      input.dispose();
+      if (prediction) {
+        prediction.dispose();
+      }
+    }
   }
 
   async addExample(text: string, label: PaymentMethod) {

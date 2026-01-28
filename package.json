@@ -27,6 +27,7 @@
   "dependencies": {
     "@supabase/supabase-js": "^2.39.0",
     "@tensorflow/tfjs": "^4.22.0",
+    "dotenv": "^17.2.3",
     "papaparse": "^5.5.3",
     "ra-i18n-polyglot": "^5.13.3",
     "ra-language-english": "^5.13.3",

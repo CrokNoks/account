@@ -32,9 +32,9 @@ export const nestDataProvider: DataProvider = {
     };
     const url = `${apiUrl}/${resource}?${stringify(query)}`;
 
-    return httpClient(url).then(({ json }) => ({
+    return httpClient(url).then(({ json, headers }) => ({
       data: json,
-      total: json.length, // TODO: Implement real pagination in backend
+      total: headers.get('X-Total-Count') ? parseInt(headers.get('X-Total-Count')!, 10) : json.length,
     }));
   },
 
@@ -66,9 +66,9 @@ export const nestDataProvider: DataProvider = {
     };
     const url = `${apiUrl}/${resource}?${stringify(query)}`;
 
-    return httpClient(url).then(({ json }) => ({
+    return httpClient(url).then(({ json, headers }) => ({
       data: json,
-      total: json.length,
+      total: headers.get('X-Total-Count') ? parseInt(headers.get('X-Total-Count')!, 10) : json.length,
     }));
   },
 
