@@ -127,10 +127,19 @@ export class PeriodsService {
     return period;
   }
 
-  async closePeriod(id: string, token: string) {
+  async closePeriod(id: string, token: string, endDate?: string) {
+    const updateData: any = { is_active: false };
+    
+    // Set end_date if provided, otherwise use today's date
+    if (endDate) {
+      updateData.end_date = endDate;
+    } else {
+      updateData.end_date = new Date().toISOString().split('T')[0];
+    }
+
     const { data, error } = await this.supabase.getClientWithToken(token)
       .from('periods')
-      .update({ is_active: false })
+      .update(updateData)
       .eq('id', id)
       .select()
       .single();

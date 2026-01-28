@@ -13,6 +13,7 @@ import { ExpenseList } from '../expenses';
 
 import { AddExpenseDrawer } from './components/AddExpenseDrawer';
 import { TransferDrawer } from './components/TransferDrawer';
+import { ClosePeriodModal } from './components/ClosePeriodModal';
 import SwapHorizIcon from '@mui/icons-material/SwapHoriz';
 
 export const ReportDashboard = () => {
@@ -33,6 +34,7 @@ export const ReportDashboard = () => {
 
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [closeDialogOpen, setCloseDialogOpen] = useState(false);
+  const [closingDate, setClosingDate] = useState<string>(new Date().toISOString().split('T')[0]);
   const [createExpenseDrawerOpen, setCreateExpenseDrawerOpen] = useState(false);
   const [transferDrawerOpen, setTransferDrawerOpen] = useState(false);
 
@@ -77,9 +79,11 @@ export const ReportDashboard = () => {
 
   const handleCloseClick = () => {
     setCloseDialogOpen(true);
+    // Initialize closing date to today
+    setClosingDate(new Date().toISOString().split('T')[0]);
   };
 
-  const handleCloseConfirm = async () => {
+  const handleCloseConfirm = async (endDate: string) => {
     if (!selectedPeriodId) return;
 
     try {
@@ -95,7 +99,8 @@ export const ReportDashboard = () => {
         headers: {
           'Authorization': token ? `Bearer ${token}` : '',
           'Content-Type': 'application/json'
-        }
+        },
+        body: JSON.stringify({ end_date: endDate })
       });
 
       if (!response.ok) throw new Error('Failed to close period');
@@ -197,12 +202,13 @@ export const ReportDashboard = () => {
         onClose={() => setDeleteDialogOpen(false)}
       />
 
-      <Confirm
-        isOpen={closeDialogOpen}
-        title="Cloturer la période"
-        content="Êtes-vous sûr de vouloir cloturer cette période ? Cela vous redirigera vers la création de la prochaine période."
-        onConfirm={handleCloseConfirm}
+      <ClosePeriodModal
+        open={closeDialogOpen}
         onClose={() => setCloseDialogOpen(false)}
+        onConfirm={handleCloseConfirm}
+        closingDate={closingDate}
+        onDateChange={setClosingDate}
+        periodStartDate={reportData?.period?.start_date || ''}
       />
 
       <AddExpenseDrawer

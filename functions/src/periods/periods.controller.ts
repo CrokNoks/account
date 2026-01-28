@@ -74,8 +74,9 @@ export class PeriodsController {
   @Post(':id/close')
   close(
     @Param('id') id: string,
+    @Body('end_date') endDate: string,
     @Headers('authorization') token: string,
   ) {
-    return this.periodsService.closePeriod(id, token);
+    return this.periodsService.closePeriod(id, token, endDate);
   }
 }
