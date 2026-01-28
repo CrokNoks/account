@@ -33,10 +33,10 @@ export const ReportSummaryCards = ({ reportData }: ReportSummaryCardsProps) => {
   // Inactive: 4 cards (Projected hidden). Grid xs=12 md=3 (4 on first row).
   const gridSize = reportData.period.is_active ? 3 : 4;
 
-  // Calculate projected savings
+  // Calculate real savings (only what was actually saved, not budgeted)
   const projectedSavings = reportData.categoryBreakdown
     .filter((c: any) => c.type === 'savings')
-    .reduce((acc: number, c: any) => acc + Math.max(c.budgeted, Math.abs(c.spent)), 0);
+    .reduce((acc: number, c: any) => acc + Math.abs(c.spent), 0);
 
   return (
     <>

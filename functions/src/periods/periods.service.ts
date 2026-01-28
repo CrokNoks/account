@@ -285,12 +285,15 @@ export class PeriodsService {
     let projectedIncome = 0;
     let projectedExpense = 0;
 
-    for (const stat of categoryStats.values()) {
+for (const stat of categoryStats.values()) {
       const projectedAmt = Math.max(stat.budgeted, Math.abs(stat.spent));
-
-      // Treat as income if type is 'income' OR if it's a transfer with positive actuals (net inflow)
-      if (stat.type === 'income' || (stat.type === 'transfer' && stat.spent > 0)) {
+      
+      // Treat as income if type is 'income' OR if it's a transfer (all transfers included in projected income)
+      if (stat.type === 'income' || stat.type === 'transfer') {
         projectedIncome += projectedAmt;
+      } else if (stat.type === 'savings') {
+        // Savings are NOT included in projected calculation 
+        // as they are only counted when actually done
       } else {
         projectedExpense += projectedAmt;
       }
