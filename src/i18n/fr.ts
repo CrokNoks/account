@@ -208,7 +208,8 @@ export const fr = {
       }
     },
     evolution: {
-      title: 'Évolution par Catégorie',
+      title: 'Évolution des Dépenses',
+      category_evolution_title: 'Évolution par Catégorie',
       view: 'Vue',
       expenses: 'Dépenses',
       revenues: 'Revenus',
@@ -235,6 +236,7 @@ export const fr = {
         variable: 'Variable',
         threshold: 'Seuil'
       },
+      max_categories: 'Catégories max',
       no_reports: 'Aucun rapport archivé disponible. Clôturez au moins un rapport pour voir l\'évolution.'
     },
     drawers: {

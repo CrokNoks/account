@@ -7,6 +7,7 @@ import {
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { useAccount } from '../../context/AccountContext';
 import { useIsSmall } from '../../hooks/isSmall';
+import { useDebounce } from '../../hooks/useDebounce';
 import { CategoryShip } from '../../components/CategoryShip';
 import { useCategoryEvolution } from './hooks/useCategoryEvolution';
 
@@ -15,9 +16,11 @@ export const CategoryEvolution = () => {
   const isSmall = useIsSmall();
   const translate = useTranslate();
   const locale = useLocale();
-  const [selectedView, setSelectedView] = useState<'expenses' | 'revenues'>('expenses');
+
   const [varianceFilter, setVarianceFilter] = useState<'all' | 'stable' | 'variable'>('all');
   const [varianceThreshold, setVarianceThreshold] = useState<number>(5);
+  const [maxCategories, setMaxCategories] = useState<number>(5);
+  const debouncedMaxCategories = useDebounce(maxCategories, 300);
 
   const {
     loading,
@@ -39,7 +42,9 @@ export const CategoryEvolution = () => {
   };
 
   useEffect(() => {
-    if (categoryData && categoryData.length > 5) {
+    if (categoryData && categoryData.length > 0) {
+      const maxVisible = Math.min(debouncedMaxCategories, categoryData.length);
+      
       const isVariable = (c: typeof categoryData[0]) => {
         if (c.min === c.max) return false;
         if (c.min === 0) return true; // Any change from 0 is significant
@@ -54,21 +59,21 @@ export const CategoryEvolution = () => {
       variableCats.sort((a, b) => b.totalExpense - a.totalExpense);
       stableCats.sort((a, b) => b.totalExpense - a.totalExpense);
 
-      // 3. Select top 5 starting with variable ones
-      let top5: string[] = [];
+      // 3. Select top categories starting with variable ones
+      let selected: string[] = [];
 
-      // Take up to 5 variable categories
-      top5 = variableCats.slice(0, 5).map(c => c.categoryId);
+      // Take up to maxVisible variable categories
+      selected = variableCats.slice(0, maxVisible).map(c => c.categoryId);
 
-      // If we don't have 5 yet, fill with stable categories
-      if (top5.length < 5) {
-        const remainingSlots = 5 - top5.length;
-        top5 = [...top5, ...stableCats.slice(0, remainingSlots).map(c => c.categoryId)];
+      // If we don't have maxVisible yet, fill with stable categories
+      if (selected.length < maxVisible) {
+        const remainingSlots = maxVisible - selected.length;
+        selected = [...selected, ...stableCats.slice(0, remainingSlots).map(c => c.categoryId)];
       }
 
-      // 4. Determine which categories to hide (all except the top 5 selected)
+      // 4. Determine which categories to hide (all except the selected ones)
       const allCategoryIds = categoryData.map(c => c.categoryId);
-      const toHide = allCategoryIds.filter(id => !top5.includes(id));
+      const toHide = allCategoryIds.filter(id => !selected.includes(id));
 
       setHiddenCategories((_prev) => {
         // If this is a purely automatic update (e.g. initial load or threshold change seeking new defaults), we might want to override.
@@ -78,7 +83,7 @@ export const CategoryEvolution = () => {
         return toHide;
       });
     }
-  }, [categoryData, varianceThreshold]);
+  }, [categoryData, varianceThreshold, debouncedMaxCategories]);
 
   if (!selectedAccountId) {
     return <Box p={2}>{translate('app.messages.no_account')}</Box>;
@@ -109,17 +114,6 @@ export const CategoryEvolution = () => {
         <Typography variant="h5">{translate('app.evolution.title')}</Typography>
         <Box display="flex" flexDirection={isSmall ? 'column' : 'row'} gap={2} width={isSmall ? '100%' : 'auto'}>
           <FormControl size="small" sx={{ minWidth: 150 }}>
-            <InputLabel>{translate('app.evolution.view')}</InputLabel>
-            <Select
-              value={selectedView}
-              label={translate('app.evolution.view')}
-              onChange={(e) => setSelectedView(e.target.value as 'expenses' | 'revenues')}
-            >
-              <MenuItem value="expenses">{translate('app.evolution.expenses')}</MenuItem>
-              <MenuItem value="revenues">{translate('app.evolution.revenues')}</MenuItem>
-            </Select>
-          </FormControl>
-          <FormControl size="small" sx={{ minWidth: 150 }}>
             <InputLabel>{translate('app.evolution.variance.label')}</InputLabel>
             <Select
               value={varianceFilter}
@@ -143,6 +137,23 @@ export const CategoryEvolution = () => {
               valueLabelDisplay="auto"
             />
           </Box>
+          <Box sx={{ width: 250, px: 2 }}>
+            <Typography variant="caption" color="text.secondary" gutterBottom>
+              {translate('app.evolution.max_categories')} ({maxCategories}/{categoryData.length})
+            </Typography>
+            <Slider
+              value={maxCategories}
+              onChange={(_, value) => setMaxCategories(value as number)}
+              min={1}
+              max={categoryData.length || 1}
+              valueLabelDisplay="auto"
+              marks={[
+                { value: 1, label: '1' },
+                { value: Math.min(5, categoryData.length || 1), label: '5' },
+                { value: categoryData.length || 1, label: 'All' }
+              ]}
+            />
+          </Box>
         </Box>
       </Box>
 
@@ -155,7 +166,7 @@ export const CategoryEvolution = () => {
                 {translate('app.evolution.global_stats')}
               </Typography>
               <Grid container spacing={2}>
-                <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+                <Grid size={{ xs: 12, sm: 6, md: 4 }}>
                   <Typography color="text.secondary" variant="body2">
                     {isSmall ? translate('app.evolution.period_analyzed') : `${translate('resources.reports.name', { smart_count: 2 })} ${firstReport ? new Date(firstReport).toLocaleDateString(locale, { month: 'short', year: '2-digit' }) : ''} - ${lastReport ? new Date(lastReport).toLocaleDateString(locale, { month: 'short', year: '2-digit' }) : ''}`}
                   </Typography>
@@ -167,7 +178,7 @@ export const CategoryEvolution = () => {
                   </Typography>
                 </Grid>
                 {!isSmall && (
-                  <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+                <Grid size={{ xs: 12, sm: 6, md: 4 }}>
                     <Typography color="text.secondary" variant="body2">
                       {translate('app.evolution.active_categories')}
                     </Typography>
@@ -176,7 +187,7 @@ export const CategoryEvolution = () => {
                     </Typography>
                   </Grid>
                 )}
-                <Grid size={{ xs: 6, sm: 6, md: 3 }}>
+                <Grid size={{ xs: 12, sm: 6, md: 4 }}>
                   <Typography color="text.secondary" variant="body2">
                     {translate('app.evolution.total_expenses')}
                   </Typography>
@@ -186,16 +197,7 @@ export const CategoryEvolution = () => {
                     )}
                   </Typography>
                 </Grid>
-                <Grid size={{ xs: 6, sm: 6, md: 3 }}>
-                  <Typography color="text.secondary" variant="body2">
-                    {translate('app.evolution.total_revenues')}
-                  </Typography>
-                  <Typography variant="h6" color="primary">
-                    {new Intl.NumberFormat(locale, { style: 'currency', currency: 'EUR' }).format(
-                      chartData.reduce((sum, point) => sum + (point['revenue_Total'] || 0), 0)
-                    )}
-                  </Typography>
-                </Grid>
+
               </Grid>
             </CardContent>
           </Card>
@@ -206,10 +208,9 @@ export const CategoryEvolution = () => {
           <Card>
             <CardContent>
               <Typography variant="h6" gutterBottom>
-                {selectedView === 'expenses' ? translate('app.evolution.summary_expenses') : translate('app.evolution.summary_revenues')}
+                {translate('app.evolution.summary_expenses')}
               </Typography>
-              {selectedView === 'expenses' ? (
-                <Box>
+              <Box>
                   {categoryData
                     .filter(cat => {
                       const isVariable = cat.min !== cat.max && (cat.min === 0 || cat.max > cat.min * (1 + varianceThreshold / 100));
@@ -270,23 +271,6 @@ export const CategoryEvolution = () => {
                       </Box>
                     ))}
                 </Box>
-              ) : (
-                <Box>
-                  <Typography variant="body2" fontWeight="bold" mb={1}>
-                    {translate('app.evolution.total_revenues')}
-                  </Typography>
-                  {chartData.map((point) => (
-                    <Box key={point.reportId} mb={1}>
-                      <Typography variant="body2">
-                        {point.reportLabel}
-                      </Typography>
-                      <Typography variant="body2" color="primary">
-                        {new Intl.NumberFormat(locale, { style: 'currency', currency: 'EUR' }).format(point['revenue_Total'] || 0)}
-                      </Typography>
-                    </Box>
-                  ))}
-                </Box>
-              )}
             </CardContent>
           </Card>
         </Grid>
@@ -313,37 +297,26 @@ export const CategoryEvolution = () => {
                       formatter={(value: any) => new Intl.NumberFormat(locale, { style: 'currency', currency: 'EUR' }).format(value)}
                     />
                     <Legend />
-                    {selectedView === 'expenses' ? (
-                      categoryData
-                        .filter(cat => !hiddenCategories.includes(cat.categoryId))
-                        .filter(cat => {
-                          const isVariable = cat.min !== cat.max && (cat.min === 0 || cat.max > cat.min * (1 + varianceThreshold / 100));
+                    {categoryData
+                      .filter(cat => !hiddenCategories.includes(cat.categoryId))
+                      .filter(cat => {
+                        const isVariable = cat.min !== cat.max && (cat.min === 0 || cat.max > cat.min * (1 + varianceThreshold / 100));
 
-                          if (varianceFilter === 'stable') return !isVariable;
-                          if (varianceFilter === 'variable') return isVariable;
-                          return true;
-                        })
-                        .map((cat) => (
-                          <Line
-                            key={cat.categoryId}
-                            type="monotone"
-                            dataKey={`expense_${cat.name}`}
-                            name={cat.name}
-                            stroke={cat.color}
-                            strokeWidth={2}
-                            dot={{ r: 4 }}
-                          />
-                        ))
-                    ) : (
-                      <Line
-                        type="monotone"
-                        dataKey="revenue_Total"
-                        name={translate('app.evolution.revenues')}
-                        stroke="#4caf50"
-                        strokeWidth={2}
-                        dot={{ r: 4 }}
-                      />
-                    )}
+                        if (varianceFilter === 'stable') return !isVariable;
+                        if (varianceFilter === 'variable') return isVariable;
+                        return true;
+                      })
+                      .map((cat) => (
+                        <Line
+                          key={cat.categoryId}
+                          type="monotone"
+                          dataKey={`expense_${cat.name}`}
+                          name={cat.name}
+                          stroke={cat.color}
+                          strokeWidth={2}
+                          dot={{ r: 4 }}
+                        />
+                      ))}
                   </LineChart>
                 </ResponsiveContainer>
               </CardContent>

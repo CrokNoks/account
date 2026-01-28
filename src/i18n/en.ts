@@ -196,7 +196,8 @@ export const en = {
       }
     },
     evolution: {
-      title: 'Category Evolution',
+      title: 'Expense Evolution',
+      category_evolution_title: 'Category Evolution',
       view: 'View',
       expenses: 'Expenses',
       revenues: 'Income',
@@ -223,6 +224,7 @@ export const en = {
         variable: 'Variable',
         threshold: 'Threshold'
       },
+      max_categories: 'Max Categories',
       no_reports: 'No archived reports available. Close at least one report to see evolution.'
     },
     drawers: {
