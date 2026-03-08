@@ -4,9 +4,20 @@ import { NextResponse, type NextRequest } from 'next/server'
 export async function updateSession(request: NextRequest, response: NextResponse) {
   let supabaseResponse = response;
 
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+  // Debug headers to check environment in production
+  supabaseResponse.headers.set('X-Debug-Has-Url', supabaseUrl ? 'true' : 'false');
+  supabaseResponse.headers.set('X-Debug-Has-Key', supabaseKey ? 'true' : 'false');
+
+  if (!supabaseUrl || !supabaseKey) {
+    return supabaseResponse;
+  }
+
   const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    supabaseUrl,
+    supabaseKey,
     {
       cookies: {
         getAll() {
@@ -22,8 +33,10 @@ export async function updateSession(request: NextRequest, response: NextResponse
     }
   )
 
-  // This will potentially call setAll if the session needs refreshing
-  const { data: { user } } = await supabase.auth.getUser()
+  // Get user session
+  const { data: { user } } = await supabase.auth.getUser();
+  
+  supabaseResponse.headers.set('X-Debug-User', user ? 'found' : 'null');
 
   const pathname = request.nextUrl.pathname;
   const isLoginPage = pathname.includes('/login');
@@ -33,10 +46,11 @@ export async function updateSession(request: NextRequest, response: NextResponse
     const url = request.nextUrl.clone();
     url.pathname = '/login';
     const redirectResponse = NextResponse.redirect(url);
-    // CRITICAL: Copy all cookies from the updated response to the redirect response
-    supabaseResponse.cookies.getAll().forEach(cookie => {
-      redirectResponse.cookies.set(cookie);
-    });
+    
+    // Transfer cookies and debug headers to redirect response
+    supabaseResponse.cookies.getAll().forEach(c => redirectResponse.cookies.set(c));
+    supabaseResponse.headers.forEach((v, k) => redirectResponse.headers.set(k, v));
+    
     return redirectResponse;
   }
 
@@ -45,9 +59,10 @@ export async function updateSession(request: NextRequest, response: NextResponse
     const url = request.nextUrl.clone();
     url.pathname = '/';
     const redirectResponse = NextResponse.redirect(url);
-    supabaseResponse.cookies.getAll().forEach(cookie => {
-      redirectResponse.cookies.set(cookie);
-    });
+    
+    supabaseResponse.cookies.getAll().forEach(c => redirectResponse.cookies.set(c));
+    supabaseResponse.headers.forEach((v, k) => redirectResponse.headers.set(k, v));
+    
     return redirectResponse;
   }
 
