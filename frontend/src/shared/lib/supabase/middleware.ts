@@ -1,46 +1,31 @@
-import { createServerClient, type CookieOptions } from '@supabase/ssr'
+import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
 export async function updateSession(request: NextRequest, response: NextResponse) {
+  let supabaseResponse = response;
+
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
-        get(name: string) {
-          return request.cookies.get(name)?.value
+        getAll() {
+          return request.cookies.getAll()
         },
-        set(name: string, value: string, options: CookieOptions) {
-          request.cookies.set({
-            name,
-            value,
-            ...options,
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value, options }) => request.cookies.set(name, value))
+          supabaseResponse = NextResponse.next({
+            request,
           })
-          response.cookies.set({
-            name,
-            value,
-            ...options,
-          })
-        },
-        remove(name: string, options: CookieOptions) {
-          request.cookies.set({
-            name,
-            value: '',
-            ...options,
-          })
-          response.cookies.set({
-            name,
-            value: '',
-            ...options,
-          })
+          cookiesToSet.forEach(({ name, value, options }) =>
+            supabaseResponse.cookies.set(name, value, options)
+          )
         },
       },
     }
   )
 
-  // Use getSession first to be more resilient
-  const { data: { session } } = await supabase.auth.getSession();
-  const user = session?.user;
+  const { data: { user } } = await supabase.auth.getUser()
 
   const pathname = request.nextUrl.pathname;
   // Detect if current path is a login page (e.g., /fr/login, /en/login, or /login)
@@ -50,19 +35,27 @@ export async function updateSession(request: NextRequest, response: NextResponse
   const segments = pathname.split('/');
   const locale = ['fr', 'en'].includes(segments[1]) ? segments[1] : 'fr';
 
+  // Helper to redirect while preserving cookies
+  const redirectWithCookies = (path: string) => {
+    const url = request.nextUrl.clone();
+    url.pathname = path;
+    const redirectResponse = NextResponse.redirect(url);
+    // Copy cookies from our latest supabaseResponse to the redirectResponse
+    supabaseResponse.cookies.getAll().forEach(cookie => {
+      redirectResponse.cookies.set(cookie.name, cookie.value);
+    });
+    return redirectResponse;
+  }
+
   // 1. If no user and not on a login page -> Redirect to /[locale]/login
   if (!user && !isLoginPage) {
-    const url = request.nextUrl.clone();
-    url.pathname = `/${locale}/login`;
-    return NextResponse.redirect(url);
+    return redirectWithCookies(`/${locale}/login`);
   }
 
   // 2. If user exists and on a login page -> Redirect to /[locale]/
   if (user && isLoginPage) {
-    const url = request.nextUrl.clone();
-    url.pathname = `/${locale}`;
-    return NextResponse.redirect(url);
+    return redirectWithCookies(`/${locale}`);
   }
 
-  return response;
+  return supabaseResponse;
 }
