@@ -1,0 +1,184 @@
+import { Controller, Get, Post, Body, Param, UseGuards, Request, Delete, HttpCode, Query, Patch } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiProperty } from '@nestjs/swagger';
+import { SupabaseAuthGuard } from '../../auth/supabase-auth.guard';
+import { GetTransactionsByAccountUseCase } from '../application/get-transactions-by-account.use-case';
+import { CreateTransactionUseCase } from '../application/create-transaction.use-case';
+import { TransactionRepository } from '../domain/transaction.repository.interface';
+import { IsString, IsOptional, IsNumberString, IsDateString, IsBoolean, IsObject } from 'class-validator';
+
+export class CreateTransactionDto {
+  @IsString()
+  @ApiProperty({ description: 'Account ID' })
+  accountId: string;
+
+  @IsOptional()
+  @IsString()
+  @ApiProperty({ description: 'Category ID', required: false, nullable: true })
+  categoryId: string | null;
+
+  @IsOptional()
+  @IsString()
+  @ApiProperty({ description: 'Period ID', required: false, nullable: true })
+  periodId?: string | null;
+
+  @IsDateString()
+  @ApiProperty({ description: 'Transaction date' })
+  date: string;
+
+  @IsString()
+  @ApiProperty({ description: 'Description' })
+  description: string;
+
+  @IsNumberString()
+  @ApiProperty({ description: 'Amount in cents' })
+  amount: string;
+
+  @IsOptional()
+  @IsString()
+  @ApiProperty({ description: 'Payment method', required: false })
+  paymentMethod?: string;
+
+  @IsOptional()
+  @IsString()
+  @ApiProperty({ description: 'Notes', required: false })
+  notes?: string;
+
+  @IsOptional()
+  @IsObject()
+  @ApiProperty({ description: 'Additional metadata', required: false })
+  metadata?: Record<string, any>;
+}
+
+export class TransactionResponseDto {
+  @ApiProperty()
+  id: string;
+
+  @ApiProperty()
+  accountId: string;
+
+  @ApiProperty({ nullable: true })
+  categoryId: string | null;
+
+  @ApiProperty({ nullable: true })
+  periodId: string | null;
+
+  @ApiProperty()
+  date: string;
+
+  @ApiProperty()
+  description: string;
+
+  @ApiProperty()
+  amount: string;
+
+  @ApiProperty()
+  reconciled: boolean;
+
+  @ApiProperty({ nullable: true })
+  paymentMethod: string | null;
+
+  @ApiProperty({ nullable: true })
+  notes: string | null;
+
+  @ApiProperty()
+  metadata: Record<string, any>;
+
+  @ApiProperty()
+  createdAt: string;
+
+  @ApiProperty()
+  updatedAt: string;
+}
+
+@ApiTags('transactions')
+@ApiBearerAuth()
+@UseGuards(SupabaseAuthGuard)
+@Controller(':accountId/transactions')
+export class TransactionsController {
+  constructor(
+    private readonly getTransactionsByAccountUseCase: GetTransactionsByAccountUseCase,
+    private readonly createTransactionUseCase: CreateTransactionUseCase,
+    private readonly transactionRepository: TransactionRepository,
+  ) {}
+
+  @Get()
+  @ApiOperation({ summary: 'Get all transactions for this account, optionally filtered by period' })
+  @ApiResponse({ status: 200, type: [TransactionResponseDto] })
+  async findAll(
+    @Param('accountId') accountId: string,
+    @Query('periodId') periodId?: string
+  ): Promise<TransactionResponseDto[]> {
+    if (periodId) {
+      const transactions = await this.transactionRepository.findAllByPeriod(periodId);
+      return transactions
+        .filter(t => t.accountId === accountId)
+        .map(t => this.mapToResponse(t));
+    }
+
+    const transactions = await this.getTransactionsByAccountUseCase.execute(accountId);
+    return transactions.map(t => this.mapToResponse(t));
+  }
+
+  @Patch(':id')
+  @ApiOperation({ summary: 'Update a transaction partialy' })
+  @ApiResponse({ status: 200, type: TransactionResponseDto })
+  async update(
+    @Param('id') id: string,
+    @Body() dto: Partial<CreateTransactionDto> & { reconciled?: boolean }
+  ): Promise<TransactionResponseDto> {
+    const existing = await this.transactionRepository.findById(id);
+    if (!existing) throw new Error('Transaction not found');
+
+    const updated = new (existing as any).constructor({
+      ...existing,
+      ...dto,
+      date: dto.date ? new Date(dto.date) : (existing as any).date,
+      amount: dto.amount ? BigInt(dto.amount) : (existing as any).amount,
+      updatedAt: new Date(),
+    });
+
+    await this.transactionRepository.save(updated);
+    return this.mapToResponse(updated);
+  }
+
+  @Delete(':id')
+  @HttpCode(204)
+  @ApiOperation({ summary: 'Delete a transaction' })
+  async delete(@Param('id') id: string): Promise<void> {
+    await this.transactionRepository.delete(id);
+  }
+
+  @Post()
+  @ApiOperation({ summary: 'Create a new transaction for this account' })
+  @ApiResponse({ status: 201, type: TransactionResponseDto })
+  async create(
+    @Param('accountId') accountId: string,
+    @Body() dto: Omit<CreateTransactionDto, 'accountId'>
+  ): Promise<TransactionResponseDto> {
+    const transaction = await this.createTransactionUseCase.execute({
+      ...dto,
+      accountId,
+      date: new Date(dto.date),
+      amount: BigInt(dto.amount),
+    } as any); // Cast for Omit compatibility
+    return this.mapToResponse(transaction);
+  }
+
+  private mapToResponse(t: any): TransactionResponseDto {
+    return {
+      id: t.id,
+      accountId: t.accountId,
+      categoryId: t.categoryId || null,
+      periodId: t.periodId || null,
+      date: t.date.toISOString(),
+      description: t.description,
+      amount: t.amount.toString(),
+      reconciled: t.reconciled,
+      paymentMethod: t.paymentMethod || null,
+      notes: t.notes || null,
+      metadata: t.metadata,
+      createdAt: t.createdAt.toISOString(),
+      updatedAt: t.updatedAt.toISOString(),
+    };
+  }
+}
