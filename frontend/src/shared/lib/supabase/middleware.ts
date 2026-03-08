@@ -1,20 +1,11 @@
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
-export async function updateSession(request: NextRequest, existingResponse?: NextResponse) {
-  let response = existingResponse ?? NextResponse.next({
-    request: {
-      headers: request.headers,
-    },
-  })
-
+export async function updateSession(request: NextRequest, response: NextResponse) {
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
-      cookieOptions: {
-        name: 'sb-auth-token',
-      },
       cookies: {
         get(name: string) {
           return request.cookies.get(name)?.value
@@ -25,14 +16,6 @@ export async function updateSession(request: NextRequest, existingResponse?: Nex
             value,
             ...options,
           })
-          // If we don't have an existing response, create a new one
-          if (!existingResponse) {
-            response = NextResponse.next({
-              request: {
-                headers: request.headers,
-              },
-            })
-          }
           response.cookies.set({
             name,
             value,
@@ -45,13 +28,6 @@ export async function updateSession(request: NextRequest, existingResponse?: Nex
             value: '',
             ...options,
           })
-          if (!existingResponse) {
-            response = NextResponse.next({
-              request: {
-                headers: request.headers,
-              },
-            })
-          }
           response.cookies.set({
             name,
             value: '',
@@ -62,26 +38,31 @@ export async function updateSession(request: NextRequest, existingResponse?: Nex
     }
   )
 
-  const { data: { user } } = await supabase.auth.getUser()
+  // Use getSession first to be more resilient
+  const { data: { session } } = await supabase.auth.getSession();
+  const user = session?.user;
 
-  // Extract path without locale if needed for logic, but pathname is full path
   const pathname = request.nextUrl.pathname;
-  const isLoginPage = pathname.includes('/login');
+  // Detect if current path is a login page (e.g., /fr/login, /en/login, or /login)
+  const isLoginPage = pathname.endsWith('/login');
+  
+  // Extract locale from pathname or default to fr
+  const segments = pathname.split('/');
+  const locale = ['fr', 'en'].includes(segments[1]) ? segments[1] : 'fr';
 
-  // Simple logic: if no user and not login -> redirect to /login
-  // We let next-intl handle the locale prefix if the redirect happens
+  // 1. If no user and not on a login page -> Redirect to /[locale]/login
   if (!user && !isLoginPage) {
-    const url = request.nextUrl.clone()
-    url.pathname = '/login'
-    return NextResponse.redirect(url)
+    const url = request.nextUrl.clone();
+    url.pathname = `/${locale}/login`;
+    return NextResponse.redirect(url);
   }
 
-  // If user and is login -> redirect to /
+  // 2. If user exists and on a login page -> Redirect to /[locale]/
   if (user && isLoginPage) {
-    const url = request.nextUrl.clone()
-    url.pathname = '/'
-    return NextResponse.redirect(url)
+    const url = request.nextUrl.clone();
+    url.pathname = `/${locale}`;
+    return NextResponse.redirect(url);
   }
 
-  return response
+  return response;
 }
