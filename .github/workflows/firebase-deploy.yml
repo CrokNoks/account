@@ -14,7 +14,18 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Filter for changes
+        uses: dorny/paths-filter@v3
+        id: changes
+        with:
+          filters: |
+            frontend:
+              - 'frontend/**'
+              - 'firebase.json'
+              - '.github/workflows/firebase-deploy.yml'
+
       - name: Setup Node.js
+        if: steps.changes.outputs.frontend == 'true'
         uses: actions/setup-node@v4
         with:
           node-version: '20'
@@ -22,10 +33,12 @@ jobs:
           cache-dependency-path: 'frontend/package-lock.json'
 
       - name: Install dependencies (frontend)
+        if: steps.changes.outputs.frontend == 'true'
         run: npm ci
         working-directory: frontend
 
       - name: Create .env.production
+        if: steps.changes.outputs.frontend == 'true'
         working-directory: frontend
         run: |
           echo "NEXT_PUBLIC_SUPABASE_URL=${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}" > .env.production
@@ -33,11 +46,13 @@ jobs:
           echo "NEXT_PUBLIC_API_URL=${{ secrets.NEXT_PUBLIC_API_URL }}" >> .env.production
 
       - id: 'auth'
+        if: steps.changes.outputs.frontend == 'true'
         uses: 'google-github-actions/auth@v2'
         with:
           credentials_json: '${{ secrets.FIREBASE_SERVICE_ACCOUNT }}'
 
       - name: Deploy to Firebase
+        if: steps.changes.outputs.frontend == 'true'
         run: |
           npx firebase-tools experiments:enable webframeworks
           npx firebase-tools deploy --only hosting --project ${{ secrets.FIREBASE_PROJECT_ID }}
