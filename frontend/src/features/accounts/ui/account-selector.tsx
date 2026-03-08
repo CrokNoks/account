@@ -1,0 +1,44 @@
+'use client';
+
+import { useEffect } from 'react';
+import { 
+  Select, 
+  SelectContent, 
+  SelectItem, 
+  SelectTrigger, 
+  SelectValue 
+} from "@/components/ui/select";
+import { useAccounts } from '../api/use-accounts';
+import { useAccountStore } from '../model/use-account-store';
+
+export function AccountSelector() {
+  const { data: accounts, isLoading } = useAccounts();
+  const { activeAccountId, setActiveAccountId } = useAccountStore();
+
+  useEffect(() => {
+    // Auto-select first account if none selected
+    if (accounts && accounts.length > 0 && !activeAccountId) {
+      setActiveAccountId(accounts[0].id);
+    }
+  }, [accounts, activeAccountId, setActiveAccountId]);
+
+  if (isLoading) return <div className="h-10 w-[180px] bg-muted animate-pulse rounded-md" />;
+
+  return (
+    <Select 
+      value={activeAccountId || ""} 
+      onValueChange={(v) => setActiveAccountId(v)}
+    >
+      <SelectTrigger className="w-[200px]">
+        <SelectValue placeholder="Select an account" />
+      </SelectTrigger>
+      <SelectContent>
+        {accounts?.map((account) => (
+          <SelectItem key={account.id} value={account.id}>
+            {account.name}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  );
+}
