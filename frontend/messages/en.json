@@ -77,6 +77,10 @@
     "empty": "No transactions found",
     "save_another": "Save & Add Another",
     "expense_hint": "Use negative value for expenses (ex: -10)",
+    "filter_status": "Filter by status",
+    "status_all": "All statuses",
+    "status_reconciled": "Reconciled",
+    "status_not_reconciled": "Not reconciled",
     "delete_confirm": "Are you sure you want to delete this transaction?",
     "deleted": "Transaction deleted",
     "toggled": "Transaction updated"
@@ -113,7 +117,8 @@
       "is_active": "Active Period"
     },
     "stats_hint": "Min: {min} | Avg: {avg} | Max: {max}",
-    "updated": "Period updated"
+    "updated": "Period updated",
+    "close_period": "Close Period"
   },
   "Common": {
     "add": "Add",
