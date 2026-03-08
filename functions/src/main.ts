@@ -40,6 +40,7 @@ async function createNestServer(expressInstance: express.Express): Promise<INest
 
 // Firebase Function export
 export const api = onRequest({ region: 'europe-west1', memory: '256MiB' }, async (req, res) => {
+  console.log(`[CloudFunction] ${req.method} ${req.url} - Auth: ${req.headers.authorization ? 'present' : 'missing'}`);
   if (!cachedApp) {
     const expressApp = express();
     await createNestServer(expressApp);
@@ -52,8 +53,14 @@ export const api = onRequest({ region: 'europe-west1', memory: '256MiB' }, async
 async function bootstrap() {
   if (!process.env.FUNCTIONS_EMULATOR && !process.env.FIREBASE_CONFIG) {
     const expressApp = express();
-    const app = await createNestServer(expressApp);
-    await app.listen(process.env.PORT ?? 8080);
+
+    // Global logging middleware
+    expressApp.use((req, res, next) => {
+      console.log(`[Request] ${req.method} ${req.url} - Auth: ${req.headers.authorization ? 'present' : 'missing'}`);
+      next();
+    });
+
+    const app = await createNestServer(expressApp);    await app.listen(process.env.PORT ?? 8080);
     console.log(`Application is running on: http://localhost:${process.env.PORT ?? 8080}`);
   }
 }
