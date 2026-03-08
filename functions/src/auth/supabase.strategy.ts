@@ -35,14 +35,14 @@ export class SupabaseStrategy extends PassportStrategy(Strategy) {
     super(strategyOptions);
 
     if (isProduction) {
-      this.logger.log('Using HS256 validation with secret');
+      console.log(`[SupabaseStrategy] Using HS256 validation. Secret length: ${secret?.length}`);
     } else {
-      this.logger.log(`Using ES256/JWKS validation with URL: ${jwksUrl}`);
+      console.log(`[SupabaseStrategy] Using ES256/JWKS validation. URL: ${jwksUrl}`);
     }
   }
 
   async validate(payload: any) {
-    this.logger.log(`Token validated successfully for user: ${payload.sub}`);
+    console.log(`[SupabaseStrategy] Token validated for user: ${payload.sub} (${payload.email})`);
     return { id: payload.sub, email: payload.email };
   }
 }
