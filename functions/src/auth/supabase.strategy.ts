@@ -19,11 +19,11 @@ export class SupabaseStrategy extends PassportStrategy(Strategy) {
       algorithms: ['HS256', 'ES256'],
     };
 
-    if (secret && !supabaseUrl?.includes('127.0.0.1')) {
-      this.logger.log('Using HS256 validation with secret');
+    const isProduction = secret && !supabaseUrl?.includes('127.0.0.1');
+
+    if (isProduction) {
       strategyOptions.secretOrKey = secret;
     } else {
-      this.logger.log(`Using ES256/JWKS validation with URL: ${jwksUrl}`);
       strategyOptions.secretOrKeyProvider = passportJwtSecret({
         cache: true,
         rateLimit: true,
@@ -33,6 +33,12 @@ export class SupabaseStrategy extends PassportStrategy(Strategy) {
     }
 
     super(strategyOptions);
+
+    if (isProduction) {
+      this.logger.log('Using HS256 validation with secret');
+    } else {
+      this.logger.log(`Using ES256/JWKS validation with URL: ${jwksUrl}`);
+    }
   }
 
   async validate(payload: any) {
