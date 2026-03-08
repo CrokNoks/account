@@ -3,9 +3,11 @@ import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiProperty } from '
 import { SupabaseAuthGuard } from '../../auth/supabase-auth.guard';
 import { GetTransactionsByAccountUseCase } from '../application/get-transactions-by-account.use-case';
 import { CreateTransactionUseCase } from '../application/create-transaction.use-case';
+import { PredictCategoryUseCase } from '../application/predict-category.use-case';
 import { TransactionRepository } from '../domain/transaction.repository.interface';
 import { IsString, IsOptional, IsNumberString, IsDateString, IsBoolean, IsObject } from 'class-validator';
 
+// ... (DTOs remain unchanged)
 export class CreateTransactionDto {
   @IsString()
   @ApiProperty({ description: 'Account ID' })
@@ -90,6 +92,11 @@ export class TransactionResponseDto {
   updatedAt: string;
 }
 
+export class PredictionResponseDto {
+  @ApiProperty({ nullable: true })
+  categoryId: string | null;
+}
+
 @ApiTags('transactions')
 @ApiBearerAuth()
 @UseGuards(SupabaseAuthGuard)
@@ -98,8 +105,19 @@ export class TransactionsController {
   constructor(
     private readonly getTransactionsByAccountUseCase: GetTransactionsByAccountUseCase,
     private readonly createTransactionUseCase: CreateTransactionUseCase,
+    private readonly predictCategoryUseCase: PredictCategoryUseCase,
     private readonly transactionRepository: TransactionRepository,
   ) {}
+
+  @Get('predict-category')
+  @ApiOperation({ summary: 'Predict category based on transaction description' })
+  @ApiResponse({ status: 200, type: PredictionResponseDto })
+  async predictCategory(
+    @Param('accountId') accountId: string,
+    @Query('description') description: string
+  ): Promise<PredictionResponseDto> {
+    return this.predictCategoryUseCase.execute(accountId, description);
+  }
 
   @Get()
   @ApiOperation({ summary: 'Get all transactions for this account, optionally filtered by period' })
