@@ -17,9 +17,13 @@ import { usePeriodDraft } from '../api/use-period-draft';
 import { useCreatePeriod } from '../api/use-create-period';
 import { Plus, Calculator } from 'lucide-react';
 import { formatCurrency } from '@/shared/lib/format';
+import { useTranslations } from 'next-intl';
 
 export function CreatePeriodDialog() {
   const { activeAccountId } = useAccountStore();
+  const t = useTranslations('Budgets');
+  const tc = useTranslations('Common');
+  
   const [open, setOpen] = useState(false);
   
   const { data: draft, isLoading: isLoadingDraft } = usePeriodDraft(activeAccountId);
@@ -65,22 +69,22 @@ export function CreatePeriodDialog() {
         render={
           <Button className="gap-2" variant="outline">
             <Plus className="w-4 h-4" />
-            New Period
+            {t('new_period')}
           </Button>
         }
       />
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Create Financial Period</DialogTitle>
+          <DialogTitle>{t('new_period_title')}</DialogTitle>
           <DialogDescription>
-            Define dates and initial budgets based on your history.
+            {t('new_period_desc')}
           </DialogDescription>
         </DialogHeader>
         
         <form onSubmit={handleSubmit} className="space-y-6 py-4">
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <label className="text-sm font-medium">Start Date</label>
+              <label className="text-sm font-medium">{t('fields.start_date')}</label>
               <Input 
                 type="date" 
                 value={startDate}
@@ -89,7 +93,7 @@ export function CreatePeriodDialog() {
               />
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium">End Date</label>
+              <label className="text-sm font-medium">{t('fields.end_date')}</label>
               <Input 
                 type="date" 
                 value={endDate}
@@ -102,7 +106,7 @@ export function CreatePeriodDialog() {
           <div className="space-y-4">
             <h3 className="text-sm font-semibold flex items-center gap-2">
               <Calculator className="w-4 h-4" />
-              Budget Initialization
+              {t('fields.budget_init')}
             </h3>
             <div className="border rounded-lg divide-y">
               {draft?.categoriesWithStats.map((cat) => (
@@ -110,9 +114,11 @@ export function CreatePeriodDialog() {
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium truncate">{cat.name}</p>
                     <div className="flex gap-2 text-[10px] text-muted-foreground mt-1">
-                      <span>Min: {formatCurrency(cat.minReal)}</span>
-                      <span>Avg: {formatCurrency(cat.avgReal)}</span>
-                      <span>Max: {formatCurrency(cat.maxReal)}</span>
+                      <span>{t('stats_hint', { 
+                        min: formatCurrency(cat.minReal), 
+                        avg: formatCurrency(cat.avgReal), 
+                        max: formatCurrency(cat.maxReal) 
+                      })}</span>
                     </div>
                   </div>
                   <div className="w-32">
@@ -131,7 +137,7 @@ export function CreatePeriodDialog() {
 
           <DialogFooter>
             <Button type="submit" disabled={isPending || isLoadingDraft}>
-              {isPending ? 'Creating...' : 'Initialize Period'}
+              {isPending ? tc('loading') : tc('add')}
             </Button>
           </DialogFooter>
         </form>

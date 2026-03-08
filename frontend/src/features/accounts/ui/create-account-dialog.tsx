@@ -21,8 +21,12 @@ import {
 } from "@/components/ui/select";
 import { useCreateAccount } from '../api/use-create-account';
 import { Plus } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 
 export function CreateAccountDialog() {
+  const t = useTranslations('Accounts');
+  const tc = useTranslations('Common');
+  
   const [open, setOpen] = useState(false);
   const [name, setName] = useState('');
   const [type, setType] = useState('checking');
@@ -53,20 +57,20 @@ export function CreateAccountDialog() {
         render={
           <Button className="gap-2">
             <Plus className="w-4 h-4" />
-            Add Account
+            {t('add_account')}
           </Button>
         }
       />
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>New Bank Account</DialogTitle>
+          <DialogTitle>{t('new_account_title')}</DialogTitle>
           <DialogDescription>
-            Enter the details of your new bank account.
+            {t('new_account_desc')}
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 py-4">
           <div className="space-y-2">
-            <label className="text-sm font-medium">Name</label>
+            <label className="text-sm font-medium">{t('fields.name')}</label>
             <Input 
               placeholder="Checking Account, Savings..." 
               value={name}
@@ -76,20 +80,20 @@ export function CreateAccountDialog() {
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <label className="text-sm font-medium">Type</label>
+              <label className="text-sm font-medium">{t('fields.type')}</label>
               <Select value={type} onValueChange={(v) => setType(v || 'checking')}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="checking">Checking</SelectItem>
-                  <SelectItem value="savings">Savings</SelectItem>
-                  <SelectItem value="cash">Cash</SelectItem>
+                  <SelectItem value="checking">{t('types.checking')}</SelectItem>
+                  <SelectItem value="savings">{t('types.savings')}</SelectItem>
+                  <SelectItem value="cash">{t('types.cash')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium">Currency</label>
+              <label className="text-sm font-medium">{t('fields.currency')}</label>
               <Select value={currency} onValueChange={(v) => setCurrency(v || 'EUR')}>
                 <SelectTrigger>
                   <SelectValue />
@@ -102,7 +106,7 @@ export function CreateAccountDialog() {
             </div>
           </div>
           <div className="space-y-2">
-            <label className="text-sm font-medium">Initial Balance</label>
+            <label className="text-sm font-medium">{t('fields.balance')}</label>
             <Input 
               type="number" 
               step="0.01"
@@ -113,7 +117,7 @@ export function CreateAccountDialog() {
           </div>
           <DialogFooter>
             <Button type="submit" disabled={isPending}>
-              {isPending ? 'Creating...' : 'Create Account'}
+              {isPending ? tc('loading') : tc('add')}
             </Button>
           </DialogFooter>
         </form>

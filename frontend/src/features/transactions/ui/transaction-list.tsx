@@ -30,8 +30,11 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { toast } from 'sonner';
+import { useTranslations } from 'next-intl';
 
 export function TransactionList() {
+  const t = useTranslations('Transactions');
+  const tc = useTranslations('Common');
   const { activeAccountId } = useAccountStore();
   const { data: periods } = usePeriods(activeAccountId);
   const { mutate: updateTransaction, isPending: isUpdating } = useUpdateTransaction();
@@ -49,14 +52,14 @@ export function TransactionList() {
       id: transactionId,
       data: { reconciled: !currentStatus }
     }, {
-      onSuccess: () => toast.success(currentStatus ? 'Transaction un-pointed' : 'Transaction reconciled')
+      onSuccess: () => toast.success(t('toggled'))
     });
   };
 
   const handleDelete = (id: string, description: string) => {
-    if (!activeAccountId || !confirm(`Delete "${description}"?`)) return;
+    if (!activeAccountId || !confirm(t('delete_confirm'))) return;
     deleteTransaction({ accountId: activeAccountId, id }, {
-      onSuccess: () => toast.success(`Transaction deleted`)
+      onSuccess: () => toast.success(t('deleted'))
     });
   };
 
@@ -83,16 +86,16 @@ export function TransactionList() {
           <TableHeader>
             <TableRow>
               <TableHead className="w-[50px]">Status</TableHead>
-              <TableHead>Date</TableHead>
-              <TableHead>Description</TableHead>
-              <TableHead>Category</TableHead>
-              <TableHead className="text-right">Amount</TableHead>
+              <TableHead>{t('fields.date')}</TableHead>
+              <TableHead>{t('fields.description')}</TableHead>
+              <TableHead>{t('fields.category')}</TableHead>
+              <TableHead className="text-right">{t('fields.amount')}</TableHead>
               <TableHead className="w-[100px]"></TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {transactions?.length === 0 ? (
-              <TableRow><TableCell colSpan={6} className="h-24 text-center">No transactions found.</TableCell></TableRow>
+              <TableRow><TableCell colSpan={6} className="h-24 text-center">{t('empty')}</TableCell></TableRow>
             ) : (
               transactions?.map((t) => (
                 <TableRow key={t.id} className="group">
@@ -136,6 +139,8 @@ export function TransactionList() {
 }
 
 function EditTransactionDialog({ transaction, open, onOpenChange }: { transaction: Transaction, open: boolean, onOpenChange: (o: boolean) => void }) {
+  const t = useTranslations('Transactions');
+  const tc = useTranslations('Common');
   const { activeAccountId } = useAccountStore();
   const { data: categories } = useCategories(activeAccountId);
   const [date, setDate] = useState(transaction.date.split('T')[0]);
@@ -160,7 +165,7 @@ function EditTransactionDialog({ transaction, open, onOpenChange }: { transactio
       }
     }, {
       onSuccess: () => {
-        toast.success(`Transaction updated`);
+        toast.success(t('toggled'));
         onOpenChange(false);
       }
     });
@@ -169,18 +174,18 @@ function EditTransactionDialog({ transaction, open, onOpenChange }: { transactio
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
-        <DialogHeader><DialogTitle>Edit Transaction</DialogTitle></DialogHeader>
+        <DialogHeader><DialogTitle>{tc('edit')} Transaction</DialogTitle></DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 py-4">
           <div className="space-y-2">
-            <label className="text-sm font-medium">Date</label>
+            <label className="text-sm font-medium">{t('fields.date')}</label>
             <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} required />
           </div>
           <div className="space-y-2">
-            <label className="text-sm font-medium">Description</label>
+            <label className="text-sm font-medium">{t('fields.description')}</label>
             <Input value={description} onChange={(e) => setDescription(e.target.value)} required />
           </div>
           <div className="space-y-2">
-            <label className="text-sm font-medium">Category</label>
+            <label className="text-sm font-medium">{t('fields.category')}</label>
             <Select value={categoryId} onValueChange={(v) => setCategoryId(v || '')}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
@@ -190,11 +195,11 @@ function EditTransactionDialog({ transaction, open, onOpenChange }: { transactio
             </Select>
           </div>
           <div className="space-y-2">
-            <label className="text-sm font-medium">Amount</label>
+            <label className="text-sm font-medium">{t('fields.amount')}</label>
             <Input type="number" step="0.01" value={amount} onChange={(e) => setAmount(e.target.value)} required />
           </div>
           <DialogFooter>
-            <Button type="submit" disabled={isPending}>Save Changes</Button>
+            <Button type="submit" disabled={isPending}>{tc('save')}</Button>
           </DialogFooter>
         </form>
       </DialogContent>
