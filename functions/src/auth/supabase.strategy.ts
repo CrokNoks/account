@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { ConfigService } from '@nestjs/config';
@@ -6,6 +6,8 @@ import { passportJwtSecret } from 'jwks-rsa';
 
 @Injectable()
 export class SupabaseStrategy extends PassportStrategy(Strategy) {
+  private readonly logger = new Logger(SupabaseStrategy.name);
+
   constructor(private readonly configService: ConfigService) {
     const supabaseUrl = configService.get<string>('SUPABASE_URL');
     const secret = configService.get<string>('SUPABASE_JWT_SECRET');
@@ -17,11 +19,11 @@ export class SupabaseStrategy extends PassportStrategy(Strategy) {
       algorithms: ['HS256', 'ES256'],
     };
 
-    // If a secret is provided, prefer HS256 validation (common for Supabase cloud)
     if (secret && !supabaseUrl?.includes('127.0.0.1')) {
+      this.logger.log('Using HS256 validation with secret');
       strategyOptions.secretOrKey = secret;
     } else {
-      // Use JWKS for local or if no secret is provided (uses ES256)
+      this.logger.log(`Using ES256/JWKS validation with URL: ${jwksUrl}`);
       strategyOptions.secretOrKeyProvider = passportJwtSecret({
         cache: true,
         rateLimit: true,
@@ -34,6 +36,7 @@ export class SupabaseStrategy extends PassportStrategy(Strategy) {
   }
 
   async validate(payload: any) {
+    this.logger.log(`Token validated successfully for user: ${payload.sub}`);
     return { id: payload.sub, email: payload.email };
   }
 }
