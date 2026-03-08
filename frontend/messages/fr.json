@@ -1,0 +1,129 @@
+{
+  "Navigation": {
+    "dashboard": "Tableau de bord",
+    "accounts": "Comptes",
+    "categories": "Catégories",
+    "transactions": "Transactions",
+    "budgets": "Budgets",
+    "logout": "Déconnexion"
+  },
+  "Auth": {
+    "login_title": "Connexion",
+    "login_desc": "Saisissez votre email et mot de passe pour accéder à votre compte.",
+    "email": "Email",
+    "password": "Mot de passe",
+    "signin": "Se connecter",
+    "signing_in": "Connexion en cours...",
+    "error_empty": "Veuillez remplir tous les champs",
+    "error_generic": "Échec de la connexion"
+  },
+  "Dashboard": {
+    "title": "Tableau de bord",
+    "welcome": "Bienvenue sur votre gestionnaire de finances",
+    "stats": "Statistiques de la période",
+    "breakdown": "Répartition budgétaire"
+  },
+  "Reporting": {
+    "start_balance": "Solde initial",
+    "real_income": "Revenus réels",
+    "planned_income": "Revenus prévus",
+    "real_expenses": "Dépenses réelles",
+    "planned_expenses": "Dépenses prévues",
+    "real_bank_balance": "Solde en banque (pointé)",
+    "upcoming_balance": "Solde à venir",
+    "forecast_balance": "Solde prévisionnel",
+    "no_period": "Aucune période active. Veuillez en créer une dans l'onglet Budgets.",
+    "income": "Revenus",
+    "expenses": "Dépenses",
+    "savings": "Épargne",
+    "transfers": "Virements",
+    "category": "Catégorie",
+    "real": "Réel",
+    "budget": "Budget",
+    "remaining": "Restant"
+  },
+  "Accounts": {
+    "title": "Mes Comptes",
+    "description": "Gérez vos comptes bancaires et suivez leurs soldes.",
+    "add_account": "Ajouter un compte",
+    "new_account_title": "Nouveau compte bancaire",
+    "new_account_desc": "Entrez les détails de votre nouveau compte.",
+    "fields": {
+      "name": "Nom",
+      "type": "Type",
+      "currency": "Devise",
+      "balance": "Solde initial"
+    },
+    "types": {
+      "checking": "Courant",
+      "savings": "Épargne",
+      "cash": "Espèces"
+    },
+    "select_account": "Sélectionner un compte"
+  },
+  "Transactions": {
+    "title": "Transactions",
+    "description": "Historique complet de vos revenus et dépenses.",
+    "add_transaction": "Ajouter une opération",
+    "new_transaction_title": "Nouvelle opération",
+    "new_transaction_desc": "Enregistrez rapidement un revenu ou une dépense.",
+    "fields": {
+      "date": "Date",
+      "description": "Description",
+      "category": "Catégorie",
+      "amount": "Montant",
+      "reconciled": "Pointé"
+    },
+    "empty": "Aucune transaction trouvée",
+    "save_another": "Enregistrer & Nouveau",
+    "expense_hint": "Utilisez une valeur négative pour les dépenses (ex: -10)",
+    "delete_confirm": "Êtes-vous sûr de vouloir supprimer cette transaction ?",
+    "deleted": "Transaction supprimée",
+    "toggled": "Transaction mise à jour"
+  },
+  "Categories": {
+    "title": "Catégories",
+    "description": "Organisez vos transactions avec des catégories personnalisées.",
+    "add_category": "Nouvelle catégorie",
+    "fields": {
+      "name": "Nom",
+      "type": "Type",
+      "color": "Couleur"
+    },
+    "types": {
+      "expense": "Dépense",
+      "income": "Revenu",
+      "transfer": "Virement",
+      "savings": "Épargne"
+    },
+    "empty": "Aucune catégorie configurée"
+  },
+  "Budgets": {
+    "title": "Périodes Financières",
+    "description": "Définissez vos cycles budgétaires et analysez vos performances.",
+    "new_period": "Nouvelle période",
+    "new_period_title": "Créer une période financière",
+    "new_period_desc": "Définissez les dates et les budgets initiaux basés sur votre historique.",
+    "edit_period": "Modifier la période",
+    "active": "Active",
+    "fields": {
+      "start_date": "Date de début",
+      "end_date": "Date de fin",
+      "budget_init": "Initialisation du budget",
+      "is_active": "Période active"
+    },
+    "stats_hint": "Min: {min} | Moy: {avg} | Max: {max}",
+    "updated": "Période mise à jour"
+  },
+  "Common": {
+    "add": "Ajouter",
+    "save": "Enregistrer",
+    "update": "Mettre à jour",
+    "cancel": "Annuler",
+    "loading": "Chargement...",
+    "error": "Une erreur est survenue",
+    "success": "Opération réussie",
+    "edit": "Modifier",
+    "delete": "Supprimer"
+  }
+}
