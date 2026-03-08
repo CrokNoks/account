@@ -29,14 +29,14 @@ export function Header() {
 
   // Find the key by checking if pathname ends with the route
   const currentKey = Object.keys(routeKeys).find(route => 
-    pathname.endsWith(route === '/' ? `/${locale}` : route)
+    pathname === route
   ) || '/';
   
   const label = t(routeKeys[currentKey] || 'dashboard');
 
   const handleLocaleChange = (newLocale: string | null) => {
     if (!newLocale) return;
-    // router.replace keeps the same pathname but changes the locale
+    // router.replace will now change the locale via cookie since prefix is 'never'
     router.replace(pathname as any, { locale: newLocale as any });
   };
 

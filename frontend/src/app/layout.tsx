@@ -4,9 +4,7 @@ import "./globals.css";
 import QueryProvider from "./providers/query-provider";
 import {Toaster} from "@/components/ui/sonner";
 import {NextIntlClientProvider} from 'next-intl';
-import {getMessages} from 'next-intl/server';
-import {notFound} from 'next/navigation';
-import {routing} from '@/i18n/routing';
+import {getMessages, getLocale} from 'next-intl/server';
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -23,25 +21,12 @@ export const metadata: Metadata = {
   description: "Personal finance manager",
 };
 
-export const dynamic = 'force-static';
-
-export function generateStaticParams() {
-  return routing.locales.map((locale) => ({locale}));
-}
-
 export default async function RootLayout({
   children,
-  params
 }: {
   children: React.ReactNode;
-  params: Promise<{locale: string}>;
 }) {
-  const {locale} = await params;
-
-  // Ensure that the incoming `locale` is valid
-  if (!routing.locales.includes(locale as any)) {
-    notFound();
-  }
+  const locale = await getLocale();
  
   // Providing all messages to the client
   // side is the easiest way to get started
