@@ -60,7 +60,8 @@ async function bootstrap() {
       next();
     });
 
-    const app = await createNestServer(expressApp);    await app.listen(process.env.PORT ?? 8080);
+    const app = await createNestServer(expressApp);
+    await app.listen(process.env.PORT ?? 8080);
     console.log(`Application is running on: http://localhost:${process.env.PORT ?? 8080}`);
   }
 }
