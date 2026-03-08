@@ -18,8 +18,5 @@
     "deploy:frontend": "firebase deploy --only hosting",
     "deploy:backend": "firebase deploy --only functions",
     "deploy:all": "firebase deploy"
-  },
-  "dependencies": {
-    "@supabase/supabase-js": "^2.39.0"
   }
 }
