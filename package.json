@@ -1,14 +1,10 @@
 {
-  "name": "account",
-  "version": "2.0.1",
-  "description": "Une application moderne de suivi de dépenses et revenus.",
-  "author": "CrokNoks",
-  "license": "MIT",
+  "name": "account-v2",
+  "version": "1.3.0",
+  "description": "Personal finance manager with Supabase and NestJS",
   "keywords": [
-    "react",
-    "react-admin",
-    "supabase",
-    "finance",
+    "personal-finance",
+    "budget-manager",
     "expense-tracker",
     "pwa"
   ],
@@ -18,36 +14,12 @@
     "release:patch": "node scripts/release.js patch",
     "release:minor": "node scripts/release.js minor",
     "release:major": "node scripts/release.js major",
-    "release:custom": "node scripts/release.js custom"
+    "release:custom": "node scripts/release.js custom",
+    "deploy:frontend": "firebase deploy --only hosting",
+    "deploy:backend": "firebase deploy --only functions",
+    "deploy:all": "firebase deploy"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.39.0",
-    "@tensorflow/tfjs": "^4.22.0",
-    "dotenv": "^17.2.3",
-    "papaparse": "^5.5.3",
-    "ra-i18n-polyglot": "^5.13.3",
-    "ra-language-english": "^5.13.3",
-    "ra-language-french": "^5.13.3",
-    "ra-supabase": "^3.5.2",
-    "ra-ui-materialui": "^5.13.2",
-    "react": "^18.2.0",
-    "react-admin": "^5.13.2",
-    "react-dom": "^18.2.0",
-    "recharts": "^3.5.1",
-    "tesseract.js": "^7.0.0"
-  },
-  "devDependencies": {
-    "@types/papaparse": "^5.5.0",
-    "@types/react": "^18.2.43",
-    "@types/react-dom": "^18.2.17",
-    "@typescript-eslint/eslint-plugin": "^6.14.0",
-    "@typescript-eslint/parser": "^6.14.0",
-    "@vitejs/plugin-react": "^4.2.1",
-    "eslint": "^8.55.0",
-    "eslint-plugin-react-hooks": "^4.6.0",
-    "eslint-plugin-react-refresh": "^0.4.5",
-    "typescript": "^5.2.2",
-    "vite": "^5.0.8",
-    "vite-plugin-pwa": "^1.2.0"
+    "@supabase/supabase-js": "^2.39.0"
   }
 }
