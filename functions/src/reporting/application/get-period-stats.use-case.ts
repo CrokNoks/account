@@ -33,16 +33,17 @@ export class GetPeriodStatsUseCase {
     if (!account || !period) throw new Error('Account or Period not found');
 
     const categories = await this.categoryRepository.findAllByAccount(accountId);
-    const transactions = await this.transactionRepository.findAllByAccount(accountId);
     const budgets = await this.budgetRepository.findAllByPeriod(periodId);
 
-    // 1. Start Balance (Initial + transactions before start date)
-    const transactionsBeforeStart = transactions.filter(t => t.date < period.startDate);
-    const sumBeforeStart = transactionsBeforeStart.reduce((sum, t) => sum + t.amount, BigInt(0));
+    // 1. Start Balance (Initial + transactions before start date calculated in DB)
+    const sumBeforeStart = await this.transactionRepository.sumAmountByAccountBeforeDate(accountId, period.startDate);
     const startBalance = account.initialBalance + sumBeforeStart;
 
-    // 2. Period Transactions
-    const periodTransactions = transactions.filter(t => t.date >= period.startDate && t.date <= period.endDate);
+    // 2. Period Transactions (Only fetch what's needed)
+    const periodTransactions = await this.transactionRepository.findAllByAccount(accountId, {
+      startDate: period.startDate,
+      endDate: period.endDate
+    });
     
     // Categorize real sums by categoryId
     const realByCategory = new Map<string, bigint>();
@@ -61,9 +62,6 @@ export class GetPeriodStatsUseCase {
     let plannedIncome = BigInt(0);
     let plannedExpenses = BigInt(0);
 
-    // Forecast Calculation
-    let forecastDiff = BigInt(0);
-
     for (const cat of categories) {
       const catReal = realByCategory.get(cat.id) || BigInt(0);
       const budget = budgets.find(b => b.categoryId === cat.id);
@@ -74,26 +72,29 @@ export class GetPeriodStatsUseCase {
       if (isIncome) {
         realIncome += catReal;
         plannedIncome += catBudget;
-        // Forecast for income: Max(real, budget) - take the best or optimistic
-        forecastDiff += catReal > catBudget ? catReal : catBudget;
       } else {
         realExpenses += catReal;
         plannedExpenses += catBudget;
-        // Forecast for expenses: Min(real, budget) - take the worst (most negative)
-        forecastDiff += catReal < catBudget ? catReal : catBudget;
       }
     }
 
-    // 4. Real Bank Balance (Start + reconciled until period end)
-    const reconciledTransactionsUntilEnd = transactions.filter(t => t.reconciled && t.date <= period.endDate);
-    const realBankBalance = account.initialBalance + reconciledTransactionsUntilEnd.reduce((sum, t) => sum + t.amount, BigInt(0));
+    // 4. Real Bank Balance (Start + reconciled in this period)
+    const reconciledInPeriod = periodTransactions.filter(t => t.reconciled).reduce((sum, t) => sum + t.amount, BigInt(0));
+    const realBankBalance = startBalance + reconciledInPeriod;
 
-    // 5. Upcoming Balance (Start + all until period end)
-    const allTransactionsUntilEnd = transactions.filter(t => t.date <= period.endDate);
-    const upcomingBalance = account.initialBalance + allTransactionsUntilEnd.reduce((sum, t) => sum + t.amount, BigInt(0));
+    // 5. Upcoming Balance (Start + all in this period)
+    const allInPeriod = periodTransactions.reduce((sum, t) => sum + t.amount, BigInt(0));
+    const upcomingBalance = startBalance + allInPeriod;
 
-    // 6. Forecast Balance (if active)
-    const forecastBalance = startBalance + forecastDiff;
+    // 6. Forecast Balance
+    // Formula: startBalance + max(realIncome, plannedIncome) - max(abs(realExpenses), abs(plannedExpenses))
+    const absRealExpenses = realExpenses < BigInt(0) ? -realExpenses : realExpenses;
+    const absPlannedExpenses = plannedExpenses < BigInt(0) ? -plannedExpenses : plannedExpenses;
+    
+    const maxIncome = realIncome > plannedIncome ? realIncome : plannedIncome;
+    const maxAbsExpenses = absRealExpenses > absPlannedExpenses ? absRealExpenses : absPlannedExpenses;
+    
+    const forecastBalance = startBalance + maxIncome - maxAbsExpenses;
 
     return {
        startBalance: startBalance.toString(),

@@ -35,10 +35,13 @@ export class GetBudgetBreakdownUseCase {
     if (!period) throw new Error('Period not found');
 
     const categories = await this.categoryRepository.findAllByAccount(accountId);
-    const transactions = await this.transactionRepository.findAllByAccount(accountId);
     const budgets = await this.budgetRepository.findAllByPeriod(periodId);
 
-    const periodTransactions = transactions.filter(t => t.date >= period.startDate && t.date <= period.endDate);
+    // Only fetch transactions for this period
+    const periodTransactions = await this.transactionRepository.findAllByAccount(accountId, {
+      startDate: period.startDate,
+      endDate: period.endDate
+    });
     
     const realByCategory = new Map<string, bigint>();
     for (const t of periodTransactions) {
@@ -60,10 +63,11 @@ export class GetBudgetBreakdownUseCase {
       const budgetInstance = budgets.find(b => b.categoryId === cat.id);
       const budget = budgetInstance?.amountAllocated || BigInt(0);
       
-      const remaining = budget - real;
+      const remaining = budget + real; // be careful with signs, expenses are negative
       let percentage = 0;
       if (budget !== BigInt(0)) {
         percentage = Math.round(Number((real * BigInt(100)) / budget));
+        if (cat.type === CategoryType.EXPENSE) percentage = - percentage; // invert for expenses
       }
 
       const item: BudgetCategoryBreakdown = {
