@@ -1,4 +1,4 @@
-import { type NextRequest, NextResponse } from 'next/server'
+import { type NextRequest } from 'next/server'
 import { updateSession } from '@/shared/lib/supabase/middleware'
 import createMiddleware from 'next-intl/middleware';
 import {routing} from './i18n/routing';
@@ -6,18 +6,12 @@ import {routing} from './i18n/routing';
 const intlMiddleware = createMiddleware(routing);
 
 export async function middleware(request: NextRequest) {
-  // 1. First, handle Supabase session and its own redirects
-  // We pass a dummy response to updateSession just to get its redirect if needed
-  const response = await updateSession(request, NextResponse.next());
-  
-  // If updateSession returned a redirect, stop here and return it
-  if (response.status === 307 || response.status === 302 || response.headers.get('location')) {
-    return response;
-  }
+  // 1. First run the intl middleware to get locale headers and potentially redirects
+  const response = intlMiddleware(request);
 
-  // 2. If no redirect from Supabase, run intl middleware
-  // We pass the response from updateSession to preserve any cookies it might have set
-  return intlMiddleware(request);
+  // 2. Pass that response to Supabase to add auth logic and cookies
+  // updateSession will now correctly merge cookies into the intl response
+  return await updateSession(request, response);
 }
 
 export const config = {
