@@ -64,7 +64,7 @@ export function AccountList() {
                   {formatCurrency(account.initialBalance)}
                 </div>
                 <p className="text-xs text-muted-foreground capitalize mt-1">
-                  {t(`types.${account.type}`)} • {account.currency}
+                  {t(`types.${account.type || 'checking'}`)} • {account.currency}
                 </p>
               </CardContent>
             </Card>
