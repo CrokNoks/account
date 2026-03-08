@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAccountStore } from '@/features/accounts/model/use-account-store';
 import { useTransactions, Transaction } from '../api/use-transactions';
 import { useUpdateTransaction } from '../api/use-update-transaction';
@@ -32,18 +32,36 @@ import { Input } from "@/components/ui/input";
 import { toast } from 'sonner';
 import { useTranslations } from 'next-intl';
 
-export function TransactionList() {
+export function TransactionList({ periodId }: { periodId?: string }) {
   const t = useTranslations('Transactions');
   const tc = useTranslations('Common');
   const { activeAccountId } = useAccountStore();
   const { data: periods } = usePeriods(activeAccountId);
+  const { data: categories } = useCategories(activeAccountId);
   const { mutate: updateTransaction, isPending: isUpdating } = useUpdateTransaction();
   const { mutate: deleteTransaction, isPending: isDeleting } = useDeleteTransaction();
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
   
-  const [selectedPeriodId, setSelectedPeriodId] = useState<string | 'all'>('all');
+  const [selectedPeriodId, setSelectedPeriodId] = useState<string | 'all'>(periodId || 'all');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'reconciled' | 'not_reconciled'>('all');
+  
   const filterPeriodId = selectedPeriodId === 'all' ? null : selectedPeriodId;
-  const { data: transactions, isLoading } = useTransactions(activeAccountId, filterPeriodId);
+  const { data: allTransactions, isLoading } = useTransactions(activeAccountId, filterPeriodId);
+
+  // Apply status filter client-side
+  const transactions = allTransactions?.filter(t => {
+    if (statusFilter === 'all') return true;
+    if (statusFilter === 'reconciled') return t.reconciled;
+    if (statusFilter === 'not_reconciled') return !t.reconciled;
+    return true;
+  });
+
+  // Sync internal state if prop changes
+  useEffect(() => {
+    if (periodId) {
+      setSelectedPeriodId(periodId);
+    }
+  }, [periodId]);
 
   const toggleReconciliation = (transactionId: string, currentStatus: boolean) => {
     if (!activeAccountId) return;
@@ -67,29 +85,54 @@ export function TransactionList() {
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-end">
-        <Select value={selectedPeriodId} onValueChange={(v) => setSelectedPeriodId(v || 'all')}>
-          <SelectTrigger className="w-[250px]"><SelectValue placeholder="Filter by period" /></SelectTrigger>
+      <div className="flex justify-end gap-2">
+        <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as any)}>
+          <SelectTrigger className="w-[180px]">
+            <SelectValue>
+              {statusFilter === 'all' ? t('status_all') : statusFilter === 'reconciled' ? t('status_reconciled') : t('status_not_reconciled')}
+            </SelectValue>
+          </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Transactions</SelectItem>
-            {periods?.map((p) => (
-              <SelectItem key={p.id} value={p.id}>
-                {format(new Date(p.startDate), 'dd/MM/yy')} - {format(new Date(p.endDate), 'dd/MM/yy')} {p.isActive && "(Active)"}
-              </SelectItem>
-            ))}
+            <SelectItem value="all">{t('status_all')}</SelectItem>
+            <SelectItem value="reconciled">{t('status_reconciled')}</SelectItem>
+            <SelectItem value="not_reconciled">{t('status_not_reconciled')}</SelectItem>
           </SelectContent>
         </Select>
+
+        {!periodId && (
+          <Select value={selectedPeriodId} onValueChange={(v) => setSelectedPeriodId(v || 'all')}>
+            <SelectTrigger className="w-[250px]">
+              <SelectValue>
+                {selectedPeriodId === 'all' 
+                  ? 'Toutes les périodes' 
+                  : (function() {
+                      const p = periods?.find(p => p.id === selectedPeriodId);
+                      return p ? `${format(new Date(p.startDate), 'dd/MM/yy')} - ${format(new Date(p.endDate), 'dd/MM/yy')}` : 'Filter by period';
+                    })()
+                }
+              </SelectValue>
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Toutes les périodes</SelectItem>
+              {periods?.map((p) => (
+                <SelectItem key={p.id} value={p.id}>
+                  {format(new Date(p.startDate), 'dd/MM/yy')} - {format(new Date(p.endDate), 'dd/MM/yy')} {p.isActive && "(Active)"}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+      )}
       </div>
 
-      <div className="border rounded-md">
-        <Table>
+      <div className="border rounded-md overflow-hidden">
+        <Table className="table-fixed w-full">
           <TableHeader>
             <TableRow>
-              <TableHead className="w-[50px]">Status</TableHead>
-              <TableHead>{t('fields.date')}</TableHead>
-              <TableHead>{t('fields.description')}</TableHead>
-              <TableHead>{t('fields.category')}</TableHead>
-              <TableHead className="text-right">{t('fields.amount')}</TableHead>
+              <TableHead className="w-[60px] text-center">Status</TableHead>
+              <TableHead className="w-[120px]">{t('fields.date')}</TableHead>
+              <TableHead className="min-w-[200px]">{t('fields.description')}</TableHead>
+              <TableHead className="w-[150px]">{t('fields.category')}</TableHead>
+              <TableHead className="w-[120px] text-right">{t('fields.amount')}</TableHead>
               <TableHead className="w-[100px]"></TableHead>
             </TableRow>
           </TableHeader>
@@ -99,19 +142,36 @@ export function TransactionList() {
             ) : (
               transactions?.map((t) => (
                 <TableRow key={t.id} className="group">
-                  <TableCell>
-                    <button onClick={() => toggleReconciliation(t.id, t.reconciled)} disabled={isUpdating}>
-                      {t.reconciled ? <CheckCircle2 className="w-5 h-5 text-green-500" /> : <Circle className="w-5 h-5 text-muted-foreground" />}
+                  <TableCell className="text-center">
+                    <button onClick={() => toggleReconciliation(t.id, t.reconciled)} disabled={isUpdating} className="cursor-pointer">
+                      {t.reconciled ? <CheckCircle2 className="w-5 h-5 text-green-500 mx-auto" /> : <Circle className="w-5 h-5 text-muted-foreground mx-auto" />}
                     </button>
                   </TableCell>
-                  <TableCell className="font-medium">{format(new Date(t.date), 'dd MMM yyyy')}</TableCell>
-                  <TableCell>{t.description}</TableCell>
-                  <TableCell>{t.categoryId ? <Badge variant="outline">Categorized</Badge> : <span className="italic text-xs">Uncategorized</span>}</TableCell>
-                  <TableCell className={`text-right font-bold ${parseInt(t.amount, 10) < 0 ? 'text-red-500' : 'text-green-500'}`}>
+                  <TableCell className="font-medium whitespace-nowrap">{format(new Date(t.date), 'dd MMM yyyy')}</TableCell>
+                  <TableCell>
+                    <div className="truncate max-w-full" title={t.description}>
+                      {t.description}
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="truncate max-w-full">
+                      {t.categoryId ? (
+                        <Badge variant="outline" style={{ 
+                          borderColor: categories?.find(c => c.id === t.categoryId)?.color,
+                          color: categories?.find(c => c.id === t.categoryId)?.color 
+                        }}>
+                          {categories?.find(c => c.id === t.categoryId)?.name || 'Categorized'}
+                        </Badge>
+                      ) : (
+                        <span className="italic text-xs text-muted-foreground">Non catégorisé</span>
+                      )}
+                    </div>
+                  </TableCell>
+                  <TableCell className={`text-right font-bold whitespace-nowrap ${parseInt(t.amount, 10) < 0 ? 'text-red-500' : 'text-green-500'}`}>
                     {formatCurrency(t.amount)}
                   </TableCell>
                   <TableCell>
-                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                       <Button variant="ghost" size="icon-sm" onClick={() => setEditingTransaction(t)} className="h-8 w-8">
                         <Pencil className="w-3.5 h-3.5" />
                       </Button>

@@ -13,19 +13,26 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
-} from "@/components/ui/select";
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { useAccountStore } from '@/features/accounts/model/use-account-store';
 import { useCategories } from '@/features/categories/api/use-categories';
 import { usePeriods } from '@/features/budgets/api/use-periods';
 import { useCreateTransaction } from '../api/use-create-transaction';
-import { Plus, Receipt } from 'lucide-react';
+import { Plus, Receipt, Check, ChevronsUpDown } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTranslations } from 'next-intl';
+import { cn } from '@/lib/utils';
 
 export function CreateTransactionDrawer() {
   const t = useTranslations('Transactions');
@@ -36,6 +43,7 @@ export function CreateTransactionDrawer() {
   const { mutate: createTransaction, isPending } = useCreateTransaction();
 
   const [open, setOpen] = useState(false);
+  const [comboOpen, setComboOpen] = useState(false);
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [description, setDescription] = useState('');
   const [categoryId, setCategoryId] = useState<string>('');
@@ -69,6 +77,8 @@ export function CreateTransactionDrawer() {
     });
   };
 
+  const selectedCategory = categories?.find((c) => c.id === categoryId);
+
   return (
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger 
@@ -79,8 +89,8 @@ export function CreateTransactionDrawer() {
           </Button>
         }
       />
-      <SheetContent side="right" className="w-[400px] sm:w-[540px]">
-        <SheetHeader>
+      <SheetContent side="right" className="w-[400px] sm:w-[540px] flex flex-col gap-0 p-0">
+        <SheetHeader className="p-6 border-b">
           <div className="flex items-center gap-2">
             <Receipt className="w-5 h-5 text-primary" />
             <SheetTitle>{t('new_transaction_title')}</SheetTitle>
@@ -90,7 +100,7 @@ export function CreateTransactionDrawer() {
           </SheetDescription>
         </SheetHeader>
         
-        <div className="space-y-6 py-8">
+        <div className="flex-1 overflow-y-auto p-6 space-y-6">
           <div className="space-y-2">
             <label className="text-sm font-medium">{t('fields.date')}</label>
             <Input 
@@ -98,6 +108,7 @@ export function CreateTransactionDrawer() {
               value={date}
               onChange={(e) => setDate(e.target.value)}
               required
+              className="h-11"
             />
           </div>
 
@@ -108,23 +119,78 @@ export function CreateTransactionDrawer() {
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               required
+              className="h-11"
             />
           </div>
 
-          <div className="space-y-2">
+          <div className="space-y-2 flex flex-col">
             <label className="text-sm font-medium">{t('fields.category')}</label>
-            <Select value={categoryId} onValueChange={(v) => setCategoryId(v || '')}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select a category" />
-              </SelectTrigger>
-              <SelectContent>
-                {categories?.map((cat) => (
-                  <SelectItem key={cat.id} value={cat.id}>
-                    {cat.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Popover open={comboOpen} onOpenChange={setComboOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  role="combobox"
+                  aria-expanded={comboOpen}
+                  className="w-full h-11 justify-between font-normal"
+                >
+                  {categoryId ? (
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 rounded-full" style={{ backgroundColor: selectedCategory?.color }} />
+                      {selectedCategory?.name}
+                    </div>
+                  ) : (
+                    "Sélectionner une catégorie..."
+                  )}
+                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                <Command>
+                  <CommandInput placeholder="Rechercher une catégorie..." />
+                  <CommandList>
+                    <CommandEmpty>Aucune catégorie trouvée.</CommandEmpty>
+                    <CommandGroup>
+                      <CommandItem
+                        value="none"
+                        onSelect={() => {
+                          setCategoryId("");
+                          setComboOpen(false);
+                        }}
+                      >
+                        <Check
+                          className={cn(
+                            "mr-2 h-4 w-4",
+                            categoryId === "" ? "opacity-100" : "opacity-0"
+                          )}
+                        />
+                        Sans catégorie
+                      </CommandItem>
+                      {categories?.map((cat) => (
+                        <CommandItem
+                          key={cat.id}
+                          value={cat.name}
+                          onSelect={() => {
+                            setCategoryId(cat.id);
+                            setComboOpen(false);
+                          }}
+                        >
+                          <Check
+                            className={cn(
+                              "mr-2 h-4 w-4",
+                              categoryId === cat.id ? "opacity-100" : "opacity-0"
+                            )}
+                          />
+                          <div className="flex items-center gap-2">
+                            <div className="w-2 h-2 rounded-full" style={{ backgroundColor: cat.color }} />
+                            {cat.name}
+                          </div>
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </CommandList>
+                </Command>
+              </PopoverContent>
+            </Popover>
           </div>
 
           <div className="space-y-2">
@@ -136,7 +202,7 @@ export function CreateTransactionDrawer() {
                 placeholder="0.00"
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
-                className="pr-12"
+                className="pr-12 h-11 text-lg font-semibold"
                 required
               />
               <span className="absolute right-3 top-2.5 text-sm text-muted-foreground">€</span>
@@ -145,9 +211,9 @@ export function CreateTransactionDrawer() {
           </div>
         </div>
 
-        <SheetFooter className="flex-col gap-3 sm:flex-col">
+        <SheetFooter className="p-6 border-t bg-muted/20 flex-col gap-3 sm:flex-col">
           <Button 
-            className="w-full" 
+            className="w-full h-11 text-base font-semibold" 
             onClick={() => handleSubmit(false)} 
             disabled={isPending}
           >
@@ -155,7 +221,7 @@ export function CreateTransactionDrawer() {
           </Button>
           <Button 
             variant="outline" 
-            className="w-full" 
+            className="w-full h-11 text-base" 
             onClick={() => handleSubmit(true)}
             disabled={isPending}
           >
