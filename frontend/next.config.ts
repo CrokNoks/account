@@ -6,7 +6,6 @@ const withNextIntl = createNextIntlPlugin(
 );
 
 const nextConfig: NextConfig = {
-  output: 'export',
   /* config options here */
 };
 
