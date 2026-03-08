@@ -35,7 +35,7 @@ export async function updateSession(request: NextRequest, response: NextResponse
     const redirectResponse = NextResponse.redirect(url);
     // CRITICAL: Copy all cookies from the updated response to the redirect response
     supabaseResponse.cookies.getAll().forEach(cookie => {
-      redirectResponse.cookies.set(cookie.name, cookie.value, cookie.options);
+      redirectResponse.cookies.set(cookie);
     });
     return redirectResponse;
   }
@@ -46,7 +46,7 @@ export async function updateSession(request: NextRequest, response: NextResponse
     url.pathname = '/';
     const redirectResponse = NextResponse.redirect(url);
     supabaseResponse.cookies.getAll().forEach(cookie => {
-      redirectResponse.cookies.set(cookie.name, cookie.value, cookie.options);
+      redirectResponse.cookies.set(cookie);
     });
     return redirectResponse;
   }
