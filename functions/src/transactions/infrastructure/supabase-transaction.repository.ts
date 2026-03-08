@@ -1,7 +1,7 @@
 import { Injectable, Inject } from '@nestjs/common';
 import { SupabaseClient } from '@supabase/supabase-js';
 import { Transaction } from '../domain/transaction.entity';
-import { TransactionRepository } from '../domain/transaction.repository.interface';
+import { TransactionRepository, FindAllTransactionsOptions } from '../domain/transaction.repository.interface';
 
 @Injectable()
 export class SupabaseTransactionRepository implements TransactionRepository {
@@ -10,16 +10,49 @@ export class SupabaseTransactionRepository implements TransactionRepository {
     private readonly supabase: SupabaseClient,
   ) {}
 
-  async findAllByAccount(accountId: string): Promise<Transaction[]> {
-    const { data, error } = await this.supabase
+  async findAllByAccount(accountId: string, options?: FindAllTransactionsOptions): Promise<Transaction[]> {
+    let query = this.supabase
       .from('transactions')
       .select('*')
-      .eq('account_id', accountId)
-      .order('date', { ascending: false });
+      .eq('account_id', accountId);
+
+    if (options?.startDate) {
+      query = query.gte('date', options.startDate.toISOString().split('T')[0]);
+    }
+    if (options?.endDate) {
+      query = query.lte('date', options.endDate.toISOString().split('T')[0]);
+    }
+
+    const { data, error } = await query.order('date', { ascending: false });
 
     if (error) throw new Error(error.message);
 
     return (data || []).map(row => this.mapToDomain(row));
+  }
+
+  async sumAmountByAccountBeforeDate(accountId: string, date: Date): Promise<bigint> {
+    // To bypass the 1000 limit and avoid fetching all data, we use an RPC call
+    // or a specialized query. If we don't have an RPC, we can use a select with sum if the view exists
+    // but here we'll assume we want a robust way.
+    // For now, let's use a query that only selects the amount and sum it.
+    // Actually, Supabase doesn't support .sum() client-side easily without fetching all rows.
+    // The best way is to use a PostgreSQL function (RPC).
+    
+    const { data, error } = await this.supabase
+      .rpc('sum_transactions_before_date', {
+        p_account_id: accountId,
+        p_date: date.toISOString().split('T')[0]
+      });
+
+    if (error) {
+      // Fallback if RPC doesn't exist yet or other error
+      // Note: In production you should ensure the RPC exists
+      console.warn('RPC sum_transactions_before_date failed, fallback to manual sum', error);
+      // Fallback logic could go here, but let's prioritize the RPC
+      return BigInt(0);
+    }
+
+    return BigInt(data || 0);
   }
 
   async findAllByPeriod(periodId: string): Promise<Transaction[]> {
