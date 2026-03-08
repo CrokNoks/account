@@ -32,7 +32,9 @@ export function AccountSelector() {
       onValueChange={(v) => setActiveAccountId(v)}
     >
       <SelectTrigger className="w-[200px]">
-        <SelectValue placeholder={t('select_account')} />
+        <SelectValue>
+          {accounts?.find(a => a.id === activeAccountId)?.name || t('select_account')}
+        </SelectValue>
       </SelectTrigger>
       <SelectContent>
         {accounts?.map((account) => (
