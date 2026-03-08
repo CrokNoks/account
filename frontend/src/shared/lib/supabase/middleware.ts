@@ -2,55 +2,49 @@ import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
 export async function updateSession(request: NextRequest, response: NextResponse) {
+  // Create an unmodified response to start with
   let supabaseResponse = response;
 
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
-  // Debug headers to check environment in production
-  supabaseResponse.headers.set('X-Debug-Has-Url', supabaseUrl ? 'true' : 'false');
-  supabaseResponse.headers.set('X-Debug-Has-Key', supabaseKey ? 'true' : 'false');
-
-  if (!supabaseUrl || !supabaseKey) {
-    return supabaseResponse;
-  }
-
   const supabase = createServerClient(
-    supabaseUrl,
-    supabaseKey,
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
         getAll() {
           return request.cookies.getAll()
         },
         setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) => {
-            request.cookies.set(name, value)
-            supabaseResponse.cookies.set(name, value, options)
+          cookiesToSet.forEach(({ name, value, options }) => request.cookies.set(name, value))
+          supabaseResponse = NextResponse.next({
+            request,
           })
+          cookiesToSet.forEach(({ name, value, options }) =>
+            supabaseResponse.cookies.set(name, value, options)
+          )
         },
       },
     }
   )
 
-  // Get user session
-  const { data: { user } } = await supabase.auth.getUser();
+  // IMPORTANT: Use getSession in middleware for better performance and reliability
+  // getUser is more secure but getSession is enough to check if we HAVE a session
+  const { data: { session } } = await supabase.auth.getSession();
+  const user = session?.user;
   
+  // Debug headers
   supabaseResponse.headers.set('X-Debug-User', user ? 'found' : 'null');
+  supabaseResponse.headers.set('X-Debug-Path', request.nextUrl.pathname);
 
   const pathname = request.nextUrl.pathname;
-  const isLoginPage = pathname.includes('/login');
+  const isLoginPage = pathname === '/login' || pathname.endsWith('/login');
 
   // 1. If no user and not on a login page -> Redirect to /login
   if (!user && !isLoginPage) {
     const url = request.nextUrl.clone();
     url.pathname = '/login';
     const redirectResponse = NextResponse.redirect(url);
-    
-    // Transfer cookies and debug headers to redirect response
+    // Copy cookies to the new redirect response
     supabaseResponse.cookies.getAll().forEach(c => redirectResponse.cookies.set(c));
-    supabaseResponse.headers.forEach((v, k) => redirectResponse.headers.set(k, v));
-    
     return redirectResponse;
   }
 
@@ -59,10 +53,7 @@ export async function updateSession(request: NextRequest, response: NextResponse
     const url = request.nextUrl.clone();
     url.pathname = '/';
     const redirectResponse = NextResponse.redirect(url);
-    
     supabaseResponse.cookies.getAll().forEach(c => redirectResponse.cookies.set(c));
-    supabaseResponse.headers.forEach((v, k) => redirectResponse.headers.set(k, v));
-    
     return redirectResponse;
   }
 
