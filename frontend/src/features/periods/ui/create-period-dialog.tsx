@@ -1,0 +1,141 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogDescription, 
+  DialogHeader, 
+  DialogTitle, 
+  DialogTrigger,
+  DialogFooter
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { useAccountStore } from '@/features/accounts/model/use-account-store';
+import { usePeriodDraft } from '../api/use-period-draft';
+import { useCreatePeriod } from '../api/use-create-period';
+import { Plus, Calculator } from 'lucide-react';
+import { formatCurrency } from '@/shared/lib/format';
+
+export function CreatePeriodDialog() {
+  const { activeAccountId } = useAccountStore();
+  const [open, setOpen] = useState(false);
+  
+  const { data: draft, isLoading: isLoadingDraft } = usePeriodDraft(activeAccountId);
+  const { mutate: createPeriod, isPending } = useCreatePeriod();
+
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+  const [budgets, setBudgets] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    if (draft) {
+      setStartDate(draft.suggestedStartDate.split('T')[0]);
+      setEndDate(draft.suggestedEndDate.split('T')[0]);
+      
+      const initialBudgets: Record<string, string> = {};
+      draft.categoriesWithStats.forEach(cat => {
+        initialBudgets[cat.categoryId] = (parseInt(cat.defaultAllocated, 10) / 100).toString();
+      });
+      setBudgets(initialBudgets);
+    }
+  }, [draft]);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!activeAccountId) return;
+
+    createPeriod({
+      accountId: activeAccountId,
+      startDate,
+      endDate,
+      budgets: Object.entries(budgets).map(([categoryId, amount]) => ({
+        categoryId,
+        amountAllocated: (parseFloat(amount) * 100).toString(),
+      })),
+    }, {
+      onSuccess: () => setOpen(false)
+    });
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger 
+        render={
+          <Button className="gap-2" variant="outline">
+            <Plus className="w-4 h-4" />
+            New Period
+          </Button>
+        }
+      />
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Create Financial Period</DialogTitle>
+          <DialogDescription>
+            Define dates and initial budgets based on your history.
+          </DialogDescription>
+        </DialogHeader>
+        
+        <form onSubmit={handleSubmit} className="space-y-6 py-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Start Date</label>
+              <Input 
+                type="date" 
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">End Date</label>
+              <Input 
+                type="date" 
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                required
+              />
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <h3 className="text-sm font-semibold flex items-center gap-2">
+              <Calculator className="w-4 h-4" />
+              Budget Initialization
+            </h3>
+            <div className="border rounded-lg divide-y">
+              {draft?.categoriesWithStats.map((cat) => (
+                <div key={cat.categoryId} className="p-4 flex items-center justify-between gap-4">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate">{cat.name}</p>
+                    <div className="flex gap-2 text-[10px] text-muted-foreground mt-1">
+                      <span>Min: {formatCurrency(cat.minReal)}</span>
+                      <span>Avg: {formatCurrency(cat.avgReal)}</span>
+                      <span>Max: {formatCurrency(cat.maxReal)}</span>
+                    </div>
+                  </div>
+                  <div className="w-32">
+                    <Input 
+                      type="number" 
+                      step="0.01"
+                      value={budgets[cat.categoryId] || '0'}
+                      onChange={(e) => setBudgets({ ...budgets, [cat.categoryId]: e.target.value })}
+                      className="text-right"
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button type="submit" disabled={isPending || isLoadingDraft}>
+              {isPending ? 'Creating...' : 'Initialize Period'}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
