@@ -40,7 +40,6 @@ jobs:
 
       - name: Deploy to Firebase
         run: |
-          npx firebase-tools experiments:enable webframeworks
           npx firebase-tools deploy --only hosting --project ${{ secrets.FIREBASE_PROJECT_ID }}
         env:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ steps.auth.outputs.credentials_file_path }}

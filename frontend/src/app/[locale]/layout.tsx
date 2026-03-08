@@ -2,11 +2,12 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import QueryProvider from "./providers/query-provider";
-import { Toaster } from "@/components/ui/sonner";
+import {Toaster} from "@/components/ui/sonner";
 import {NextIntlClientProvider} from 'next-intl';
 import {getMessages} from 'next-intl/server';
 import {notFound} from 'next/navigation';
 import {routing} from '@/i18n/routing';
+import {AuthGuard} from './providers/auth-guard';
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -22,6 +23,10 @@ export const metadata: Metadata = {
   title: "Account V2",
   description: "Personal finance manager",
 };
+
+export function generateStaticParams() {
+  return routing.locales.map((locale) => ({locale}));
+}
 
 export default async function RootLayout({
   children,
@@ -47,9 +52,11 @@ export default async function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <NextIntlClientProvider messages={messages}>
-          <QueryProvider>
-            {children}
-          </QueryProvider>
+          <AuthGuard>
+            <QueryProvider>
+              {children}
+            </QueryProvider>
+          </AuthGuard>
         </NextIntlClientProvider>
         <Toaster />
       </body>
