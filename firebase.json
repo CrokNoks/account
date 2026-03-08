@@ -13,6 +13,7 @@
   ],
   "hosting": {
     "source": "frontend",
+    "public": "frontend/out",
     "codebase": "frontend",
     "ignore": [
       "firebase.json",
