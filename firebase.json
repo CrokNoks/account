@@ -12,13 +12,17 @@
     }
   ],
   "hosting": {
-    "source": "frontend",
     "public": "frontend/out",
-    "codebase": "frontend",
     "ignore": [
       "firebase.json",
       "**/.*",
       "**/node_modules/**"
+    ],
+    "rewrites": [
+      {
+        "source": "**",
+        "destination": "/index.html"
+      }
     ]
   }
 }
