@@ -37,8 +37,8 @@ export function LoginForm() {
       setError(t('error_generic'));
       setLoading(false);
     } else {
-      router.push('/');
-      router.refresh();
+      // Hard redirect to ensure middleware picks up the new session cookie
+      window.location.href = '/';
     }
   };
 
