@@ -32,6 +32,8 @@ export async function updateSession(request: NextRequest, response: NextResponse
   const user = session?.user;
   
   // Debug headers
+  const cookieNames = request.cookies.getAll().map(c => c.name).join(', ');
+  supabaseResponse.headers.set('X-Debug-Cookie-Names', cookieNames || 'none');
   supabaseResponse.headers.set('X-Debug-User', user ? 'found' : 'null');
   supabaseResponse.headers.set('X-Debug-Path', request.nextUrl.pathname);
 
