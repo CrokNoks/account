@@ -24,6 +24,8 @@ export const metadata: Metadata = {
   description: "Personal finance manager",
 };
 
+export const dynamic = 'force-static';
+
 export function generateStaticParams() {
   return routing.locales.map((locale) => ({locale}));
 }

@@ -8,9 +8,10 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
   const router = useRouter();
   const pathname = usePathname();
-  const supabase = createClient();
 
   useEffect(() => {
+    const supabase = createClient();
+    
     const checkUser = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       const isLoginPage = pathname.includes('/login');
@@ -35,7 +36,7 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
     });
 
     return () => subscription.unsubscribe();
-  }, [pathname, router, supabase.auth]);
+  }, [pathname, router]);
 
   if (loading) {
     return (
