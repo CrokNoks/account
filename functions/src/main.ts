@@ -3,7 +3,7 @@ import { AppModule } from './app.module';
 import { ValidationPipe, INestApplication } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { onRequest } from 'firebase-functions/v2/https';
-import * as express from 'express';
+import express from 'express';
 
 let cachedApp: express.Express;
 
