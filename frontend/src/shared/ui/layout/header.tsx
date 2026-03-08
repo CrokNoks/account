@@ -34,7 +34,8 @@ export function Header() {
   
   const label = t(routeKeys[currentKey] || 'dashboard');
 
-  const handleLocaleChange = (newLocale: string) => {
+  const handleLocaleChange = (newLocale: string | null) => {
+    if (!newLocale) return;
     // router.replace keeps the same pathname but changes the locale
     router.replace(pathname as any, { locale: newLocale as any });
   };
