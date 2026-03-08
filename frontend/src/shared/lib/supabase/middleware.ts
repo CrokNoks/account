@@ -55,5 +55,3 @@ export async function updateSession(request: NextRequest, response: NextResponse
 
   return supabaseResponse;
 }
-
-}
