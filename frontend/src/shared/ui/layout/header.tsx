@@ -36,7 +36,7 @@ export function Header() {
 
   const handleLocaleChange = (newLocale: string | null) => {
     if (!newLocale) return;
-    // router.replace will now change the locale via cookie since prefix is 'never'
+    // router.replace will change the locale via cookie when prefix is 'never'
     router.replace(pathname as any, { locale: newLocale as any });
   };
 
