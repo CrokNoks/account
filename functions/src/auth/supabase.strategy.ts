@@ -8,19 +8,29 @@ import { passportJwtSecret } from 'jwks-rsa';
 export class SupabaseStrategy extends PassportStrategy(Strategy) {
   constructor(private readonly configService: ConfigService) {
     const supabaseUrl = configService.get<string>('SUPABASE_URL');
+    const secret = configService.get<string>('SUPABASE_JWT_SECRET');
     const jwksUrl = `${supabaseUrl}/auth/v1/.well-known/jwks.json`;
 
-    super({
+    const strategyOptions: any = {
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
-      secretOrKeyProvider: passportJwtSecret({
+      algorithms: ['HS256', 'ES256'],
+    };
+
+    // If a secret is provided, prefer HS256 validation (common for Supabase cloud)
+    if (secret && !supabaseUrl?.includes('127.0.0.1')) {
+      strategyOptions.secretOrKey = secret;
+    } else {
+      // Use JWKS for local or if no secret is provided (uses ES256)
+      strategyOptions.secretOrKeyProvider = passportJwtSecret({
         cache: true,
         rateLimit: true,
         jwksRequestsPerMinute: 5,
         jwksUri: jwksUrl,
-      }),
-      algorithms: ['ES256', 'HS256'],
-    });
+      });
+    }
+
+    super(strategyOptions);
   }
 
   async validate(payload: any) {
