@@ -1,8 +1,8 @@
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
-export async function updateSession(request: NextRequest) {
-  let response = NextResponse.next({
+export async function updateSession(request: NextRequest, existingResponse?: NextResponse) {
+  let response = existingResponse ?? NextResponse.next({
     request: {
       headers: request.headers,
     },
@@ -22,11 +22,14 @@ export async function updateSession(request: NextRequest) {
             value,
             ...options,
           })
-          response = NextResponse.next({
-            request: {
-              headers: request.headers,
-            },
-          })
+          // If we don't have an existing response, create a new one
+          if (!existingResponse) {
+            response = NextResponse.next({
+              request: {
+                headers: request.headers,
+              },
+            })
+          }
           response.cookies.set({
             name,
             value,
@@ -39,11 +42,13 @@ export async function updateSession(request: NextRequest) {
             value: '',
             ...options,
           })
-          response = NextResponse.next({
-            request: {
-              headers: request.headers,
-            },
-          })
+          if (!existingResponse) {
+            response = NextResponse.next({
+              request: {
+                headers: request.headers,
+              },
+            })
+          }
           response.cookies.set({
             name,
             value: '',
@@ -56,14 +61,23 @@ export async function updateSession(request: NextRequest) {
 
   const { data: { user } } = await supabase.auth.getUser()
 
-  // 1. If no user and trying to access protected route -> Redirect to /login
-  if (!user && !request.nextUrl.pathname.startsWith('/login')) {
-    return NextResponse.redirect(new URL('/login', request.url))
+  // Extract path without locale if needed for logic, but pathname is full path
+  const pathname = request.nextUrl.pathname;
+  const isLoginPage = pathname.includes('/login');
+
+  // Simple logic: if no user and not login -> redirect to /login
+  // We let next-intl handle the locale prefix if the redirect happens
+  if (!user && !isLoginPage) {
+    const url = request.nextUrl.clone()
+    url.pathname = '/login'
+    return NextResponse.redirect(url)
   }
 
-  // 2. If user exists and trying to access /login -> Redirect to /
-  if (user && request.nextUrl.pathname.startsWith('/login')) {
-    return NextResponse.redirect(new URL('/', request.url))
+  // If user and is login -> redirect to /
+  if (user && isLoginPage) {
+    const url = request.nextUrl.clone()
+    url.pathname = '/'
+    return NextResponse.redirect(url)
   }
 
   return response
