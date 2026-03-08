@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { toast } from 'sonner';
+import { useTranslations } from 'next-intl';
 
 const typeIcons: Record<string, any> = {
   checking: CreditCard,
@@ -24,6 +25,7 @@ const typeIcons: Record<string, any> = {
 };
 
 export function AccountList() {
+  const t = useTranslations('Accounts');
   const { data: accounts, isLoading } = useAccounts();
   const [editingAccount, setEditingAccount] = useState<Account | null>(null);
 
@@ -62,7 +64,7 @@ export function AccountList() {
                   {formatCurrency(account.initialBalance)}
                 </div>
                 <p className="text-xs text-muted-foreground capitalize mt-1">
-                  {account.type} • {account.currency}
+                  {t(`types.${account.type}`)} • {account.currency}
                 </p>
               </CardContent>
             </Card>
@@ -82,6 +84,8 @@ export function AccountList() {
 }
 
 function EditAccountDialog({ account, open, onOpenChange }: { account: Account, open: boolean, onOpenChange: (o: boolean) => void }) {
+  const t = useTranslations('Accounts');
+  const tc = useTranslations('Common');
   const [name, setName] = useState(account.name);
   const [balance, setBalance] = useState((parseInt(account.initialBalance, 10) / 100).toString());
   const { mutate: updateAccount, isPending } = useUpdateAccount();
@@ -96,7 +100,7 @@ function EditAccountDialog({ account, open, onOpenChange }: { account: Account, 
       } as any
     }, {
       onSuccess: () => {
-        toast.success(`Account "${name}" updated`);
+        toast.success(tc('success'));
         onOpenChange(false);
       }
     });
@@ -106,20 +110,20 @@ function EditAccountDialog({ account, open, onOpenChange }: { account: Account, 
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Edit Account</DialogTitle>
+          <DialogTitle>{tc('edit')} {t('title').toLowerCase()}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 py-4">
           <div className="space-y-2">
-            <label className="text-sm font-medium">Name</label>
+            <label className="text-sm font-medium">{t('fields.name')}</label>
             <Input value={name} onChange={(e) => setName(e.target.value)} required />
           </div>
           <div className="space-y-2">
-            <label className="text-sm font-medium">Initial Balance</label>
+            <label className="text-sm font-medium">{t('fields.balance')}</label>
             <Input type="number" step="0.01" value={balance} onChange={(e) => setBalance(e.target.value)} required />
           </div>
           <DialogFooter>
             <Button type="submit" disabled={isPending}>
-              {isPending ? 'Updating...' : 'Save Changes'}
+              {isPending ? tc('loading') : tc('save')}
             </Button>
           </DialogFooter>
         </form>

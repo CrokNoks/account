@@ -4,7 +4,6 @@ import { useState } from 'react';
 import { 
   Dialog, 
   DialogContent, 
-  DialogDescription, 
   DialogHeader, 
   DialogTitle, 
   DialogTrigger,
@@ -21,16 +20,19 @@ import {
 } from "@/components/ui/select";
 import { useAccountStore } from '@/features/accounts/model/use-account-store';
 import { useCreateCategory } from '../api/use-create-category';
+import { CategoryType } from '@/features/categories/api/use-categories';
 import { Plus } from 'lucide-react';
-import { toast } from 'sonner';
+import { useTranslations } from 'next-intl';
 
 export function CreateCategoryDialog() {
   const { activeAccountId } = useAccountStore();
+  const t = useTranslations('Categories');
+  const tc = useTranslations('Common');
+  
   const [open, setOpen] = useState(false);
   const [name, setName] = useState('');
-  const [color, setColor] = useState('#3498db');
-  const [type, setType] = useState('expense');
-  const [budget, setBudget] = useState('0');
+  const [type, setType] = useState<CategoryType>(CategoryType.EXPENSE);
+  const [color, setColor] = useState('#3b82f6');
   
   const { mutate: createCategory, isPending } = useCreateCategory();
 
@@ -41,89 +43,73 @@ export function CreateCategoryDialog() {
     createCategory({
       accountId: activeAccountId,
       name,
-      color,
       type,
-      budget: (parseFloat(budget) * 100).toString(),
+      color,
     }, {
       onSuccess: () => {
-        toast.success(`Category "${name}" created`);
         setOpen(false);
         setName('');
-        setBudget('0');
       }
     });
   };
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger >
-        <Button className="gap-2">
-          <Plus className="w-4 h-4" />
-          Add Category
-        </Button>
-      </DialogTrigger>
+      <DialogTrigger 
+        render={
+          <Button className="gap-2">
+            <Plus className="w-4 h-4" />
+            {t('add_category')}
+          </Button>
+        }
+      />
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>New Category</DialogTitle>
-          <DialogDescription>
-            Create a category to organize your transactions.
-          </DialogDescription>
+          <DialogTitle>{t('add_category')}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 py-4">
           <div className="space-y-2">
-            <label className="text-sm font-medium">Name</label>
+            <label className="text-sm font-medium">{t('fields.name')}</label>
             <Input 
-              placeholder="Rent, Food, Salary..." 
+              placeholder="Rent, Groceries..." 
               value={name}
               onChange={(e) => setName(e.target.value)}
               required
             />
           </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Type</label>
-              <Select value={type} onValueChange={(v) => setType(v || 'expense')}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="expense">Expense</SelectItem>
-                  <SelectItem value="income">Income</SelectItem>
-                  <SelectItem value="savings">Savings</SelectItem>
-                  <SelectItem value="transfer">Transfer</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Color</label>
-              <div className="flex gap-2">
-                <Input 
-                  type="color" 
-                  value={color}
-                  onChange={(e) => setColor(e.target.value)}
-                  className="w-12 p-1 h-10"
-                />
-                <Input 
-                  value={color}
-                  onChange={(e) => setColor(e.target.value)}
-                  placeholder="#hex"
-                />
-              </div>
-            </div>
+          <div className="space-y-2">
+            <label className="text-sm font-medium">{t('fields.type')}</label>
+            <Select value={type} onValueChange={(v) => setType(v as CategoryType)}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={CategoryType.EXPENSE}>{t('types.expense')}</SelectItem>
+                <SelectItem value={CategoryType.INCOME}>{t('types.income')}</SelectItem>
+                <SelectItem value={CategoryType.TRANSFER}>{t('types.transfer')}</SelectItem>
+                <SelectItem value={CategoryType.SAVINGS}>{t('types.savings')}</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
           <div className="space-y-2">
-            <label className="text-sm font-medium">Default Budget (Template)</label>
-            <Input 
-              type="number" 
-              step="0.01"
-              value={budget}
-              onChange={(e) => setBudget(e.target.value)}
-            />
-            <p className="text-[10px] text-muted-foreground italic">Suggested budget for new periods.</p>
+            <label className="text-sm font-medium">{t('fields.color')}</label>
+            <div className="flex gap-2">
+              <Input 
+                type="color" 
+                value={color}
+                onChange={(e) => setColor(e.target.value)}
+                className="w-12 h-10 p-1 cursor-pointer"
+              />
+              <Input 
+                value={color}
+                onChange={(e) => setColor(e.target.value)}
+                className="flex-1"
+              />
+            </div>
           </div>
           <DialogFooter>
             <Button type="submit" disabled={isPending}>
-              {isPending ? 'Creating...' : 'Create Category'}
+              {isPending ? tc('loading') : tc('add')}
             </Button>
           </DialogFooter>
         </form>

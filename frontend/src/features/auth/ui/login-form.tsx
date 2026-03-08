@@ -1,13 +1,15 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter } from '@/i18n/routing';
 import { createClient } from '@/shared/lib/supabase/supabase-browser';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { useTranslations } from 'next-intl';
 
 export function LoginForm() {
+  const t = useTranslations('Auth');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -20,13 +22,19 @@ export function LoginForm() {
     setLoading(true);
     setError(null);
 
+    if (!email || !password) {
+      setError(t('error_empty'));
+      setLoading(false);
+      return;
+    }
+
     const { error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
 
     if (error) {
-      setError(error.message);
+      setError(t('error_generic'));
       setLoading(false);
     } else {
       router.push('/');
@@ -37,13 +45,13 @@ export function LoginForm() {
   return (
     <Card className="w-[400px]">
       <CardHeader>
-        <CardTitle>Welcome back</CardTitle>
-        <CardDescription>Enter your credentials to access your account.</CardDescription>
+        <CardTitle>{t('login_title')}</CardTitle>
+        <CardDescription>{t('login_desc')}</CardDescription>
       </CardHeader>
       <form onSubmit={handleLogin}>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <label className="text-sm font-medium leading-none" htmlFor="email">Email</label>
+            <label className="text-sm font-medium leading-none" htmlFor="email">{t('email')}</label>
             <Input
               id="email"
               type="email"
@@ -54,7 +62,7 @@ export function LoginForm() {
             />
           </div>
           <div className="space-y-2">
-            <label className="text-sm font-medium leading-none" htmlFor="password">Password</label>
+            <label className="text-sm font-medium leading-none" htmlFor="password">{t('password')}</label>
             <Input
               id="password"
               type="password"
@@ -67,7 +75,7 @@ export function LoginForm() {
         </CardContent>
         <CardFooter>
           <Button className="w-full" type="submit" disabled={loading}>
-            {loading ? 'Logging in...' : 'Login'}
+            {loading ? t('signing_in') : t('signin')}
           </Button>
         </CardFooter>
       </form>

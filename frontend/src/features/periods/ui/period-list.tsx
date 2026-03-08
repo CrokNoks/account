@@ -19,8 +19,10 @@ import {
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from 'sonner';
+import { useTranslations } from 'next-intl';
 
 export function PeriodList() {
+  const t = useTranslations('Budgets');
   const { activeAccountId } = useAccountStore();
   const { data: periods, isLoading } = usePeriods(activeAccountId);
   const [editingPeriod, setEditingPeriod] = useState<Period | null>(null);
@@ -45,7 +47,7 @@ export function PeriodList() {
                 >
                   <Pencil className="w-3.5 h-3.5" />
                 </Button>
-                {period.isActive && <Badge variant="default">Active</Badge>}
+                {period.isActive && <Badge variant="default">{t('active')}</Badge>}
               </div>
             </CardHeader>
             <CardContent />
@@ -65,6 +67,8 @@ export function PeriodList() {
 }
 
 function EditPeriodDialog({ period, open, onOpenChange }: { period: Period, open: boolean, onOpenChange: (o: boolean) => void }) {
+  const t = useTranslations('Budgets');
+  const tc = useTranslations('Common');
   const { activeAccountId } = useAccountStore();
   const [startDate, setStartDate] = useState(period.startDate.split('T')[0]);
   const [endDate, setEndDate] = useState(period.endDate.split('T')[0]);
@@ -82,7 +86,7 @@ function EditPeriodDialog({ period, open, onOpenChange }: { period: Period, open
       data: { startDate, endDate, isActive }
     }, {
       onSuccess: () => {
-        toast.success(`Period updated`);
+        toast.success(t('updated'));
         onOpenChange(false);
       }
     });
@@ -92,26 +96,26 @@ function EditPeriodDialog({ period, open, onOpenChange }: { period: Period, open
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Edit Period</DialogTitle>
+          <DialogTitle>{t('edit_period')}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 py-4">
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <label className="text-sm font-medium">Start Date</label>
+              <label className="text-sm font-medium">{t('fields.start_date')}</label>
               <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} required />
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium">End Date</label>
+              <label className="text-sm font-medium">{t('fields.end_date')}</label>
               <Input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} required />
             </div>
           </div>
           <div className="flex items-center space-x-2">
             <Checkbox id="active" checked={isActive} onCheckedChange={(checked) => setIsActive(!!checked)} />
-            <label htmlFor="active" className="text-sm font-medium">Active Period</label>
+            <label htmlFor="active" className="text-sm font-medium">{t('fields.is_active')}</label>
           </div>
           <DialogFooter>
             <Button type="submit" disabled={isPending}>
-              {isPending ? 'Updating...' : 'Save Changes'}
+              {isPending ? tc('loading') : tc('save')}
             </Button>
           </DialogFooter>
         </form>

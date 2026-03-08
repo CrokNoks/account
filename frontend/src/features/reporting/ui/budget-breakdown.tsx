@@ -1,13 +1,14 @@
 'use client';
 
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
 import { formatCurrency } from "@/shared/lib/format";
 import { useAccountStore } from "@/features/accounts/model/use-account-store";
 import { usePeriods } from "@/features/budgets/api/use-periods";
 import { useBudgetBreakdown, BudgetCategoryBreakdown } from "../api/use-budget-breakdown";
+import { useTranslations } from "next-intl";
 
 export function BudgetBreakdown() {
+  const t = useTranslations('Reporting');
   const { activeAccountId } = useAccountStore();
   const { data: periods } = usePeriods(activeAccountId);
   
@@ -22,15 +23,16 @@ export function BudgetBreakdown() {
 
   return (
     <div className="grid gap-6 md:grid-cols-2">
-      <BudgetGroup title="Expenses" items={breakdown.expenses} isExpense />
-      <BudgetGroup title="Income" items={breakdown.income} />
-      <BudgetGroup title="Savings" items={breakdown.savings} isExpense />
-      <BudgetGroup title="Transfers" items={breakdown.transfers} />
+      <BudgetGroup title={t('expenses')} items={breakdown.expenses} isExpense />
+      <BudgetGroup title={t('income')} items={breakdown.income} />
+      <BudgetGroup title={t('savings')} items={breakdown.savings} isExpense />
+      <BudgetGroup title={t('transfers')} items={breakdown.transfers} />
     </div>
   );
 }
 
 function BudgetGroup({ title, items, isExpense }: { title: string, items: BudgetCategoryBreakdown[], isExpense?: boolean }) {
+  const t = useTranslations('Reporting');
   if (items.length === 0) return null;
 
   return (
@@ -41,10 +43,7 @@ function BudgetGroup({ title, items, isExpense }: { title: string, items: Budget
       <CardContent className="space-y-6">
         {items.map((item) => {
           const percentage = Math.min(Math.abs(item.percentage), 100);
-          const isOverBudget = isExpense 
-            ? parseInt(item.real, 10) < parseInt(item.budget, 10) // More negative = over budget
-            : parseInt(item.real, 10) < parseInt(item.budget, 10); // Less positive = under budget
-
+          
           // Simplify logic: if real is "worse" than budget
           const variant = isExpense 
             ? (parseInt(item.real, 10) < parseInt(item.budget, 10) ? "bg-red-500" : "bg-green-500")
@@ -65,8 +64,8 @@ function BudgetGroup({ title, items, isExpense }: { title: string, items: Budget
                  />
               </div>
               <div className="flex justify-between text-[10px] text-muted-foreground uppercase tracking-wider">
-                <span>{item.percentage}% used</span>
-                <span>Remaining: {formatCurrency(item.remaining)}</span>
+                <span>{item.percentage}%</span>
+                <span>{t('remaining')}: {formatCurrency(item.remaining)}</span>
               </div>
             </div>
           );

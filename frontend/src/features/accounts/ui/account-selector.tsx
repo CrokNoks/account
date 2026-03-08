@@ -10,8 +10,10 @@ import {
 } from "@/components/ui/select";
 import { useAccounts } from '../api/use-accounts';
 import { useAccountStore } from '../model/use-account-store';
+import { useTranslations } from 'next-intl';
 
 export function AccountSelector() {
+  const t = useTranslations('Accounts');
   const { data: accounts, isLoading } = useAccounts();
   const { activeAccountId, setActiveAccountId } = useAccountStore();
 
@@ -30,7 +32,7 @@ export function AccountSelector() {
       onValueChange={(v) => setActiveAccountId(v)}
     >
       <SelectTrigger className="w-[200px]">
-        <SelectValue placeholder="Select an account" />
+        <SelectValue placeholder={t('select_account')} />
       </SelectTrigger>
       <SelectContent>
         {accounts?.map((account) => (

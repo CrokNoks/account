@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { 
   Sheet, 
   SheetContent, 
@@ -25,8 +25,11 @@ import { usePeriods } from '@/features/budgets/api/use-periods';
 import { useCreateTransaction } from '../api/use-create-transaction';
 import { Plus, Receipt } from 'lucide-react';
 import { toast } from 'sonner';
+import { useTranslations } from 'next-intl';
 
 export function CreateTransactionDrawer() {
+  const t = useTranslations('Transactions');
+  const tc = useTranslations('Common');
   const { activeAccountId } = useAccountStore();
   const { data: categories } = useCategories(activeAccountId);
   const { data: periods } = usePeriods(activeAccountId);
@@ -41,7 +44,6 @@ export function CreateTransactionDrawer() {
   const activePeriod = periods?.find(p => p.isActive);
 
   const resetForm = () => {
-    // Keep date as is for rapid entry
     setDescription('');
     setAmount('');
   };
@@ -73,7 +75,7 @@ export function CreateTransactionDrawer() {
         render={
           <Button className="gap-2">
             <Plus className="w-4 h-4" />
-            Add Transaction
+            {t('add_transaction')}
           </Button>
         }
       />
@@ -81,16 +83,16 @@ export function CreateTransactionDrawer() {
         <SheetHeader>
           <div className="flex items-center gap-2">
             <Receipt className="w-5 h-5 text-primary" />
-            <SheetTitle>New Transaction</SheetTitle>
+            <SheetTitle>{t('new_transaction_title')}</SheetTitle>
           </div>
           <SheetDescription>
-            Quickly record a new income or expense for the active period.
+            {t('new_transaction_desc')}
           </SheetDescription>
         </SheetHeader>
         
         <div className="space-y-6 py-8">
           <div className="space-y-2">
-            <label className="text-sm font-medium">Date</label>
+            <label className="text-sm font-medium">{t('fields.date')}</label>
             <Input 
               type="date" 
               value={date}
@@ -100,7 +102,7 @@ export function CreateTransactionDrawer() {
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-medium">Description</label>
+            <label className="text-sm font-medium">{t('fields.description')}</label>
             <Input 
               placeholder="Rent, Groceries, Salary..." 
               value={description}
@@ -110,7 +112,7 @@ export function CreateTransactionDrawer() {
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-medium">Category</label>
+            <label className="text-sm font-medium">{t('fields.category')}</label>
             <Select value={categoryId} onValueChange={(v) => setCategoryId(v || '')}>
               <SelectTrigger>
                 <SelectValue placeholder="Select a category" />
@@ -126,7 +128,7 @@ export function CreateTransactionDrawer() {
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-medium">Amount</label>
+            <label className="text-sm font-medium">{t('fields.amount')}</label>
             <div className="relative">
               <Input 
                 type="number" 
@@ -139,7 +141,7 @@ export function CreateTransactionDrawer() {
               />
               <span className="absolute right-3 top-2.5 text-sm text-muted-foreground">€</span>
             </div>
-            <p className="text-[10px] text-muted-foreground italic">Use negative value for expenses (ex: -10)</p>
+            <p className="text-[10px] text-muted-foreground italic">{t('expense_hint')}</p>
           </div>
         </div>
 
@@ -149,7 +151,7 @@ export function CreateTransactionDrawer() {
             onClick={() => handleSubmit(false)} 
             disabled={isPending}
           >
-            {isPending ? 'Saving...' : 'Save'}
+            {isPending ? tc('loading') : tc('save')}
           </Button>
           <Button 
             variant="outline" 
@@ -157,7 +159,7 @@ export function CreateTransactionDrawer() {
             onClick={() => handleSubmit(true)}
             disabled={isPending}
           >
-            Save & Add Another
+            {isPending ? tc('loading') : t('save_another')}
           </Button>
         </SheetFooter>
       </SheetContent>

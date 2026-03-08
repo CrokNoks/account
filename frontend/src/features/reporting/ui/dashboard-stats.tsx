@@ -6,8 +6,11 @@ import { useAccountStore } from "@/features/accounts/model/use-account-store";
 import { usePeriods } from "@/features/budgets/api/use-periods";
 import { useReportingStats } from "../api/use-reporting-stats";
 import { ArrowUpCircle, ArrowDownCircle, Wallet, History, TrendingUp } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 export function DashboardStats() {
+  const t = useTranslations('Reporting');
+  const ta = useTranslations('Accounts');
   const { activeAccountId } = useAccountStore();
   const { data: periods, isLoading: isLoadingPeriods } = usePeriods(activeAccountId);
   
@@ -27,8 +30,8 @@ export function DashboardStats() {
     );
   }
 
-  if (!activeAccountId) return <p className="text-muted-foreground text-center">Please select an account</p>;
-  if (!activePeriod) return <p className="text-muted-foreground text-center">No active period found for this account</p>;
+  if (!activeAccountId) return <p className="text-muted-foreground text-center">{ta('select_account')}</p>;
+  if (!activePeriod) return <p className="text-muted-foreground text-center">{t('no_period')}</p>;
   if (!stats) return null;
 
   return (
@@ -36,29 +39,29 @@ export function DashboardStats() {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         {/* Main Balances */}
         <StatCard 
-          title="Bank Balance" 
+          title={t('real_bank_balance')} 
           value={stats.realBankBalance} 
           icon={<Wallet className="w-4 h-4 text-muted-foreground" />}
-          description="Reconciled balance"
+          description={t('real_bank_balance')}
         />
         <StatCard 
-          title="Upcoming" 
+          title={t('upcoming_balance')} 
           value={stats.upcomingBalance} 
           icon={<History className="w-4 h-4 text-muted-foreground" />}
-          description="After all transactions"
+          description={t('upcoming_balance')}
         />
         <StatCard 
-          title="Forecast" 
+          title={t('forecast_balance')} 
           value={stats.forecastBalance} 
           icon={<TrendingUp className="w-4 h-4 text-primary" />}
-          description="Projected at period end"
+          description={t('forecast_balance')}
           highlight
         />
         <StatCard 
-          title="Start Balance" 
+          title={t('start_balance')} 
           value={stats.startBalance} 
           icon={<Wallet className="w-4 h-4 text-muted-foreground" />}
-          description="At start of period"
+          description={t('start_balance')}
         />
       </div>
 
@@ -66,16 +69,16 @@ export function DashboardStats() {
         {/* Income vs Expenses */}
         <div className="grid gap-4 sm:grid-cols-2">
           <StatCard 
-            title="Real Income" 
+            title={t('real_income')} 
             value={stats.realIncome} 
             icon={<ArrowUpCircle className="w-4 h-4 text-green-500" />}
-            description={`Planned: ${formatCurrency(stats.plannedIncome)}`}
+            description={`${t('planned_income')}: ${formatCurrency(stats.plannedIncome)}`}
           />
           <StatCard 
-            title="Real Expenses" 
+            title={t('real_expenses')} 
             value={stats.realExpenses} 
             icon={<ArrowDownCircle className="w-4 h-4 text-red-500" />}
-            description={`Planned: ${formatCurrency(stats.plannedExpenses)}`}
+            description={`${t('planned_expenses')}: ${formatCurrency(stats.plannedExpenses)}`}
           />
         </div>
       </div>

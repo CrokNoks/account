@@ -25,8 +25,10 @@ import {
   SelectValue 
 } from "@/components/ui/select";
 import { toast } from 'sonner';
+import { useTranslations } from 'next-intl';
 
 export function CategoryList() {
+  const t = useTranslations('Categories');
   const { activeAccountId } = useAccountStore();
   const { data: categories, isLoading } = useCategories(activeAccountId);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
@@ -61,12 +63,12 @@ export function CategoryList() {
                 >
                   <Pencil className="w-3.5 h-3.5" />
                 </Button>
-                <Badge variant="secondary" className="text-[10px] capitalize">{category.type}</Badge>
+                <Badge variant="secondary" className="text-[10px] capitalize">{t(`types.${category.type}`)}</Badge>
               </div>
             </CardHeader>
             <CardContent>
               <p className="text-xs text-muted-foreground">
-                Template: {(category as any).budget ? formatCurrency((category as any).budget) : "No default budget"}
+                Budget: {(category as any).budget ? formatCurrency((category as any).budget) : "-"}
               </p>
             </CardContent>
           </Card>
@@ -85,6 +87,8 @@ export function CategoryList() {
 }
 
 function EditCategoryDialog({ category, open, onOpenChange }: { category: Category, open: boolean, onOpenChange: (o: boolean) => void }) {
+  const t = useTranslations('Categories');
+  const tc = useTranslations('Common');
   const { activeAccountId } = useAccountStore();
   const [name, setName] = useState(category.name);
   const [type, setType] = useState(category.type);
@@ -108,7 +112,7 @@ function EditCategoryDialog({ category, open, onOpenChange }: { category: Catego
       }
     }, {
       onSuccess: () => {
-        toast.success(`Category "${name}" updated`);
+        toast.success(tc('success'));
         onOpenChange(false);
       }
     });
@@ -118,28 +122,28 @@ function EditCategoryDialog({ category, open, onOpenChange }: { category: Catego
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Edit Category</DialogTitle>
+          <DialogTitle>{tc('edit')} {t('title').toLowerCase()}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 py-4">
           <div className="space-y-2">
-            <label className="text-sm font-medium">Name</label>
+            <label className="text-sm font-medium">{t('fields.name')}</label>
             <Input value={name} onChange={(e) => setName(e.target.value)} required />
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <label className="text-sm font-medium">Type</label>
-              <Select value={type} onValueChange={(v) => setType(v || 'expense')}>
+              <label className="text-sm font-medium">{t('fields.type')}</label>
+              <Select value={type} onValueChange={(v) => setType(v as any || 'expense')}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="expense">Expense</SelectItem>
-                  <SelectItem value="income">Income</SelectItem>
-                  <SelectItem value="savings">Savings</SelectItem>
-                  <SelectItem value="transfer">Transfer</SelectItem>
+                  <SelectItem value="expense">{t('types.expense')}</SelectItem>
+                  <SelectItem value="income">{t('types.income')}</SelectItem>
+                  <SelectItem value="savings">{t('types.savings')}</SelectItem>
+                  <SelectItem value="transfer">{t('types.transfer')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium">Color</label>
+              <label className="text-sm font-medium">{t('fields.color')}</label>
               <div className="flex gap-2">
                 <Input type="color" value={color} onChange={(e) => setColor(e.target.value)} className="w-12 p-1 h-10" />
                 <Input value={color} onChange={(e) => setColor(e.target.value)} />
@@ -147,12 +151,12 @@ function EditCategoryDialog({ category, open, onOpenChange }: { category: Catego
             </div>
           </div>
           <div className="space-y-2">
-            <label className="text-sm font-medium">Default Budget</label>
+            <label className="text-sm font-medium">Budget</label>
             <Input type="number" step="0.01" value={budget} onChange={(e) => setBudget(e.target.value)} />
           </div>
           <DialogFooter>
             <Button type="submit" disabled={isPending}>
-              {isPending ? 'Updating...' : 'Save Changes'}
+              {isPending ? tc('loading') : tc('save')}
             </Button>
           </DialogFooter>
         </form>
