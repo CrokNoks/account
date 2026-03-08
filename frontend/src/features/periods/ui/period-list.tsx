@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { format } from 'date-fns';
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Pencil } from 'lucide-react';
+import { Pencil, Lock } from 'lucide-react';
 import { 
   Dialog, 
   DialogContent, 
@@ -25,7 +25,19 @@ export function PeriodList() {
   const t = useTranslations('Budgets');
   const { activeAccountId } = useAccountStore();
   const { data: periods, isLoading } = usePeriods(activeAccountId);
+  const { mutate: updatePeriod, isPending: isUpdating } = useUpdatePeriod();
   const [editingPeriod, setEditingPeriod] = useState<Period | null>(null);
+
+  const handleClosePeriod = (period: Period) => {
+    if (!activeAccountId || !confirm(t('close_period') + '?')) return;
+    updatePeriod({
+      accountId: activeAccountId,
+      id: period.id,
+      data: { isActive: false }
+    }, {
+      onSuccess: () => toast.success(t('updated'))
+    });
+  };
 
   if (isLoading) return <div className="h-64 bg-muted animate-pulse rounded-xl" />;
 
@@ -39,6 +51,18 @@ export function PeriodList() {
                 {format(new Date(period.startDate), 'dd MMMM yyyy')} - {format(new Date(period.endDate), 'dd MMMM yyyy')}
               </CardTitle>
               <div className="flex items-center gap-2">
+                {period.isActive && (
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="gap-2 text-xs h-8"
+                    onClick={() => handleClosePeriod(period)}
+                    disabled={isUpdating}
+                  >
+                    <Lock className="w-3 h-3" />
+                    {t('close_period')}
+                  </Button>
+                )}
                 <Button 
                   variant="ghost" 
                   size="icon-sm" 

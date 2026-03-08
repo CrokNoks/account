@@ -77,6 +77,10 @@
     "empty": "Aucune transaction trouvée",
     "save_another": "Enregistrer & Nouveau",
     "expense_hint": "Utilisez une valeur négative pour les dépenses (ex: -10)",
+    "filter_status": "Filtrer par statut",
+    "status_all": "Tous les statuts",
+    "status_reconciled": "Pointées",
+    "status_not_reconciled": "Non pointées",
     "delete_confirm": "Êtes-vous sûr de vouloir supprimer cette transaction ?",
     "deleted": "Transaction supprimée",
     "toggled": "Transaction mise à jour"
@@ -113,7 +117,8 @@
       "is_active": "Période active"
     },
     "stats_hint": "Min: {min} | Moy: {avg} | Max: {max}",
-    "updated": "Période mise à jour"
+    "updated": "Période mise à jour",
+    "close_period": "Clôturer la période"
   },
   "Common": {
     "add": "Ajouter",

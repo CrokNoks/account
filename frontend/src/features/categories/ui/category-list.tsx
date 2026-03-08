@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { useCategories, Category } from '../api/use-categories';
+import { useCategories, Category, CategoryType } from '../api/use-categories';
 import { useUpdateCategory } from '../api/use-update-category';
 import { useAccountStore } from '@/features/accounts/model/use-account-store';
 import { formatCurrency } from '@/shared/lib/format';
@@ -34,45 +34,83 @@ export function CategoryList() {
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
 
   if (isLoading) return (
-    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+    <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6">
       {[1, 2, 3].map(i => (
         <div key={i} className="h-24 bg-muted animate-pulse rounded-xl" />
       ))}
     </div>
   );
 
+  const groupedCategories = categories?.reduce((acc, cat) => {
+    if (!acc[cat.type]) acc[cat.type] = [];
+    acc[cat.type].push(cat);
+    return acc;
+  }, {} as Record<string, Category[]>) || {};
+
+  // Sort categories by name within each group
+  Object.keys(groupedCategories).forEach(type => {
+    groupedCategories[type].sort((a, b) => a.name.localeCompare(b.name));
+  });
+
+  const order = [CategoryType.EXPENSE, CategoryType.INCOME, CategoryType.SAVINGS, CategoryType.TRANSFER];
+
   return (
     <>
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {categories?.map((category) => (
-          <Card key={category.id} className="group hover:border-primary/50 transition-colors relative">
-            <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-              <CardTitle className="text-sm font-medium flex items-center gap-2">
-                <div 
-                  className="w-3 h-3 rounded-full" 
-                  style={{ backgroundColor: category.color }} 
-                />
-                {category.name}
-              </CardTitle>
-              <div className="flex items-center gap-2">
-                <Button 
-                  variant="ghost" 
-                  size="icon-sm" 
-                  className="opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8"
-                  onClick={() => setEditingCategory(category)}
-                >
-                  <Pencil className="w-3.5 h-3.5" />
-                </Button>
-                <Badge variant="secondary" className="text-[10px] capitalize">{t(`types.${category.type}`)}</Badge>
+      <div className="space-y-8">
+        {order.map((type) => {
+          const group = groupedCategories[type];
+          if (!group || group.length === 0) return null;
+
+          const bgColors: Record<string, string> = {
+            expense: "bg-red-100/80 dark:bg-red-900/30 border-red-200 dark:border-red-800",
+            income: "bg-green-100/80 dark:bg-green-900/30 border-green-200 dark:border-green-800",
+            savings: "bg-blue-100/80 dark:bg-blue-900/30 border-blue-200 dark:border-blue-800",
+            transfer: "bg-slate-200/80 dark:bg-slate-800/30 border-slate-300 dark:border-slate-700",
+          };
+
+          return (
+            <div key={type} className="space-y-4">
+              <h3 className="text-lg font-bold flex items-center gap-2 px-1">
+                <span className="capitalize">{t(`types.${type}`)}</span>
+                <Badge variant="secondary" className="rounded-full h-5 min-w-5 flex items-center justify-center p-0 text-[10px]">
+                  {group.length}
+                </Badge>
+              </h3>
+              <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6">
+                {group.map((category) => (
+                  <Card key={category.id} className={`group hover:border-primary transition-all relative border-2 ${bgColors[category.type] || ""}`}>
+                    <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+                      <CardTitle className="text-sm font-bold flex items-center gap-2 truncate pr-8">
+                        <div 
+                          className="w-3 h-3 rounded-full shrink-0 shadow-sm border border-black/10" 
+                          style={{ backgroundColor: category.color }} 
+                        />
+                        <span className="truncate">{category.name}</span>
+                      </CardTitle>
+                      <div className="flex items-center gap-1 absolute right-2 top-2">
+                        <Button 
+                          variant="ghost" 
+                          size="icon-sm" 
+                          className="opacity-0 group-hover:opacity-100 transition-opacity h-6 w-6 hover:bg-background/50"
+                          onClick={() => setEditingCategory(category)}
+                        >
+                          <Pencil className="w-3 h-3" />
+                        </Button>
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="text-xs font-semibold text-foreground/80">
+                          {(category as any).budget ? formatCurrency((category as any).budget) : "-"}
+                        </p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
               </div>
-            </CardHeader>
-            <CardContent>
-              <p className="text-xs text-muted-foreground">
-                Budget: {(category as any).budget ? formatCurrency((category as any).budget) : "-"}
-              </p>
-            </CardContent>
-          </Card>
-        ))}
+            </div>
+          );
+        })}
       </div>
 
       {editingCategory && (

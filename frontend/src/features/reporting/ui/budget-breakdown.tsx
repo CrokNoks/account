@@ -3,44 +3,63 @@
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { formatCurrency } from "@/shared/lib/format";
 import { useAccountStore } from "@/features/accounts/model/use-account-store";
-import { usePeriods } from "@/features/budgets/api/use-periods";
 import { useBudgetBreakdown, BudgetCategoryBreakdown } from "../api/use-budget-breakdown";
 import { useTranslations } from "next-intl";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export function BudgetBreakdown() {
   const t = useTranslations('Reporting');
-  const { activeAccountId } = useAccountStore();
-  const { data: periods } = usePeriods(activeAccountId);
+  const { activeAccountId, activePeriodId } = useAccountStore();
   
-  const activePeriod = periods?.find(p => p.isActive);
   const { data: breakdown, isLoading } = useBudgetBreakdown(
     activeAccountId, 
-    activePeriod?.id || null
+    activePeriodId
   );
 
   if (isLoading) return <div className="h-64 bg-muted animate-pulse rounded-xl" />;
   if (!breakdown) return null;
 
   return (
-    <div className="grid gap-6 md:grid-cols-2">
-      <BudgetGroup title={t('expenses')} items={breakdown.expenses} isExpense />
-      <BudgetGroup title={t('income')} items={breakdown.income} />
-      <BudgetGroup title={t('savings')} items={breakdown.savings} isExpense />
-      <BudgetGroup title={t('transfers')} items={breakdown.transfers} />
-    </div>
+    <Tabs defaultValue="expenses" className="w-full">
+      <TabsList className="grid w-full grid-cols-4 mb-4">
+        <TabsTrigger value="expenses">{t('expenses')}</TabsTrigger>
+        <TabsTrigger value="income">{t('income')}</TabsTrigger>
+        <TabsTrigger value="savings">{t('savings')}</TabsTrigger>
+        <TabsTrigger value="transfers">{t('transfers')}</TabsTrigger>
+      </TabsList>
+      
+      <TabsContent value="expenses">
+        <BudgetGroup title={t('expenses')} items={breakdown.expenses} isExpense />
+      </TabsContent>
+      <TabsContent value="income">
+        <BudgetGroup title={t('income')} items={breakdown.income} />
+      </TabsContent>
+      <TabsContent value="savings">
+        <BudgetGroup title={t('savings')} items={breakdown.savings} isExpense />
+      </TabsContent>
+      <TabsContent value="transfers">
+        <BudgetGroup title={t('transfers')} items={breakdown.transfers} />
+      </TabsContent>
+    </Tabs>
   );
 }
 
 function BudgetGroup({ title, items, isExpense }: { title: string, items: BudgetCategoryBreakdown[], isExpense?: boolean }) {
   const t = useTranslations('Reporting');
-  if (items.length === 0) return null;
+  if (items.length === 0) return (
+    <Card>
+      <CardContent className="h-32 flex items-center justify-center text-muted-foreground italic">
+        Aucune donnée pour cette catégorie
+      </CardContent>
+    </Card>
+  );
 
   return (
     <Card>
       <CardHeader>
         <CardTitle className="text-lg">{title}</CardTitle>
       </CardHeader>
-      <CardContent className="space-y-6">
+      <CardContent className="space-y-6 max-h-[400px] overflow-y-auto">
         {items.map((item) => {
           const percentage = Math.min(Math.abs(item.percentage), 100);
           
@@ -52,9 +71,9 @@ function BudgetGroup({ title, items, isExpense }: { title: string, items: Budget
           return (
             <div key={item.categoryId} className="space-y-2">
               <div className="flex justify-between text-sm font-medium">
-                <span>{item.name}</span>
-                <span className="text-muted-foreground">
-                  {formatCurrency(item.real)} / {formatCurrency(item.budget)}
+                <span className="truncate pr-4">{item.name}</span>
+                <span className="text-muted-foreground whitespace-nowrap">
+                  {formatCurrency(Math.abs(parseInt(item.real, 10)).toString())} / {formatCurrency(Math.abs(parseInt(item.budget, 10)).toString())}
                 </span>
               </div>
               <div className="relative h-2 w-full overflow-hidden rounded-full bg-secondary">
@@ -65,7 +84,7 @@ function BudgetGroup({ title, items, isExpense }: { title: string, items: Budget
               </div>
               <div className="flex justify-between text-[10px] text-muted-foreground uppercase tracking-wider">
                 <span>{item.percentage}%</span>
-                <span>{t('remaining')}: {formatCurrency(item.remaining)}</span>
+                <span>{t('remaining')}: {formatCurrency(Math.abs(parseInt(item.remaining, 10)).toString())}</span>
               </div>
             </div>
           );
