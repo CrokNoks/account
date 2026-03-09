@@ -3,14 +3,14 @@ import { GetBudgetBreakdownUseCase } from './get-budget-breakdown.use-case';
 import { GetPeriodStatsUseCase } from './get-period-stats.use-case';
 
 export interface SankeyNode {
-  id: string;
+  id?: string;
   name: string;
   color?: string;
 }
 
 export interface SankeyLink {
-  source: string;
-  target: string;
+  source: string | number;
+  target: string | number;
   value: number;
 }
 
