@@ -1,6 +1,7 @@
 {
   "Navigation": {
     "dashboard": "Dashboard",
+    "evolution": "Evolution",
     "accounts": "Accounts",
     "categories": "Categories",
     "transactions": "Transactions",
@@ -40,7 +41,11 @@
     "category": "Category",
     "real": "Real",
     "budget": "Budget",
-    "remaining": "Remaining"
+    "remaining": "Remaining",
+    "evolution_title": "Evolution",
+    "evolution_desc": "Track your balance and income/expenses evolution over time.",
+    "balance_evolution": "Bank Balance Evolution",
+    "income_vs_expenses": "Income vs Expenses"
   },
   "Accounts": {
     "title": "My Accounts",
