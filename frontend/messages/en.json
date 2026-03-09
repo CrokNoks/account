@@ -6,6 +6,7 @@
     "categories": "Categories",
     "transactions": "Transactions",
     "budgets": "Budgets",
+    "recurring": "Recurring",
     "logout": "Logout"
   },
   "Auth": {
@@ -123,7 +124,25 @@
     },
     "stats_hint": "Min: {min} | Avg: {avg} | Max: {max}",
     "updated": "Period updated",
-    "close_period": "Close Period"
+    "close_period": "Close Period",
+    "inject_label": "Inject recurring operations"
+  },
+  "Recurring": {
+    "title": "Recurring Operations",
+    "description": "Manage your subscriptions, rent, and regular income.",
+    "add_recurring": "New Recurring",
+    "new_recurring_title": "New Recurring Operation",
+    "new_recurring_desc": "Define an operation that repeats every month.",
+    "fields": {
+      "description": "Description",
+      "category": "Category",
+      "amount": "Amount",
+      "day_of_month": "Day of Month"
+    },
+    "empty": "No recurring operations",
+    "delete_confirm": "Delete this recurrence?",
+    "deleted": "Recurring deleted",
+    "inject_label": "Inject recurring operations"
   },
   "Common": {
     "add": "Add",

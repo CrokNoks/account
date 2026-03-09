@@ -6,6 +6,7 @@
     "categories": "Catégories",
     "transactions": "Transactions",
     "budgets": "Budgets",
+    "recurring": "Récurrences",
     "logout": "Déconnexion"
   },
   "Auth": {
@@ -81,7 +82,7 @@
     },
     "empty": "Aucune transaction trouvée",
     "save_another": "Enregistrer & Nouveau",
-    "expense_hint": "Utilisez une valeur négative pour les dépenses (ex: -10)",
+    "expense_hint": "Utilisez une valeur négative pour les denses (ex: -10)",
     "filter_status": "Filtrer par statut",
     "status_all": "Tous les statuts",
     "status_reconciled": "Pointées",
@@ -123,7 +124,25 @@
     },
     "stats_hint": "Min: {min} | Moy: {avg} | Max: {max}",
     "updated": "Période mise à jour",
-    "close_period": "Clôturer la période"
+    "close_period": "Clôturer la période",
+    "inject_label": "Injecter les opérations récurrentes"
+  },
+  "Recurring": {
+    "title": "Opérations Récurrentes",
+    "description": "Gérez vos abonnements, loyers et revenus réguliers.",
+    "add_recurring": "Nouvelle récurrence",
+    "new_recurring_title": "Nouvelle opération récurrente",
+    "new_recurring_desc": "Définissez une opération qui se répète chaque mois.",
+    "fields": {
+      "description": "Description",
+      "category": "Catégorie",
+      "amount": "Montant",
+      "day_of_month": "Jour du mois"
+    },
+    "empty": "Aucune opération récurrente",
+    "delete_confirm": "Supprimer cette récurrence ?",
+    "deleted": "Récurrence supprimée",
+    "inject_label": "Injecter les opérations récurrentes"
   },
   "Common": {
     "add": "Ajouter",

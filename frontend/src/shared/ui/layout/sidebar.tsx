@@ -10,6 +10,7 @@ import {
   Receipt, 
   PieChart, 
   Settings,
+  Repeat,
   LogOut
 } from 'lucide-react';
 import { createClient } from '@/shared/lib/supabase/supabase-browser';
@@ -19,6 +20,7 @@ import {useTranslations} from 'next-intl';
 const menuItems = [
   { icon: LayoutDashboard, labelKey: 'dashboard', href: '/' },
   { icon: TrendingUp, labelKey: 'evolution', href: '/evolution' },
+  { icon: Repeat, labelKey: 'recurring', href: '/recurring' },
   { icon: CreditCard, labelKey: 'accounts', href: '/accounts' },
   { icon: Settings, labelKey: 'categories', href: '/categories' },
   { icon: Receipt, labelKey: 'transactions', href: '/transactions' },
