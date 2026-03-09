@@ -2,8 +2,10 @@
 
 import { TransactionList } from "@/features/transactions/ui/transaction-list";
 import { CreateTransactionDrawer } from "@/features/transactions/ui/create-transaction-drawer";
-import { ImportCsvDrawer } from "@/features/transactions/ui/import-csv-drawer";
 import { useTranslations } from 'next-intl';
+import { Link } from '@/i18n/routing';
+import { FileUp } from 'lucide-react';
+import { Button } from "@/components/ui/button";
 
 export default function TransactionsPage() {
   const t = useTranslations('Transactions');
@@ -18,7 +20,12 @@ export default function TransactionsPage() {
           </p>
         </div>
         <div className="flex gap-2">
-          <ImportCsvDrawer />
+          <Link href="/transactions/import">
+            <Button variant="outline" className="gap-2">
+              <FileUp className="w-4 h-4" />
+              Import CSV
+            </Button>
+          </Link>
           <CreateTransactionDrawer />
         </div>
       </div>
