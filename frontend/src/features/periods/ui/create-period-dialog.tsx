@@ -130,29 +130,39 @@ export function CreatePeriodDialog() {
                 {t('fields.budget_init')}
               </h3>
               <div className="border rounded-lg divide-y">
-                {draft?.categoriesWithStats.map((cat) => (
-                  <div key={cat.categoryId} className="p-4 flex items-center justify-between gap-4">
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">{cat.name}</p>
-                      <div className="flex gap-2 text-[10px] text-muted-foreground mt-1">
-                        <span>{t('stats_hint', { 
-                          min: formatCurrency(cat.minReal), 
-                          avg: formatCurrency(cat.avgReal), 
-                          max: formatCurrency(cat.maxReal) 
-                        })}</span>
+                {isLoadingDraft ? (
+                  <div className="p-8 text-center text-sm text-muted-foreground">
+                    {tc('loading')}
+                  </div>
+                ) : draft?.categoriesWithStats && draft.categoriesWithStats.length > 0 ? (
+                  draft.categoriesWithStats.map((cat) => (
+                    <div key={cat.categoryId} className="p-4 flex items-center justify-between gap-4">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium truncate">{cat.name}</p>
+                        <div className="flex gap-2 text-[10px] text-muted-foreground mt-1">
+                          <span>{t('stats_hint', { 
+                            min: formatCurrency(cat.minReal), 
+                            avg: formatCurrency(cat.avgReal), 
+                            max: formatCurrency(cat.maxReal) 
+                          })}</span>
+                        </div>
+                      </div>
+                      <div className="w-32">
+                        <Input 
+                          type="number" 
+                          step="0.01"
+                          value={budgets[cat.categoryId] || '0'}
+                          onChange={(e) => setBudgets({ ...budgets, [cat.categoryId]: e.target.value })}
+                          className="text-right"
+                        />
                       </div>
                     </div>
-                    <div className="w-32">
-                      <Input 
-                        type="number" 
-                        step="0.01"
-                        value={budgets[cat.categoryId] || '0'}
-                        onChange={(e) => setBudgets({ ...budgets, [cat.categoryId]: e.target.value })}
-                        className="text-right"
-                      />
-                    </div>
+                  ))
+                ) : (
+                  <div className="p-8 text-center text-sm text-muted-foreground">
+                    Aucune catégorie disponible.
                   </div>
-                ))}
+                )}
               </div>
             </div>
 
