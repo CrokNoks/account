@@ -3,7 +3,6 @@
 import { EvolutionChart } from "@/features/reporting/ui/evolution-chart";
 import { SankeyChart } from "@/features/reporting/ui/sankey-chart";
 import { PeriodComparison } from "@/features/reporting/ui/period-comparison";
-import { CashflowForecast } from "@/features/reporting/ui/cashflow-forecast";
 import { useAccountStore } from "@/features/accounts/model/use-account-store";
 import { useTranslations } from 'next-intl';
 
@@ -23,15 +22,14 @@ export default function EvolutionPage() {
       <div className="space-y-12">
         <EvolutionChart />
         
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="space-y-4">
+          <h2 className="text-2xl font-bold tracking-tight">Flux de trésorerie</h2>
+          <p className="text-sm text-muted-foreground">Visualisation des entrées et sorties d'argent pour la période sélectionnée.</p>
           <SankeyChart accountId={activeAccountId} periodId={activePeriodId} />
-          <PeriodComparison accountId={activeAccountId} periodId={activePeriodId} />
         </div>
 
-        <div className="space-y-4">
-          <h2 className="text-2xl font-bold tracking-tight">Prévisions de trésorerie</h2>
-          <p className="text-sm text-muted-foreground">Projection de votre solde sur les 90 prochains jours basée sur vos opérations récurrentes.</p>
-          <CashflowForecast accountId={activeAccountId} />
+        <div className="grid grid-cols-1 gap-8">
+          <PeriodComparison accountId={activeAccountId} periodId={activePeriodId} />
         </div>
       </div>
     </div>

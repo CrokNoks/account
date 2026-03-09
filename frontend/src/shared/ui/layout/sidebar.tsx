@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils';
 import { 
   LayoutDashboard, 
   TrendingUp,
+  Calendar,
   CreditCard, 
   Receipt, 
   PieChart, 
@@ -20,6 +21,7 @@ import {useTranslations} from 'next-intl';
 const menuItems = [
   { icon: LayoutDashboard, labelKey: 'dashboard', href: '/' },
   { icon: TrendingUp, labelKey: 'evolution', href: '/evolution' },
+  { icon: Calendar, labelKey: 'cashflow', href: '/cashflow' },
   { icon: Repeat, labelKey: 'recurring', href: '/recurring' },
   { icon: CreditCard, labelKey: 'accounts', href: '/accounts' },
   { icon: Settings, labelKey: 'categories', href: '/categories' },

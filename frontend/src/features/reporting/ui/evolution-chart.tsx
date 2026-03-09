@@ -157,21 +157,21 @@ export function EvolutionChart() {
                 <AreaChart data={chartData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
                   <defs>
                     <linearGradient id="colorBalance" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3}/>
-                      <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0}/>
+                      <stop offset="5%" stopColor="#38bdf8" stopOpacity={0.5}/>
+                      <stop offset="95%" stopColor="#38bdf8" stopOpacity={0}/>
                     </linearGradient>
                   </defs>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--muted-foreground))" strokeOpacity={0.2} />
                   <XAxis 
                     dataKey="name" 
-                    stroke="hsl(var(--muted-foreground))" 
+                    stroke="#94a3b8" 
                     fontSize={12} 
                     tickLine={false} 
                     axisLine={false}
                     dy={10}
                   />
                   <YAxis 
-                    stroke="hsl(var(--muted-foreground))" 
+                    stroke="#94a3b8" 
                     fontSize={12} 
                     tickLine={false} 
                     axisLine={false}
@@ -183,8 +183,8 @@ export function EvolutionChart() {
                     type="monotone" 
                     dataKey="balance" 
                     name={t('real_bank_balance')} 
-                    stroke="hsl(var(--primary))" 
-                    strokeWidth={2}
+                    stroke="#38bdf8" 
+                    strokeWidth={4}
                     fillOpacity={1} 
                     fill="url(#colorBalance)" 
                   />
@@ -202,17 +202,17 @@ export function EvolutionChart() {
             <div className="h-[350px] w-full min-h-[350px]">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={chartData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--muted-foreground))" strokeOpacity={0.2} />
                   <XAxis 
                     dataKey="name" 
-                    stroke="hsl(var(--muted-foreground))" 
+                    stroke="#94a3b8" 
                     fontSize={12} 
                     tickLine={false} 
                     axisLine={false}
                     dy={10}
                   />
                   <YAxis 
-                    stroke="hsl(var(--muted-foreground))" 
+                    stroke="#94a3b8" 
                     fontSize={12} 
                     tickLine={false} 
                     axisLine={false}
@@ -221,8 +221,8 @@ export function EvolutionChart() {
                   />
                   <Tooltip content={<CustomTooltip />} />
                   <Legend iconType="circle" verticalAlign="top" height={36}/>
-                  <Line type="monotone" dataKey="income" name={t('income')} stroke="#22c55e" strokeWidth={2} dot={false} />
-                  <Line type="monotone" dataKey="expenses" name={t('expenses')} stroke="#ef4444" strokeWidth={2} dot={false} />
+                  <Line type="monotone" dataKey="income" name={t('income')} stroke="#22c55e" strokeWidth={4} dot={{ r: 4, fill: "#22c55e", strokeWidth: 2, stroke: "#fff" }} activeDot={{ r: 8 }} />
+                  <Line type="monotone" dataKey="expenses" name={t('expenses')} stroke="#f43f5e" strokeWidth={4} dot={{ r: 4, fill: "#f43f5e", strokeWidth: 2, stroke: "#fff" }} activeDot={{ r: 8 }} />
                 </LineChart>
               </ResponsiveContainer>
             </div>
@@ -277,17 +277,19 @@ export function EvolutionChart() {
             <div className="flex-1 h-[500px] min-h-[500px]">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={chartData} margin={{ top: 10, right: 30, left: 0, bottom: 40 }}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--muted))" />
                   <XAxis 
                     dataKey="name" 
-                    stroke="hsl(var(--muted-foreground))" 
+                    stroke="currentColor" 
+                    className="text-muted-foreground"
                     fontSize={12} 
                     tickLine={false} 
                     axisLine={false}
                     dy={10}
                   />
                   <YAxis 
-                    stroke="hsl(var(--muted-foreground))" 
+                    stroke="currentColor" 
+                    className="text-muted-foreground"
                     fontSize={12} 
                     tickLine={false} 
                     axisLine={false}

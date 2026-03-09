@@ -10,6 +10,35 @@ interface SankeyChartProps {
   periodId: string | null;
 }
 
+const CustomNode = ({ x, y, width, height, index, payload, containerWidth }: any) => {
+  const isOut = x + width + 6 > containerWidth;
+  return (
+    <Layer key={`node-${index}`}>
+      <Rectangle
+        x={x}
+        y={y}
+        width={width}
+        height={height}
+        fill={payload.color || '#6366f1'}
+        fillOpacity={0.8}
+        rx={2}
+      />
+      <text
+        x={isOut ? x - 6 : x + width + 6}
+        y={y + height / 2}
+        textAnchor={isOut ? 'end' : 'start'}
+        verticalAnchor="middle"
+        fontSize="10"
+        fontWeight="bold"
+        fill="currentColor"
+        className="fill-foreground"
+      >
+        {payload.name}
+      </text>
+    </Layer>
+  );
+};
+
 export function SankeyChart({ accountId, periodId }: SankeyChartProps) {
   const { data, isLoading } = useSankeyData(accountId, periodId);
 
@@ -36,10 +65,10 @@ export function SankeyChart({ accountId, periodId }: SankeyChartProps) {
           <ResponsiveContainer width="100%" height="100%">
             <Sankey
               data={data as any}
-              node={{ stroke: '#6366f1', strokeWidth: 1 }}
+              node={<CustomNode />}
               link={{ stroke: '#6366f1', fillOpacity: 0.1 }}
               nodePadding={40}
-              margin={{ top: 20, right: 100, bottom: 20, left: 10 }}
+              margin={{ top: 20, right: 120, bottom: 20, left: 120 }}
             >
               <Tooltip 
                 formatter={(value: any) => [`${value}€`, 'Montant']}

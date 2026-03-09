@@ -22,6 +22,12 @@ export function PeriodComparison({ accountId, periodId }: PeriodComparisonProps)
   
   const { data: comparison, isLoading } = usePeriodComparison(accountId, periodId, compareWithId);
 
+  const currentPeriod = periods?.find(p => p.id === periodId);
+  const comparePeriod = periods?.find(p => p.id === compareWithId);
+
+  const labelA = comparePeriod ? format(new Date(comparePeriod.startDate), 'MMM yy') : 'Période A';
+  const labelB = currentPeriod ? format(new Date(currentPeriod.startDate), 'MMM yy') : 'Période B';
+
   const otherPeriods = periods?.filter(p => p.id !== periodId) || [];
 
   if (!accountId || !periodId) return null;
@@ -33,32 +39,46 @@ export function PeriodComparison({ accountId, periodId }: PeriodComparisonProps)
           <Scale className="w-4 h-4 text-primary" />
           Comparaison de périodes
         </CardTitle>
-        <Select value={compareWithId || ''} onValueChange={setCompareWithId}>
-          <SelectTrigger className="w-[200px] h-8 text-xs">
-            <SelectValue placeholder="Comparer avec..." />
-          </SelectTrigger>
-          <SelectContent>
-            {otherPeriods.map(p => (
-              <SelectItem key={p.id} value={p.id}>
-                {format(new Date(p.startDate), 'MMM yy')} - {format(new Date(p.endDate), 'MMM yy')}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <div className="flex items-center gap-2">
+          <span className="text-[10px] font-bold uppercase text-muted-foreground italic">Comparer avec :</span>
+          <Select value={compareWithId || ''} onValueChange={setCompareWithId}>
+            <SelectTrigger className="w-[180px] h-8 text-xs font-medium">
+              <SelectValue placeholder="Choisir une période..." />
+            </SelectTrigger>
+            <SelectContent>
+              {otherPeriods.map(p => (
+                <SelectItem key={p.id} value={p.id}>
+                  {format(new Date(p.startDate), 'MMMM yyyy')}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </CardHeader>
       <CardContent>
         {!compareWithId ? (
-          <div className="h-32 flex items-center justify-center text-sm text-muted-foreground border-2 border-dashed rounded-lg">
-            Sélectionnez une période pour comparer les résultats.
+          <div className="h-32 flex items-center justify-center text-sm text-muted-foreground border-2 border-dashed rounded-lg bg-muted/10">
+            Sélectionnez une période passée pour comparer vos résultats actuels.
           </div>
         ) : isLoading ? (
           <div className="h-32 flex items-center justify-center">
             <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
           </div>
         ) : (
-          <div className="space-y-6">
-            <ComparisonTable title="Dépenses" data={comparison?.expenses || []} isExpense />
-            <ComparisonTable title="Revenus" data={comparison?.income || []} />
+          <div className="space-y-8">
+            <div className="flex flex-col sm:flex-row gap-4 p-3 bg-primary/5 rounded-lg border border-primary/10 text-[10px] sm:text-xs">
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-muted-foreground" />
+                <span className="font-semibold text-muted-foreground uppercase">Période A (Base) :</span> {comparePeriod ? `${format(new Date(comparePeriod.startDate), 'dd/MM/yy')} - ${format(new Date(comparePeriod.endDate), 'dd/MM/yy')}` : ''}
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-primary" />
+                <span className="font-semibold text-primary uppercase">Période B (Actuelle) :</span> {currentPeriod ? `${format(new Date(currentPeriod.startDate), 'dd/MM/yy')} - ${format(new Date(currentPeriod.endDate), 'dd/MM/yy')}` : ''}
+              </div>
+            </div>
+
+            <ComparisonTable title="Dépenses" data={comparison?.expenses || []} labelA={labelA} labelB={labelB} isExpense />
+            <ComparisonTable title="Revenus" data={comparison?.income || []} labelA={labelA} labelB={labelB} />
           </div>
         )}
       </CardContent>
@@ -66,19 +86,22 @@ export function PeriodComparison({ accountId, periodId }: PeriodComparisonProps)
   );
 }
 
-function ComparisonTable({ title, data, isExpense }: { title: string, data: any[], isExpense?: boolean }) {
+function ComparisonTable({ title, data, labelA, labelB, isExpense }: { title: string, data: any[], labelA: string, labelB: string, isExpense?: boolean }) {
   if (data.length === 0) return null;
 
   return (
-    <div className="space-y-2">
-      <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">{title}</h4>
+    <div className="space-y-3">
+      <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+        <span className="w-8 h-[1px] bg-muted-foreground/30" />
+        {title}
+      </h4>
       <Table>
         <TableHeader>
-          <TableRow className="hover:bg-transparent">
-            <TableHead className="h-8">Catégorie</TableHead>
-            <TableHead className="h-8 text-right">Période A</TableHead>
-            <TableHead className="h-8 text-right">Période B</TableHead>
-            <TableHead className="h-8 text-right">Écart</TableHead>
+          <TableRow className="hover:bg-transparent border-none">
+            <TableHead className="h-8 text-xs">Catégorie</TableHead>
+            <TableHead className="h-8 text-right text-xs">{labelA}</TableHead>
+            <TableHead className="h-8 text-right text-xs font-bold text-foreground underline decoration-primary/30 underline-offset-4">{labelB}</TableHead>
+            <TableHead className="h-8 text-right text-xs">Écart</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
