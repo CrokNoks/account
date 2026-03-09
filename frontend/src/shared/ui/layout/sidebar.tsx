@@ -22,11 +22,12 @@ const menuItems = [
   { icon: LayoutDashboard, labelKey: 'dashboard', href: '/' },
   { icon: TrendingUp, labelKey: 'evolution', href: '/evolution' },
   { icon: Calendar, labelKey: 'cashflow', href: '/cashflow' },
-  { icon: Repeat, labelKey: 'recurring', href: '/recurring' },
+  { isSeparator: true },
   { icon: CreditCard, labelKey: 'accounts', href: '/accounts' },
   { icon: Settings, labelKey: 'categories', href: '/categories' },
-  { icon: Receipt, labelKey: 'transactions', href: '/transactions' },
+  { icon: Repeat, labelKey: 'recurring', href: '/recurring' },
   { icon: PieChart, labelKey: 'budgets', href: '/budgets' },
+  { icon: Receipt, labelKey: 'transactions', href: '/transactions' },
 ];
 
 export function Sidebar() {
@@ -48,7 +49,11 @@ export function Sidebar() {
       </div>
       
       <nav className="flex-1 px-4 space-y-2">
-        {menuItems.map((item) => {
+        {menuItems.map((item, index) => {
+          if ('isSeparator' in item) {
+            return <div key={`sep-${index}`} className="my-4 border-t border-muted" />;
+          }
+
           const Icon = item.icon;
           // Note: with next-intl, pathname includes locale
           const isActive = pathname.endsWith(item.href === '/' ? '/fr' : item.href) || 
