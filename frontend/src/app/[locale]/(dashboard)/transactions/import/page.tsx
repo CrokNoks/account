@@ -52,10 +52,13 @@ export default function ImportTransactionsPage() {
   
   // Mapping state
   const [headerRowIndex, setHeaderRowIndex] = useState(0);
+  const [amountMode, setAmountMode] = useState<'single' | 'separate'>('single');
   const [mapping, setMapping] = useState({
     date: '',
     description: '',
-    amount: ''
+    amount: '',
+    debit: '',
+    credit: ''
   });
 
   const [isProcessing, setIsProcessing] = useState(false);
@@ -67,8 +70,9 @@ export default function ImportTransactionsPage() {
     setCsvHeaders([]);
     setRawRows([]);
     setHeaderRowIndex(0);
+    setAmountMode('single');
     setParsedData([]);
-    setMapping({ date: '', description: '', amount: '' });
+    setMapping({ date: '', description: '', amount: '', debit: '', credit: '' });
     setIsProcessing(false);
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
@@ -93,10 +97,13 @@ export default function ImportTransactionsPage() {
         const headers = data[0] || [];
         setCsvHeaders(headers);
         
+        // Guess mapping
         const guess = {
           date: headers.find(h => /date/i.test(h)) || headers[0] || '',
           description: headers.find(h => /libelle|description|label/i.test(h)) || headers[1] || '',
-          amount: headers.find(h => /montant|amount/i.test(h)) || headers[2] || ''
+          amount: headers.find(h => /montant|amount/i.test(h)) || headers[2] || '',
+          debit: headers.find(h => /debit/i.test(h)) || '',
+          credit: headers.find(h => /credit/i.test(h)) || ''
         };
         setMapping(guess);
         setStep('mapping');
@@ -118,7 +125,9 @@ export default function ImportTransactionsPage() {
     setMapping({
       date: newHeaders.find(h => /date/i.test(h)) || newHeaders[0] || '',
       description: newHeaders.find(h => /libelle|description|label/i.test(h)) || newHeaders[1] || '',
-      amount: newHeaders.find(h => /montant|amount/i.test(h)) || newHeaders[2] || ''
+      amount: newHeaders.find(h => /montant|amount/i.test(h)) || newHeaders[2] || '',
+      debit: newHeaders.find(h => /debit/i.test(h)) || '',
+      credit: newHeaders.find(h => /credit/i.test(h)) || ''
     });
   };
 
@@ -128,6 +137,8 @@ export default function ImportTransactionsPage() {
     const dateIdx = csvHeaders.indexOf(mapping.date);
     const descIdx = csvHeaders.indexOf(mapping.description);
     const amountIdx = csvHeaders.indexOf(mapping.amount);
+    const debitIdx = csvHeaders.indexOf(mapping.debit);
+    const creditIdx = csvHeaders.indexOf(mapping.credit);
 
     const dataRows = rawRows.slice(headerRowIndex + 1);
 
@@ -135,11 +146,21 @@ export default function ImportTransactionsPage() {
       const rowArr = dataRows[i];
       const dateVal = rowArr[dateIdx];
       const descVal = rowArr[descIdx];
-      const amountVal = rowArr[amountIdx];
+      
+      let finalAmount = "0";
+      if (amountMode === 'single') {
+        finalAmount = rowArr[amountIdx] || "0";
+      } else {
+        const d = rowArr[debitIdx] || "0";
+        const c = rowArr[creditIdx] || "0";
+        const dv = parseFloat(d.toString().replace(/[^\d.,-]/g, '').replace(',', '.')) || 0;
+        const cv = parseFloat(c.toString().replace(/[^\d.,-]/g, '').replace(',', '.')) || 0;
+        finalAmount = (cv - Math.abs(dv)).toString();
+      }
 
-      if (!dateVal || !descVal || !amountVal) continue;
+      if (!dateVal || !descVal) continue;
 
-      const cleanAmount = amountVal.toString().replace(/[^\d.,-]/g, '').replace(',', '.');
+      const cleanAmount = finalAmount.toString().replace(/[^\d.,-]/g, '').replace(',', '.');
       
       let isoDate = new Date().toISOString().split('T')[0];
       try {
@@ -165,7 +186,7 @@ export default function ImportTransactionsPage() {
     setStep('validation');
     
     if (activeAccountId && mappedData.length > 0) {
-      toast.info(`Analyzing categories...`);
+      toast.info(`Analyse des catégories en cours...`);
       const updatedData = [...mappedData];
       for (let i = 0; i < updatedData.length; i++) {
         try {
@@ -229,18 +250,18 @@ export default function ImportTransactionsPage() {
         )}
       </div>
 
-      <Card className="min-h-[400px] flex flex-col">
-        <CardHeader className="border-b bg-muted/10">
+      <Card className="min-h-[400px] flex flex-col shadow-lg border-primary/10">
+        <CardHeader className="border-b bg-muted/10 px-8 py-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${step === 'upload' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>1</div>
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${step === 'upload' ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20' : 'bg-muted text-muted-foreground'}`}>1</div>
               <div className={`h-px w-8 bg-muted`} />
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${step === 'mapping' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>2</div>
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${step === 'mapping' ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20' : 'bg-muted text-muted-foreground'}`}>2</div>
               <div className={`h-px w-8 bg-muted`} />
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${step === 'validation' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>3</div>
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${step === 'validation' ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20' : 'bg-muted text-muted-foreground'}`}>3</div>
             </div>
             {step === 'mapping' && (
-              <Button onClick={processMapping} disabled={!mapping.date || !mapping.description || !mapping.amount || isProcessing} className="gap-2">
+              <Button onClick={processMapping} disabled={!mapping.date || !mapping.description || (amountMode === 'single' ? !mapping.amount : (!mapping.debit || !mapping.credit)) || isProcessing} className="gap-2 shadow-lg shadow-primary/20">
                 {isProcessing ? <Loader2 className="w-4 h-4 animate-spin" /> : <ArrowRight className="w-4 h-4" />}
                 Analyser les données
               </Button>
@@ -255,9 +276,11 @@ export default function ImportTransactionsPage() {
               </div>
               <input type="file" accept=".csv" className="hidden" ref={fileInputRef} onChange={handleFileUpload} />
               
-              <div className="flex flex-col items-center gap-6 bg-muted/20 p-8 rounded-xl border max-w-md w-full">
+              <div className="flex flex-col items-center gap-6 bg-muted/20 p-8 rounded-xl border max-w-md w-full shadow-sm">
                 <div className="space-y-3 w-full text-left">
-                  <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Séparateur CSV</label>
+                  <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+                    <Columns className="w-3 h-3" /> Séparateur CSV
+                  </label>
                   <Select value={delimiter} onValueChange={(v) => setDelimiter(v as any)}>
                     <SelectTrigger className="w-full h-11"><SelectValue /></SelectTrigger>
                     <SelectContent>
@@ -272,7 +295,7 @@ export default function ImportTransactionsPage() {
                   <p className="text-muted-foreground text-sm">Le fichier CSV exporté par votre banque.</p>
                 </div>
                 
-                <Button size="lg" onClick={() => fileInputRef.current?.click()} disabled={isProcessing} className="w-full h-12 text-base font-semibold">
+                <Button size="lg" onClick={() => fileInputRef.current?.click()} disabled={isProcessing} className="w-full h-12 text-base font-semibold shadow-lg shadow-primary/20">
                   {isProcessing ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <FileUp className="w-4 h-4 mr-2" />}
                   Choisir le fichier
                 </Button>
@@ -282,56 +305,98 @@ export default function ImportTransactionsPage() {
 
           {step === 'mapping' && (
             <div className="p-8 space-y-8">
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-6 bg-muted/20 p-6 rounded-xl border">
-                <div className="space-y-2">
-                  <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Ligne d'en-tête</label>
-                  <Input 
-                    type="number" 
-                    min="0" 
-                    value={headerRowIndex} 
-                    onChange={(e) => handleHeaderRowChange(parseInt(e.target.value, 10) || 0)} 
-                    className="h-10"
-                  />
-                  <p className="text-[10px] text-muted-foreground italic">Index de la ligne contenant les noms</p>
+              <div className="flex flex-col gap-6">
+                <div className="flex items-center gap-2 bg-muted/30 p-1 rounded-lg border w-fit">
+                  <Button 
+                    variant={amountMode === 'single' ? 'secondary' : 'ghost'} 
+                    size="sm" 
+                    onClick={() => setAmountMode('single')}
+                    className="h-8 text-xs px-4"
+                  >
+                    Colonne Montant unique
+                  </Button>
+                  <Button 
+                    variant={amountMode === 'separate' ? 'secondary' : 'ghost'} 
+                    size="sm" 
+                    onClick={() => setAmountMode('separate')}
+                    className="h-8 text-xs px-4"
+                  >
+                    Débit / Crédit séparés
+                  </Button>
                 </div>
-                <div className="space-y-2">
-                  <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Colonne Date</label>
-                  <Select value={mapping.date} onValueChange={(v) => setMapping({...mapping, date: v})}>
-                    <SelectTrigger className="h-10"><SelectValue placeholder="Sélectionner" /></SelectTrigger>
-                    <SelectContent>{csvHeaders.map((h, i) => <SelectItem key={i} value={h}>{h || `Colonne ${i}`}</SelectItem>)}</SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Colonne Description</label>
-                  <Select value={mapping.description} onValueChange={(v) => setMapping({...mapping, description: v})}>
-                    <SelectTrigger className="h-10"><SelectValue placeholder="Sélectionner" /></SelectTrigger>
-                    <SelectContent>{csvHeaders.map((h, i) => <SelectItem key={i} value={h}>{h || `Colonne ${i}`}</SelectItem>)}</SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Colonne Montant</label>
-                  <Select value={mapping.amount} onValueChange={(v) => setMapping({...mapping, amount: v})}>
-                    <SelectTrigger className="h-10"><SelectValue placeholder="Sélectionner" /></SelectTrigger>
-                    <SelectContent>{csvHeaders.map((h, i) => <SelectItem key={i} value={h}>{h || `Colonne ${i}`}</SelectItem>)}</SelectContent>
-                  </Select>
+
+                <div className="grid grid-cols-1 md:grid-cols-5 gap-4 bg-muted/20 p-6 rounded-xl border">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Ligne d'en-tête</label>
+                    <Input type="number" min="0" value={headerRowIndex} onChange={(e) => handleHeaderRowChange(parseInt(e.target.value, 10) || 0)} className="h-10" />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Colonne Date</label>
+                    <Select value={mapping.date} onValueChange={(v) => setMapping({...mapping, date: v})}>
+                      <SelectTrigger className="h-10"><SelectValue placeholder="Date" /></SelectTrigger>
+                      <SelectContent>{csvHeaders.map((h, i) => <SelectItem key={i} value={h}>{h || `Col ${i}`}</SelectItem>)}</SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2 md:col-span-1">
+                    <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Colonne Description</label>
+                    <Select value={mapping.description} onValueChange={(v) => setMapping({...mapping, description: v})}>
+                      <SelectTrigger className="h-10"><SelectValue placeholder="Description" /></SelectTrigger>
+                      <SelectContent>{csvHeaders.map((h, i) => <SelectItem key={i} value={h}>{h || `Col ${i}`}</SelectItem>)}</SelectContent>
+                    </Select>
+                  </div>
+                  
+                  {amountMode === 'single' ? (
+                    <div className="space-y-2 md:col-span-2 text-primary">
+                      <label className="text-[10px] font-bold uppercase tracking-wider">Colonne Montant</label>
+                      <Select value={mapping.amount} onValueChange={(v) => setMapping({...mapping, amount: v})}>
+                        <SelectTrigger className="h-10 border-primary/30"><SelectValue placeholder="Montant" /></SelectTrigger>
+                        <SelectContent>{csvHeaders.map((h, i) => <SelectItem key={i} value={h}>{h || `Col ${i}`}</SelectItem>)}</SelectContent>
+                      </Select>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="space-y-2 text-red-500">
+                        <label className="text-[10px] font-bold uppercase tracking-wider">Colonne Débit</label>
+                        <Select value={mapping.debit} onValueChange={(v) => setMapping({...mapping, debit: v})}>
+                          <SelectTrigger className="h-10 border-red-200"><SelectValue placeholder="Débit" /></SelectTrigger>
+                          <SelectContent>{csvHeaders.map((h, i) => <SelectItem key={i} value={h}>{h || `Col ${i}`}</SelectItem>)}</SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2 text-green-500">
+                        <label className="text-[10px] font-bold uppercase tracking-wider">Colonne Crédit</label>
+                        <Select value={mapping.credit} onValueChange={(v) => setMapping({...mapping, credit: v})}>
+                          <SelectTrigger className="h-10 border-green-200"><SelectValue placeholder="Crédit" /></SelectTrigger>
+                          <SelectContent>{csvHeaders.map((h, i) => <SelectItem key={i} value={h}>{h || `Col ${i}`}</SelectItem>)}</SelectContent>
+                        </Select>
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
 
               <div className="border rounded-lg overflow-hidden shadow-sm">
-                <div className="bg-muted/50 px-4 py-2 text-[10px] font-bold uppercase tracking-widest border-b">Aperçu du CSV</div>
+                <div className="bg-muted/50 px-4 py-2 text-[10px] font-bold uppercase tracking-widest border-b flex justify-between items-center">
+                  <span>Aperçu du CSV</span>
+                  <span className="text-[9px] font-normal text-muted-foreground">Colonnes actives surlignées</span>
+                </div>
                 <Table>
                   <TableBody>
                     {rawRows.slice(Math.max(0, headerRowIndex - 1), headerRowIndex + 6).map((rowArr, i) => {
                       const actualIndex = Math.max(0, headerRowIndex - 1) + i;
                       const isHeader = actualIndex === headerRowIndex;
+                      const activeCols = [mapping.date, mapping.description, amountMode === 'single' ? mapping.amount : null, mapping.debit, mapping.credit].filter(Boolean);
                       return (
-                        <TableRow key={actualIndex} className={isHeader ? "bg-primary/10" : ""}>
-                          <TableCell className="w-12 text-[9px] font-mono text-muted-foreground border-r bg-muted/5">{actualIndex}</TableCell>
-                          {rowArr.map((cell, j) => (
-                            <TableCell key={j} className={`text-[11px] truncate max-w-[200px] ${isHeader ? 'font-bold text-primary' : 'opacity-40'}`}>
-                              {cell}
-                            </TableCell>
-                          ))}
+                        <TableRow key={actualIndex} className={isHeader ? "bg-primary/5" : ""}>
+                          <TableCell className="w-12 text-[9px] font-mono text-muted-foreground border-r bg-muted/5 text-center">{actualIndex}</TableCell>
+                          {rowArr.map((cell, j) => {
+                            const headerName = csvHeaders[j];
+                            const isActive = activeCols.includes(headerName);
+                            return (
+                              <TableCell key={j} className={`text-[11px] truncate max-w-[200px] ${isActive && isHeader ? 'font-bold text-primary underline decoration-2' : isActive ? 'bg-primary/5 font-medium' : 'opacity-40'}`}>
+                                {cell}
+                              </TableCell>
+                            );
+                          })}
                         </TableRow>
                       );
                     })}
@@ -346,7 +411,7 @@ export default function ImportTransactionsPage() {
               <Table className="table-fixed w-full">
                 <TableHeader>
                   <TableRow className="bg-muted/30">
-                    <TableHead className="w-[120px] pl-6 text-xs">Date</TableHead>
+                    <TableHead className="w-[120px] pl-8 text-xs">Date</TableHead>
                     <TableHead className="min-w-[250px] text-xs">Description</TableHead>
                     <TableHead className="w-[150px] text-right text-xs">Montant</TableHead>
                     <TableHead className="w-[300px] text-xs">Catégorie</TableHead>
@@ -356,7 +421,7 @@ export default function ImportTransactionsPage() {
                 <TableBody>
                   {parsedData.map((row) => (
                     <TableRow key={row.id}>
-                      <TableCell className="pl-6 font-medium text-xs">{row.date}</TableCell>
+                      <TableCell className="pl-8 font-medium text-xs">{row.date}</TableCell>
                       <TableCell className="truncate text-xs" title={row.description}>{row.description}</TableCell>
                       <TableCell className={`text-right font-bold text-xs ${parseFloat(row.amount) < 0 ? 'text-red-500' : 'text-green-500'}`}>
                         {formatCurrency((Math.round(parseFloat(row.amount) * 100)).toString())}
@@ -388,7 +453,7 @@ export default function ImportTransactionsPage() {
                           </SelectContent>
                         </Select>
                       </TableCell>
-                      <TableCell className="pr-6">
+                      <TableCell className="pr-8">
                         <Button variant="ghost" size="icon-sm" onClick={() => setParsedData(prev => prev.filter(p => p.id !== row.id))} className="h-8 w-8 text-muted-foreground hover:text-destructive">
                           <X className="w-4 h-4" />
                         </Button>
