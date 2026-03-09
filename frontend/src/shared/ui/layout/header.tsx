@@ -4,6 +4,7 @@ import { usePathname } from 'next/navigation';
 import { AccountSelector } from '@/features/accounts/ui/account-selector';
 import { useTranslations, useLocale } from 'next-intl';
 import { Link, routing } from '@/i18n/routing';
+import { ThemeToggle } from './theme-toggle';
 import { 
   Select, 
   SelectContent, 
@@ -46,6 +47,7 @@ export function Header() {
         <h1 className="text-lg font-semibold md:text-xl">{label}</h1>
       </div>
       <div className="flex items-center gap-4">
+        <ThemeToggle />
         <Select value={locale} onValueChange={handleLocaleChange}>
           <SelectTrigger className="w-[70px] border-none bg-transparent hover:bg-accent transition-colors">
             <SelectValue />
