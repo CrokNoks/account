@@ -9,6 +9,7 @@ export interface CreatePeriodCommand {
     categoryId: string;
     amountAllocated: string;
   }>;
+  injectRecurring?: boolean;
 }
 
 export function useCreatePeriod() {
@@ -22,6 +23,7 @@ export function useCreatePeriod() {
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['periods', variables.accountId] });
+      queryClient.invalidateQueries({ queryKey: ['transactions', variables.accountId] });
       queryClient.invalidateQueries({ queryKey: ['reporting'] });
     },
   });

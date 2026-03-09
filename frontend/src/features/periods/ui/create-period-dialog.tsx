@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useAccountStore } from '@/features/accounts/model/use-account-store';
 import { usePeriodDraft } from '../api/use-period-draft';
 import { useCreatePeriod } from '../api/use-create-period';
@@ -32,6 +33,7 @@ export function CreatePeriodDialog() {
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [budgets, setBudgets] = useState<Record<string, string>>({});
+  const [injectRecurring, setInjectRecurring] = useState(true);
 
   useEffect(() => {
     if (draft) {
@@ -58,6 +60,7 @@ export function CreatePeriodDialog() {
         categoryId,
         amountAllocated: Math.round(parseFloat(amount) * 100).toString(),
       })),
+      injectRecurring,
     }, {
       onSuccess: () => setOpen(false)
     });
@@ -101,6 +104,20 @@ export function CreatePeriodDialog() {
                 required
               />
             </div>
+          </div>
+
+          <div className="flex items-center space-x-2 bg-primary/5 p-4 rounded-lg border border-primary/10">
+            <Checkbox 
+              id="inject-recurring" 
+              checked={injectRecurring} 
+              onCheckedChange={(checked) => setInjectRecurring(!!checked)} 
+            />
+            <label 
+              htmlFor="inject-recurring" 
+              className="text-sm font-medium leading-none cursor-pointer"
+            >
+              {t('inject_label')}
+            </label>
           </div>
 
           <div className="space-y-4">
