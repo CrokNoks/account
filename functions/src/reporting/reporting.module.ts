@@ -10,6 +10,7 @@ import { GetEvolutionUseCase } from './application/get-evolution.use-case';
 import { GetPeriodComparisonUseCase } from './application/get-period-comparison.use-case';
 import { GetSankeyDataUseCase } from './application/get-sankey-data.use-case';
 import { GetAIInsightsUseCase } from './application/get-ai-insights.use-case';
+import { GetCashflowForecastUseCase } from './application/get-cashflow-forecast.use-case';
 import { GeminiService } from './application/gemini.service';
 import { ReportingController } from './infrastructure/reporting.controller';
 
@@ -29,6 +30,7 @@ import { ReportingController } from './infrastructure/reporting.controller';
     GetPeriodComparisonUseCase,
     GetSankeyDataUseCase,
     GetAIInsightsUseCase,
+    GetCashflowForecastUseCase,
     GeminiService,
   ],
 })

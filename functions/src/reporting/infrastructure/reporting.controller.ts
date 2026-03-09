@@ -7,6 +7,7 @@ import { GetEvolutionUseCase, EvolutionDataPoint } from '../application/get-evol
 import { GetPeriodComparisonUseCase, PeriodComparisonResponse } from '../application/get-period-comparison.use-case';
 import { GetSankeyDataUseCase, SankeyDataResponse } from '../application/get-sankey-data.use-case';
 import { GetAIInsightsUseCase } from '../application/get-ai-insights.use-case';
+import { GetCashflowForecastUseCase, CashflowForecastResponse } from '../application/get-cashflow-forecast.use-case';
 
 class BudgetCategoryBreakdownDto implements BudgetCategoryBreakdown {
   @ApiProperty() categoryId: string;
@@ -58,6 +59,7 @@ export class ReportingController {
     private readonly getPeriodComparisonUseCase: GetPeriodComparisonUseCase,
     private readonly getSankeyDataUseCase: GetSankeyDataUseCase,
     private readonly getAIInsightsUseCase: GetAIInsightsUseCase,
+    private readonly getCashflowForecastUseCase: GetCashflowForecastUseCase,
   ) {}
 
   @Get('periods/:periodId/reporting/stats')
@@ -122,5 +124,14 @@ export class ReportingController {
   ): Promise<{ insights: string }> {
     const insights = await this.getAIInsightsUseCase.execute(accountId, periodId, locale);
     return { insights };
+  }
+
+  @Get('reporting/cashflow')
+  @ApiOperation({ summary: 'Get cashflow forecast based on recurring transactions' })
+  async getCashflow(
+    @Param('accountId') accountId: string,
+    @Query('days') days?: number
+  ): Promise<CashflowForecastResponse> {
+    return this.getCashflowForecastUseCase.execute(accountId, days);
   }
 }
