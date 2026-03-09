@@ -9,7 +9,7 @@ export interface TransactionProps {
   reconciled: boolean;
   paymentMethod?: string | null;
   notes?: string | null;
-  metadata: Record<string, any>;
+  metadata: Record<string, any> | undefined;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -25,7 +25,7 @@ export class Transaction {
   public readonly reconciled: boolean;
   public readonly paymentMethod?: string | null;
   public readonly notes?: string | null;
-  public readonly metadata: Record<string, any>;
+  public readonly metadata: Record<string, any> | undefined;
   public readonly createdAt: Date;
   public readonly updatedAt: Date;
 
