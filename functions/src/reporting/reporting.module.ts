@@ -4,6 +4,7 @@ import { CategoriesModule } from '../categories/categories.module';
 import { PeriodsModule } from '../periods/periods.module';
 import { TransactionsModule } from '../transactions/transactions.module';
 import { BudgetsModule } from '../budgets/budgets.module';
+import { RecurringModule } from '../recurring/recurring.module';
 import { GetPeriodStatsUseCase } from './application/get-period-stats.use-case';
 import { GetBudgetBreakdownUseCase } from './application/get-budget-breakdown.use-case';
 import { GetEvolutionUseCase } from './application/get-evolution.use-case';
@@ -21,6 +22,7 @@ import { ReportingController } from './infrastructure/reporting.controller';
     PeriodsModule,
     TransactionsModule,
     BudgetsModule,
+    RecurringModule,
   ],
   controllers: [ReportingController],
   providers: [
