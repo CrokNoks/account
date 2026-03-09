@@ -9,6 +9,7 @@ export interface EvolutionDataPoint {
   realExpenses: string;
   forecastBalance: string;
   realBankBalance: string;
+  categories?: Record<string, string>;
 }
 
 export function useEvolution(accountId: string | null) {
