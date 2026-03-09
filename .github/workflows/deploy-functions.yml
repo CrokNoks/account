@@ -23,7 +23,6 @@ jobs:
               - '.github/workflows/deploy-functions.yml'
 
       - name: Setup Node.js
-        if: steps.changes.outputs.backend == 'true'
         uses: actions/setup-node@v4
         with:
           node-version: '20'
@@ -31,27 +30,22 @@ jobs:
           cache-dependency-path: 'functions/package-lock.json'
 
       - name: Install Dependencies
-        if: steps.changes.outputs.backend == 'true'
         working-directory: functions
         run: npm ci
 
       - name: Build Functions
-        if: steps.changes.outputs.backend == 'true'
         working-directory: functions
         run: npm run build
 
       - id: 'auth'
-        if: steps.changes.outputs.backend == 'true'
         uses: 'google-github-actions/auth@v2'
         with:
           credentials_json: '${{ secrets.FIREBASE_SERVICE_ACCOUNT }}'
 
       - name: 'Set up Cloud SDK'
-        if: steps.changes.outputs.backend == 'true'
         uses: 'google-github-actions/setup-gcloud@v2'
 
       - name: Create functions .env
-        if: steps.changes.outputs.backend == 'true'
         working-directory: functions
         run: |
           echo "SUPABASE_URL=${{ secrets.SUPABASE_URL }}" > .env
@@ -59,7 +53,6 @@ jobs:
           echo "SUPABASE_JWT_SECRET=${{ secrets.SUPABASE_JWT_SECRET }}" >> .env
 
       - name: Deploy to Firebase
-        if: steps.changes.outputs.backend == 'true'
         run: |
           npx firebase-tools experiments:enable webframeworks
           npx firebase-tools deploy --only functions:backend --project ${{ secrets.FIREBASE_PROJECT_ID }} --force
