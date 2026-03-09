@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { PeriodRepository } from '../domain/period.repository.interface';
 import { BudgetRepository, CategoryStats } from '../../budgets/domain/budget.repository.interface';
 import { CategoryRepository } from '../../categories/domain/category.repository.interface';
+import { RecurringTransactionRepository } from '../../recurring/domain/recurring-transaction.repository.interface';
 
 export interface PeriodDraft {
   suggestedStartDate: Date;
@@ -22,6 +23,7 @@ export class GetPeriodDraftUseCase {
     private readonly periodRepository: PeriodRepository,
     private readonly budgetRepository: BudgetRepository,
     private readonly categoryRepository: CategoryRepository,
+    private readonly recurringRepository: RecurringTransactionRepository,
   ) {}
 
   async execute(accountId: string): Promise<PeriodDraft> {
@@ -43,11 +45,21 @@ export class GetPeriodDraftUseCase {
     // 3. Get all categories to match names
     const categories = await this.categoryRepository.findAllByAccount(accountId);
 
+    // 4. Get recurring transactions to predict initial amounts
+    const recurringTransactions = await this.recurringRepository.findAllByAccount(accountId);
+
     const categoriesWithStats = categories.map(cat => {
       const catStat = stats.find(s => s.categoryId === cat.id);
       const min = catStat?.minReal || BigInt(0);
       const max = catStat?.maxReal || BigInt(0);
       const avg = catStat?.avgReal || BigInt(0);
+
+      const categoryRecurringTxs = recurringTransactions.filter(rt => rt.categoryId === cat.id);
+      
+      let defaultAllocated = avg;
+      if (categoryRecurringTxs.length > 0) {
+        defaultAllocated = categoryRecurringTxs.reduce((sum, rt) => sum + rt.amount, BigInt(0));
+      }
 
       return {
         categoryId: cat.id,
@@ -55,7 +67,7 @@ export class GetPeriodDraftUseCase {
         minReal: min.toString(),
         maxReal: max.toString(),
         avgReal: avg.toString(),
-        defaultAllocated: avg.toString(),
+        defaultAllocated: defaultAllocated.toString(),
       };
     });
 
