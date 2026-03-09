@@ -1,6 +1,7 @@
 {
   "Navigation": {
     "dashboard": "Tableau de bord",
+    "evolution": "Évolution",
     "accounts": "Comptes",
     "categories": "Catégories",
     "transactions": "Transactions",
@@ -40,7 +41,11 @@
     "category": "Catégorie",
     "real": "Réel",
     "budget": "Budget",
-    "remaining": "Restant"
+    "remaining": "Restant",
+    "evolution_title": "Évolution",
+    "evolution_desc": "Suivez l'évolution de votre solde et de vos revenus/dépenses au fil du temps.",
+    "balance_evolution": "Évolution du solde en banque",
+    "income_vs_expenses": "Revenus vs Dépenses"
   },
   "Accounts": {
     "title": "Mes Comptes",
