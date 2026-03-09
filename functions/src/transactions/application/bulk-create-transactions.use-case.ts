@@ -17,8 +17,10 @@ export class BulkCreateTransactionsUseCase {
 
     for (const dto of command.transactions) {
       const transaction = Transaction.create({
+        metadata: undefined,
         ...dto,
         accountId: command.accountId,
+        reconciled: false,
       });
       await this.repository.save(transaction);
       createdTransactions.push(transaction);
