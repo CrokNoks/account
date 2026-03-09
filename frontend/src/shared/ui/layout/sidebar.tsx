@@ -50,7 +50,7 @@ export function Sidebar() {
         <h1 className="text-2xl font-bold text-primary">Account V2</h1>
       </div>
       
-      <nav className="flex-1 px-4 space-y-2">
+      <nav className="flex-1 px-4 py-4 space-y-2 flex flex-col">
         {menuItems.map((item, index) => {
           if ('isSeparator' in item) {
             return <div key={`sep-${index}`} className="my-4 border-t border-muted" />;
@@ -77,17 +77,20 @@ export function Sidebar() {
             </Link>
           );
         })}
-      </nav>
 
-      <div className="p-4 border-t">
-        <button
-          onClick={handleLogout}
-          className="flex items-center gap-3 px-3 py-2 w-full text-muted-foreground hover:text-destructive transition-colors cursor-pointer"
-        >
-          <LogOut className="w-5 h-5" />
-          <span className="font-medium">{t('logout')}</span>
-        </button>
-      </div>
+        {/* Spacer to push logout to bottom */}
+        <div className="flex-1" />
+        
+        <div className="border-t border-muted pt-4">
+          <button
+            onClick={handleLogout}
+            className="flex items-center gap-3 px-3 py-2 w-full text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg transition-colors cursor-pointer"
+          >
+            <LogOut className="w-5 h-5" />
+            <span className="font-medium">{t('logout')}</span>
+          </button>
+        </div>
+      </nav>
     </div>
   );
 }
