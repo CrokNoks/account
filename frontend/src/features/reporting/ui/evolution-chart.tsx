@@ -58,18 +58,42 @@ export function EvolutionChart() {
   const { data: evolutionData, isLoading: isLoadingEvolution } = useEvolution(activeAccountId);
   const { data: categories, isLoading: isLoadingCategories } = useCategories(activeAccountId);
 
-  const expenseCategories = useMemo(() => 
-    categories?.filter(c => c.type === 'expense') || []
-  , [categories]);
+  const { expenseCategories, sortedCategories } = useMemo(() => {
+    const base = categories?.filter(c => c.type === 'expense') || [];
+    
+    if (!evolutionData || evolutionData.length === 0) return { expenseCategories: base, sortedCategories: base };
+
+    // Calculate variance for each category
+    const withVariance = base.map(cat => {
+      const values = evolutionData.map(d => 
+        Math.abs(parseInt(d.categories[cat.id] || '0', 10))
+      );
+      const min = Math.min(...values);
+      const max = Math.max(...values);
+      return { ...cat, variance: max - min };
+    });
+
+    // Sort by variance descending
+    const sorted = [...withVariance].sort((a, b) => b.variance - a.variance);
+    
+    return { 
+      expenseCategories: base, 
+      sortedCategories: sorted 
+    };
+  }, [categories, evolutionData]);
 
   const [selectedCategoryIds, setSelectedCategoryIds] = useState<Set<string>>(new Set());
 
-  // Initialize selected categories when loaded
+  // Initialize selection with top 5 most variable categories
   useEffect(() => {
-    if (expenseCategories.length > 0 && selectedCategoryIds.size === 0) {
-      setSelectedCategoryIds(new Set(expenseCategories.map(c => c.id)));
+    if (sortedCategories.length > 0 && selectedCategoryIds.size === 0 && 'variance' in sortedCategories[0]) {
+      const top5Ids = sortedCategories
+        .slice(0, 5)
+        .map(v => v.id);
+
+      setSelectedCategoryIds(new Set(top5Ids));
     }
-  }, [expenseCategories, selectedCategoryIds.size]);
+  }, [sortedCategories, selectedCategoryIds.size]);
 
   const toggleCategory = (id: string) => {
     const newSet = new Set(selectedCategoryIds);
@@ -225,7 +249,7 @@ export function EvolutionChart() {
                 </button>
               </div>
               <div className="space-y-2 max-h-[400px] overflow-y-auto pr-2">
-                {expenseCategories.map((cat) => (
+                {sortedCategories.map((cat: any) => (
                   <div key={cat.id} className="flex items-center space-x-2">
                     <Checkbox 
                       id={`cat-${cat.id}`} 
@@ -234,10 +258,15 @@ export function EvolutionChart() {
                     />
                     <label 
                       htmlFor={`cat-${cat.id}`}
-                      className="text-xs font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 flex items-center gap-2 cursor-pointer truncate flex-1"
+                      className="text-xs font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 flex items-center justify-between gap-2 cursor-pointer truncate flex-1"
                     >
-                      <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: cat.color }} />
-                      <span className="truncate">{cat.name}</span>
+                      <div className="flex items-center gap-2 truncate">
+                        <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: cat.color }} />
+                        <span className="truncate">{cat.name}</span>
+                      </div>
+                      <span className="text-[9px] text-muted-foreground shrink-0 font-mono">
+                        ±{formatCurrency(cat.variance.toString())}
+                      </span>
                     </label>
                   </div>
                 ))}
