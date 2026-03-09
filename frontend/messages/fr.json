@@ -2,7 +2,8 @@
   "Navigation": {
     "dashboard": "Tableau de bord",
     "evolution": "Évolution",
-    "cashflow": "Trésorerie",
+    "flux": "Flux",
+    "prevision": "Prévisions",
     "accounts": "Comptes",
     "categories": "Catégories",
     "transactions": "Transactions",

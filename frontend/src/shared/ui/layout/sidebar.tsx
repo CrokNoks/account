@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils';
 import { 
   LayoutDashboard, 
   TrendingUp,
+  GitBranch,
   Calendar,
   CreditCard, 
   Receipt, 
@@ -21,7 +22,8 @@ import {useTranslations} from 'next-intl';
 const menuItems = [
   { icon: LayoutDashboard, labelKey: 'dashboard', href: '/' },
   { icon: TrendingUp, labelKey: 'evolution', href: '/evolution' },
-  { icon: Calendar, labelKey: 'cashflow', href: '/cashflow' },
+  { icon: GitBranch, labelKey: 'flux', href: '/flux' },
+  { icon: Calendar, labelKey: 'prevision', href: '/cashflow' },
   { isSeparator: true },
   { icon: CreditCard, labelKey: 'accounts', href: '/accounts' },
   { icon: Settings, labelKey: 'categories', href: '/categories' },

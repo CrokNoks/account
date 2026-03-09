@@ -2,7 +2,8 @@
   "Navigation": {
     "dashboard": "Dashboard",
     "evolution": "Evolution",
-    "cashflow": "Cashflow",
+    "flux": "Flow",
+    "prevision": "Forecast",
     "accounts": "Accounts",
     "categories": "Categories",
     "transactions": "Transactions",
