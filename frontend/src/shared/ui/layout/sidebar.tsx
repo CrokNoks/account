@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { 
   LayoutDashboard, 
+  TrendingUp,
   CreditCard, 
   Receipt, 
   PieChart, 
@@ -17,6 +18,7 @@ import {useTranslations} from 'next-intl';
 
 const menuItems = [
   { icon: LayoutDashboard, labelKey: 'dashboard', href: '/' },
+  { icon: TrendingUp, labelKey: 'evolution', href: '/evolution' },
   { icon: CreditCard, labelKey: 'accounts', href: '/accounts' },
   { icon: Settings, labelKey: 'categories', href: '/categories' },
   { icon: Receipt, labelKey: 'transactions', href: '/transactions' },

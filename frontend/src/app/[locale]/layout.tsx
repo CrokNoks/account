@@ -22,36 +22,30 @@ export const metadata: Metadata = {
   description: "Personal finance manager",
 };
 
-export default async function RootLayout({
+export default async function LocalizedLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const locale = await getLocale();
- 
   // Providing all messages to the client
   // side is the easiest way to get started
   const messages = await getMessages();
 
   return (
-    <html lang={locale} suppressHydrationWarning>
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+    <div className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+      <ThemeProvider
+        attribute="class"
+        defaultTheme="system"
+        enableSystem
+        disableTransitionOnChange
       >
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange
-        >
-          <NextIntlClientProvider messages={messages}>
-            <QueryProvider>
-              {children}
-            </QueryProvider>
-          </NextIntlClientProvider>
-          <Toaster />
-        </ThemeProvider>
-      </body>
-    </html>
+        <NextIntlClientProvider messages={messages}>
+          <QueryProvider>
+            {children}
+          </QueryProvider>
+        </NextIntlClientProvider>
+        <Toaster />
+      </ThemeProvider>
+    </div>
   );
 }
