@@ -221,7 +221,7 @@ function EditTransactionDialog({ transaction, open, onOpenChange }: { transactio
         date,
         description,
         categoryId: categoryId || null,
-        amount: (parseFloat(amount) * 100).toString(),
+        amount: Math.round(parseFloat(amount) * 100).toString(),
       }
     }, {
       onSuccess: () => {

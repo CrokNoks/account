@@ -41,7 +41,7 @@ export function CreateAccountDialog() {
       name,
       type,
       currency,
-      initialBalance: (parseFloat(balance) * 100).toString(),
+      initialBalance: Math.round(parseFloat(balance) * 100).toString(),
     }, {
       onSuccess: () => {
         setOpen(false);

@@ -96,7 +96,7 @@ function EditAccountDialog({ account, open, onOpenChange }: { account: Account, 
       id: account.id,
       data: {
         name,
-        initialBalance: (parseFloat(balance) * 100).toString(),
+        initialBalance: Math.round(parseFloat(balance) * 100).toString(),
       } as any
     }, {
       onSuccess: () => {

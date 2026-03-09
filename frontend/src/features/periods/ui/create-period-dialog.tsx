@@ -56,7 +56,7 @@ export function CreatePeriodDialog() {
       endDate,
       budgets: Object.entries(budgets).map(([categoryId, amount]) => ({
         categoryId,
-        amountAllocated: (parseFloat(amount) * 100).toString(),
+        amountAllocated: Math.round(parseFloat(amount) * 100).toString(),
       })),
     }, {
       onSuccess: () => setOpen(false)
