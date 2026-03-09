@@ -146,7 +146,7 @@ function EditCategoryDialog({ category, open, onOpenChange }: { category: Catego
         name,
         type,
         color,
-        budget: (parseFloat(budget) * 100).toString(),
+        budget: Math.round(parseFloat(budget) * 100).toString(),
       }
     }, {
       onSuccess: () => {

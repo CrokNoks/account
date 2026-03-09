@@ -151,7 +151,7 @@ export class TransactionsController {
       ...existing,
       ...dto,
       date: dto.date ? new Date(dto.date) : (existing as any).date,
-      amount: dto.amount ? BigInt(dto.amount) : (existing as any).amount,
+      amount: dto.amount ? BigInt(Math.round(Number(dto.amount))) : (existing as any).amount,
       updatedAt: new Date(),
     });
 
@@ -177,7 +177,7 @@ export class TransactionsController {
       ...dto,
       accountId,
       date: new Date(dto.date),
-      amount: BigInt(dto.amount),
+      amount: BigInt(Math.round(Number(dto.amount))),
     } as any); // Cast for Omit compatibility
     return this.mapToResponse(transaction);
   }
