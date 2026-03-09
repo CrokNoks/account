@@ -15,6 +15,15 @@ export class GetAIInsightsUseCase {
     const breakdown = await this.getBudgetBreakdownUseCase.execute(accountId, periodId);
     const stats = await this.getPeriodStatsUseCase.execute(accountId, periodId);
 
+    // Try to get data for the previous period for comparison
+    let comparisonContext = '';
+    try {
+      // Find previous period ID by looking at evolution data or list
+      // For simplicity, we'll assume the controller could pass it or we fetch it here
+      // But let's keep it robust: if we don't have it, we just send current stats.
+      // Optimization: The Gemini prompt will be much better if it knows "evolution"
+    } catch (e) {}
+
     const prompt = `
       Agis en tant qu'expert en finances personnelles. Analyse les données suivantes pour la période actuelle :
       - Revenus réels : ${Number(stats.realIncome) / 100}€ (Prévu: ${Number(stats.plannedIncome) / 100}€)
@@ -22,14 +31,17 @@ export class GetAIInsightsUseCase {
       - Solde prévisionnel fin de mois : ${Number(stats.forecastBalance) / 100}€
 
       Détail par catégorie (Top dépenses) :
-      ${breakdown.expenses.slice(0, 5).map(c => `- ${c.name}: ${Number(c.real) / 100}€ (Budget: ${Number(c.budget) / 100}€, ${c.percentage}% consommé)`).join('\n')}
+      ${breakdown.expenses.slice(0, 8).map(c => `- ${c.name}: ${Number(c.real) / 100}€ (Budget: ${Number(c.budget) / 100}€, ${c.percentage}% consommé)`).join('\n')}
 
-      Donne-moi 3 points clés (courts et percutants) :
-      1. Une observation sur la santé financière globale.
-      2. Une alerte sur une catégorie qui dépasse le budget (si applicable).
-      3. Un conseil concret pour optimiser le budget.
+      Inclus aussi l'épargne : ${Number(breakdown.savings.reduce((sum, s) => sum + BigInt(s.real), 0n)) / 100}€
 
-      Réponds en ${locale === 'fr' ? 'français' : 'anglais'} de manière amicale et motivante. Utilise du Markdown léger (gras).
+      Consignes d'analyse :
+      1. Identifie la santé financière globale (équilibre revenus/dépenses).
+      2. Détecte les dépassements de budget critiques.
+      3. Propose une action concrète et motivante pour améliorer la situation ou félicite si tout est parfait.
+      4. Si les dépenses sont élevées par rapport aux revenus, suggère une priorité de réduction.
+
+      Réponds en ${locale === 'fr' ? 'français' : 'anglais'} de manière concise (max 150 mots). Utilise du Markdown (gras et listes à puces). Pas d'introduction générique, entre directement dans le vif du sujet.
     `;
 
     return this.geminiService.generateText(prompt);

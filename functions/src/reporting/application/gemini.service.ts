@@ -5,7 +5,7 @@ import axios from 'axios';
 @Injectable()
 export class GeminiService {
   private readonly apiKey: string;
-  private readonly apiUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
+  private readonly apiUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-001:generateContent';
 
   constructor(private configService: ConfigService) {
     this.apiKey = this.configService.get<string>('GEMINI_API_KEY') || '';
@@ -24,7 +24,10 @@ export class GeminiService {
       });
 
       return response.data.candidates[0].content.parts[0].text;
-    } catch (error) {
+    } catch (error: any) {
+      if (error.response?.status === 429) {
+        return "Le quota d'analyse IA est temporairement dépassé. Veuillez réessayer dans une minute.";
+      }
       console.error('Gemini API Error:', error);
       return "Désolé, je ne peux pas générer d'analyses pour le moment.";
     }
