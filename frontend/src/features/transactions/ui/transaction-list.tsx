@@ -19,7 +19,7 @@ import { formatCurrency } from '@/shared/lib/format';
 import { format } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { CheckCircle2, Circle, Trash2, Pencil } from 'lucide-react';
+import { CheckCircle2, Circle, Trash2, Pencil, Repeat } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { 
   Dialog, 
@@ -31,6 +31,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { toast } from 'sonner';
 import { useTranslations } from 'next-intl';
+import { CreateRecurringDialog } from '@/features/recurring/ui/create-recurring-dialog';
 
 export function TransactionList({ periodId }: { periodId?: string }) {
   const t = useTranslations('Transactions');
@@ -41,6 +42,7 @@ export function TransactionList({ periodId }: { periodId?: string }) {
   const { mutate: updateTransaction, isPending: isUpdating } = useUpdateTransaction();
   const { mutate: deleteTransaction, isPending: isDeleting } = useDeleteTransaction();
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
+  const [transactionToMakeRecurring, setTransactionToMakeRecurring] = useState<Transaction | null>(null);
   
   const [selectedPeriodId, setSelectedPeriodId] = useState<string | 'all'>(periodId || 'all');
   const [statusFilter, setStatusFilter] = useState<'all' | 'reconciled' | 'not_reconciled'>('all');
@@ -133,7 +135,7 @@ export function TransactionList({ periodId }: { periodId?: string }) {
               <TableHead className="min-w-[200px]">{t('fields.description')}</TableHead>
               <TableHead className="w-[150px]">{t('fields.category')}</TableHead>
               <TableHead className="w-[120px] text-right">{t('fields.amount')}</TableHead>
-              <TableHead className="w-[100px]"></TableHead>
+              <TableHead className="w-[120px]"></TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -172,6 +174,9 @@ export function TransactionList({ periodId }: { periodId?: string }) {
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Button variant="ghost" size="icon-sm" onClick={() => setTransactionToMakeRecurring(t)} className="h-8 w-8 text-muted-foreground hover:text-primary" title="Convert to recurring">
+                        <Repeat className="w-3.5 h-3.5" />
+                      </Button>
                       <Button variant="ghost" size="icon-sm" onClick={() => setEditingTransaction(t)} className="h-8 w-8">
                         <Pencil className="w-3.5 h-3.5" />
                       </Button>
@@ -192,6 +197,19 @@ export function TransactionList({ periodId }: { periodId?: string }) {
           transaction={editingTransaction} 
           open={!!editingTransaction} 
           onOpenChange={(o) => !o && setEditingTransaction(null)} 
+        />
+      )}
+
+      {transactionToMakeRecurring && (
+        <CreateRecurringDialog
+          open={!!transactionToMakeRecurring}
+          onOpenChange={(open) => !open && setTransactionToMakeRecurring(null)}
+          initialData={{
+            description: transactionToMakeRecurring.description,
+            categoryId: transactionToMakeRecurring.categoryId,
+            amount: (parseInt(transactionToMakeRecurring.amount, 10) / 100).toString(),
+            dayOfMonth: new Date(transactionToMakeRecurring.date).getDate().toString()
+          }}
         />
       )}
     </div>

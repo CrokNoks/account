@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { 
   Sheet, 
   SheetContent, 
@@ -25,7 +25,24 @@ import { useCreateRecurringTransaction } from '../api/use-create-recurring-trans
 import { Plus, Repeat } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 
-export function CreateRecurringDialog() {
+export interface CreateRecurringDialogProps {
+  trigger?: React.ReactNode;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  initialData?: {
+    description?: string;
+    categoryId?: string | null;
+    amount?: string;
+    dayOfMonth?: string;
+  };
+}
+
+export function CreateRecurringDialog({ 
+  trigger, 
+  open: controlledOpen, 
+  onOpenChange: controlledOnOpenChange,
+  initialData 
+}: CreateRecurringDialogProps = {}) {
   const t = useTranslations('Recurring');
   const tc = useTranslations('Common');
   const tt = useTranslations('Transactions');
@@ -33,7 +50,10 @@ export function CreateRecurringDialog() {
   const { data: categories } = useCategories(activeAccountId);
   const { mutate: createRecurring, isPending } = useCreateRecurringTransaction();
 
-  const [open, setOpen] = useState(false);
+  const [internalOpen, setInternalOpen] = useState(false);
+  const open = controlledOpen !== undefined ? controlledOpen : internalOpen;
+  const setOpen = controlledOnOpenChange || setInternalOpen;
+
   const [description, setDescription] = useState('');
   const [categoryId, setCategoryId] = useState<string>('');
   const [amount, setAmount] = useState('');
@@ -45,6 +65,19 @@ export function CreateRecurringDialog() {
     setCategoryId('');
     setDayOfMonth('1');
   };
+
+  useEffect(() => {
+    if (open) {
+      if (initialData) {
+        setDescription(initialData.description || '');
+        setCategoryId(initialData.categoryId || '');
+        setAmount(initialData.amount || '');
+        setDayOfMonth(initialData.dayOfMonth || '1');
+      } else {
+        resetForm();
+      }
+    }
+  }, [open, initialData]);
 
   const handleSubmit = (addAnother = false) => {
     if (!activeAccountId || !description || !amount) return;
@@ -74,14 +107,20 @@ export function CreateRecurringDialog() {
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
-      <SheetTrigger 
-        render={
-          <Button className="gap-2">
-            <Plus className="w-4 h-4" />
-            {t('add_recurring')}
-          </Button>
-        }
-      />
+      {trigger ? (
+        <SheetTrigger asChild>
+          {trigger}
+        </SheetTrigger>
+      ) : controlledOpen === undefined ? (
+        <SheetTrigger 
+          render={
+            <Button className="gap-2">
+              <Plus className="w-4 h-4" />
+              {t('add_recurring')}
+            </Button>
+          }
+        />
+      ) : null}
       <SheetContent side="right" className="w-[400px] sm:w-[540px] flex flex-col gap-0 p-0" onKeyDown={handleKeyDown}>
         <SheetHeader className="p-6 border-b">
           <div className="flex items-center gap-2">
