@@ -16,6 +16,7 @@ import { useRouter } from '@/i18n/routing';
 
 const routeKeys: Record<string, string> = {
   '/': 'dashboard',
+  '/evolution': 'evolution',
   '/accounts': 'accounts',
   '/transactions': 'transactions',
   '/budgets': 'budgets',
