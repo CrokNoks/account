@@ -45,12 +45,13 @@ export default function ImportTransactionsPage() {
   const [step, setStep] = useState<Step>('upload');
   
   // Data states
+  const [delimiter, setDelimiter] = useState<',' | ';'>(';');
   const [csvHeaders, setCsvHeaders] = useState<string[]>([]);
-  const [rawRows, setRawRows] = useState<any[]>([]);
+  const [rawRows, setRawRows] = useState<string[][]>([]);
   const [parsedData, setParsedData] = useState<ParsedTransaction[]>([]);
   
   // Mapping state
-  const [skipRows, setSkipRows] = useState(0);
+  const [headerRowIndex, setHeaderRowIndex] = useState(0);
   const [mapping, setMapping] = useState({
     date: '',
     description: '',
@@ -61,21 +62,37 @@ export default function ImportTransactionsPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const activePeriod = periods?.find(p => p.isActive);
 
+  const resetState = () => {
+    setStep('upload');
+    setCsvHeaders([]);
+    setRawRows([]);
+    setHeaderRowIndex(0);
+    setParsedData([]);
+    setMapping({ date: '', description: '', amount: '' });
+    setIsProcessing(false);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
+    parseFile(file);
+  };
 
+  const parseFile = (file: File) => {
     setIsProcessing(true);
     
     Papa.parse(file, {
-      header: true,
+      header: false,
+      delimiter: delimiter,
       skipEmptyLines: true,
       complete: (results) => {
-        const headers = results.meta.fields || [];
-        setCsvHeaders(headers);
-        setRawRows(results.data);
+        const data = results.data as string[][];
+        setRawRows(data);
         
-        // Guess mapping
+        const headers = data[0] || [];
+        setCsvHeaders(headers);
+        
         const guess = {
           date: headers.find(h => /date/i.test(h)) || headers[0] || '',
           description: headers.find(h => /libelle|description|label/i.test(h)) || headers[1] || '',
@@ -92,16 +109,33 @@ export default function ImportTransactionsPage() {
     });
   };
 
+  const handleHeaderRowChange = (index: number) => {
+    const idx = Math.max(0, Math.min(index, rawRows.length - 1));
+    setHeaderRowIndex(idx);
+    const newHeaders = rawRows[idx] || [];
+    setCsvHeaders(newHeaders);
+    
+    setMapping({
+      date: newHeaders.find(h => /date/i.test(h)) || newHeaders[0] || '',
+      description: newHeaders.find(h => /libelle|description|label/i.test(h)) || newHeaders[1] || '',
+      amount: newHeaders.find(h => /montant|amount/i.test(h)) || newHeaders[2] || ''
+    });
+  };
+
   const processMapping = async () => {
     setIsProcessing(true);
     const mappedData: ParsedTransaction[] = [];
-    const rowsToProcess = rawRows.slice(skipRows);
+    const dateIdx = csvHeaders.indexOf(mapping.date);
+    const descIdx = csvHeaders.indexOf(mapping.description);
+    const amountIdx = csvHeaders.indexOf(mapping.amount);
 
-    for (let i = 0; i < rowsToProcess.length; i++) {
-      const row = rowsToProcess[i];
-      const dateVal = row[mapping.date];
-      const descVal = row[mapping.description];
-      const amountVal = row[mapping.amount];
+    const dataRows = rawRows.slice(headerRowIndex + 1);
+
+    for (let i = 0; i < dataRows.length; i++) {
+      const rowArr = dataRows[i];
+      const dateVal = rowArr[dateIdx];
+      const descVal = rowArr[descIdx];
+      const amountVal = rowArr[amountIdx];
 
       if (!dateVal || !descVal || !amountVal) continue;
 
@@ -131,7 +165,7 @@ export default function ImportTransactionsPage() {
     setStep('validation');
     
     if (activeAccountId && mappedData.length > 0) {
-      toast.info(`Analyzing categories for ${mappedData.length} transactions...`);
+      toast.info(`Analyzing categories...`);
       const updatedData = [...mappedData];
       for (let i = 0; i < updatedData.length; i++) {
         try {
@@ -181,16 +215,16 @@ export default function ImportTransactionsPage() {
           <div>
             <h2 className="text-3xl font-bold tracking-tight">Import Transactions</h2>
             <p className="text-muted-foreground">
-              {step === 'upload' && "Upload your bank statement (CSV)"}
-              {step === 'mapping' && "Configure column matching"}
-              {step === 'validation' && `Validate ${parsedData.length} transactions`}
+              {step === 'upload' && "Chargez votre relevé bancaire (CSV)"}
+              {step === 'mapping' && "Configurez la ligne d'en-tête et le mapping des colonnes"}
+              {step === 'validation' && `Validez les ${parsedData.length} transactions`}
             </p>
           </div>
         </div>
         {step === 'validation' && (
           <Button onClick={handleImport} disabled={isPending || parsedData.length === 0} size="lg" className="gap-2">
             {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
-            Confirm Import
+            Confirmer l'import
           </Button>
         )}
       </div>
@@ -208,7 +242,7 @@ export default function ImportTransactionsPage() {
             {step === 'mapping' && (
               <Button onClick={processMapping} disabled={!mapping.date || !mapping.description || !mapping.amount || isProcessing} className="gap-2">
                 {isProcessing ? <Loader2 className="w-4 h-4 animate-spin" /> : <ArrowRight className="w-4 h-4" />}
-                Analyze Data
+                Analyser les données
               </Button>
             )}
           </div>
@@ -220,14 +254,29 @@ export default function ImportTransactionsPage() {
                 <Upload className="w-10 h-10 text-primary" />
               </div>
               <input type="file" accept=".csv" className="hidden" ref={fileInputRef} onChange={handleFileUpload} />
-              <div className="space-y-2">
-                <h3 className="text-xl font-semibold">Drop your file here</h3>
-                <p className="text-muted-foreground max-w-sm">Select the CSV export from your bank to start the import process.</p>
+              
+              <div className="flex flex-col items-center gap-6 bg-muted/20 p-8 rounded-xl border max-w-md w-full">
+                <div className="space-y-3 w-full text-left">
+                  <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Séparateur CSV</label>
+                  <Select value={delimiter} onValueChange={(v) => setDelimiter(v as any)}>
+                    <SelectTrigger className="w-full h-11"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value=",">Virgule ( , )</SelectItem>
+                      <SelectItem value=";">Point-virgule ( ; )</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div className="space-y-2">
+                  <h3 className="text-xl font-semibold">Sélectionnez votre fichier</h3>
+                  <p className="text-muted-foreground text-sm">Le fichier CSV exporté par votre banque.</p>
+                </div>
+                
+                <Button size="lg" onClick={() => fileInputRef.current?.click()} disabled={isProcessing} className="w-full h-12 text-base font-semibold">
+                  {isProcessing ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <FileUp className="w-4 h-4 mr-2" />}
+                  Choisir le fichier
+                </Button>
               </div>
-              <Button size="lg" onClick={() => fileInputRef.current?.click()} disabled={isProcessing} className="px-8">
-                {isProcessing ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <FileUp className="w-4 h-4 mr-2" />}
-                Select CSV File
-              </Button>
             </div>
           )}
 
@@ -235,45 +284,57 @@ export default function ImportTransactionsPage() {
             <div className="p-8 space-y-8">
               <div className="grid grid-cols-1 md:grid-cols-4 gap-6 bg-muted/20 p-6 rounded-xl border">
                 <div className="space-y-2">
-                  <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Date Column</label>
+                  <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Ligne d'en-tête</label>
+                  <Input 
+                    type="number" 
+                    min="0" 
+                    value={headerRowIndex} 
+                    onChange={(e) => handleHeaderRowChange(parseInt(e.target.value, 10) || 0)} 
+                    className="h-10"
+                  />
+                  <p className="text-[10px] text-muted-foreground italic">Index de la ligne contenant les noms</p>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Colonne Date</label>
                   <Select value={mapping.date} onValueChange={(v) => setMapping({...mapping, date: v})}>
-                    <SelectTrigger><SelectValue placeholder="Select column" /></SelectTrigger>
-                    <SelectContent>{csvHeaders.map(h => <SelectItem key={h} value={h}>{h}</SelectItem>)}</SelectContent>
+                    <SelectTrigger className="h-10"><SelectValue placeholder="Sélectionner" /></SelectTrigger>
+                    <SelectContent>{csvHeaders.map((h, i) => <SelectItem key={i} value={h}>{h || `Colonne ${i}`}</SelectItem>)}</SelectContent>
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Description Column</label>
+                  <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Colonne Description</label>
                   <Select value={mapping.description} onValueChange={(v) => setMapping({...mapping, description: v})}>
-                    <SelectTrigger><SelectValue placeholder="Select column" /></SelectTrigger>
-                    <SelectContent>{csvHeaders.map(h => <SelectItem key={h} value={h}>{h}</SelectItem>)}</SelectContent>
+                    <SelectTrigger className="h-10"><SelectValue placeholder="Sélectionner" /></SelectTrigger>
+                    <SelectContent>{csvHeaders.map((h, i) => <SelectItem key={i} value={h}>{h || `Colonne ${i}`}</SelectItem>)}</SelectContent>
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Amount Column</label>
+                  <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Colonne Montant</label>
                   <Select value={mapping.amount} onValueChange={(v) => setMapping({...mapping, amount: v})}>
-                    <SelectTrigger><SelectValue placeholder="Select column" /></SelectTrigger>
-                    <SelectContent>{csvHeaders.map(h => <SelectItem key={h} value={h}>{h}</SelectItem>)}</SelectContent>
+                    <SelectTrigger className="h-10"><SelectValue placeholder="Sélectionner" /></SelectTrigger>
+                    <SelectContent>{csvHeaders.map((h, i) => <SelectItem key={i} value={h}>{h || `Colonne ${i}`}</SelectItem>)}</SelectContent>
                   </Select>
-                </div>
-                <div className="space-y-2">
-                  <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Skip Header Rows</label>
-                  <Input type="number" min="0" value={skipRows} onChange={(e) => setSkipRows(parseInt(e.target.value, 10) || 0)} />
                 </div>
               </div>
 
-              <div className="border rounded-lg overflow-hidden">
-                <div className="bg-muted/50 px-4 py-2 text-[10px] font-bold uppercase tracking-widest border-b">CSV Preview</div>
+              <div className="border rounded-lg overflow-hidden shadow-sm">
+                <div className="bg-muted/50 px-4 py-2 text-[10px] font-bold uppercase tracking-widest border-b">Aperçu du CSV</div>
                 <Table>
                   <TableBody>
-                    {rawRows.slice(skipRows, skipRows + 5).map((row, i) => (
-                      <TableRow key={i}>
-                        {csvHeaders.map(h => (
-                          <TableCell key={h} className={`text-[11px] truncate max-w-[200px] ${[mapping.date, mapping.description, mapping.amount].includes(h) ? 'bg-primary/5 font-semibold text-primary' : 'opacity-40'}`}>
-                            {row[h]}
-                          </TableCell>
-                        ))}
-                      </TableRow>
-                    ))}
+                    {rawRows.slice(Math.max(0, headerRowIndex - 1), headerRowIndex + 6).map((rowArr, i) => {
+                      const actualIndex = Math.max(0, headerRowIndex - 1) + i;
+                      const isHeader = actualIndex === headerRowIndex;
+                      return (
+                        <TableRow key={actualIndex} className={isHeader ? "bg-primary/10" : ""}>
+                          <TableCell className="w-12 text-[9px] font-mono text-muted-foreground border-r bg-muted/5">{actualIndex}</TableCell>
+                          {rowArr.map((cell, j) => (
+                            <TableCell key={j} className={`text-[11px] truncate max-w-[200px] ${isHeader ? 'font-bold text-primary' : 'opacity-40'}`}>
+                              {cell}
+                            </TableCell>
+                          ))}
+                        </TableRow>
+                      );
+                    })}
                   </TableBody>
                 </Table>
               </div>
@@ -287,8 +348,8 @@ export default function ImportTransactionsPage() {
                   <TableRow className="bg-muted/30">
                     <TableHead className="w-[120px] pl-6 text-xs">Date</TableHead>
                     <TableHead className="min-w-[250px] text-xs">Description</TableHead>
-                    <TableHead className="w-[150px] text-right text-xs">Amount</TableHead>
-                    <TableHead className="w-[300px] text-xs">Category (Auto-predicted ✨)</TableHead>
+                    <TableHead className="w-[150px] text-right text-xs">Montant</TableHead>
+                    <TableHead className="w-[300px] text-xs">Catégorie</TableHead>
                     <TableHead className="w-[60px]"></TableHead>
                   </TableRow>
                 </TableHeader>
@@ -311,11 +372,11 @@ export default function ImportTransactionsPage() {
                                   <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: categories?.find(c => c.id === row.categoryId)?.color }} />
                                   <span className="truncate">{categories?.find(c => c.id === row.categoryId)?.name}</span>
                                 </div>
-                              ) : <span className="text-muted-foreground italic">No category</span>}
+                              ) : <span className="text-muted-foreground italic">Pas de catégorie</span>}
                             </SelectValue>
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="none">Uncategorized</SelectItem>
+                            <SelectItem value="none">Non catégorisé</SelectItem>
                             {categories?.map((cat) => (
                               <SelectItem key={cat.id} value={cat.id}>
                                 <div className="flex items-center gap-2 text-xs">
