@@ -5,6 +5,7 @@ import { SupabaseTransactionRepository } from './infrastructure/supabase-transac
 import { GetTransactionsByAccountUseCase } from './application/get-transactions-by-account.use-case';
 import { CreateTransactionUseCase } from './application/create-transaction.use-case';
 import { PredictCategoryUseCase } from './application/predict-category.use-case';
+import { BulkCreateTransactionsUseCase } from './application/bulk-create-transactions.use-case';
 import { TransactionsController } from './infrastructure/transactions.controller';
 
 @Module({
@@ -18,7 +19,8 @@ import { TransactionsController } from './infrastructure/transactions.controller
     GetTransactionsByAccountUseCase,
     CreateTransactionUseCase,
     PredictCategoryUseCase,
+    BulkCreateTransactionsUseCase,
   ],
-  exports: [TransactionRepository, GetTransactionsByAccountUseCase, CreateTransactionUseCase, PredictCategoryUseCase],
+  exports: [TransactionRepository, GetTransactionsByAccountUseCase, CreateTransactionUseCase, PredictCategoryUseCase, BulkCreateTransactionsUseCase],
 })
 export class TransactionsModule {}

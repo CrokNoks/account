@@ -4,10 +4,11 @@ import { SupabaseAuthGuard } from '../../auth/supabase-auth.guard';
 import { GetTransactionsByAccountUseCase } from '../application/get-transactions-by-account.use-case';
 import { CreateTransactionUseCase } from '../application/create-transaction.use-case';
 import { PredictCategoryUseCase } from '../application/predict-category.use-case';
+import { BulkCreateTransactionsUseCase } from '../application/bulk-create-transactions.use-case';
 import { TransactionRepository } from '../domain/transaction.repository.interface';
-import { IsString, IsOptional, IsNumberString, IsDateString, IsBoolean, IsObject } from 'class-validator';
+import { IsString, IsOptional, IsNumberString, IsDateString, IsBoolean, IsObject, IsArray, ValidateNested } from 'class-validator';
+import { Type } from 'class-transformer';
 
-// ... (DTOs remain unchanged)
 export class CreateTransactionDto {
   @IsString()
   @ApiProperty({ description: 'Account ID' })
@@ -49,6 +50,14 @@ export class CreateTransactionDto {
   @IsObject()
   @ApiProperty({ description: 'Additional metadata', required: false })
   metadata?: Record<string, any>;
+}
+
+export class BulkCreateTransactionsDto {
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => CreateTransactionDto)
+  @ApiProperty({ type: [CreateTransactionDto] })
+  transactions: CreateTransactionDto[];
 }
 
 export class TransactionResponseDto {
@@ -105,6 +114,7 @@ export class TransactionsController {
   constructor(
     private readonly getTransactionsByAccountUseCase: GetTransactionsByAccountUseCase,
     private readonly createTransactionUseCase: CreateTransactionUseCase,
+    private readonly bulkCreateTransactionsUseCase: BulkCreateTransactionsUseCase,
     private readonly predictCategoryUseCase: PredictCategoryUseCase,
     private readonly transactionRepository: TransactionRepository,
   ) {}
@@ -166,6 +176,24 @@ export class TransactionsController {
     await this.transactionRepository.delete(id);
   }
 
+  @Post('bulk')
+  @ApiOperation({ summary: 'Create multiple transactions at once' })
+  @ApiResponse({ status: 201, type: [TransactionResponseDto] })
+  async createBulk(
+    @Param('accountId') accountId: string,
+    @Body() dto: BulkCreateTransactionsDto
+  ): Promise<TransactionResponseDto[]> {
+    const transactions = await this.bulkCreateTransactionsUseCase.execute({
+      accountId,
+      transactions: dto.transactions.map(t => ({
+        ...t,
+        date: new Date(t.date),
+        amount: BigInt(Math.round(Number(t.amount))),
+      })) as any,
+    });
+    return transactions.map(t => this.mapToResponse(t));
+  }
+
   @Post()
   @ApiOperation({ summary: 'Create a new transaction for this account' })
   @ApiResponse({ status: 201, type: TransactionResponseDto })
@@ -178,7 +206,7 @@ export class TransactionsController {
       accountId,
       date: new Date(dto.date),
       amount: BigInt(Math.round(Number(dto.amount))),
-    } as any); // Cast for Omit compatibility
+    } as any);
     return this.mapToResponse(transaction);
   }
 
