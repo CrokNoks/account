@@ -22,10 +22,10 @@ import {
 } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAccountStore } from '@/features/accounts/model/use-account-store';
-import { useCategories, Category } from '@/features/categories/api/use-categories';
+import { useCategories } from '@/features/categories/api/use-categories';
 import { usePeriods } from '@/features/budgets/api/use-periods';
 import { useBulkCreateTransactions } from '../api/use-bulk-create-transactions';
-import { Upload, FileUp, Loader2, Sparkles, X } from 'lucide-react';
+import { Upload, FileUp, Loader2, Sparkles, X, ArrowRight, Columns } from 'lucide-react';
 import { toast } from 'sonner';
 import { apiClient } from '@/shared/api/api-client';
 
@@ -38,6 +38,8 @@ interface ParsedTransaction {
   predicted?: boolean;
 }
 
+type Step = 'upload' | 'mapping' | 'validation';
+
 export function ImportCsvDrawer() {
   const { activeAccountId } = useAccountStore();
   const { data: categories } = useCategories(activeAccountId);
@@ -45,14 +47,30 @@ export function ImportCsvDrawer() {
   const { mutate: bulkCreate, isPending } = useBulkCreateTransactions();
   
   const [open, setOpen] = useState(false);
-  const [parsedData, setParsedData] = useState<ParsedTransaction[]>([]);
-  const [isProcessing, setIsProcessing] = useState(false);
+  const [step, setStep] = useState<Step>('upload');
   
+  // Data states
+  const [csvHeaders, setCsvHeaders] = useState<string[]>([]);
+  const [rawRows, setRawRows] = useState<any[]>([]);
+  const [parsedData, setParsedData] = useState<ParsedTransaction[]>([]);
+  
+  // Mapping state
+  const [mapping, setMapping] = useState({
+    date: '',
+    description: '',
+    amount: ''
+  });
+
+  const [isProcessing, setIsProcessing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const activePeriod = periods?.find(p => p.isActive);
 
   const resetState = () => {
+    setStep('upload');
+    setCsvHeaders([]);
+    setRawRows([]);
     setParsedData([]);
+    setMapping({ date: '', description: '', amount: '' });
     setIsProcessing(false);
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
@@ -66,72 +84,22 @@ export function ImportCsvDrawer() {
     Papa.parse(file, {
       header: true,
       skipEmptyLines: true,
-      complete: async (results) => {
-        const rows = results.data as any[];
+      complete: (results) => {
+        const headers = results.meta.fields || [];
+        const data = results.data as any[];
         
-        // Basic mapping logic (adjust based on expected CSV format)
-        // Here we assume standard generic column names, or simple positional
-        // For a robust app, you'd add a mapping step. We'll do a simple guess here.
-        const mappedData: ParsedTransaction[] = [];
+        setCsvHeaders(headers);
+        setRawRows(data);
         
-        for (let i = 0; i < rows.length; i++) {
-          const row = rows[i];
-          // Try to guess columns
-          const date = row.Date || row.date || row.DateOp || Object.values(row)[0] as string;
-          const description = row.Description || row.Libelle || row.label || Object.values(row)[1] as string;
-          const amountStr = row.Amount || row.Montant || row.amount || Object.values(row)[2] as string;
-          
-          if (!date || !description || !amountStr) continue;
-          
-          // Clean amount string (e.g. " - 36,30 €" -> "-36.30")
-          const cleanAmount = amountStr.replace(/[^\d.,-]/g, '').replace(',', '.');
-          // Format date (assume DD/MM/YYYY or YYYY-MM-DD for now)
-          let isoDate = new Date().toISOString().split('T')[0];
-          try {
-             if (date.includes('/')) {
-                 const [d, m, y] = date.split('/');
-                 isoDate = `${y.length === 2 ? '20'+y : y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`;
-             } else {
-                 isoDate = new Date(date).toISOString().split('T')[0];
-             }
-          } catch(e) {}
-
-          mappedData.push({
-            id: `row-${i}`,
-            date: isoDate,
-            description,
-            amount: cleanAmount,
-            categoryId: null,
-            predicted: false,
-          });
-        }
-
-        // Run prediction batch (simple iteration for now, but could be Promise.all)
-        // To avoid hammering the API, we'll process them in small batches or sequence if many
-        setParsedData(mappedData); // Show them immediately while predicting
+        // Try to guess mapping
+        const guess = {
+          date: headers.find(h => /date/i.test(h)) || headers[0] || '',
+          description: headers.find(h => /libelle|description|label/i.test(h)) || headers[1] || '',
+          amount: headers.find(h => /montant|amount/i.test(h)) || headers[2] || ''
+        };
+        setMapping(guess);
         
-        if (activeAccountId && mappedData.length > 0) {
-            toast.info(`Analyzing ${mappedData.length} transactions for categories...`);
-            const updatedData = [...mappedData];
-            
-            // Fire and forget predictions to update UI progressively
-            for (let i = 0; i < updatedData.length; i++) {
-                try {
-                    const { data } = await apiClient.get(`/${activeAccountId}/transactions/predict-category`, {
-                        params: { description: updatedData[i].description }
-                    });
-                    if (data.categoryId) {
-                        updatedData[i].categoryId = data.categoryId;
-                        updatedData[i].predicted = true;
-                        // Trigger re-render for this update
-                        setParsedData([...updatedData]);
-                    }
-                } catch(e) {
-                    // ignore prediction errors
-                }
-            }
-        }
-        
+        setStep('mapping');
         setIsProcessing(false);
       },
       error: () => {
@@ -141,14 +109,69 @@ export function ImportCsvDrawer() {
     });
   };
 
-  const handleCategoryChange = (id: string, categoryId: string) => {
-    setParsedData(prev => prev.map(item => 
-      item.id === id ? { ...item, categoryId, predicted: false } : item
-    ));
+  const processMapping = async () => {
+    setIsProcessing(true);
+    const mappedData: ParsedTransaction[] = [];
+
+    for (let i = 0; i < rawRows.length; i++) {
+      const row = rawRows[i];
+      const dateVal = row[mapping.date];
+      const descVal = row[mapping.description];
+      const amountVal = row[mapping.amount];
+
+      if (!dateVal || !descVal || !amountVal) continue;
+
+      // Clean amount
+      const cleanAmount = amountVal.toString().replace(/[^\d.,-]/g, '').replace(',', '.');
+      
+      // Format date
+      let isoDate = new Date().toISOString().split('T')[0];
+      try {
+        if (dateVal.includes('/')) {
+          const [d, m, y] = dateVal.split('/');
+          isoDate = `${y.length === 2 ? '20' + y : y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`;
+        } else {
+          isoDate = new Date(dateVal).toISOString().split('T')[0];
+        }
+      } catch (e) {}
+
+      mappedData.push({
+        id: `row-${i}`,
+        date: isoDate,
+        description: descVal.toString(),
+        amount: cleanAmount,
+        categoryId: null,
+        predicted: false,
+      });
+    }
+
+    setParsedData(mappedData);
+    setStep('validation');
+    
+    // Run predictions
+    if (activeAccountId && mappedData.length > 0) {
+      toast.info(`Analyzing ${mappedData.length} transactions...`);
+      const updatedData = [...mappedData];
+      for (let i = 0; i < updatedData.length; i++) {
+        try {
+          const { data } = await apiClient.get(`/${activeAccountId}/transactions/predict-category`, {
+            params: { description: updatedData[i].description }
+          });
+          if (data.categoryId) {
+            updatedData[i].categoryId = data.categoryId;
+            updatedData[i].predicted = true;
+            setParsedData([...updatedData]);
+          }
+        } catch (e) {}
+      }
+    }
+    setIsProcessing(false);
   };
 
-  const handleRemoveRow = (id: string) => {
-    setParsedData(prev => prev.filter(item => item.id !== id));
+  const handleCategoryChange = (id: string, categoryId: string) => {
+    setParsedData(prev => prev.map(item => 
+      item.id === id ? { ...item, categoryId: categoryId === 'none' ? null : categoryId, predicted: false } : item
+    ));
   };
 
   const handleImport = () => {
@@ -159,8 +182,8 @@ export function ImportCsvDrawer() {
       description: item.description,
       amount: Math.round(parseFloat(item.amount) * 100).toString(),
       categoryId: item.categoryId || null,
-      periodId: activePeriod?.id || null, // Auto-assign to active period
-      reconciled: true, // Imported are usually cleared
+      periodId: activePeriod?.id || null,
+      reconciled: true,
     }));
 
     bulkCreate({
@@ -179,49 +202,94 @@ export function ImportCsvDrawer() {
       setOpen(o);
       if (!o) resetState();
     }}>
-      <SheetTrigger asChild>
+      <SheetTrigger render={
         <Button variant="outline" className="gap-2">
           <FileUp className="w-4 h-4" />
           Import CSV
         </Button>
-      </SheetTrigger>
-      <SheetContent side="right" className="w-[800px] sm:w-[900px] flex flex-col gap-0 p-0">
+      } />
+      <SheetContent side="right" className="w-[800px] sm:w-[950px] flex flex-col gap-0 p-0">
         <SheetHeader className="p-6 border-b">
           <div className="flex items-center gap-2">
             <Upload className="w-5 h-5 text-primary" />
-            <SheetTitle>Import Transactions</SheetTitle>
+            <SheetTitle>
+              {step === 'upload' && "Upload CSV"}
+              {step === 'mapping' && "Map Columns"}
+              {step === 'validation' && "Validate Transactions"}
+            </SheetTitle>
           </div>
           <SheetDescription>
-            Upload a CSV file from your bank. We will try to predict categories automatically.
+            {step === 'upload' && "Upload a CSV file from your bank."}
+            {step === 'mapping' && "Tell us which column is which."}
+            {step === 'validation' && "Review and correct predicted categories before final import."}
           </SheetDescription>
         </SheetHeader>
         
-        <div className="flex-1 overflow-y-auto p-6 space-y-6">
-          {parsedData.length === 0 ? (
-            <div className="flex flex-col items-center justify-center border-2 border-dashed rounded-xl p-12 bg-muted/10 text-center">
-              <input 
-                type="file" 
-                accept=".csv" 
-                className="hidden" 
-                ref={fileInputRef}
-                onChange={handleFileUpload}
-              />
-              <Button 
-                variant="secondary" 
-                onClick={() => fileInputRef.current?.click()}
-                disabled={isProcessing}
-                className="mb-4"
-              >
+        <div className="flex-1 overflow-y-auto p-6">
+          {step === 'upload' && (
+            <div className="flex flex-col items-center justify-center border-2 border-dashed rounded-xl p-12 bg-muted/10 text-center h-64">
+              <input type="file" accept=".csv" className="hidden" ref={fileInputRef} onChange={handleFileUpload} />
+              <Button variant="secondary" onClick={() => fileInputRef.current?.click()} disabled={isProcessing} className="mb-4">
                 {isProcessing ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <FileUp className="w-4 h-4 mr-2" />}
-                {isProcessing ? "Processing..." : "Select CSV File"}
+                Select CSV File
               </Button>
-              <p className="text-sm text-muted-foreground max-w-[300px]">
-                Ensure your CSV has Date, Description, and Amount columns.
-              </p>
             </div>
-          ) : (
+          )}
+
+          {step === 'mapping' && (
+            <div className="space-y-8">
+              <div className="grid grid-cols-3 gap-6">
+                <div className="space-y-2">
+                  <label className="text-sm font-semibold flex items-center gap-2"><Columns className="w-4 h-4" /> Date</label>
+                  <Select value={mapping.date} onValueChange={(v) => setMapping({...mapping, date: v})}>
+                    <SelectTrigger><SelectValue placeholder="Select column" /></SelectTrigger>
+                    <SelectContent>
+                      {csvHeaders.map(h => <SelectItem key={h} value={h}>{h}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-semibold flex items-center gap-2"><Columns className="w-4 h-4" /> Description</label>
+                  <Select value={mapping.description} onValueChange={(v) => setMapping({...mapping, description: v})}>
+                    <SelectTrigger><SelectValue placeholder="Select column" /></SelectTrigger>
+                    <SelectContent>
+                      {csvHeaders.map(h => <SelectItem key={h} value={h}>{h}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-semibold flex items-center gap-2"><Columns className="w-4 h-4" /> Amount</label>
+                  <Select value={mapping.amount} onValueChange={(v) => setMapping({...mapping, amount: v})}>
+                    <SelectTrigger><SelectValue placeholder="Select column" /></SelectTrigger>
+                    <SelectContent>
+                      {csvHeaders.map(h => <SelectItem key={h} value={h}>{h}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="border rounded-lg overflow-hidden">
+                <Table>
+                  <TableHeader><TableRow><TableHead colSpan={csvHeaders.length} className="bg-muted/50 text-center text-[10px] uppercase">CSV Preview (First 3 rows)</TableHead></TableRow></TableHeader>
+                  <TableBody>
+                    {rawRows.slice(0, 3).map((row, i) => (
+                      <TableRow key={i}>
+                        {csvHeaders.map(h => (
+                          <TableCell key={h} className={`text-[10px] truncate max-w-[150px] ${[mapping.date, mapping.description, mapping.amount].includes(h) ? 'bg-primary/5 font-bold' : 'opacity-50'}`}>
+                            {row[h]}
+                          </TableCell>
+                        ))}
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </div>
+          )}
+
+          {step === 'validation' && (
             <div className="border rounded-md">
-              <Table className="table-fixed w-full">
+              <Table className="table-fixed w-full text-xs">
                 <TableHeader>
                   <TableRow>
                     <TableHead className="w-[100px]">Date</TableHead>
@@ -240,10 +308,10 @@ export function ImportCsvDrawer() {
                         {row.amount} €
                       </TableCell>
                       <TableCell>
-                        <Select value={row.categoryId || ''} onValueChange={(v) => handleCategoryChange(row.id, v)}>
-                          <SelectTrigger className="h-8 text-xs relative">
+                        <Select value={row.categoryId || 'none'} onValueChange={(v) => handleCategoryChange(row.id, v)}>
+                          <SelectTrigger className="h-8 text-[10px] relative">
                             {row.predicted && <Sparkles className="w-3 h-3 text-yellow-500 absolute -left-1 -top-1" />}
-                            <SelectValue placeholder="Select category">
+                            <SelectValue>
                               {row.categoryId ? (
                                 <div className="flex items-center gap-2 truncate">
                                   <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: categories?.find(c => c.id === row.categoryId)?.color }} />
@@ -256,7 +324,7 @@ export function ImportCsvDrawer() {
                             <SelectItem value="none">Uncategorized</SelectItem>
                             {categories?.map((cat) => (
                               <SelectItem key={cat.id} value={cat.id}>
-                                <div className="flex items-center gap-2">
+                                <div className="flex items-center gap-2 text-[10px]">
                                   <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: cat.color }} />
                                   {cat.name}
                                 </div>
@@ -266,7 +334,7 @@ export function ImportCsvDrawer() {
                         </Select>
                       </TableCell>
                       <TableCell>
-                        <Button variant="ghost" size="icon-sm" onClick={() => handleRemoveRow(row.id)} className="h-8 w-8 text-muted-foreground hover:text-destructive">
+                        <Button variant="ghost" size="icon-sm" onClick={() => setParsedData(prev => prev.filter(p => p.id !== row.id))} className="h-8 w-8 text-muted-foreground hover:text-destructive">
                           <X className="w-4 h-4" />
                         </Button>
                       </TableCell>
@@ -279,13 +347,21 @@ export function ImportCsvDrawer() {
         </div>
 
         <SheetFooter className="p-6 border-t bg-muted/20 flex-row gap-3 justify-end">
-          <Button variant="outline" onClick={() => resetState()} disabled={isPending || parsedData.length === 0}>
-            Cancel
-          </Button>
-          <Button onClick={handleImport} disabled={isPending || parsedData.length === 0}>
-            {isPending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
-            Import {parsedData.length} Transactions
-          </Button>
+          {step === 'mapping' && (
+            <Button onClick={processMapping} disabled={!mapping.date || !mapping.description || !mapping.amount || isProcessing}>
+              {isProcessing ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <ArrowRight className="w-4 h-4 mr-2" />}
+              Analyze Transactions
+            </Button>
+          )}
+          {step === 'validation' && (
+            <>
+              <Button variant="outline" onClick={() => setStep('mapping')}>Back to Mapping</Button>
+              <Button onClick={handleImport} disabled={isPending || parsedData.length === 0}>
+                {isPending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
+                Import {parsedData.length} Transactions
+              </Button>
+            </>
+          )}
         </SheetFooter>
       </SheetContent>
     </Sheet>
