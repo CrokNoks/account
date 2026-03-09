@@ -247,10 +247,26 @@ function EditTransactionDialog({ transaction, open, onOpenChange }: { transactio
           <div className="space-y-2">
             <label className="text-sm font-medium">{t('fields.category')}</label>
             <Select value={categoryId} onValueChange={(v) => setCategoryId(v || '')}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectTrigger>
+                <SelectValue>
+                  {categoryId ? (
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 rounded-full" style={{ backgroundColor: categories?.find(c => c.id === categoryId)?.color }} />
+                      {categories?.find(c => c.id === categoryId)?.name}
+                    </div>
+                  ) : "Uncategorized"}
+                </SelectValue>
+              </SelectTrigger>
               <SelectContent>
                 <SelectItem value="">Uncategorized</SelectItem>
-                {categories?.map((cat) => <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>)}
+                {categories?.map((cat) => (
+                  <SelectItem key={cat.id} value={cat.id}>
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 rounded-full" style={{ backgroundColor: cat.color }} />
+                      {cat.name}
+                    </div>
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
