@@ -111,6 +111,15 @@ export function CreateTransactionDrawer() {
 
   const selectedCategory = categories?.find((c) => c.id === categoryId);
 
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !comboOpen) {
+      e.preventDefault();
+      // Shift + Enter -> Submit and close (addAnother = false)
+      // Enter only -> Submit and keep open (addAnother = true)
+      handleSubmit(!e.shiftKey);
+    }
+  };
+
   return (
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger 
@@ -121,7 +130,7 @@ export function CreateTransactionDrawer() {
           </Button>
         }
       />
-      <SheetContent side="right" className="w-[400px] sm:w-[540px] flex flex-col gap-0 p-0">
+      <SheetContent side="right" className="w-[400px] sm:w-[540px] flex flex-col gap-0 p-0" onKeyDown={handleKeyDown}>
         <SheetHeader className="p-6 border-b">
           <div className="flex items-center gap-2">
             <Receipt className="w-5 h-5 text-primary" />
@@ -247,19 +256,25 @@ export function CreateTransactionDrawer() {
 
         <SheetFooter className="p-6 border-t bg-muted/20 flex-col gap-3 sm:flex-col">
           <Button 
-            className="w-full h-11 text-base font-semibold" 
-            onClick={() => handleSubmit(false)} 
-            disabled={isPending}
-          >
-            {isPending ? tc('loading') : tc('save')}
-          </Button>
-          <Button 
-            variant="outline" 
-            className="w-full h-11 text-base" 
+            variant="outline"
+            className="w-full h-11 text-base flex justify-between px-4" 
             onClick={() => handleSubmit(true)}
             disabled={isPending}
           >
-            {isPending ? tc('loading') : t('save_another')}
+            <span>{isPending ? tc('loading') : t('save_another')}</span>
+            <kbd className="pointer-events-none inline-flex h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground opacity-100">
+              Enter
+            </kbd>
+          </Button>
+          <Button 
+            className="w-full h-11 text-base font-semibold flex justify-between px-4" 
+            onClick={() => handleSubmit(false)} 
+            disabled={isPending}
+          >
+            <span>{isPending ? tc('loading') : tc('save')}</span>
+            <kbd className="pointer-events-none inline-flex h-5 select-none items-center gap-1 rounded border bg-primary-foreground/20 px-1.5 font-mono text-[10px] font-medium text-primary-foreground opacity-100">
+              <span className="text-xs">⇧</span> Enter
+            </kbd>
           </Button>
         </SheetFooter>
       </SheetContent>
