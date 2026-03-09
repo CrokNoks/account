@@ -124,7 +124,9 @@
     },
     "stats_hint": "Min: {min} | Avg: {avg} | Max: {max}",
     "updated": "Period updated",
+    "deleted": "Period deleted",
     "close_period": "Close Period",
+    "confirm_delete": "Permanently delete this period? Associated budgets will also be removed.",
     "inject_label": "Inject recurring operations"
   },
   "Recurring": {

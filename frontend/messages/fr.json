@@ -124,7 +124,9 @@
     },
     "stats_hint": "Min: {min} | Moy: {avg} | Max: {max}",
     "updated": "Période mise à jour",
+    "deleted": "Période supprimée",
     "close_period": "Clôturer la période",
+    "confirm_delete": "Supprimer définitivement cette période ? Les budgets associés seront également supprimés.",
     "inject_label": "Injecter les opérations récurrentes"
   },
   "Recurring": {

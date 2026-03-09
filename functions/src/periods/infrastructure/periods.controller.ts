@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, UseGuards, Request, Query, Patch } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, UseGuards, Request, Query, Patch, Delete } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiProperty } from '@nestjs/swagger';
 import { SupabaseAuthGuard } from '../../auth/supabase-auth.guard';
 import { GetPeriodDraftUseCase, PeriodDraft } from '../application/get-period-draft.use-case';
@@ -66,6 +66,13 @@ export class PeriodsController {
     return this.periodRepository.findAllByAccount(accountId);
   }
 
+  @Get(':id')
+  @ApiOperation({ summary: 'Get a single period' })
+  @ApiResponse({ status: 200 })
+  async findOne(@Param('accountId') accountId: string, @Param('id') id: string) {
+    return this.periodRepository.findById(id);
+  }
+
   @Patch(':id')
   @ApiOperation({ summary: 'Update a period' })
   @ApiResponse({ status: 200 })
@@ -87,6 +94,13 @@ export class PeriodsController {
 
     await this.periodRepository.save(updated);
     return updated;
+  }
+
+  @Delete(':id')
+  @ApiOperation({ summary: 'Delete a period' })
+  @ApiResponse({ status: 200 })
+  async remove(@Param('accountId') accountId: string, @Param('id') id: string) {
+    return this.periodRepository.delete(id);
   }
 
   @Get('draft-init')

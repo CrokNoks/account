@@ -4,11 +4,12 @@ import { useState } from 'react';
 import { useAccountStore } from '@/features/accounts/model/use-account-store';
 import { usePeriods, Period } from '@/features/budgets/api/use-periods';
 import { useUpdatePeriod } from '../api/use-update-period';
+import { useDeletePeriod } from '../api/use-delete-period';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { format } from 'date-fns';
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Pencil, Lock } from 'lucide-react';
+import { Pencil, Lock, Trash2 } from 'lucide-react';
 import { 
   Dialog, 
   DialogContent, 
@@ -99,6 +100,7 @@ function EditPeriodDialog({ period, open, onOpenChange }: { period: Period, open
   const [isActive, setIsActive] = useState(period.isActive);
   
   const { mutate: updatePeriod, isPending } = useUpdatePeriod();
+  const { mutate: deletePeriod, isPending: isDeleting } = useDeletePeriod();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -111,6 +113,20 @@ function EditPeriodDialog({ period, open, onOpenChange }: { period: Period, open
     }, {
       onSuccess: () => {
         toast.success(t('updated'));
+        onOpenChange(false);
+      }
+    });
+  };
+
+  const handleDelete = () => {
+    if (!activeAccountId || !confirm(t('confirm_delete'))) return;
+
+    deletePeriod({
+      accountId: activeAccountId,
+      id: period.id
+    }, {
+      onSuccess: () => {
+        toast.success(t('deleted'));
         onOpenChange(false);
       }
     });
@@ -137,8 +153,18 @@ function EditPeriodDialog({ period, open, onOpenChange }: { period: Period, open
             <Checkbox id="active" checked={isActive} onCheckedChange={(checked) => setIsActive(!!checked)} />
             <label htmlFor="active" className="text-sm font-medium">{t('fields.is_active')}</label>
           </div>
-          <DialogFooter>
-            <Button type="submit" disabled={isPending}>
+          <DialogFooter className="flex justify-between items-center sm:justify-between">
+            <Button 
+              type="button" 
+              variant="destructive" 
+              className="gap-2" 
+              onClick={handleDelete}
+              disabled={isDeleting || isPending}
+            >
+              <Trash2 className="w-4 h-4" />
+              {tc('delete')}
+            </Button>
+            <Button type="submit" disabled={isPending || isDeleting}>
               {isPending ? tc('loading') : tc('save')}
             </Button>
           </DialogFooter>
