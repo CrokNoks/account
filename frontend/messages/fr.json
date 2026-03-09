@@ -65,7 +65,17 @@
       "savings": "Épargne",
       "cash": "Espèces"
     },
-    "select_account": "Sélectionner un compte"
+    "select_account": "Sélectionner un compte",
+    "share": "Partager",
+    "share_title": "Partager le compte",
+    "share_desc": "Invitez d'autres personnes à consulter ou gérer ce compte.",
+    "share_email_placeholder": "email@exemple.com",
+    "share_permission_read": "Lecture seule",
+    "share_permission_write": "Lecture & Écriture",
+    "share_list_title": "Personnes ayant accès",
+    "share_empty": "Ce compte n'est pas encore partagé.",
+    "share_success": "Invitation envoyée",
+    "share_remove_confirm": "Retirer l'accès à cet utilisateur ?"
   },
   "Transactions": {
     "title": "Transactions",

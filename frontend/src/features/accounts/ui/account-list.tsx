@@ -5,7 +5,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { useAccounts, Account } from '../api/use-accounts';
 import { useUpdateAccount } from '../api/use-update-account';
 import { formatCurrency } from '@/shared/lib/format';
-import { CreditCard, Landmark, Wallet, Pencil } from 'lucide-react';
+import { CreditCard, Landmark, Wallet, Pencil, Share2 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { 
   Dialog, 
@@ -17,6 +17,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { toast } from 'sonner';
 import { useTranslations } from 'next-intl';
+import { ShareAccountDialog } from './share-account-dialog';
 
 const typeIcons: Record<string, any> = {
   checking: CreditCard,
@@ -28,6 +29,7 @@ export function AccountList() {
   const t = useTranslations('Accounts');
   const { data: accounts, isLoading } = useAccounts();
   const [editingAccount, setEditingAccount] = useState<Account | null>(null);
+  const [sharingAccount, setSharingAccount] = useState<Account | null>(null);
 
   if (isLoading) return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -47,7 +49,15 @@ export function AccountList() {
             <Card key={account.id} className="group hover:border-primary/50 transition-colors relative">
               <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
                 <CardTitle className="text-sm font-medium">{account.name}</CardTitle>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1">
+                  <Button 
+                    variant="ghost" 
+                    size="icon-sm" 
+                    className="opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8"
+                    onClick={() => setSharingAccount(account)}
+                  >
+                    <Share2 className="w-3.5 h-3.5" />
+                  </Button>
                   <Button 
                     variant="ghost" 
                     size="icon-sm" 
@@ -56,7 +66,7 @@ export function AccountList() {
                   >
                     <Pencil className="w-3.5 h-3.5" />
                   </Button>
-                  <Icon className="w-4 h-4 text-muted-foreground" />
+                  <Icon className="w-4 h-4 text-muted-foreground ml-1" />
                 </div>
               </CardHeader>
               <CardContent>
@@ -77,6 +87,15 @@ export function AccountList() {
           account={editingAccount} 
           open={!!editingAccount} 
           onOpenChange={(open) => !open && setEditingAccount(null)} 
+        />
+      )}
+
+      {sharingAccount && (
+        <ShareAccountDialog
+          accountId={sharingAccount.id}
+          accountName={sharingAccount.name}
+          open={!!sharingAccount}
+          onOpenChange={(open) => !open && setSharingAccount(null)}
         />
       )}
     </>

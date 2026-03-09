@@ -28,11 +28,17 @@ export class SupabaseAccountRepository extends AccountRepository {
     }
   }
 
-  async findAllByOwner(ownerId: string): Promise<Account[]> {
+  async findAllForUser(userId: string): Promise<Account[]> {
+    // We select accounts where user is owner OR has a share
+    // In Supabase/PostgREST, we can use an 'or' filter, but for joins it's easier to use a custom query or a view
+    // Since we have a has_account_access RLS helper, let's just select all accounts and let RLS filter?
+    // No, better to be explicit in the query for performance.
+    
+    // We'll use a trick: select accounts and join on account_shares
     const { data, error } = await this.supabase
       .from('accounts')
-      .select('*')
-      .eq('owner_id', ownerId);
+      .select('*, account_shares!left(user_id)')
+      .or(`owner_id.eq.${userId},account_shares.user_id.eq.${userId}`);
 
     if (error) {
       throw new Error(`Failed to fetch accounts: ${error.message}`);

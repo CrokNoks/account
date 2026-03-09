@@ -2,6 +2,7 @@
 
 import { DashboardStats } from "@/features/reporting/ui/dashboard-stats";
 import { BudgetBreakdown } from "@/features/reporting/ui/budget-breakdown";
+import { AIInsightsCard } from "@/features/reporting/ui/ai-insights-card";
 import { CreateTransactionDrawer } from "@/features/transactions/ui/create-transaction-drawer";
 import { TransactionList } from "@/features/transactions/ui/transaction-list";
 import { useAccountStore } from "@/features/accounts/model/use-account-store";
@@ -67,6 +68,8 @@ export default function Home() {
       </div>
       
       <DashboardStats />
+
+      <AIInsightsCard accountId={activeAccountId} periodId={activePeriodId} />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         <div className="flex flex-col gap-4">

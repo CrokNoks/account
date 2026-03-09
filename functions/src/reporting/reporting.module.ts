@@ -7,6 +7,10 @@ import { BudgetsModule } from '../budgets/budgets.module';
 import { GetPeriodStatsUseCase } from './application/get-period-stats.use-case';
 import { GetBudgetBreakdownUseCase } from './application/get-budget-breakdown.use-case';
 import { GetEvolutionUseCase } from './application/get-evolution.use-case';
+import { GetPeriodComparisonUseCase } from './application/get-period-comparison.use-case';
+import { GetSankeyDataUseCase } from './application/get-sankey-data.use-case';
+import { GetAIInsightsUseCase } from './application/get-ai-insights.use-case';
+import { GeminiService } from './application/gemini.service';
 import { ReportingController } from './infrastructure/reporting.controller';
 
 @Module({
@@ -22,6 +26,10 @@ import { ReportingController } from './infrastructure/reporting.controller';
     GetPeriodStatsUseCase,
     GetBudgetBreakdownUseCase,
     GetEvolutionUseCase,
+    GetPeriodComparisonUseCase,
+    GetSankeyDataUseCase,
+    GetAIInsightsUseCase,
+    GeminiService,
   ],
 })
 export class ReportingModule {}

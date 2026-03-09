@@ -65,7 +65,17 @@
       "savings": "Savings",
       "cash": "Cash"
     },
-    "select_account": "Select an account"
+    "select_account": "Select an account",
+    "share": "Share",
+    "share_title": "Share account",
+    "share_desc": "Invite others to view or manage this account.",
+    "share_email_placeholder": "email@example.com",
+    "share_permission_read": "Read only",
+    "share_permission_write": "Read & Write",
+    "share_list_title": "People with access",
+    "share_empty": "This account is not shared yet.",
+    "share_success": "Invitation sent",
+    "share_remove_confirm": "Remove access for this user?"
   },
   "Transactions": {
     "title": "Transactions",

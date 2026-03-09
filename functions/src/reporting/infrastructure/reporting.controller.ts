@@ -1,9 +1,12 @@
-import { Controller, Get, Param, UseGuards } from '@nestjs/common';
+import { Controller, Get, Param, UseGuards, Query } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiProperty } from '@nestjs/swagger';
 import { SupabaseAuthGuard } from '../../auth/supabase-auth.guard';
 import { GetPeriodStatsUseCase, PeriodStatsResponse } from '../application/get-period-stats.use-case';
 import { GetBudgetBreakdownUseCase, BudgetBreakdownResponse, BudgetCategoryBreakdown } from '../application/get-budget-breakdown.use-case';
 import { GetEvolutionUseCase, EvolutionDataPoint } from '../application/get-evolution.use-case';
+import { GetPeriodComparisonUseCase, PeriodComparisonResponse } from '../application/get-period-comparison.use-case';
+import { GetSankeyDataUseCase, SankeyDataResponse } from '../application/get-sankey-data.use-case';
+import { GetAIInsightsUseCase } from '../application/get-ai-insights.use-case';
 
 class BudgetCategoryBreakdownDto implements BudgetCategoryBreakdown {
   @ApiProperty() categoryId: string;
@@ -52,6 +55,9 @@ export class ReportingController {
     private readonly getPeriodStatsUseCase: GetPeriodStatsUseCase,
     private readonly getBudgetBreakdownUseCase: GetBudgetBreakdownUseCase,
     private readonly getEvolutionUseCase: GetEvolutionUseCase,
+    private readonly getPeriodComparisonUseCase: GetPeriodComparisonUseCase,
+    private readonly getSankeyDataUseCase: GetSankeyDataUseCase,
+    private readonly getAIInsightsUseCase: GetAIInsightsUseCase,
   ) {}
 
   @Get('periods/:periodId/reporting/stats')
@@ -86,5 +92,35 @@ export class ReportingController {
       console.log(`[ReportingController] Sample point categories keys: ${Object.keys(data[0].categories).join(', ')}`);
     }
     return data;
+  }
+
+  @Get('periods/:periodId/reporting/comparison')
+  @ApiOperation({ summary: 'Compare current period with another' })
+  async getComparison(
+    @Param('accountId') accountId: string,
+    @Param('periodId') periodId: string,
+    @Query('compareWith') compareWithId: string
+  ): Promise<PeriodComparisonResponse> {
+    return this.getPeriodComparisonUseCase.execute(accountId, compareWithId, periodId);
+  }
+
+  @Get('periods/:periodId/reporting/sankey')
+  @ApiOperation({ summary: 'Get data for Sankey diagram' })
+  async getSankey(
+    @Param('accountId') accountId: string,
+    @Param('periodId') periodId: string
+  ): Promise<SankeyDataResponse> {
+    return this.getSankeyDataUseCase.execute(accountId, periodId);
+  }
+
+  @Get('periods/:periodId/reporting/ai-insights')
+  @ApiOperation({ summary: 'Get AI-generated financial insights' })
+  async getAIInsights(
+    @Param('accountId') accountId: string,
+    @Param('periodId') periodId: string,
+    @Query('locale') locale: string = 'fr'
+  ): Promise<{ insights: string }> {
+    const insights = await this.getAIInsightsUseCase.execute(accountId, periodId, locale);
+    return { insights };
   }
 }
