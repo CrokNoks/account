@@ -35,6 +35,11 @@ export class CreatePeriodDto {
   @Type(() => BudgetInitDto)
   @ApiProperty({ type: [BudgetInitDto] })
   budgets: BudgetInitDto[];
+
+  @IsOptional()
+  @IsBoolean()
+  @ApiProperty({ required: false })
+  injectRecurring?: boolean;
 }
 
 export class UpdatePeriodDto {
@@ -106,6 +111,7 @@ export class PeriodsController {
         categoryId: b.categoryId,
         amountAllocated: BigInt(b.amountAllocated),
       })),
+      injectRecurring: dto.injectRecurring,
     });
 
     return {

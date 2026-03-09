@@ -48,7 +48,6 @@ export class CreatePeriodWithBudgetsUseCase {
     const generatedTransactions: Transaction[] = [];
     if (command.injectRecurring) {
       const recurring = await this.recurringRepository.findAllByAccount(command.accountId);
-      console.log(`[CreatePeriodWithBudgetsUseCase] Found ${recurring.length} recurring transactions for account ${command.accountId}`);
       
       for (const rec of recurring) {
         // Calculate the date for this month
@@ -58,11 +57,9 @@ export class CreatePeriodWithBudgetsUseCase {
         const day = Math.min(rec.dayOfMonth, lastDayOfMonth);
         transactionDate.setDate(day);
 
-        console.log(`[CreatePeriodWithBudgetsUseCase] Processing recurring: ${rec.description} for day ${day}. Calculated date: ${transactionDate.toISOString()}. Range: ${command.startDate.toISOString()} - ${command.endDate.toISOString()}`);
-
-        // Ensure date is within period range
+        // Ensure date is within period range (if period is shorter than a month or unusual)
         if (transactionDate >= command.startDate && transactionDate <= command.endDate) {
-          const t = Transaction.create({
+          generatedTransactions.push(Transaction.create({
             accountId: command.accountId,
             categoryId: rec.categoryId,
             description: rec.description,
@@ -71,11 +68,7 @@ export class CreatePeriodWithBudgetsUseCase {
             periodId: period.id,
             reconciled: false,
             metadata: { source: 'recurring', recurringId: rec.id }
-          });
-          generatedTransactions.push(t);
-          console.log(`[CreatePeriodWithBudgetsUseCase] Generated transaction: ${rec.description}`);
-        } else {
-          console.warn(`[CreatePeriodWithBudgetsUseCase] Transaction date ${transactionDate.toISOString()} is out of range!`);
+          }));
         }
       }
     }
@@ -85,7 +78,6 @@ export class CreatePeriodWithBudgetsUseCase {
     if (budgetInstances.length > 0) {
       await this.budgetRepository.saveBulk(budgetInstances);
     }
-    console.log(`[CreatePeriodWithBudgetsUseCase] Saving ${generatedTransactions.length} generated transactions`);
     for (const t of generatedTransactions) {
       await this.transactionRepository.save(t);
     }
