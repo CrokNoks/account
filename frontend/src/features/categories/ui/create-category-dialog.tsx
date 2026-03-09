@@ -81,7 +81,12 @@ export function CreateCategoryDialog() {
             <label className="text-sm font-medium">{t('fields.type')}</label>
             <Select value={type} onValueChange={(v) => setType(v as CategoryType)}>
               <SelectTrigger>
-                <SelectValue />
+                <SelectValue>
+                  {type === CategoryType.EXPENSE && t('types.expense')}
+                  {type === CategoryType.INCOME && t('types.income')}
+                  {type === CategoryType.TRANSFER && t('types.transfer')}
+                  {type === CategoryType.SAVINGS && t('types.savings')}
+                </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value={CategoryType.EXPENSE}>{t('types.expense')}</SelectItem>

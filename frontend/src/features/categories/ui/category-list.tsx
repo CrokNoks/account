@@ -171,7 +171,14 @@ function EditCategoryDialog({ category, open, onOpenChange }: { category: Catego
             <div className="space-y-2">
               <label className="text-sm font-medium">{t('fields.type')}</label>
               <Select value={type} onValueChange={(v) => setType(v as any || 'expense')}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger>
+                  <SelectValue>
+                    {type === 'expense' && t('types.expense')}
+                    {type === 'income' && t('types.income')}
+                    {type === 'savings' && t('types.savings')}
+                    {type === 'transfer' && t('types.transfer')}
+                  </SelectValue>
+                </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="expense">{t('types.expense')}</SelectItem>
                   <SelectItem value="income">{t('types.income')}</SelectItem>
