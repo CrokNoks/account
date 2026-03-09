@@ -45,12 +45,12 @@ export function Sidebar() {
   };
 
   return (
-    <div className="flex flex-col w-64 border-r bg-card min-h-screen">
-      <div className="p-6">
+    <div className="flex flex-col w-64 border-r bg-card h-full">
+      <div className="p-6 shrink-0">
         <h1 className="text-2xl font-bold text-primary">Account V2</h1>
       </div>
       
-      <nav className="flex-1 px-4 py-4 space-y-2 flex flex-col">
+      <nav className="flex-1 px-4 py-4 space-y-2 flex flex-col overflow-y-auto custom-scrollbar">
         {menuItems.map((item, index) => {
           if ('isSeparator' in item) {
             return <div key={`sep-${index}`} className="my-4 border-t border-muted" />;
