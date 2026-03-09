@@ -23,6 +23,7 @@ export function useCreatePeriod() {
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['periods', variables.accountId] });
+      queryClient.invalidateQueries({ queryKey: ['periods', 'draft', variables.accountId] });
       queryClient.invalidateQueries({ queryKey: ['transactions', variables.accountId] });
       queryClient.invalidateQueries({ queryKey: ['reporting'] });
     },

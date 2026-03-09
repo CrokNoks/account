@@ -33,7 +33,9 @@ export class GetPeriodDraftUseCase {
       startDate.setDate(startDate.getDate() + 1);
     }
     const endDate = new Date(startDate);
-    endDate.setDate(endDate.getDate() + 10);
+    endDate.setMonth(endDate.getMonth() + 1);
+    // Move back one day to keep it consistent (e.g. 01/01 to 31/01 instead of 01/02)
+    endDate.setDate(endDate.getDate() - 1);
 
     // 2. Historical stats
     const stats = await this.budgetRepository.getHistoricalStatsByAccount(accountId);

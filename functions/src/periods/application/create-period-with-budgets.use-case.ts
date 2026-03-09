@@ -28,6 +28,16 @@ export class CreatePeriodWithBudgetsUseCase {
   ) {}
 
   async execute(command: CreatePeriodWithBudgetsCommand): Promise<{ period: Period, budgets: BudgetInstance[] }> {
+    // 0. Deactivate existing active periods for this account
+    const existingPeriods = await this.periodRepository.findAllByAccount(command.accountId);
+    for (const p of existingPeriods) {
+      if (p.isActive) {
+        (p as any).isActive = false;
+        (p as any).updatedAt = new Date();
+        await this.periodRepository.save(p);
+      }
+    }
+
     // 1. Create Period
     const period = Period.create({
       accountId: command.accountId,
