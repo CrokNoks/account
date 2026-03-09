@@ -10,9 +10,10 @@ import { IsString, IsOptional, IsNumberString, IsDateString, IsBoolean, IsObject
 import { Type } from 'class-transformer';
 
 export class CreateTransactionDto {
+  @IsOptional()
   @IsString()
-  @ApiProperty({ description: 'Account ID' })
-  accountId: string;
+  @ApiProperty({ description: 'Account ID', required: false })
+  accountId?: string;
 
   @IsOptional()
   @IsString()
@@ -35,6 +36,11 @@ export class CreateTransactionDto {
   @IsNumberString()
   @ApiProperty({ description: 'Amount in cents' })
   amount: string;
+
+  @IsOptional()
+  @IsBoolean()
+  @ApiProperty({ description: 'Reconciled status', required: false })
+  reconciled?: boolean;
 
   @IsOptional()
   @IsString()
