@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { 
   Sheet, 
   SheetContent, 
@@ -34,6 +34,7 @@ import { useAccounts } from '@/features/accounts/api/use-accounts';
 import { useCreateTransaction } from '../api/use-create-transaction';
 import { useCreateTransfer } from '../api/use-create-transfer';
 import { usePredictCategory } from '../api/use-predict-category';
+import { useUiStore } from '@/shared/model/use-ui-store';
 import { Plus, Receipt, Check, ChevronsUpDown, Sparkles, ArrowRightLeft } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTranslations } from 'next-intl';
@@ -43,6 +44,7 @@ export function CreateTransactionDrawer() {
   const t = useTranslations('Transactions');
   const tc = useTranslations('Common');
   const { activeAccountId } = useAccountStore();
+  const { isCreateTransactionDrawerOpen, setCreateTransactionDrawerOpen } = useUiStore();
   const { data: accounts } = useAccounts();
   const { data: categories } = useCategories(activeAccountId);
   const { data: periods } = usePeriods(activeAccountId);
@@ -51,7 +53,6 @@ export function CreateTransactionDrawer() {
 
   const isPending = isCreatingTransaction || isCreatingTransfer;
 
-  const [open, setOpen] = useState(false);
   const [mode, setMode] = useState<'standard' | 'transfer'>('standard');
   const [comboOpen, setComboOpen] = useState(false);
   
@@ -61,6 +62,8 @@ export function CreateTransactionDrawer() {
   const [categoryId, setCategoryId] = useState<string>('');
   const [amount, setAmount] = useState('');
   const [destinationAccountId, setDestinationAccountId] = useState<string>('');
+
+  const dateInputRef = useRef<HTMLInputElement>(null);
 
   const activePeriod = periods?.find(p => p.isActive);
 
@@ -88,10 +91,15 @@ export function CreateTransactionDrawer() {
 
   // Reset form when sheet closes
   useEffect(() => {
-    if (!open) {
+    if (!isCreateTransactionDrawerOpen) {
       resetForm();
+    } else {
+      // Focus date input when opening
+      setTimeout(() => {
+        dateInputRef.current?.focus();
+      }, 100);
     }
-  }, [open]);
+  }, [isCreateTransactionDrawerOpen]);
 
   const resetForm = () => {
     setDescription('');
@@ -116,7 +124,7 @@ export function CreateTransactionDrawer() {
         onSuccess: () => {
           toast.success(`Transfer "${description}" created`);
           resetForm();
-          if (!addAnother) setOpen(false);
+          if (!addAnother) setCreateTransactionDrawerOpen(false);
         }
       });
     } else {
@@ -131,7 +139,7 @@ export function CreateTransactionDrawer() {
         onSuccess: () => {
           toast.success(`Transaction "${description}" added`);
           resetForm();
-          if (!addAnother) setOpen(false);
+          if (!addAnother) setCreateTransactionDrawerOpen(false);
         }
       });
     }
@@ -149,7 +157,7 @@ export function CreateTransactionDrawer() {
   const availableDestinations = accounts?.filter(a => a.id !== activeAccountId) || [];
 
   return (
-    <Sheet open={open} onOpenChange={setOpen}>
+    <Sheet open={isCreateTransactionDrawerOpen} onOpenChange={setCreateTransactionDrawerOpen}>
       <SheetTrigger 
         render={
           <Button className="gap-2">
@@ -176,6 +184,7 @@ export function CreateTransactionDrawer() {
           <div className="space-y-2">
             <label className="text-sm font-medium">{t('fields.date')}</label>
             <Input 
+              ref={dateInputRef}
               type="date" 
               value={date}
               onChange={(e) => setDate(e.target.value)}

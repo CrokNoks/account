@@ -7,6 +7,7 @@ import { CreateTransactionDrawer } from "@/features/transactions/ui/create-trans
 import { TransactionList } from "@/features/transactions/ui/transaction-list";
 import { useAccountStore } from "@/features/accounts/model/use-account-store";
 import { usePeriods } from "@/features/budgets/api/use-periods";
+import { useUiStore } from "@/shared/model/use-ui-store";
 import { useTranslations } from 'next-intl';
 import { format } from 'date-fns';
 import { 
@@ -22,6 +23,7 @@ export default function Home() {
   const t = useTranslations('Dashboard');
   const tt = useTranslations('Transactions');
   const { activeAccountId, activePeriodId, setActivePeriodId } = useAccountStore();
+  const { isCreateTransactionDrawerOpen, setCreateTransactionDrawerOpen } = useUiStore();
   const { data: periods } = usePeriods(activeAccountId);
   
   // Auto-select active period on first load if nothing selected
@@ -32,6 +34,30 @@ export default function Home() {
       else setActivePeriodId(periods[0].id);
     }
   }, [periods, activePeriodId, setActivePeriodId]);
+
+  // Handle Enter key to open transaction drawer
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Only trigger if not already open and not in an input
+      if (isCreateTransactionDrawerOpen) return;
+      
+      if (
+        document.activeElement?.tagName === 'INPUT' ||
+        document.activeElement?.tagName === 'TEXTAREA' ||
+        document.activeElement?.hasAttribute('contenteditable')
+      ) {
+        return;
+      }
+
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        setCreateTransactionDrawerOpen(true);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isCreateTransactionDrawerOpen, setCreateTransactionDrawerOpen]);
 
   const currentPeriod = periods?.find(p => p.id === activePeriodId);
 
