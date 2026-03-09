@@ -6,6 +6,7 @@ import { GetTransactionsByAccountUseCase } from './application/get-transactions-
 import { CreateTransactionUseCase } from './application/create-transaction.use-case';
 import { PredictCategoryUseCase } from './application/predict-category.use-case';
 import { BulkCreateTransactionsUseCase } from './application/bulk-create-transactions.use-case';
+import { CreateTransferUseCase } from './application/create-transfer.use-case';
 import { TransactionsController } from './infrastructure/transactions.controller';
 
 @Module({
@@ -20,7 +21,8 @@ import { TransactionsController } from './infrastructure/transactions.controller
     CreateTransactionUseCase,
     PredictCategoryUseCase,
     BulkCreateTransactionsUseCase,
+    CreateTransferUseCase,
   ],
-  exports: [TransactionRepository, GetTransactionsByAccountUseCase, CreateTransactionUseCase, PredictCategoryUseCase, BulkCreateTransactionsUseCase],
+  exports: [TransactionRepository, GetTransactionsByAccountUseCase, CreateTransactionUseCase, PredictCategoryUseCase, BulkCreateTransactionsUseCase, CreateTransferUseCase],
 })
 export class TransactionsModule {}

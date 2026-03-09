@@ -5,6 +5,7 @@ import { GetTransactionsByAccountUseCase } from '../application/get-transactions
 import { CreateTransactionUseCase } from '../application/create-transaction.use-case';
 import { PredictCategoryUseCase } from '../application/predict-category.use-case';
 import { BulkCreateTransactionsUseCase } from '../application/bulk-create-transactions.use-case';
+import { CreateTransferUseCase } from '../application/create-transfer.use-case';
 import { TransactionRepository } from '../domain/transaction.repository.interface';
 import { IsString, IsOptional, IsNumberString, IsDateString, IsBoolean, IsObject, IsArray, ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
@@ -56,6 +57,24 @@ export class CreateTransactionDto {
   @IsObject()
   @ApiProperty({ description: 'Additional metadata', required: false })
   metadata?: Record<string, any>;
+}
+
+export class CreateTransferDto {
+  @IsString()
+  @ApiProperty({ description: 'Destination Account ID' })
+  destinationAccountId: string;
+
+  @IsDateString()
+  @ApiProperty({ description: 'Transfer date' })
+  date: string;
+
+  @IsString()
+  @ApiProperty({ description: 'Description' })
+  description: string;
+
+  @IsNumberString()
+  @ApiProperty({ description: 'Amount in cents (must be positive)' })
+  amount: string;
 }
 
 export class BulkCreateTransactionsDto {
@@ -121,6 +140,7 @@ export class TransactionsController {
     private readonly getTransactionsByAccountUseCase: GetTransactionsByAccountUseCase,
     private readonly createTransactionUseCase: CreateTransactionUseCase,
     private readonly bulkCreateTransactionsUseCase: BulkCreateTransactionsUseCase,
+    private readonly createTransferUseCase: CreateTransferUseCase,
     private readonly predictCategoryUseCase: PredictCategoryUseCase,
     private readonly transactionRepository: TransactionRepository,
   ) {}
@@ -198,6 +218,23 @@ export class TransactionsController {
       })) as any,
     });
     return transactions.map(t => this.mapToResponse(t));
+  }
+
+  @Post('transfer')
+  @ApiOperation({ summary: 'Create a transfer between two accounts' })
+  @ApiResponse({ status: 201, type: [TransactionResponseDto] })
+  async createTransfer(
+    @Param('accountId') accountId: string,
+    @Body() dto: CreateTransferDto
+  ): Promise<TransactionResponseDto[]> {
+    const [sourceTx, destTx] = await this.createTransferUseCase.execute({
+      sourceAccountId: accountId,
+      destinationAccountId: dto.destinationAccountId,
+      amount: BigInt(Math.round(Number(dto.amount))),
+      date: new Date(dto.date),
+      description: dto.description,
+    });
+    return [this.mapToResponse(sourceTx), this.mapToResponse(destTx)];
   }
 
   @Post()

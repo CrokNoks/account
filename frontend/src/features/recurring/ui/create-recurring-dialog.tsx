@@ -108,6 +108,7 @@ export function CreateRecurringDialog({
   return (
     <Sheet open={open} onOpenChange={setOpen}>
       {trigger ? (
+        // @ts-expect-error Radix UI type issue
         <SheetTrigger asChild>
           {trigger}
         </SheetTrigger>

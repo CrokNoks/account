@@ -66,7 +66,7 @@ export function EvolutionChart() {
     // Calculate variance for each category
     const withVariance = base.map(cat => {
       const values = evolutionData.map(d => 
-        Math.abs(parseInt(d.categories[cat.id] || '0', 10))
+        Math.abs(parseInt(d.categories?.[cat.id] || '0', 10))
       );
       const min = Math.min(...values);
       const max = Math.max(...values);
