@@ -18,47 +18,67 @@ interface PeriodComparisonProps {
 
 export function PeriodComparison({ accountId, periodId }: PeriodComparisonProps) {
   const { data: periods } = usePeriods(accountId);
-  const [compareWithId, setCompareWithId] = useState<string | null>(null);
+  const [periodAId, setPeriodAId] = useState<string | null>(null);
+  const [periodBId, setPeriodBId] = useState<string | null>(periodId);
   
-  const { data: comparison, isLoading } = usePeriodComparison(accountId, periodId, compareWithId);
+  const { data: comparison, isLoading } = usePeriodComparison(accountId, periodBId, periodAId);
 
-  const currentPeriod = periods?.find(p => p.id === periodId);
-  const comparePeriod = periods?.find(p => p.id === compareWithId);
+  const periodA = periods?.find(p => p.id === periodAId);
+  const periodB = periods?.find(p => p.id === periodBId);
 
-  const labelA = comparePeriod ? format(new Date(comparePeriod.startDate), 'MMM yy') : 'Période A';
-  const labelB = currentPeriod ? format(new Date(currentPeriod.startDate), 'MMM yy') : 'Période B';
-
-  const otherPeriods = periods?.filter(p => p.id !== periodId) || [];
-
-  if (!accountId || !periodId) return null;
+  const labelA = periodA ? format(new Date(periodA.startDate), 'MMM yy') : 'Période A';
+  const labelB = periodB ? format(new Date(periodB.startDate), 'MMM yy') : 'Période B';
 
   return (
     <Card>
-      <CardHeader className="flex flex-row items-center justify-between pb-4">
+      <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6">
         <CardTitle className="text-sm font-semibold flex items-center gap-2">
           <Scale className="w-4 h-4 text-primary" />
           Comparaison de périodes
         </CardTitle>
-        <div className="flex items-center gap-2">
-          <span className="text-[10px] font-bold uppercase text-muted-foreground italic">Comparer avec :</span>
-          <Select value={compareWithId || ''} onValueChange={setCompareWithId}>
-            <SelectTrigger className="w-[180px] h-8 text-xs font-medium">
-              <SelectValue placeholder="Choisir une période..." />
-            </SelectTrigger>
-            <SelectContent>
-              {otherPeriods.map(p => (
-                <SelectItem key={p.id} value={p.id}>
-                  {format(new Date(p.startDate), 'MMMM yyyy')}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+        
+        <div className="flex flex-wrap items-center gap-4">
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] font-bold uppercase text-muted-foreground italic">Base (A) :</span>
+            <Select value={periodAId || ''} onValueChange={setPeriodAId}>
+              <SelectTrigger className="w-[160px] h-8 text-xs font-medium bg-muted/30">
+                <SelectValue placeholder="Période A...">
+                  {periodA ? format(new Date(periodA.startDate), 'MMMM yyyy') : undefined}
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                {periods?.map(p => (
+                  <SelectItem key={p.id} value={p.id}>
+                    {format(new Date(p.startDate), 'MMMM yyyy')}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] font-bold uppercase text-muted-foreground italic">Cible (B) :</span>
+            <Select value={periodBId || ''} onValueChange={setPeriodBId}>
+              <SelectTrigger className="w-[160px] h-8 text-xs font-medium bg-primary/5 border-primary/20">
+                <SelectValue placeholder="Période B...">
+                  {periodB ? format(new Date(periodB.startDate), 'MMMM yyyy') : undefined}
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                {periods?.map(p => (
+                  <SelectItem key={p.id} value={p.id}>
+                    {format(new Date(p.startDate), 'MMMM yyyy')} {p.id === periodId && "(Actuelle)"}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
       </CardHeader>
       <CardContent>
-        {!compareWithId ? (
+        {!periodAId || !periodBId ? (
           <div className="h-32 flex items-center justify-center text-sm text-muted-foreground border-2 border-dashed rounded-lg bg-muted/10">
-            Sélectionnez une période passée pour comparer vos résultats actuels.
+            Sélectionnez deux périodes pour comparer les résultats.
           </div>
         ) : isLoading ? (
           <div className="h-32 flex items-center justify-center">
@@ -69,11 +89,11 @@ export function PeriodComparison({ accountId, periodId }: PeriodComparisonProps)
             <div className="flex flex-col sm:flex-row gap-4 p-3 bg-primary/5 rounded-lg border border-primary/10 text-[10px] sm:text-xs">
               <div className="flex items-center gap-2">
                 <div className="w-2 h-2 rounded-full bg-muted-foreground" />
-                <span className="font-semibold text-muted-foreground uppercase">Période A (Base) :</span> {comparePeriod ? `${format(new Date(comparePeriod.startDate), 'dd/MM/yy')} - ${format(new Date(comparePeriod.endDate), 'dd/MM/yy')}` : ''}
+                <span className="font-semibold text-muted-foreground uppercase">Période A :</span> {periodA ? `${format(new Date(periodA.startDate), 'dd/MM/yy')} - ${format(new Date(periodA.endDate), 'dd/MM/yy')}` : ''}
               </div>
               <div className="flex items-center gap-2">
                 <div className="w-2 h-2 rounded-full bg-primary" />
-                <span className="font-semibold text-primary uppercase">Période B (Actuelle) :</span> {currentPeriod ? `${format(new Date(currentPeriod.startDate), 'dd/MM/yy')} - ${format(new Date(currentPeriod.endDate), 'dd/MM/yy')}` : ''}
+                <span className="font-semibold text-primary uppercase">Période B :</span> {periodB ? `${format(new Date(periodB.startDate), 'dd/MM/yy')} - ${format(new Date(periodB.endDate), 'dd/MM/yy')}` : ''}
               </div>
             </div>
 
