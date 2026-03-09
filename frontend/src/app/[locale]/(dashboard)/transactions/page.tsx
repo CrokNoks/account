@@ -2,6 +2,7 @@
 
 import { TransactionList } from "@/features/transactions/ui/transaction-list";
 import { CreateTransactionDrawer } from "@/features/transactions/ui/create-transaction-drawer";
+import { ImportCsvDrawer } from "@/features/transactions/ui/import-csv-drawer";
 import { useTranslations } from 'next-intl';
 
 export default function TransactionsPage() {
@@ -16,7 +17,10 @@ export default function TransactionsPage() {
             {t('description')}
           </p>
         </div>
-        <CreateTransactionDrawer />
+        <div className="flex gap-2">
+          <ImportCsvDrawer />
+          <CreateTransactionDrawer />
+        </div>
       </div>
 
       <TransactionList />
