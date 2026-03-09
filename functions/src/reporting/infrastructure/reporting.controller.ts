@@ -3,6 +3,7 @@ import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiProperty } from '
 import { SupabaseAuthGuard } from '../../auth/supabase-auth.guard';
 import { GetPeriodStatsUseCase, PeriodStatsResponse } from '../application/get-period-stats.use-case';
 import { GetBudgetBreakdownUseCase, BudgetBreakdownResponse, BudgetCategoryBreakdown } from '../application/get-budget-breakdown.use-case';
+import { GetEvolutionUseCase, EvolutionDataPoint } from '../application/get-evolution.use-case';
 
 class BudgetCategoryBreakdownDto implements BudgetCategoryBreakdown {
   @ApiProperty() categoryId: string;
@@ -31,17 +32,29 @@ class PeriodStatsResponseDto implements PeriodStatsResponse {
   @ApiProperty() forecastBalance: string;
 }
 
+class EvolutionDataPointDto implements EvolutionDataPoint {
+  @ApiProperty() periodId: string;
+  @ApiProperty() startDate: string;
+  @ApiProperty() endDate: string;
+  @ApiProperty() realIncome: string;
+  @ApiProperty() realExpenses: string;
+  @ApiProperty() forecastBalance: string;
+  @ApiProperty() realBankBalance: string;
+  @ApiProperty({ type: 'object', additionalProperties: { type: 'string' } }) categories: Record<string, string>;
+}
+
 @ApiTags('reporting')
 @ApiBearerAuth()
 @UseGuards(SupabaseAuthGuard)
-@Controller(':accountId/periods/:periodId/reporting')
+@Controller(':accountId')
 export class ReportingController {
   constructor(
     private readonly getPeriodStatsUseCase: GetPeriodStatsUseCase,
     private readonly getBudgetBreakdownUseCase: GetBudgetBreakdownUseCase,
+    private readonly getEvolutionUseCase: GetEvolutionUseCase,
   ) {}
 
-  @Get('stats')
+  @Get('periods/:periodId/reporting/stats')
   @ApiOperation({ summary: 'Get financial stats for a specific period' })
   @ApiResponse({ status: 200, type: PeriodStatsResponseDto })
   async getStats(
@@ -51,7 +64,7 @@ export class ReportingController {
     return this.getPeriodStatsUseCase.execute(accountId, periodId);
   }
 
-  @Get('budget-breakdown')
+  @Get('periods/:periodId/reporting/budget-breakdown')
   @ApiOperation({ summary: 'Get budget consumption breakdown by category type' })
   @ApiResponse({ status: 200, type: BudgetBreakdownResponseDto })
   async getBudgetBreakdown(
@@ -59,5 +72,19 @@ export class ReportingController {
     @Param('periodId') periodId: string
   ): Promise<BudgetBreakdownResponseDto> {
     return this.getBudgetBreakdownUseCase.execute(accountId, periodId);
+  }
+
+  @Get('reporting/evolution')
+  @ApiOperation({ summary: 'Get account balance evolution over periods' })
+  @ApiResponse({ status: 200, type: [EvolutionDataPointDto] })
+  async getEvolution(
+    @Param('accountId') accountId: string,
+  ): Promise<EvolutionDataPointDto[]> {
+    const data = await this.getEvolutionUseCase.execute(accountId);
+    console.log(`[ReportingController] Evolution data points: ${data.length}`);
+    if (data.length > 0) {
+      console.log(`[ReportingController] Sample point categories keys: ${Object.keys(data[0].categories).join(', ')}`);
+    }
+    return data;
   }
 }
