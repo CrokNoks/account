@@ -6,6 +6,7 @@ import { TransactionsModule } from '../transactions/transactions.module';
 import { BudgetsModule } from '../budgets/budgets.module';
 import { GetPeriodStatsUseCase } from './application/get-period-stats.use-case';
 import { GetBudgetBreakdownUseCase } from './application/get-budget-breakdown.use-case';
+import { GetEvolutionUseCase } from './application/get-evolution.use-case';
 import { ReportingController } from './infrastructure/reporting.controller';
 
 @Module({
@@ -20,6 +21,7 @@ import { ReportingController } from './infrastructure/reporting.controller';
   providers: [
     GetPeriodStatsUseCase,
     GetBudgetBreakdownUseCase,
+    GetEvolutionUseCase,
   ],
 })
 export class ReportingModule {}
