@@ -19,7 +19,9 @@ import { formatCurrency } from '@/shared/lib/format';
 import { format } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { CheckCircle2, Circle, Trash2, Pencil, Repeat } from 'lucide-react';
+import { CheckCircle2, Circle, Trash2, Pencil, Repeat, Clock } from 'lucide-react';
+import { Checkbox } from "@/components/ui/checkbox";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { 
   Dialog, 
@@ -71,6 +73,17 @@ export function TransactionList({ periodId, compact = false }: { periodId?: stri
       accountId: activeAccountId,
       id: transactionId,
       data: { reconciled: !currentStatus }
+    }, {
+      onSuccess: () => toast.success(t('toggled'))
+    });
+  };
+
+  const togglePending = (transactionId: string, currentStatus: boolean) => {
+    if (!activeAccountId) return;
+    updateTransaction({
+      accountId: activeAccountId,
+      id: transactionId,
+      data: { pending: !currentStatus }
     }, {
       onSuccess: () => toast.success(t('toggled'))
     });
@@ -142,48 +155,55 @@ export function TransactionList({ periodId, compact = false }: { periodId?: stri
             {transactions?.length === 0 ? (
               <TableRow><TableCell colSpan={6} className="h-24 text-center">{t('empty')}</TableCell></TableRow>
             ) : (
-              transactions?.map((t) => (
-                <TableRow key={t.id} className="group">
+              transactions?.map((transaction) => (
+                <TableRow key={transaction.id} className={cn("group", transaction.pending && "bg-muted/30")}>
                   <TableCell className="text-center">
-                    <button onClick={() => toggleReconciliation(t.id, t.reconciled)} disabled={isUpdating} className="cursor-pointer">
-                      {t.reconciled ? <CheckCircle2 className="w-5 h-5 text-green-500 mx-auto" /> : <Circle className="w-5 h-5 text-muted-foreground mx-auto" />}
-                    </button>
+                    <div className="flex items-center justify-center gap-2">
+                      <button onClick={() => toggleReconciliation(transaction.id, transaction.reconciled)} disabled={isUpdating} className="cursor-pointer" title={t('fields.reconciled')}>
+                        {transaction.reconciled ? <CheckCircle2 className="w-5 h-5 text-green-500" /> : <Circle className="w-5 h-5 text-muted-foreground" />}
+                      </button>
+                      {transaction.pending && (
+                        <button onClick={() => togglePending(transaction.id, transaction.pending)} disabled={isUpdating} className="cursor-pointer" title={t('fields.pending')}>
+                          <Clock className="w-4 h-4 text-orange-500 animate-pulse" />
+                        </button>
+                      )}
+                    </div>
                   </TableCell>
-                  <TableCell className="font-medium whitespace-nowrap">{format(new Date(t.date), 'dd MMM yyyy')}</TableCell>
+                  <TableCell className="font-medium whitespace-nowrap">{format(new Date(transaction.date), 'dd MMM yyyy')}</TableCell>
                   <TableCell>
-                    <div className="truncate max-w-full" title={t.description}>
-                      {t.description}
+                    <div className="truncate max-w-full" title={transaction.description}>
+                      {transaction.description}
                     </div>
                   </TableCell>
                   <TableCell>
                     <div className="truncate max-w-full">
-                      {t.categoryId ? (
+                      {transaction.categoryId ? (
                         <Badge variant="outline" style={{ 
-                          borderColor: categories?.find(c => c.id === t.categoryId)?.color,
-                          color: categories?.find(c => c.id === t.categoryId)?.color 
+                          borderColor: categories?.find(c => c.id === transaction.categoryId)?.color,
+                          color: categories?.find(c => c.id === transaction.categoryId)?.color 
                         }}>
-                          {categories?.find(c => c.id === t.categoryId)?.name || 'Categorized'}
+                          {categories?.find(c => c.id === transaction.categoryId)?.name || 'Categorized'}
                         </Badge>
                       ) : (
                         <span className="italic text-xs text-muted-foreground">Non catégorisé</span>
                       )}
                     </div>
                   </TableCell>
-                  <TableCell className={`text-right font-bold whitespace-nowrap ${parseInt(t.amount, 10) < 0 ? 'text-red-500' : 'text-green-500'}`}>
-                    {formatCurrency(t.amount)}
+                  <TableCell className={`text-right font-bold whitespace-nowrap ${parseInt(transaction.amount, 10) < 0 ? 'text-red-500' : 'text-green-500'}`}>
+                    {formatCurrency(transaction.amount)}
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                       {!compact && (
-                        <Button variant="ghost" size="icon-sm" onClick={() => setTransactionToMakeRecurring(t)} className="h-8 w-8 text-muted-foreground hover:text-primary" title="Convert to recurring">
+                        <Button variant="ghost" size="icon-sm" onClick={() => setTransactionToMakeRecurring(transaction)} className="h-8 w-8 text-muted-foreground hover:text-primary" title="Convert to recurring">
                           <Repeat className="w-3.5 h-3.5" />
                         </Button>
                       )}
-                      <Button variant="ghost" size="icon-sm" onClick={() => setEditingTransaction(t)} className="h-8 w-8">
+                      <Button variant="ghost" size="icon-sm" onClick={() => setEditingTransaction(transaction)} className="h-8 w-8">
                         <Pencil className="w-3.5 h-3.5" />
                       </Button>
                       {!compact && (
-                        <Button variant="ghost" size="icon-sm" onClick={() => handleDelete(t.id, t.description)} className="h-8 w-8 text-muted-foreground hover:text-destructive">
+                        <Button variant="ghost" size="icon-sm" onClick={() => handleDelete(transaction.id, transaction.description)} className="h-8 w-8 text-muted-foreground hover:text-destructive">
                           <Trash2 className="w-3.5 h-3.5" />
                         </Button>
                       )}
@@ -229,6 +249,7 @@ function EditTransactionDialog({ transaction, open, onOpenChange }: { transactio
   const [description, setDescription] = useState(transaction.description);
   const [categoryId, setCategoryId] = useState(transaction.categoryId || '');
   const [amount, setAmount] = useState((parseInt(transaction.amount, 10) / 100).toString());
+  const [pending, setPending] = useState(transaction.pending);
   
   const { mutate: updateTransaction, isPending } = useUpdateTransaction();
 
@@ -244,6 +265,7 @@ function EditTransactionDialog({ transaction, open, onOpenChange }: { transactio
         description,
         categoryId: categoryId || null,
         amount: Math.round(parseFloat(amount) * 100).toString(),
+        pending,
       }
     }, {
       onSuccess: () => {
@@ -295,6 +317,16 @@ function EditTransactionDialog({ transaction, open, onOpenChange }: { transactio
           <div className="space-y-2">
             <label className="text-sm font-medium">{t('fields.amount')}</label>
             <Input type="number" step="0.01" value={amount} onChange={(e) => setAmount(e.target.value)} required />
+          </div>
+          <div className="flex items-center gap-2 p-3 rounded-lg border bg-muted/30">
+            <Checkbox 
+              id="edit-pending" 
+              checked={pending} 
+              onCheckedChange={(checked) => setPending(!!checked)} 
+            />
+            <label htmlFor="edit-pending" className="text-sm font-medium cursor-pointer select-none flex-1">
+              {t('fields.pending')}
+            </label>
           </div>
           <DialogFooter>
             <Button type="submit" disabled={isPending}>{tc('save')}</Button>

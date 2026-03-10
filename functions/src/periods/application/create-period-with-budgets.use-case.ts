@@ -77,6 +77,7 @@ export class CreatePeriodWithBudgetsUseCase {
             date: transactionDate,
             periodId: period.id,
             reconciled: false,
+            pending: true,
             metadata: { source: 'recurring', recurringId: rec.id }
           }));
         }

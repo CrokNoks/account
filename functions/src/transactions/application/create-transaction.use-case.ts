@@ -9,6 +9,8 @@ export interface CreateTransactionCommand {
   date: Date;
   description: string;
   amount: bigint;
+  reconciled?: boolean;
+  pending?: boolean;
   paymentMethod?: string | null;
   notes?: string | null;
   metadata?: Record<string, any>;
@@ -29,7 +31,8 @@ export class CreateTransactionUseCase {
       paymentMethod: command.paymentMethod,
       notes: command.notes,
       metadata: command.metadata || {},
-      reconciled: false,
+      reconciled: command.reconciled ?? false,
+      pending: command.pending ?? false,
     });
 
     await this.transactionRepository.save(transaction);

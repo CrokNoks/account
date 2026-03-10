@@ -21,6 +21,7 @@ export class BulkCreateTransactionsUseCase {
         ...dto,
         accountId: command.accountId,
         reconciled: false,
+        pending: false,
       });
       await this.repository.save(transaction);
       createdTransactions.push(transaction);

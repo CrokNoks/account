@@ -44,6 +44,11 @@ export class CreateTransactionDto {
   reconciled?: boolean;
 
   @IsOptional()
+  @IsBoolean()
+  @ApiProperty({ description: 'Pending status', required: false })
+  pending?: boolean;
+
+  @IsOptional()
   @IsString()
   @ApiProperty({ description: 'Payment method', required: false })
   paymentMethod?: string;
@@ -109,6 +114,9 @@ export class TransactionResponseDto {
 
   @ApiProperty()
   reconciled: boolean;
+
+  @ApiProperty()
+  pending: boolean;
 
   @ApiProperty({ nullable: true })
   paymentMethod: string | null;
@@ -178,14 +186,18 @@ export class TransactionsController {
   @ApiResponse({ status: 200, type: TransactionResponseDto })
   async update(
     @Param('id') id: string,
-    @Body() dto: Partial<CreateTransactionDto> & { reconciled?: boolean }
+    @Body() dto: Partial<CreateTransactionDto> & { reconciled?: boolean, pending?: boolean }
   ): Promise<TransactionResponseDto> {
     const existing = await this.transactionRepository.findById(id);
     if (!existing) throw new Error('Transaction not found');
 
+    // If reconciling, auto-clear pending
+    const pending = dto.reconciled === true ? false : (dto.pending ?? existing.pending);
+
     const updated = new (existing as any).constructor({
       ...existing,
       ...dto,
+      pending,
       date: dto.date ? new Date(dto.date) : (existing as any).date,
       amount: dto.amount ? BigInt(Math.round(Number(dto.amount))) : (existing as any).amount,
       updatedAt: new Date(),
@@ -263,6 +275,7 @@ export class TransactionsController {
       description: t.description,
       amount: t.amount.toString(),
       reconciled: t.reconciled,
+      pending: t.pending,
       paymentMethod: t.paymentMethod || null,
       notes: t.notes || null,
       metadata: t.metadata,

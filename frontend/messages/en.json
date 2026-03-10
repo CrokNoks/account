@@ -90,7 +90,8 @@
       "description": "Description",
       "category": "Category",
       "amount": "Amount",
-      "reconciled": "Reconciled"
+      "reconciled": "Reconciled",
+      "pending": "Pending / Pre-auth"
     },
     "empty": "No transactions found",
     "save_another": "Save & Add Another",

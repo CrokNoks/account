@@ -82,9 +82,9 @@ export class GetPeriodStatsUseCase {
     const reconciledInPeriod = periodTransactions.filter(t => t.reconciled).reduce((sum, t) => sum + t.amount, BigInt(0));
     const realBankBalance = startBalance + reconciledInPeriod;
 
-    // 5. Upcoming Balance (Start + all in this period)
-    const allInPeriod = periodTransactions.reduce((sum, t) => sum + t.amount, BigInt(0));
-    const upcomingBalance = startBalance + allInPeriod;
+    // 5. Upcoming Balance (Start + all NOT pending in this period)
+    const nonPendingInPeriod = periodTransactions.filter(t => !t.pending).reduce((sum, t) => sum + t.amount, BigInt(0));
+    const upcomingBalance = startBalance + nonPendingInPeriod;
 
     // 6. Forecast Balance
     // Formula: startBalance + max(realIncome, plannedIncome) - max(abs(realExpenses), abs(plannedExpenses))

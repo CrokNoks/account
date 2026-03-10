@@ -33,6 +33,7 @@ export class CreateTransferUseCase {
       amount: -command.amount,
       metadata: { transferId, type: 'transfer_out', relatedAccountId: command.destinationAccountId },
       reconciled: false,
+      pending: false,
     });
 
     const destinationTransaction = Transaction.create({
@@ -43,6 +44,7 @@ export class CreateTransferUseCase {
       amount: command.amount,
       metadata: { transferId, type: 'transfer_in', relatedAccountId: command.sourceAccountId },
       reconciled: false,
+      pending: false,
     });
 
     await this.transactionRepository.save(sourceTransaction);

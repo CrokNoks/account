@@ -10,6 +10,7 @@ export interface Transaction {
   description: string;
   amount: string;
   reconciled: boolean;
+  pending: boolean;
   paymentMethod: string | null;
   notes: string | null;
   metadata: Record<string, any>;

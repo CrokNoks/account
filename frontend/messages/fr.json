@@ -90,7 +90,8 @@
       "description": "Description",
       "category": "Catégorie",
       "amount": "Montant",
-      "reconciled": "Pointé"
+      "reconciled": "Pointé",
+      "pending": "En attente / Pré-auth"
     },
     "empty": "Aucune transaction trouvée",
     "save_another": "Enregistrer & Nouveau",

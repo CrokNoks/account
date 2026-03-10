@@ -27,6 +27,7 @@ import {
 } from "@/components/ui/popover";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useAccountStore } from '@/features/accounts/model/use-account-store';
 import { useCategories } from '@/features/categories/api/use-categories';
 import { usePeriods } from '@/features/budgets/api/use-periods';
@@ -61,6 +62,7 @@ export function CreateTransactionDrawer() {
   const [debouncedDescription, setDebouncedDescription] = useState('');
   const [categoryId, setCategoryId] = useState<string>('');
   const [amount, setAmount] = useState('');
+  const [pending, setPending] = useState(false);
   const [destinationAccountId, setDestinationAccountId] = useState<string>('');
 
   const dateInputRef = useRef<HTMLInputElement>(null);
@@ -104,6 +106,7 @@ export function CreateTransactionDrawer() {
   const resetForm = () => {
     setDescription('');
     setAmount('');
+    setPending(false);
     setCategoryId('');
     setDestinationAccountId('');
     setMode('standard');
@@ -135,6 +138,7 @@ export function CreateTransactionDrawer() {
         categoryId: categoryId || null,
         amount: Math.round(parseFloat(amount) * 100).toString(),
         periodId: activePeriod?.id,
+        pending,
       }, {
         onSuccess: () => {
           toast.success(`Transaction "${description}" added`);
@@ -319,6 +323,20 @@ export function CreateTransactionDrawer() {
               <p className="text-[10px] text-muted-foreground italic">Le montant sera déduit du compte actuel et ajouté au compte de destination.</p>
             )}
           </div>
+
+          {mode === 'standard' && (
+            <div className="flex items-center gap-2 p-3 rounded-lg border bg-muted/30">
+              <Checkbox 
+                id="pending-field" 
+                checked={pending} 
+                onCheckedChange={(checked) => setPending(!!checked)} 
+              />
+              <label htmlFor="pending-field" className="text-sm font-medium cursor-pointer select-none flex-1">
+                {t('fields.pending')}
+              </label>
+              <p className="text-[10px] text-muted-foreground">Exclu du solde à venir</p>
+            </div>
+          )}
         </div>
 
         <SheetFooter className="p-6 border-t bg-muted/20 flex-col gap-3 sm:flex-col">
