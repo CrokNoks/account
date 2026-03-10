@@ -187,6 +187,7 @@
     "account": {
       "intro": "La configuration d'un compte se fait en plusieurs étapes pour assurer une gestion précise.",
       "name": "Donnez un nom clair à votre compte (ex: Courant, Livret A).",
+      "create_btn": "Cliquez ici pour créer un nouveau compte.",
       "balance": "Saisissez le solde actuel de votre compte en banque pour démarrer sur de bonnes bases.",
       "type": "Choisissez le type de compte pour adapter les calculs et l'affichage.",
       "categories": "Configurez vos catégories de dépenses et revenus pour organiser vos transactions.",

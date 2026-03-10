@@ -72,6 +72,15 @@ export class SupabaseBudgetRepository implements BudgetRepository {
     if (error) throw new Error(error.message);
   }
 
+  async deleteAllByPeriod(periodId: string): Promise<void> {
+    const { error } = await this.supabase
+      .from('budget_instances')
+      .delete()
+      .eq('period_id', periodId);
+
+    if (error) throw new Error(error.message);
+  }
+
   async getHistoricalStatsByAccount(accountId: string): Promise<CategoryStats[]> {
     /**
      * PostgreSQL specific query:

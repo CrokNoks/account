@@ -1,101 +1,13 @@
 'use client';
 
 import React from 'react';
-import Joyride, { Step, CallBackProps, STATUS, ACTIONS, EVENTS } from 'react-joyride';
-import { useUiStore, TourName } from '@/shared/model/use-ui-store';
+import Joyride, { CallBackProps, STATUS, ACTIONS, EVENTS } from 'react-joyride';
+import { useUiStore } from '@/shared/model/use-ui-store';
 import { useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
-
-const DASHBOARD_STEPS = (t: any): Step[] => [
-  {
-    target: 'body',
-    content: t('dashboard.welcome'),
-    placement: 'center',
-  },
-  {
-    target: '[data-tour="stats"]',
-    content: t('dashboard.stats'),
-    placement: 'top',
-  },
-  {
-    target: '[data-tour="evolution"]',
-    content: t('dashboard.evolution'),
-    placement: 'top',
-  },
-  {
-    target: '[data-tour="budget-breakdown"]',
-    content: t('dashboard.breakdown'),
-    placement: 'top',
-  },
-  {
-    target: '[data-tour="transaction-list"]',
-    content: t('dashboard.transactions'),
-    placement: 'top',
-  },
-  {
-    target: '[data-tour="add-transaction"]',
-    content: t('dashboard.add_btn'),
-    placement: 'bottom',
-  }
-];
-
-const ACCOUNT_STEPS = (t: any): Step[] => [
-  {
-    target: 'body',
-    content: t('account.intro'),
-    placement: 'center',
-  },
-  {
-    target: '[data-tour="account-name"]',
-    content: t('account.name'),
-  },
-  {
-    target: '[data-tour="account-balance"]',
-    content: t('account.balance'),
-  },
-  {
-    target: '[data-tour="account-type"]',
-    content: t('account.type'),
-  },
-  {
-    target: '[data-tour="nav-categories"]',
-    content: t('account.categories'),
-    placement: 'right',
-  },
-  {
-    target: '[data-tour="nav-recurring"]',
-    content: t('account.recurring'),
-    placement: 'right',
-  },
-  {
-    target: '[data-tour="nav-budgets"]',
-    content: t('account.periods'),
-    placement: 'right',
-  }
-];
-
-const TRANSACTION_STEPS = (t: any): Step[] => [
-  {
-    target: '[data-tour="tx-date"]',
-    content: t('transactions.date'),
-  },
-  {
-    target: '[data-tour="tx-description"]',
-    content: t('transactions.description'),
-  },
-  {
-    target: '[data-tour="tx-amount"]',
-    content: t('transactions.amount'),
-  },
-  {
-    target: '[data-tour="tx-pending"]',
-    content: t('transactions.pending'),
-  },
-  {
-    target: '[data-tour="tx-shortcuts"]',
-    content: t('transactions.shortcuts'),
-  }
-];
+import { DASHBOARD_STEPS } from '@/features/tour/config/dashboard-tour';
+import { ACCOUNT_STEPS } from '@/features/tour/config/account-tour';
+import { TRANSACTION_STEPS } from '@/features/tour/config/transactions-tour';
 
 export function AppTour() {
   const { theme } = useTheme();
@@ -108,10 +20,11 @@ export function AppTour() {
     tourStepIndex, 
     setTourStepIndex, 
     stopTour, 
-    completeTour 
+    completeTour,
+    setCreateAccountDialogOpen
   } = useUiStore();
 
-  const getSteps = (): Step[] => {
+  const getSteps = () => {
     switch (activeTour) {
       case 'dashboard': return DASHBOARD_STEPS(t);
       case 'account': return ACCOUNT_STEPS(t);
@@ -123,11 +36,50 @@ export function AppTour() {
   const handleJoyrideCallback = (data: CallBackProps) => {
     const { action, index, status, type } = data;
 
+    // Logic to open/close dialogs during tours
+    if (activeTour === 'account') {
+      if (type === EVENTS.STEP_AFTER) {
+        // After step index 1 (pointing to add-account-btn), open the dialog
+        if (index === 1 && action === ACTIONS.NEXT) {
+          setCreateAccountDialogOpen(true);
+        } 
+        // If going back from step index 2 (inside dialog), close it
+        else if (index === 2 && action === ACTIONS.PREV) {
+          setCreateAccountDialogOpen(false);
+        }
+        // After step index 4 (last field in dialog), close it to point to sidebar
+        else if (index === 4 && action === ACTIONS.NEXT) {
+          setCreateAccountDialogOpen(false);
+        }
+        // If going back from step index 5 (sidebar), reopen dialog
+        else if (index === 5 && action === ACTIONS.PREV) {
+          setCreateAccountDialogOpen(true);
+        }
+      }
+    }
+
     if (([STATUS.FINISHED, STATUS.SKIPPED] as string[]).includes(status)) {
       completeTour(activeTour);
     } else if (([EVENTS.STEP_AFTER, EVENTS.TARGET_NOT_FOUND] as string[]).includes(type)) {
       const nextStepIndex = index + (action === ACTIONS.PREV ? -1 : 1);
-      setTourStepIndex(nextStepIndex);
+      
+      // If we are opening a dialog, add a small delay to let it animate/render
+      const needsDelay = activeTour === 'account' && (
+        (index === 1 && action === ACTIONS.NEXT) || // Opening dialog
+        (index === 5 && action === ACTIONS.PREV)    // Re-opening dialog
+      );
+
+      if (needsDelay && type !== EVENTS.TARGET_NOT_FOUND) {
+        setTimeout(() => {
+          setTourStepIndex(nextStepIndex);
+        }, 500);
+      } else if (type === EVENTS.TARGET_NOT_FOUND) {
+        // If target not found, we might still be waiting for the dialog
+        // Don't auto-advance, maybe retry or just stay here
+        console.warn('Tour target not found, waiting...', data.step.target);
+      } else {
+        setTourStepIndex(nextStepIndex);
+      }
     } else if (type === EVENTS.TOUR_END) {
       stopTour();
     }

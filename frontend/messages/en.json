@@ -187,6 +187,7 @@
     "account": {
       "intro": "Setting up an account involves several steps to ensure accurate management.",
       "name": "Give your account a clear name (e.g., Checking, Savings).",
+      "create_btn": "Click here to create a new account.",
       "balance": "Enter your current bank balance to start on the right foot.",
       "type": "Choose the account type to adapt calculations and display.",
       "categories": "Set up your expense and income categories to organize your transactions.",

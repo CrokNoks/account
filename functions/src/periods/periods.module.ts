@@ -8,6 +8,7 @@ import { PeriodRepository } from './domain/period.repository.interface';
 import { SupabasePeriodRepository } from './infrastructure/supabase-period.repository';
 import { GetPeriodDraftUseCase } from './application/get-period-draft.use-case';
 import { CreatePeriodWithBudgetsUseCase } from './application/create-period-with-budgets.use-case';
+import { UpdatePeriodBudgetsUseCase } from './application/update-period-budgets.use-case';
 import { PeriodsController } from './infrastructure/periods.controller';
 
 @Module({
@@ -26,7 +27,8 @@ import { PeriodsController } from './infrastructure/periods.controller';
     },
     GetPeriodDraftUseCase,
     CreatePeriodWithBudgetsUseCase,
+    UpdatePeriodBudgetsUseCase,
   ],
-  exports: [PeriodRepository, GetPeriodDraftUseCase, CreatePeriodWithBudgetsUseCase],
+  exports: [PeriodRepository, GetPeriodDraftUseCase, CreatePeriodWithBudgetsUseCase, UpdatePeriodBudgetsUseCase],
 })
 export class PeriodsModule {}

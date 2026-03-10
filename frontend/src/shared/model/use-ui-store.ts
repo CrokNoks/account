@@ -8,6 +8,10 @@ interface UiState {
   setCreateTransactionDrawerOpen: (open: boolean) => void;
   toggleCreateTransactionDrawer: () => void;
   
+  isCreateAccountDialogOpen: boolean;
+  setCreateAccountDialogOpen: (open: boolean) => void;
+  toggleCreateAccountDialog: () => void;
+  
   // Tour State
   activeTour: TourName;
   tourRun: boolean;
@@ -29,6 +33,10 @@ export const useUiStore = create<UiState>()(
       setCreateTransactionDrawerOpen: (open) => set({ isCreateTransactionDrawerOpen: open }),
       toggleCreateTransactionDrawer: () => set((state) => ({ isCreateTransactionDrawerOpen: !state.isCreateTransactionDrawerOpen })),
       
+      isCreateAccountDialogOpen: false,
+      setCreateAccountDialogOpen: (open) => set({ isCreateAccountDialogOpen: open }),
+      toggleCreateAccountDialog: () => set((state) => ({ isCreateAccountDialogOpen: !state.isCreateAccountDialogOpen })),
+
       // Tour Initial State
       activeTour: 'none',
       tourRun: false,

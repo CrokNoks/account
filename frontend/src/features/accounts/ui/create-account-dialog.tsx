@@ -22,12 +22,13 @@ import {
 import { useCreateAccount } from '../api/use-create-account';
 import { Plus } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { useUiStore } from '@/shared/model/use-ui-store';
 
 export function CreateAccountDialog() {
   const t = useTranslations('Accounts');
   const tc = useTranslations('Common');
   
-  const [open, setOpen] = useState(false);
+  const { isCreateAccountDialogOpen, setCreateAccountDialogOpen } = useUiStore();
   const [name, setName] = useState('');
   const [type, setType] = useState('checking');
   const [currency, setCurrency] = useState('EUR');
@@ -44,7 +45,7 @@ export function CreateAccountDialog() {
       initialBalance: Math.round(parseFloat(balance) * 100).toString(),
     }, {
       onSuccess: () => {
-        setOpen(false);
+        setCreateAccountDialogOpen(false);
         setName('');
         setBalance('0');
       }
@@ -52,10 +53,10 @@ export function CreateAccountDialog() {
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={isCreateAccountDialogOpen} onOpenChange={setCreateAccountDialogOpen}>
       <DialogTrigger 
         render={
-          <Button className="gap-2">
+          <Button className="gap-2" onClick={() => setCreateAccountDialogOpen(true)} data-tour="add-account-btn">
             <Plus className="w-4 h-4" />
             {t('add_account')}
           </Button>
@@ -83,7 +84,9 @@ export function CreateAccountDialog() {
               <label className="text-sm font-medium">{t('fields.type')}</label>
               <Select value={type} onValueChange={(v) => setType(v || 'checking')}>
                 <SelectTrigger>
-                  <SelectValue />
+                  <SelectValue>
+                    {t(`types.${type as 'checking' | 'savings' | 'cash'}`)}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="checking">{t('types.checking')}</SelectItem>
@@ -96,7 +99,9 @@ export function CreateAccountDialog() {
               <label className="text-sm font-medium">{t('fields.currency')}</label>
               <Select value={currency} onValueChange={(v) => setCurrency(v || 'EUR')}>
                 <SelectTrigger>
-                  <SelectValue />
+                  <SelectValue>
+                    {currency === 'EUR' ? 'EUR (€)' : 'USD ($)'}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="EUR">EUR (€)</SelectItem>

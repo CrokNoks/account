@@ -1,9 +1,11 @@
-import { Controller, Get, Post, Body, Param, UseGuards, Request, Query, Patch, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, UseGuards, Request, Query, Patch, Delete, Put } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiProperty } from '@nestjs/swagger';
 import { SupabaseAuthGuard } from '../../auth/supabase-auth.guard';
 import { GetPeriodDraftUseCase, PeriodDraft } from '../application/get-period-draft.use-case';
 import { CreatePeriodWithBudgetsUseCase } from '../application/create-period-with-budgets.use-case';
+import { UpdatePeriodBudgetsUseCase } from '../application/update-period-budgets.use-case';
 import { PeriodRepository } from '../domain/period.repository.interface';
+import { BudgetRepository } from '../../budgets/domain/budget.repository.interface';
 import { IsString, IsDateString, IsArray, ValidateNested, IsOptional, IsBoolean } from 'class-validator';
 import { Type } from 'class-transformer';
 
@@ -48,6 +50,14 @@ export class UpdatePeriodDto {
   @IsOptional() @IsBoolean() @ApiProperty({ required: false }) isActive?: boolean;
 }
 
+export class UpdateBudgetsDto {
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => BudgetInitDto)
+  @ApiProperty({ type: [BudgetInitDto] })
+  budgets: BudgetInitDto[];
+}
+
 @ApiTags('periods')
 @ApiBearerAuth()
 @UseGuards(SupabaseAuthGuard)
@@ -56,7 +66,9 @@ export class PeriodsController {
   constructor(
     private readonly getPeriodDraftUseCase: GetPeriodDraftUseCase,
     private readonly createPeriodWithBudgetsUseCase: CreatePeriodWithBudgetsUseCase,
+    private readonly updatePeriodBudgetsUseCase: UpdatePeriodBudgetsUseCase,
     private readonly periodRepository: PeriodRepository,
+    private readonly budgetRepository: BudgetRepository,
   ) {}
 
   @Get()
@@ -64,6 +76,47 @@ export class PeriodsController {
   @ApiResponse({ status: 200 })
   async findAll(@Param('accountId') accountId: string) {
     return this.periodRepository.findAllByAccount(accountId);
+  }
+
+  @Get('draft-init')
+  @ApiOperation({ summary: 'Get suggested dates and historical stats for a new period' })
+  @ApiResponse({ status: 200 })
+  async getDraft(@Param('accountId') accountId: string): Promise<PeriodDraft> {
+    return this.getPeriodDraftUseCase.execute(accountId);
+  }
+
+  @Get(':id/budgets')
+  @ApiOperation({ summary: 'Get budgets for a period' })
+  @ApiResponse({ status: 200 })
+  async getBudgets(@Param('id') id: string) {
+    const budgets = await this.budgetRepository.findAllByPeriod(id);
+    return budgets.map(b => ({
+      id: b.id,
+      categoryId: b.categoryId,
+      amountAllocated: b.amountAllocated.toString(),
+    }));
+  }
+
+  @Put(':id/budgets')
+  @ApiOperation({ summary: 'Update budgets for a period' })
+  @ApiResponse({ status: 200 })
+  async updateBudgets(
+    @Param('id') id: string,
+    @Body() dto: UpdateBudgetsDto
+  ) {
+    const result = await this.updatePeriodBudgetsUseCase.execute({
+      periodId: id,
+      budgets: dto.budgets.map(b => ({
+        categoryId: b.categoryId,
+        amountAllocated: BigInt(b.amountAllocated),
+      })),
+    });
+
+    return result.map(b => ({
+      id: b.id,
+      categoryId: b.categoryId,
+      amountAllocated: b.amountAllocated.toString(),
+    }));
   }
 
   @Get(':id')
@@ -101,13 +154,6 @@ export class PeriodsController {
   @ApiResponse({ status: 200 })
   async remove(@Param('accountId') accountId: string, @Param('id') id: string) {
     return this.periodRepository.delete(id);
-  }
-
-  @Get('draft-init')
-  @ApiOperation({ summary: 'Get suggested dates and historical stats for a new period' })
-  @ApiResponse({ status: 200 })
-  async getDraft(@Param('accountId') accountId: string): Promise<PeriodDraft> {
-    return this.getPeriodDraftUseCase.execute(accountId);
   }
 
   @Post()

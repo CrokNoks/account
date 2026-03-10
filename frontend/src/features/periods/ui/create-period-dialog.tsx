@@ -27,7 +27,7 @@ export function CreatePeriodDialog() {
   
   const [open, setOpen] = useState(false);
   
-  const { data: draft, isLoading: isLoadingDraft } = usePeriodDraft(activeAccountId);
+  const { data: draft, isLoading: isLoadingDraft, refetch } = usePeriodDraft(activeAccountId);
   const { mutate: createPeriod, isPending } = useCreatePeriod();
 
   const [startDate, setStartDate] = useState('');
@@ -36,6 +36,12 @@ export function CreatePeriodDialog() {
   const [injectRecurring, setInjectRecurring] = useState(true);
 
   // Sync internal state when draft changes OR when dialog opens
+  useEffect(() => {
+    if (open) {
+      refetch();
+    }
+  }, [open, refetch]);
+
   useEffect(() => {
     if (draft && open) {
       setStartDate(draft.suggestedStartDate.split('T')[0]);

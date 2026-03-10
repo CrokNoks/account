@@ -101,7 +101,7 @@ export function TransactionList({ periodId, compact = false }: { periodId?: stri
   return (
     <div className="space-y-4">
       <div className="flex justify-end gap-2">
-        <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as any)}>
+        <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as 'all' | 'reconciled' | 'not_reconciled')}>
           <SelectTrigger className="w-[180px]">
             <SelectValue>
               {statusFilter === 'all' ? t('status_all') : statusFilter === 'reconciled' ? t('status_reconciled') : t('status_not_reconciled')}
@@ -140,15 +140,15 @@ export function TransactionList({ periodId, compact = false }: { periodId?: stri
       </div>
 
       <div className="border rounded-md overflow-hidden" data-tour="transaction-list">
-        <Table className="w-full">
+        <Table className="w-full table-fixed">
           <TableHeader>
             <TableRow>
-              <TableHead className="w-[60px] text-center">Status</TableHead>
-              <TableHead className="w-[120px]">{t('fields.date')}</TableHead>
-              <TableHead>{t('fields.description')}</TableHead>
-              <TableHead className="w-[120px]">{t('fields.category')}</TableHead>
+              <TableHead className="w-[50px] text-center">Status</TableHead>
+              <TableHead className="w-[110px]">{t('fields.date')}</TableHead>
+              <TableHead className="w-auto">{t('fields.description')}</TableHead>
+              <TableHead className="w-[140px]">{t('fields.category')}</TableHead>
               <TableHead className="w-[100px] text-right">{t('fields.amount')}</TableHead>
-              <TableHead className="w-[100px]"></TableHead>
+              <TableHead className={cn("w-[100px]", compact && "w-[50px]")}></TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
