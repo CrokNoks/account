@@ -170,9 +170,12 @@ export function CreateTransactionDrawer() {
     <Sheet open={isCreateTransactionDrawerOpen} onOpenChange={setCreateTransactionDrawerOpen}>
       <SheetTrigger 
         render={
-          <Button className="gap-2">
+          <Button className="gap-2 px-4">
             <Plus className="w-4 h-4" />
-            {t('add_transaction')}
+            <span>{t('add_transaction')}</span>
+            <kbd className="pointer-events-none inline-flex h-5 select-none items-center gap-1 rounded border bg-primary-foreground/20 px-1.5 font-mono text-[10px] font-medium text-primary-foreground opacity-100 ml-1">
+              Enter
+            </kbd>
           </Button>
         }
       />
