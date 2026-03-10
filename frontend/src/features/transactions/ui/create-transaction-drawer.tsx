@@ -162,9 +162,16 @@ export function CreateTransactionDrawer() {
       e.preventDefault();
       handleSubmit(!e.shiftKey);
     }
+
+    if (e.key === 'Tab' && e.shiftKey) {
+      e.preventDefault();
+      setMode(prev => prev === 'standard' ? 'transfer' : 'standard');
+    }
   };
 
   const availableDestinations = accounts?.filter(a => a.id !== activeAccountId) || [];
+
+  const isFormValid = activeAccountId && description && amount && (mode === 'standard' || (mode === 'transfer' && destinationAccountId));
 
   return (
     <Sheet open={isCreateTransactionDrawerOpen} onOpenChange={setCreateTransactionDrawerOpen}>
@@ -180,7 +187,16 @@ export function CreateTransactionDrawer() {
         }
       />
       <SheetContent side="right" className="w-[400px] sm:w-[540px] flex flex-col gap-0 p-0" onKeyDown={handleKeyDown}>
-        <SheetHeader className="p-6 border-b">
+        <SheetHeader className="p-6 border-b space-y-4">
+          <div className="flex items-center justify-between">
+            <SheetTitle>{mode === 'standard' ? t('new_transaction_title') : 'Nouveau transfert'}</SheetTitle>
+            <div className="flex items-center gap-1 text-[10px] text-muted-foreground font-medium bg-muted/50 px-1.5 py-0.5 rounded border">
+              <span className="opacity-70 mr-0.5 text-[9px] uppercase tracking-wider">Mode:</span>
+              <kbd className="font-mono">⇧</kbd>
+              <span>+</span>
+              <kbd className="font-mono">Tab</kbd>
+            </div>
+          </div>
           <Tabs value={mode} onValueChange={(v) => setMode(v as any)} className="w-full">
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="standard" className="gap-2">
@@ -353,7 +369,7 @@ export function CreateTransactionDrawer() {
             variant="outline"
             className="w-full h-11 text-base flex justify-between px-4" 
             onClick={() => handleSubmit(true)}
-            disabled={isPending || (mode === 'transfer' && !destinationAccountId)}
+            disabled={isPending || !isFormValid}
           >
             <span>{isPending ? tc('loading') : t('save_another')}</span>
             <kbd className="pointer-events-none inline-flex h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground opacity-100">
@@ -363,7 +379,7 @@ export function CreateTransactionDrawer() {
           <Button 
             className="w-full h-11 text-base font-semibold flex justify-between px-4" 
             onClick={() => handleSubmit(false)} 
-            disabled={isPending || (mode === 'transfer' && !destinationAccountId)}
+            disabled={isPending || !isFormValid}
           >
             <span>{isPending ? tc('loading') : tc('save')}</span>
             <kbd className="pointer-events-none inline-flex h-5 select-none items-center gap-1 rounded border bg-primary-foreground/20 px-1.5 font-mono text-[10px] font-medium text-primary-foreground opacity-100">
