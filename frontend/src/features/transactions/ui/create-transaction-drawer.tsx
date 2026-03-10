@@ -128,6 +128,9 @@ export function CreateTransactionDrawer() {
           toast.success(`Transfer "${description}" created`);
           resetForm();
           if (!addAnother) setCreateTransactionDrawerOpen(false);
+          else {
+            setTimeout(() => dateInputRef.current?.focus(), 0);
+          }
         }
       });
     } else {
@@ -144,6 +147,9 @@ export function CreateTransactionDrawer() {
           toast.success(`Transaction "${description}" added`);
           resetForm();
           if (!addAnother) setCreateTransactionDrawerOpen(false);
+          else {
+            setTimeout(() => dateInputRef.current?.focus(), 0);
+          }
         }
       });
     }
