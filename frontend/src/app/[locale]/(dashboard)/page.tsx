@@ -7,9 +7,11 @@ import { CreateTransactionDrawer } from "@/features/transactions/ui/create-trans
 import { TransactionList } from "@/features/transactions/ui/transaction-list";
 import { useAccountStore } from "@/features/accounts/model/use-account-store";
 import { usePeriods } from "@/features/budgets/api/use-periods";
+import { useAccounts } from "@/features/accounts/api/use-accounts";
 import { useUiStore } from "@/shared/model/use-ui-store";
 import { useTranslations } from 'next-intl';
 import { format } from 'date-fns';
+import { useRouter } from '@/i18n/routing';
 import { 
   Select, 
   SelectContent, 
@@ -17,15 +19,25 @@ import {
   SelectTrigger, 
   SelectValue 
 } from "@/components/ui/select";
+import { HelpButton } from "@/shared/ui/tour/HelpButton";
 import { useEffect } from 'react';
 
 export default function Home() {
   const t = useTranslations('Dashboard');
   const tt = useTranslations('Transactions');
+  const router = useRouter();
   const { activeAccountId, activePeriodId, setActivePeriodId } = useAccountStore();
-  const { isCreateTransactionDrawerOpen, setCreateTransactionDrawerOpen } = useUiStore();
+  const { isCreateTransactionDrawerOpen, setCreateTransactionDrawerOpen, startTour, completedTours } = useUiStore();
+  const { data: accounts, isLoading: isLoadingAccounts } = useAccounts();
   const { data: periods } = usePeriods(activeAccountId);
   
+  // Redirect to accounts if none exist
+  useEffect(() => {
+    if (!isLoadingAccounts && (!accounts || accounts.length === 0)) {
+      router.push('/accounts');
+    }
+  }, [accounts, isLoadingAccounts, router]);
+
   // Auto-select active period on first load if nothing selected
   useEffect(() => {
     if (periods && periods.length > 0 && !activePeriodId) {
@@ -59,6 +71,17 @@ export default function Home() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isCreateTransactionDrawerOpen, setCreateTransactionDrawerOpen]);
 
+  // Auto-start tour if dashboard tour not completed AND account tour IS completed
+  useEffect(() => {
+    if (!completedTours['dashboard'] && completedTours['account']) {
+      // Small delay to ensure everything is rendered
+      const timer = setTimeout(() => {
+        startTour('dashboard');
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [completedTours, startTour]);
+
   const currentPeriod = periods?.find(p => p.id === activePeriodId);
 
   return (
@@ -67,6 +90,8 @@ export default function Home() {
         <div className="flex flex-col gap-2">
           <div className="flex items-center gap-4">
             <h2 className="text-3xl font-bold tracking-tight">{t('title')}</h2>
+            
+            <HelpButton tour="dashboard" className="h-8 w-8" />
             
             <Select value={activePeriodId || ""} onValueChange={setActivePeriodId}>
               <SelectTrigger className="h-8 rounded-full bg-primary/10 text-primary border-primary/20 px-4 hover:bg-primary/20 transition-colors">
@@ -90,7 +115,9 @@ export default function Home() {
             {t('welcome')}
           </p>
         </div>
-        <CreateTransactionDrawer />
+        <div data-tour="add-transaction">
+          <CreateTransactionDrawer />
+        </div>
       </div>
       
       <DashboardStats />
@@ -98,12 +125,12 @@ export default function Home() {
       <AIInsightsCard accountId={activeAccountId} periodId={activePeriodId} />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-4" data-tour="budget-breakdown">
           <h2 className="text-2xl font-bold tracking-tight">{t('breakdown')}</h2>
           <BudgetBreakdown />
         </div>
         
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-4" data-tour="transaction-list">
           <h2 className="text-2xl font-bold tracking-tight">{tt('title')}</h2>
           <TransactionList periodId={activePeriodId || undefined} compact />
         </div>

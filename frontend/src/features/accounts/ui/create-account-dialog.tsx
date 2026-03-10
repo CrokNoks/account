@@ -69,7 +69,7 @@ export function CreateAccountDialog() {
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 py-4">
-          <div className="space-y-2">
+          <div className="space-y-2" data-tour="account-name">
             <label className="text-sm font-medium">{t('fields.name')}</label>
             <Input 
               placeholder="Checking Account, Savings..." 
@@ -79,7 +79,7 @@ export function CreateAccountDialog() {
             />
           </div>
           <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
+            <div className="space-y-2" data-tour="account-type">
               <label className="text-sm font-medium">{t('fields.type')}</label>
               <Select value={type} onValueChange={(v) => setType(v || 'checking')}>
                 <SelectTrigger>
@@ -105,7 +105,7 @@ export function CreateAccountDialog() {
               </Select>
             </div>
           </div>
-          <div className="space-y-2">
+          <div className="space-y-2" data-tour="account-balance">
             <label className="text-sm font-medium">{t('fields.balance')}</label>
             <Input 
               type="number" 

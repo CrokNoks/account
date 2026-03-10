@@ -45,7 +45,7 @@ export function Header() {
   };
 
   return (
-    <header className="flex h-14 items-center gap-4 border-b bg-muted/40 px-6 lg:h-[60px] mb-8 -mt-8 -mx-8">
+    <header className="sticky top-0 z-10 flex h-14 items-center gap-4 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-6 lg:h-[60px] mb-8 -mx-8">
       <div className="flex-1">
         <h1 className="text-lg font-semibold md:text-xl">{label}</h1>
       </div>

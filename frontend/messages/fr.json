@@ -168,6 +168,37 @@
     "error": "Une erreur est survenue",
     "success": "Opération réussie",
     "edit": "Modifier",
-    "delete": "Supprimer"
+    "delete": "Supprimer",
+    "next": "Suivant",
+    "back": "Précédent",
+    "skip": "Passer",
+    "finish": "Terminer",
+    "close": "Fermer"
+  },
+  "Tour": {
+    "dashboard": {
+      "welcome": "Bienvenue sur Account V2 ! Laissez-vous guider pour découvrir les fonctionnalités principales.",
+      "stats": "Retrouvez ici vos soldes (en banque, à venir et prévisionnel) pour la période en cours.",
+      "evolution": "Suivez l'évolution de votre solde et comparez vos revenus et dépenses mois après mois.",
+      "breakdown": "Visualisez en un coup d'œil la répartition de vos dépenses par catégorie par rapport à votre budget.",
+      "transactions": "Consultez ici vos dernières opérations. Les couleurs indiquent si vous êtes dans le vert ou non.",
+      "add_btn": "Utilisez ce bouton (ou la touche Entrée) pour ajouter rapidement une nouvelle opération."
+    },
+    "account": {
+      "intro": "La configuration d'un compte se fait en plusieurs étapes pour assurer une gestion précise.",
+      "name": "Donnez un nom clair à votre compte (ex: Courant, Livret A).",
+      "balance": "Saisissez le solde actuel de votre compte en banque pour démarrer sur de bonnes bases.",
+      "type": "Choisissez le type de compte pour adapter les calculs et l'affichage.",
+      "categories": "Configurez vos catégories de dépenses et revenus pour organiser vos transactions.",
+      "recurring": "Programmez vos virements et prélèvements automatiques ici.",
+      "periods": "Enfin, créez vos périodes budgétaires (mois par mois) pour suivre vos objectifs."
+    },
+    "transactions": {
+      "date": "La date de l'opération. Par défaut, c'est aujourd'hui.",
+      "description": "Indiquez le libellé. Notre IA vous suggérera une catégorie automatiquement !",
+      "amount": "Le montant. Utilisez un signe moins (-) pour les dépenses.",
+      "pending": "Cochez ceci pour les pré-autorisations ou paiements à venir. Ils ne compteront pas immédiatement dans votre solde pointé.",
+      "shortcuts": "Utilisez Maj+Tab pour basculer entre transaction et transfert, et Entrée pour valider."
+    }
   }
 }

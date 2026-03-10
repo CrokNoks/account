@@ -94,6 +94,7 @@ export function Sidebar() {
               key={item.href}
               // eslint-disable-next-line @typescript-eslint/no-explicit-any
               href={item.href as any}
+              data-tour={item.labelKey === 'categories' ? 'nav-categories' : item.labelKey === 'recurring' ? 'nav-recurring' : item.labelKey === 'budgets' ? 'nav-budgets' : undefined}
               className={cn(
                 "group flex items-center gap-3 px-3 py-2 rounded-lg transition-colors",
                 isActive 

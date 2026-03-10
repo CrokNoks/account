@@ -210,7 +210,7 @@ export function CreateTransactionDrawer() {
         </SheetHeader>
         
         <div className="flex-1 overflow-y-auto p-6 space-y-6">
-          <div className="space-y-2">
+          <div className="space-y-2" data-tour="tx-date">
             <label className="text-sm font-medium">{t('fields.date')}</label>
             <Input 
               ref={dateInputRef}
@@ -222,7 +222,7 @@ export function CreateTransactionDrawer() {
             />
           </div>
 
-          <div className="space-y-2">
+          <div className="space-y-2" data-tour="tx-description">
             <label className="text-sm font-medium">{t('fields.description')}</label>
             <Input 
               placeholder={mode === 'transfer' ? "Virement épargne, Loyer partagé..." : "Rent, Groceries, Salary..."} 
@@ -327,7 +327,7 @@ export function CreateTransactionDrawer() {
             </div>
           )}
 
-          <div className="space-y-2">
+          <div className="space-y-2" data-tour="tx-amount">
             <label className="text-sm font-medium">{t('fields.amount')}</label>
             <div className="relative">
               <Input 
@@ -350,7 +350,7 @@ export function CreateTransactionDrawer() {
           </div>
 
           {mode === 'standard' && (
-            <div className="flex items-center gap-2 p-3 rounded-lg border bg-muted/30">
+            <div className="flex items-center gap-2 p-3 rounded-lg border bg-muted/30" data-tour="tx-pending">
               <Checkbox 
                 id="pending-field" 
                 checked={pending} 
@@ -364,7 +364,7 @@ export function CreateTransactionDrawer() {
           )}
         </div>
 
-        <SheetFooter className="p-6 border-t bg-muted/20 flex-col gap-3 sm:flex-col">
+        <SheetFooter className="p-6 border-t bg-muted/20 flex-col gap-3 sm:flex-col" data-tour="tx-shortcuts">
           <Button 
             variant="outline"
             className="w-full h-11 text-base flex justify-between px-4" 

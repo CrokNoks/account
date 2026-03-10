@@ -144,7 +144,7 @@ export function EvolutionChart() {
   });
 
   return (
-    <div className="space-y-8 pb-10">
+    <div className="space-y-8 pb-10" data-tour="evolution">
       {/* Top row: Balance and Income/Expenses */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         <Card>

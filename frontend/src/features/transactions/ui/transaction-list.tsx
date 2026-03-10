@@ -139,7 +139,7 @@ export function TransactionList({ periodId, compact = false }: { periodId?: stri
       )}
       </div>
 
-      <div className="border rounded-md overflow-hidden">
+      <div className="border rounded-md overflow-hidden" data-tour="transaction-list">
         <Table className="w-full">
           <TableHeader>
             <TableRow>

@@ -168,6 +168,37 @@
     "error": "An error occurred",
     "success": "Success",
     "edit": "Edit",
-    "delete": "Delete"
+    "delete": "Delete",
+    "next": "Next",
+    "back": "Back",
+    "skip": "Skip",
+    "finish": "Finish",
+    "close": "Close"
+  },
+  "Tour": {
+    "dashboard": {
+      "welcome": "Welcome to Account V2! Let us guide you through the main features.",
+      "stats": "Find your balances here (bank, upcoming, and forecast) for the current period.",
+      "evolution": "Track your balance evolution and compare income and expenses month after month.",
+      "breakdown": "Visualize at a glance your spending distribution by category compared to your budget.",
+      "transactions": "Check your latest operations here. Colors indicate if you're on track.",
+      "add_btn": "Use this button (or the Enter key) to quickly add a new operation."
+    },
+    "account": {
+      "intro": "Setting up an account involves several steps to ensure accurate management.",
+      "name": "Give your account a clear name (e.g., Checking, Savings).",
+      "balance": "Enter your current bank balance to start on the right foot.",
+      "type": "Choose the account type to adapt calculations and display.",
+      "categories": "Set up your expense and income categories to organize your transactions.",
+      "recurring": "Schedule your automatic transfers and withdrawals here.",
+      "periods": "Finally, create your budget periods (month by month) to track your goals."
+    },
+    "transactions": {
+      "date": "Operation date. Defaults to today.",
+      "description": "Enter the description. Our AI will suggest a category automatically!",
+      "amount": "The amount. Use a minus sign (-) for expenses.",
+      "pending": "Check this for pre-authorizations or upcoming payments. They won't count immediately in your reconciled balance.",
+      "shortcuts": "Use Shift+Tab to toggle between transaction and transfer, and Enter to save."
+    }
   }
 }
