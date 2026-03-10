@@ -11,6 +11,7 @@ export interface CreateTransactionCommand {
   paymentMethod?: string | null;
   notes?: string | null;
   metadata?: Record<string, any>;
+  pending?: boolean;
 }
 
 export function useCreateTransaction() {
