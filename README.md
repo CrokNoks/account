@@ -4,7 +4,7 @@ A modern, robust, and full-featured personal finance management application. Bui
 
 ![Version](https://img.shields.io/badge/version-2.6.0-blue.svg)
 ![Status](https://img.shields.io/badge/status-active-success.svg)
-![License](https://img.shields.io/badge/license-UNLICENSED-red.svg)
+![License](https://img.shields.io/badge/license-MIT-blue.svg)
 ![Next.js](https://img.shields.io/badge/Next.js-15-black.svg?style=flat&logo=next.js)
 ![NestJS](https://img.shields.io/badge/NestJS-11-E0234E.svg?style=flat&logo=nestjs)
 ![Supabase](https://img.shields.io/badge/Supabase-PostgreSQL-3ECF8E.svg?style=flat&logo=supabase)
@@ -116,4 +116,4 @@ npm run deploy:backend
 
 ## 📄 License
 
-This project is currently UNLICENSED.
+Distributed under the MIT License. See `LICENSE` for more information.
