@@ -105,7 +105,7 @@ export default function Home() {
         
         <div className="flex flex-col gap-4">
           <h2 className="text-2xl font-bold tracking-tight">{tt('title')}</h2>
-          <TransactionList periodId={activePeriodId || undefined} />
+          <TransactionList periodId={activePeriodId || undefined} compact />
         </div>
       </div>
     </div>
