@@ -1,101 +1,119 @@
-# 💰 My Accounts - Personal Finance Manager
+# 💰 Account V2 - Personal Finance Manager
 
-A modern, fast, and mobile-first application to track your expenses and income, built with **React Admin** and **Supabase**.
+A modern, robust, and full-featured personal finance management application. Built with a clean architecture using **Next.js 15**, **NestJS 11**, and **Supabase**.
 
-![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)
+![Version](https://img.shields.io/badge/version-2.6.0-blue.svg)
 ![Status](https://img.shields.io/badge/status-active-success.svg)
-![License](https://img.shields.io/badge/license-MIT-blue.svg)
-![React](https://img.shields.io/badge/React-18-61DAFB.svg?style=flat&logo=react&logoColor=white)
-![TypeScript](https://img.shields.io/badge/TypeScript-5.0-3178C6.svg?style=flat&logo=typescript&logoColor=white)
-![Vite](https://img.shields.io/badge/Vite-5.0-646CFF.svg?style=flat&logo=vite&logoColor=white)
-![Supabase](https://img.shields.io/badge/Supabase-PostgreSQL-3ECF8E.svg?style=flat&logo=supabase&logoColor=white)
-![Material UI](https://img.shields.io/badge/Material--UI-5.15-007FFF.svg?style=flat&logo=mui&logoColor=white)
-![PWA](https://img.shields.io/badge/PWA-Ready-purple.svg?style=flat&logo=pwa&logoColor=white)
+![License](https://img.shields.io/badge/license-UNLICENSED-red.svg)
+![Next.js](https://img.shields.io/badge/Next.js-15-black.svg?style=flat&logo=next.js)
+![NestJS](https://img.shields.io/badge/NestJS-11-E0234E.svg?style=flat&logo=nestjs)
+![Supabase](https://img.shields.io/badge/Supabase-PostgreSQL-3ECF8E.svg?style=flat&logo=supabase)
+![TailwindCSS](https://img.shields.io/badge/TailwindCSS-4-06B6D4.svg?style=flat&logo=tailwind-css)
 
-## ✨ Features
+## ✨ Key Features
 
-- **📱 Mobile First & PWA**: Optimized interface for mobile, installable as a native application.
-- **📊 Monthly Reports**: Automatic report generation with balance tracking (initial, final, reconciled).
-- **📈 Visualization**: Charts showing expense and income evolution by category.
-- **🌗 Dark Mode**: Full support for light and dark themes.
-- **📥 CSV Import**: Easy import of your bank statements.
-- **📸 OCR Receipt Scanner**: Scan and extract data from receipts automatically.
-- **🏷️ Categorization**: Flexible category management with budgets and colors.
-- **✅ Reconciliation**: Bank reconciliation system (operation matching).
-- **🔒 Secure**: Authentication and Row Level Security (RLS) via Supabase.
+- **👥 Multi-Account Sharing**: Create multiple bank accounts and share them with other users with specific permissions (Read/Write).
+- **📅 Period-Based Budgeting**: Organize your finances into custom financial periods with dedicated budgets per category.
+- **🔄 Recurring Transactions**: Automate your monthly expenses and income. Injected as "Pending" at the start of each period for verification.
+- **⏳ Pre-authorization & Pending Status**: Track transactions that are not yet cleared at the bank (e.g., gas station pre-auths, upcoming rent).
+- **✅ Bank Reconciliation**: Easily match your app transactions with your bank statement (pointing system).
+- **🤖 AI-Powered Categorization**: Automatic category suggestion based on transaction descriptions using natural language processing.
+- **📊 Comprehensive Reporting**:
+  - **Evolution Charts**: Track your balance and cash flow over time.
+  - **Budget Breakdown**: Visualize your spending vs. budget in real-time.
+  - **Forecasts**: Predictive balance based on planned expenses and income.
+- **⌨️ Power User Shortcuts**: Navigate the entire app lightning-fast with F2-F10 keys and context-aware shortcuts (Enter to add, etc.).
+- **🌍 Internationalization**: Full support for English and French.
 
-## 🎮 Demo
+## 🚀 Tech Stack
 
-A live demo is available at: [https://account-c6a3f.web.app](https://account-c6a3f.web.app)
+### Frontend
+- **Framework**: Next.js 15 (App Router)
+- **State Management**: Zustand
+- **Data Fetching**: TanStack Query (React Query) v5
+- **Styling**: Tailwind CSS 4 + Shadcn/UI (Radix UI)
+- **Internationalization**: next-intl
+- **Icons**: Lucide React
 
-**Credentials:**
-- **Email:** `demo@mydomain.tld`
-- **Password:** `DemoPassword1!`
+### Backend
+- **Framework**: NestJS 11
+- **Deployment**: Firebase Functions
+- **Auth & Database**: Supabase (PostgreSQL)
+- **Validation**: Class-validator & Class-transformer
 
-## 🚀 Technologies
+## 🛠️ Project Structure
 
-- **Frontend**: React, TypeScript, React Admin, Material UI, Recharts, Tesseract.js
-- **Backend**: Supabase (PostgreSQL, Auth, Edge Functions)
-- **Build**: Vite, Vite PWA
+```text
+├── frontend/             # Next.js web application
+├── functions/            # NestJS API (Firebase Functions)
+├── supabase/             # Database migrations and configuration
+├── scripts/              # Release and utility scripts
+└── README.md             # This file
+```
 
-## 🛠️ Installation
+## 📦 Getting Started
 
-### 1. Clone the project
+### 1. Prerequisites
+- Node.js 20+
+- Firebase CLI (`npm install -g firebase-tools`)
+- A Supabase project
 
+### 2. Installation
 ```bash
-git clone https://github.com/CrokNoks/account.git
-cd account
+# Install root dependencies
 npm install
+
+# Install frontend dependencies
+cd frontend && npm install
+
+# Install functions dependencies
+cd ../functions && npm install
 ```
 
-### 2. Configure Supabase
+### 3. Environment Setup
+Create `.env` files in both `frontend/` and `functions/` based on their respective `.env.example` files.
 
-1. Create a project on [Supabase](https://supabase.com).
-2. Run the SQL script provided in `supabase/schema.sql` via the Supabase SQL editor to create tables and security policies.
-
-### 3. Environment Variables
-
-Create a `.env` file at the root of the project by copying `.env.example`:
-
-```bash
-cp .env.example .env
-```
-
-Fill in the variables with your Supabase credentials:
-
+**Frontend (.env.local):**
 ```env
-VITE_SUPABASE_URL=your_supabase_url
-VITE_SUPABASE_ANON_KEY=your_anon_public_key
+NEXT_PUBLIC_SUPABASE_URL=your_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_key
 ```
 
-### 4. Start the application
+**Functions (.env):**
+```env
+SUPABASE_URL=your_url
+SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
+```
+
+### 4. Database Setup
+Apply migrations to your Supabase project:
+```bash
+# Using Supabase CLI
+supabase db push
+```
+
+### 5. Running Locally
+```bash
+# Start frontend (from /frontend)
+npm run dev
+
+# Start backend (from /functions)
+npm run start:dev
+```
+
+## 🚢 Deployment
+
+The project is configured for deployment via Firebase.
 
 ```bash
-npm run dev
+# Deploy everything
+npm run deploy:all
+
+# Or deploy specifically
+npm run deploy:frontend
+npm run deploy:backend
 ```
-
-The application will be accessible at `http://localhost:5173`.
-
-## 📱 PWA (Progressive Web App)
-
-The application is configured as a PWA. Once deployed (or locally with HTTPS), you can install it on your phone via the browser ("Add to Home Screen").
-
-## 📅 Roadmap
-
-- [ ] Improve category display
-- [x] OCR for receipts
-- [ ] PDF generation with customizable information
-
-## 🤝 Contributing
-
-Contributions are welcome! Feel free to open an issue or a Pull Request.
-
-1. Fork the project
-2. Create a branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
 
 ## 📄 License
 
-Distributed under the MIT license.
+This project is currently UNLICENSED.
