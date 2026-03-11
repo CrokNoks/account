@@ -122,7 +122,9 @@ export default function Home() {
       
       <DashboardStats />
 
-      <AIInsightsCard accountId={activeAccountId} periodId={activePeriodId} />
+      {currentPeriod?.isActive && (
+        <AIInsightsCard accountId={activeAccountId} periodId={activePeriodId} />
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         <div className="flex flex-col gap-4" data-tour="budget-breakdown">
