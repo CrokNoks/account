@@ -237,90 +237,92 @@ export function EvolutionChart() {
       </div>
 
       {/* Full width: Category Breakdown with Sidebar */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Répartition des dépenses par catégorie</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-col md:flex-row gap-8">
-            {/* Category Selector Sidebar */}
-            <div className="w-full md:w-64 space-y-4">
-              <div className="flex items-center justify-between border-b pb-2">
-                <span className="text-sm font-semibold">Filtres</span>
-                <button 
-                  onClick={toggleAll}
-                  className="text-[10px] text-primary hover:underline font-medium"
-                >
-                  {selectedCategoryIds.size === expenseCategories.length ? 'Tout désélectionner' : 'Tout sélectionner'}
-                </button>
-              </div>
-              <div className="space-y-2 max-h-[400px] overflow-y-auto pr-2">
-                {sortedCategories.map((cat: any) => (
-                  <div key={cat.id} className="flex items-center space-x-2">
-                    <Checkbox 
-                      id={`cat-${cat.id}`} 
-                      checked={selectedCategoryIds.has(cat.id)}
-                      onCheckedChange={() => toggleCategory(cat.id)}
-                    />
-                    <label 
-                      htmlFor={`cat-${cat.id}`}
-                      className="text-xs font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 flex items-center justify-between gap-2 cursor-pointer truncate flex-1"
-                    >
-                      <div className="flex items-center gap-2 truncate">
-                        <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: cat.color }} />
-                        <span className="truncate">{cat.name}</span>
-                      </div>
-                      <span className="text-[9px] text-muted-foreground shrink-0 font-mono">
-                        ±{formatCurrency(cat.variance.toString())}
-                      </span>
-                    </label>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Chart */}
-            <div className="flex-1 h-[500px] min-h-[500px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={chartData} margin={{ top: 10, right: 30, left: 0, bottom: 40 }}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--muted))" />
-                  <XAxis 
-                    dataKey="name" 
-                    stroke="currentColor" 
-                    className="text-muted-foreground"
-                    fontSize={12} 
-                    tickLine={false} 
-                    axisLine={false}
-                    dy={10}
-                  />
-                  <YAxis 
-                    stroke="currentColor" 
-                    className="text-muted-foreground"
-                    fontSize={12} 
-                    tickLine={false} 
-                    axisLine={false}
-                    tickFormatter={(value) => `${value}€`}
-                    dx={-10}
-                  />
-                  <Tooltip content={<CustomTooltip />} />
-                  <Legend layout="horizontal" verticalAlign="bottom" align="center" iconType="circle" wrapperStyle={{ paddingTop: '20px' }} />
-                  {expenseCategories
-                    .filter(cat => selectedCategoryIds.has(cat.id))
-                    .map((cat) => (
-                      <Bar 
-                        key={cat.id} 
-                        dataKey={cat.name} 
-                        stackId="a" 
-                        fill={cat.color} 
+      <div className="hidden lg:block">
+        <Card>
+          <CardHeader>
+            <CardTitle>Répartition des dépenses par catégorie</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-col md:flex-row gap-8">
+              {/* Category Selector Sidebar */}
+              <div className="w-full md:w-64 space-y-4">
+                <div className="flex items-center justify-between border-b pb-2">
+                  <span className="text-sm font-semibold">Filtres</span>
+                  <button 
+                    onClick={toggleAll}
+                    className="text-[10px] text-primary hover:underline font-medium"
+                  >
+                    {selectedCategoryIds.size === expenseCategories.length ? 'Tout désélectionner' : 'Tout sélectionner'}
+                  </button>
+                </div>
+                <div className="space-y-2 max-h-[400px] overflow-y-auto pr-2">
+                  {sortedCategories.map((cat: any) => (
+                    <div key={cat.id} className="flex items-center space-x-2">
+                      <Checkbox 
+                        id={`cat-${cat.id}`} 
+                        checked={selectedCategoryIds.has(cat.id)}
+                        onCheckedChange={() => toggleCategory(cat.id)}
                       />
-                    ))
-                  }
-                </BarChart>
-              </ResponsiveContainer>
+                      <label 
+                        htmlFor={`cat-${cat.id}`}
+                        className="text-xs font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 flex items-center justify-between gap-2 cursor-pointer truncate flex-1"
+                      >
+                        <div className="flex items-center gap-2 truncate">
+                          <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: cat.color }} />
+                          <span className="truncate">{cat.name}</span>
+                        </div>
+                        <span className="text-[9px] text-muted-foreground shrink-0 font-mono">
+                          ±{formatCurrency(cat.variance.toString())}
+                        </span>
+                      </label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Chart */}
+              <div className="flex-1 h-[500px] min-h-[500px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={chartData} margin={{ top: 10, right: 30, left: 0, bottom: 40 }}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--muted))" />
+                    <XAxis 
+                      dataKey="name" 
+                      stroke="currentColor" 
+                      className="text-muted-foreground"
+                      fontSize={12} 
+                      tickLine={false} 
+                      axisLine={false}
+                      dy={10}
+                    />
+                    <YAxis 
+                      stroke="currentColor" 
+                      className="text-muted-foreground"
+                      fontSize={12} 
+                      tickLine={false} 
+                      axisLine={false}
+                      tickFormatter={(value) => `${value}€`}
+                      dx={-10}
+                    />
+                    <Tooltip content={<CustomTooltip />} />
+                    <Legend layout="horizontal" verticalAlign="bottom" align="center" iconType="circle" wrapperStyle={{ paddingTop: '20px' }} />
+                    {expenseCategories
+                      .filter(cat => selectedCategoryIds.has(cat.id))
+                      .map((cat) => (
+                        <Bar 
+                          key={cat.id} 
+                          dataKey={cat.name} 
+                          stackId="a" 
+                          fill={cat.color} 
+                        />
+                      ))
+                    }
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
             </div>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }
