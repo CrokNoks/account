@@ -2,8 +2,10 @@
 
 import { useAIInsights } from '../api/use-ai-insights';
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Sparkles, Loader2 } from 'lucide-react';
+import { Button } from "@/components/ui/button";
+import { Sparkles, Loader2, RefreshCw } from 'lucide-react';
 import { useLocale } from 'next-intl';
+import ReactMarkdown from 'react-markdown';
 
 interface AIInsightsCardProps {
   accountId: string | null;
@@ -12,17 +14,28 @@ interface AIInsightsCardProps {
 
 export function AIInsightsCard({ accountId, periodId }: AIInsightsCardProps) {
   const locale = useLocale();
-  const { data: insights, isLoading, isError } = useAIInsights(accountId, periodId, locale);
+  const { data: insights, isLoading, isError, refetch, isFetching } = useAIInsights(accountId, periodId, locale);
 
   if (!accountId || !periodId) return null;
 
   return (
-    <Card className="border-primary/20 bg-primary/5">
-      <CardHeader className="pb-2">
+    <Card className="border-primary/20 bg-primary/5 relative group">
+      <CardHeader className="pb-2 flex flex-row items-center justify-between space-y-0">
         <CardTitle className="text-sm font-semibold flex items-center gap-2">
           <Sparkles className="w-4 h-4 text-primary" />
           Analyse IA
         </CardTitle>
+        {!isLoading && (
+          <Button 
+            variant="ghost" 
+            size="icon-xs" 
+            className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+            onClick={() => refetch()}
+            disabled={isFetching}
+          >
+            <RefreshCw className={`w-3 h-3 ${isFetching ? 'animate-spin' : ''}`} />
+          </Button>
+        )}
       </CardHeader>
       <CardContent>
         {isLoading ? (
@@ -35,8 +48,8 @@ export function AIInsightsCard({ accountId, periodId }: AIInsightsCardProps) {
             Impossible de charger les analyses IA pour le moment.
           </p>
         ) : (
-          <div className="text-sm space-y-2 leading-relaxed whitespace-pre-line">
-            {insights}
+          <div className="prose prose-sm dark:prose-invert max-w-none prose-headings:font-semibold prose-p:leading-relaxed prose-li:my-0">
+            <ReactMarkdown>{insights}</ReactMarkdown>
           </div>
         )}
       </CardContent>
