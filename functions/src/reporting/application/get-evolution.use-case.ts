@@ -25,11 +25,16 @@ export class GetEvolutionUseCase {
     private readonly categoryRepository: CategoryRepository,
   ) {}
 
-  async execute(accountId: string): Promise<EvolutionDataPoint[]> {
+  async execute(accountId: string, onlyClosed: boolean = false): Promise<EvolutionDataPoint[]> {
     const account = await this.accountRepository.findById(accountId);
     if (!account) throw new Error('Account not found');
 
-    const periods = await this.periodRepository.findAllByAccount(accountId);
+    let periods = await this.periodRepository.findAllByAccount(accountId);
+    
+    if (onlyClosed) {
+      periods = periods.filter(p => !p.isActive);
+    }
+
     // Sort periods chronologically
     periods.sort((a, b) => a.startDate.getTime() - b.startDate.getTime());
 

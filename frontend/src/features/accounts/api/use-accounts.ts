@@ -5,6 +5,7 @@ export interface Account {
   id: string;
   name: string;
   type: string;
+  description: string | null;
   currency: string;
   initialBalance: string;
   balance?: string;

@@ -13,6 +13,11 @@ export class CreateAccountDto {
   @IsString()
   name: string;
 
+  @ApiProperty({ description: 'The description of the account purpose', example: 'Main checking account for daily expenses', required: false })
+  @IsOptional()
+  @IsString()
+  description?: string;
+
   @ApiProperty({ description: 'The initial balance in cents', example: '1000', required: false })
   @IsOptional()
   @IsNumberString()
@@ -21,6 +26,7 @@ export class CreateAccountDto {
 
 export class UpdateAccountDto {
   @ApiProperty({ required: false }) @IsOptional() @IsString() name?: string;
+  @ApiProperty({ required: false }) @IsOptional() @IsString() description?: string;
   @ApiProperty({ required: false }) @IsOptional() @IsNumberString() initialBalance?: string;
 }
 
@@ -115,6 +121,7 @@ export class AccountsController {
     const account = await this.createAccountUseCase.execute({
       name: dto.name,
       ownerId: ownerId,
+      description: dto.description,
       initialBalance: dto.initialBalance ? BigInt(dto.initialBalance) : undefined,
     });
 

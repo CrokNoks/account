@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { GetBudgetBreakdownUseCase } from './get-budget-breakdown.use-case';
 import { GetPeriodStatsUseCase } from './get-period-stats.use-case';
 import { GeminiService } from './gemini.service';
+import { AccountRepository } from '../../accounts/domain/account.repository.interface';
 
 @Injectable()
 export class GetAIInsightsUseCase {
@@ -9,24 +10,22 @@ export class GetAIInsightsUseCase {
     private readonly getBudgetBreakdownUseCase: GetBudgetBreakdownUseCase,
     private readonly getPeriodStatsUseCase: GetPeriodStatsUseCase,
     private readonly geminiService: GeminiService,
+    private readonly accountRepository: AccountRepository,
   ) {}
 
   async execute(accountId: string, periodId: string, locale: string = 'fr'): Promise<string> {
+    const account = await this.accountRepository.findById(accountId);
     const breakdown = await this.getBudgetBreakdownUseCase.execute(accountId, periodId);
     const stats = await this.getPeriodStatsUseCase.execute(accountId, periodId);
 
-    // Try to get data for the previous period for comparison
-    let comparisonContext = '';
-    try {
-      // Find previous period ID by looking at evolution data or list
-      // For simplicity, we'll assume the controller could pass it or we fetch it here
-      // But let's keep it robust: if we don't have it, we just send current stats.
-      // Optimization: The Gemini prompt will be much better if it knows "evolution"
-    } catch (e) {}
+    const accountContext = account?.description 
+      ? `Contexte du compte : ${account.description}` 
+      : '';
 
     const prompt = `
-      Agis en tant qu'expert en finances personnelles. Analyse les données suivantes pour la période actuelle :
-      - Revenus réels : ${Number(stats.realIncome) / 100}€ (Prévu: ${Number(stats.plannedIncome) / 100}€)
+      Agis en tant qu'expert en finances personnelles. ${accountContext}
+      Analyse les données suivantes pour la période actuelle :
+...
       - Dépenses réelles : ${Number(stats.realExpenses) / 100}€ (Prévu: ${Number(stats.plannedExpenses) / 100}€)
       - Solde prévisionnel fin de mois : ${Number(stats.forecastBalance) / 100}€
 

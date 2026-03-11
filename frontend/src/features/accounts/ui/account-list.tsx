@@ -15,6 +15,7 @@ import {
   DialogFooter 
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { toast } from 'sonner';
 import { useTranslations } from 'next-intl';
 import { ShareAccountDialog } from './share-account-dialog';
@@ -106,6 +107,7 @@ function EditAccountDialog({ account, open, onOpenChange }: { account: Account, 
   const t = useTranslations('Accounts');
   const tc = useTranslations('Common');
   const [name, setName] = useState(account.name);
+  const [description, setDescription] = useState(account.description || '');
   const [balance, setBalance] = useState((parseInt(account.initialBalance, 10) / 100).toString());
   const { mutate: updateAccount, isPending } = useUpdateAccount();
 
@@ -115,6 +117,7 @@ function EditAccountDialog({ account, open, onOpenChange }: { account: Account, 
       id: account.id,
       data: {
         name,
+        description,
         initialBalance: Math.round(parseFloat(balance) * 100).toString(),
       } as any
     }, {
@@ -139,6 +142,18 @@ function EditAccountDialog({ account, open, onOpenChange }: { account: Account, 
           <div className="space-y-2">
             <label className="text-sm font-medium">{t('fields.balance')}</label>
             <Input type="number" step="0.01" value={balance} onChange={(e) => setBalance(e.target.value)} required />
+          </div>
+          <div className="space-y-2">
+            <label className="text-sm font-medium">{t('fields.description')}</label>
+            <Textarea 
+              placeholder="Ex: Compte pour les dépenses du quotidien, loyer et abonnements..." 
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              className="resize-none h-20"
+            />
+            <p className="text-[10px] text-muted-foreground italic">
+              {t('fields.description_hint')}
+            </p>
           </div>
           <DialogFooter>
             <Button type="submit" disabled={isPending}>

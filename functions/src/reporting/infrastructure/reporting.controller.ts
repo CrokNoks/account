@@ -7,6 +7,7 @@ import { GetEvolutionUseCase, EvolutionDataPoint } from '../application/get-evol
 import { GetPeriodComparisonUseCase, PeriodComparisonResponse } from '../application/get-period-comparison.use-case';
 import { GetSankeyDataUseCase, SankeyDataResponse } from '../application/get-sankey-data.use-case';
 import { GetAIInsightsUseCase } from '../application/get-ai-insights.use-case';
+import { GetEvolutionAIInsightsUseCase } from '../application/get-evolution-ai-insights.use-case';
 import { GetCashflowForecastUseCase, CashflowForecastResponse } from '../application/get-cashflow-forecast.use-case';
 
 class BudgetCategoryBreakdownDto implements BudgetCategoryBreakdown {
@@ -59,6 +60,7 @@ export class ReportingController {
     private readonly getPeriodComparisonUseCase: GetPeriodComparisonUseCase,
     private readonly getSankeyDataUseCase: GetSankeyDataUseCase,
     private readonly getAIInsightsUseCase: GetAIInsightsUseCase,
+    private readonly getEvolutionAIInsightsUseCase: GetEvolutionAIInsightsUseCase,
     private readonly getCashflowForecastUseCase: GetCashflowForecastUseCase,
   ) {}
 
@@ -123,6 +125,16 @@ export class ReportingController {
     @Query('locale') locale: string = 'fr'
   ): Promise<{ insights: string }> {
     const insights = await this.getAIInsightsUseCase.execute(accountId, periodId, locale);
+    return { insights };
+  }
+
+  @Get('reporting/evolution/ai-insights')
+  @ApiOperation({ summary: 'Get AI-generated evolution insights' })
+  async getEvolutionAIInsights(
+    @Param('accountId') accountId: string,
+    @Query('locale') locale: string = 'fr'
+  ): Promise<{ insights: string }> {
+    const insights = await this.getEvolutionAIInsightsUseCase.execute(accountId, locale);
     return { insights };
   }
 

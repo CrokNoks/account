@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { 
   Select, 
   SelectContent, 
@@ -30,6 +31,7 @@ export function CreateAccountDialog() {
   
   const { isCreateAccountDialogOpen, setCreateAccountDialogOpen } = useUiStore();
   const [name, setName] = useState('');
+  const [description, setDescription] = useState('');
   const [type, setType] = useState('checking');
   const [currency, setCurrency] = useState('EUR');
   const [balance, setBalance] = useState('0');
@@ -41,12 +43,14 @@ export function CreateAccountDialog() {
     createAccount({
       name,
       type,
+      description,
       currency,
       initialBalance: Math.round(parseFloat(balance) * 100).toString(),
     }, {
       onSuccess: () => {
         setCreateAccountDialogOpen(false);
         setName('');
+        setDescription('');
         setBalance('0');
       }
     });
@@ -119,6 +123,18 @@ export function CreateAccountDialog() {
               onChange={(e) => setBalance(e.target.value)}
               required
             />
+          </div>
+          <div className="space-y-2">
+            <label className="text-sm font-medium">{t('fields.description')}</label>
+            <Textarea 
+              placeholder="Ex: Compte pour les dépenses du quotidien, loyer et abonnements..." 
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              className="resize-none h-20"
+            />
+            <p className="text-[10px] text-muted-foreground italic">
+              {t('fields.description_hint')}
+            </p>
           </div>
           <DialogFooter>
             <Button type="submit" disabled={isPending}>

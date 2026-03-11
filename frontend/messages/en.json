@@ -58,10 +58,12 @@
     "new_account_desc": "Enter the details of your new bank account.",
     "fields": {
       "name": "Name",
-      "type": "Type",
+      "type": "Account Type",
       "currency": "Currency",
-      "balance": "Initial Balance"
-    },
+      "balance": "Initial Balance",
+      "description": "Purpose / Pitch",
+      "description_hint": "Describe the purpose of this account to help the AI personalize its analysis."
+      },
     "types": {
       "checking": "Checking",
       "savings": "Savings",

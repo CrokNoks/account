@@ -58,10 +58,12 @@
     "new_account_desc": "Entrez les détails de votre nouveau compte.",
     "fields": {
       "name": "Nom",
-      "type": "Type",
+      "type": "Type de compte",
       "currency": "Devise",
-      "balance": "Solde initial"
-    },
+      "balance": "Solde initial",
+      "description": "Objectif / Pitch",
+      "description_hint": "Décrivez l'utilité de ce compte pour aider l'IA à personnaliser ses analyses."
+      },
     "types": {
       "checking": "Courant",
       "savings": "Épargne",

@@ -19,6 +19,7 @@ export class SupabaseAccountRepository extends AccountRepository {
         id: account.id,
         name: account.name,
         owner_id: account.ownerId,
+        description: account.description,
         initial_balance: account.initialBalance.toString(), // Convert to string for BIGINT
         updated_at: account.updatedAt.toISOString(),
       });
@@ -62,6 +63,7 @@ export class SupabaseAccountRepository extends AccountRepository {
       id: row.id,
       name: row.name,
       ownerId: row.owner_id,
+      description: row.description,
       initialBalance: BigInt(row.initial_balance),
       createdAt: new Date(row.created_at),
       updatedAt: new Date(row.updated_at),
