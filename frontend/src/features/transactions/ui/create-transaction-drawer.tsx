@@ -35,8 +35,9 @@ import { useAccounts } from '@/features/accounts/api/use-accounts';
 import { useCreateTransaction } from '../api/use-create-transaction';
 import { useCreateTransfer } from '../api/use-create-transfer';
 import { usePredictCategory } from '../api/use-predict-category';
+import { useScanReceipt } from '@/features/reporting/api/use-scan-receipt';
 import { useUiStore } from '@/shared/model/use-ui-store';
-import { Plus, Receipt, Check, ChevronsUpDown, Sparkles, ArrowRightLeft, Clock } from 'lucide-react';
+import { Plus, Receipt, Check, ChevronsUpDown, Sparkles, ArrowRightLeft, Clock, Camera, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTranslations } from 'next-intl';
 import { cn } from '@/lib/utils';
@@ -51,8 +52,9 @@ export function CreateTransactionDrawer({ trigger, isFab = false }: { trigger?: 
   const { data: periods } = usePeriods(activeAccountId);
   const { mutate: createTransaction, isPending: isCreatingTransaction } = useCreateTransaction();
   const { mutate: createTransfer, isPending: isCreatingTransfer } = useCreateTransfer();
+  const { mutate: scanReceipt, isPending: isScanning } = useScanReceipt();
 
-  const isPending = isCreatingTransaction || isCreatingTransfer;
+  const isPending = isCreatingTransaction || isCreatingTransfer || isScanning;
 
   const [mode, setMode] = useState<'standard' | 'transfer'>('standard');
   const [comboOpen, setComboOpen] = useState(false);
@@ -66,8 +68,35 @@ export function CreateTransactionDrawer({ trigger, isFab = false }: { trigger?: 
   const [destinationAccountId, setDestinationAccountId] = useState<string>('');
 
   const dateInputRef = useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const activePeriod = periods?.find(p => p.isActive);
+
+  const handleScanReceipt = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !activeAccountId) return;
+
+    const reader = new FileReader();
+    reader.onload = async () => {
+      const base64 = (reader.result as string).split(',')[1];
+      scanReceipt({ 
+        accountId: activeAccountId, 
+        base64Image: base64, 
+        mimeType: file.type 
+      }, {
+        onSuccess: (data) => {
+          if (data.date) setDate(data.date);
+          if (data.amount) setAmount(data.amount.toString());
+          if (data.description) setDescription(data.description);
+          toast.success("Ticket analysé avec succès !");
+        },
+        onError: () => {
+          toast.error("Erreur lors de l'analyse du ticket.");
+        }
+      });
+    };
+    reader.readAsDataURL(file);
+  };
 
   // Debounce description for prediction
   useEffect(() => {
@@ -199,6 +228,29 @@ export function CreateTransactionDrawer({ trigger, isFab = false }: { trigger?: 
         <SheetHeader className="p-6 border-b space-y-4">
           <div className="flex items-center justify-between">
             <SheetTitle>{mode === 'standard' ? t('new_transaction_title') : 'Nouveau transfert'}</SheetTitle>
+            
+            {/* Scan Receipt Button - Mobile only */}
+            <div className="lg:hidden">
+              <input 
+                type="file" 
+                accept="image/*" 
+                capture="environment" 
+                className="hidden" 
+                ref={fileInputRef}
+                onChange={handleScanReceipt}
+              />
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="h-8 gap-2 border-primary/30 text-primary"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isScanning}
+              >
+                {isScanning ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Camera className="w-3.5 h-3.5" />}
+                <span>Scanner</span>
+              </Button>
+            </div>
+
             <div className="hidden lg:flex items-center gap-1 text-[10px] text-muted-foreground font-medium bg-muted/50 px-1.5 py-0.5 rounded border">
               <span className="opacity-70 mr-0.5 text-[9px] uppercase tracking-wider">Mode:</span>
               <kbd className="font-mono">⇧</kbd>

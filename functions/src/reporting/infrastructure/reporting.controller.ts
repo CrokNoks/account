@@ -1,4 +1,4 @@
-import { Controller, Get, Param, UseGuards, Query } from '@nestjs/common';
+import { Controller, Get, Param, UseGuards, Query, Post, Body } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiProperty } from '@nestjs/swagger';
 import { SupabaseAuthGuard } from '../../auth/supabase-auth.guard';
 import { GetPeriodStatsUseCase, PeriodStatsResponse } from '../application/get-period-stats.use-case';
@@ -9,6 +9,7 @@ import { GetSankeyDataUseCase, SankeyDataResponse } from '../application/get-san
 import { GetAIInsightsUseCase } from '../application/get-ai-insights.use-case';
 import { GetEvolutionAIInsightsUseCase } from '../application/get-evolution-ai-insights.use-case';
 import { GetCashflowForecastUseCase, CashflowForecastResponse } from '../application/get-cashflow-forecast.use-case';
+import { ScanReceiptUseCase, ScanReceiptResult } from '../application/scan-receipt.use-case';
 
 class BudgetCategoryBreakdownDto implements BudgetCategoryBreakdown {
   @ApiProperty() categoryId: string;
@@ -63,6 +64,7 @@ export class ReportingController {
     private readonly getAIInsightsUseCase: GetAIInsightsUseCase,
     private readonly getEvolutionAIInsightsUseCase: GetEvolutionAIInsightsUseCase,
     private readonly getCashflowForecastUseCase: GetCashflowForecastUseCase,
+    private readonly scanReceiptUseCase: ScanReceiptUseCase,
   ) {}
 
   @Get('periods/:periodId/reporting/stats')
@@ -139,12 +141,20 @@ export class ReportingController {
     return { insights };
   }
 
-  @Get('reporting/cashflow')
+  @Post('reporting/cashflow')
   @ApiOperation({ summary: 'Get cashflow forecast based on recurring transactions' })
   async getCashflow(
     @Param('accountId') accountId: string,
     @Query('days') days?: number
   ): Promise<CashflowForecastResponse> {
     return this.getCashflowForecastUseCase.execute(accountId, days);
+  }
+
+  @Post('reporting/scan-receipt')
+  @ApiOperation({ summary: 'Scan a receipt image to extract data' })
+  async scanReceipt(
+    @Body() dto: { base64Image: string, mimeType: string }
+  ): Promise<ScanReceiptResult> {
+    return this.scanReceiptUseCase.execute(dto.base64Image, dto.mimeType);
   }
 }

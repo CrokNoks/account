@@ -38,10 +38,48 @@ export class GeminiService {
     } catch (error: any) {
       if (error.response?.status === 429) {
         console.error('Gemini Quota Error details:', JSON.stringify(error.response?.data, null, 2));
-        return "Quota de 0 détecté. Veuillez vérifier votre compte sur Google AI Studio (Plan 'Pay-as-you-go' gratuit requis).";
+        return "Le quota d'analyse IA est temporairement dépassé (10 requêtes/min en gratuit). Veuillez réessayer dans une minute.";
       }
       console.error('Gemini API Error:', JSON.stringify(error.response?.data || error.message, null, 2));
       return "Désolé, l'IA ne semble pas disponible sur ce projet Google Cloud.";
+    }
+  }
+
+  /**
+   * Generates content from an image and a text prompt
+   * @param prompt The text instructions
+   * @param base64Image The image in base64 format (without data:image/xxx;base64, prefix)
+   * @param mimeType The mime type of the image (e.g. image/jpeg)
+   */
+  async analyzeImage(prompt: string, base64Image: string, mimeType: string): Promise<string> {
+    if (!this.apiKey) {
+      throw new Error("L'IA n'est pas configurée (clé API manquante).");
+    }
+
+    try {
+      console.log('[GeminiService] Calling Gemini API for image analysis...');
+      const response = await axios.post(`${this.apiUrl}?key=${this.apiKey}`, {
+        contents: [{
+          parts: [
+            { text: prompt },
+            {
+              inline_data: {
+                mime_type: mimeType,
+                data: base64Image
+              }
+            }
+          ]
+        }]
+      });
+
+      if (!response.data?.candidates?.[0]?.content?.parts?.[0]?.text) {
+        throw new Error('Structure de réponse Gemini invalide');
+      }
+
+      return response.data.candidates[0].content.parts[0].text;
+    } catch (error: any) {
+      console.error('Gemini Image API Error:', JSON.stringify(error.response?.data || error.message, null, 2));
+      throw error;
     }
   }
 }

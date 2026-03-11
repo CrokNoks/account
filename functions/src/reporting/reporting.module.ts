@@ -13,6 +13,7 @@ import { GetSankeyDataUseCase } from './application/get-sankey-data.use-case';
 import { GetAIInsightsUseCase } from './application/get-ai-insights.use-case';
 import { GetEvolutionAIInsightsUseCase } from './application/get-evolution-ai-insights.use-case';
 import { GetCashflowForecastUseCase } from './application/get-cashflow-forecast.use-case';
+import { ScanReceiptUseCase } from './application/scan-receipt.use-case';
 import { GeminiService } from './application/gemini.service';
 import { ReportingController } from './infrastructure/reporting.controller';
 
@@ -35,6 +36,7 @@ import { ReportingController } from './infrastructure/reporting.controller';
     GetAIInsightsUseCase,
     GetEvolutionAIInsightsUseCase,
     GetCashflowForecastUseCase,
+    ScanReceiptUseCase,
     GeminiService,
   ],
 })
