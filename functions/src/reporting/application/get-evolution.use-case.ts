@@ -9,6 +9,7 @@ export interface EvolutionDataPoint {
   periodId: string;
   startDate: string;
   endDate: string;
+  isActive: boolean;
   realIncome: string;
   realExpenses: string;
   forecastBalance: string;
@@ -89,6 +90,7 @@ export class GetEvolutionUseCase {
         periodId: period.id,
         startDate: period.startDate.toISOString(),
         endDate: period.endDate.toISOString(),
+        isActive: period.isActive,
         realIncome: realIncome.toString(),
         realExpenses: realExpenses.toString(),
         forecastBalance: forecastBalance.toString(),

@@ -130,11 +130,13 @@ export default function Home() {
       <DashboardStats />
 
       {currentPeriod?.isActive && (
-        <AIInsightsCard accountId={activeAccountId} periodId={activePeriodId} />
+        <div className="hidden lg:block">
+          <AIInsightsCard accountId={activeAccountId} periodId={activePeriodId} />
+        </div>
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <div className="flex flex-col gap-4" data-tour="budget-breakdown">
+        <div className="hidden lg:flex flex-col gap-4" data-tour="budget-breakdown">
           <h2 className="text-2xl font-bold tracking-tight">{t('breakdown')}</h2>
           <BudgetBreakdown />
         </div>

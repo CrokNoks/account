@@ -122,7 +122,7 @@ export function CreateRecurringDialog({
           }
         />
       ) : null}
-      <SheetContent side="right" className="w-[400px] sm:w-[540px] flex flex-col gap-0 p-0" onKeyDown={handleKeyDown}>
+      <SheetContent side="right" className="flex flex-col gap-0 p-0" onKeyDown={handleKeyDown}>
         <SheetHeader className="p-6 border-b">
           <div className="flex items-center gap-2">
             <Repeat className="w-5 h-5 text-primary" />

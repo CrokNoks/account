@@ -71,7 +71,7 @@ export function EditPeriodBudgetsSheet({ periodId, open, onOpenChange }: EditPer
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="right" className="w-[400px] sm:w-[540px] flex flex-col gap-0 p-0">
+      <SheetContent side="right" className="flex flex-col gap-0 p-0">
         <SheetHeader className="p-6 border-b">
           <SheetTitle>Modifier les budgets</SheetTitle>
           <SheetDescription>

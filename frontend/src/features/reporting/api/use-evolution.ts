@@ -5,6 +5,7 @@ export interface EvolutionDataPoint {
   periodId: string;
   startDate: string;
   endDate: string;
+  isActive: boolean;
   realIncome: string;
   realExpenses: string;
   forecastBalance: string;

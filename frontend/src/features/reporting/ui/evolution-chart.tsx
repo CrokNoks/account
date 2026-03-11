@@ -55,8 +55,14 @@ export function EvolutionChart() {
   const dateLocale = locale === 'fr' ? fr : enUS;
   
   const { activeAccountId } = useAccountStore();
-  const { data: evolutionData, isLoading: isLoadingEvolution } = useEvolution(activeAccountId);
+  const { data: rawEvolutionData, isLoading: isLoadingEvolution } = useEvolution(activeAccountId);
   const { data: categories, isLoading: isLoadingCategories } = useCategories(activeAccountId);
+
+  // Only consider closed periods for the chart
+  const evolutionData = useMemo(() => {
+    if (!rawEvolutionData) return [];
+    return rawEvolutionData.filter(d => !d.isActive);
+  }, [rawEvolutionData]);
 
   const { expenseCategories, sortedCategories } = useMemo(() => {
     const base = categories?.filter(c => c.type === 'expense') || [];

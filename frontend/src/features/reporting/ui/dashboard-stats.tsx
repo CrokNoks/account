@@ -39,26 +39,32 @@ export function DashboardStats() {
   return (
     <div className="space-y-8" data-tour="stats">
       <div className="grid gap-4 grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
-        <StatCard 
-          title={t('start_balance')} 
-          value={stats.startBalance} 
-          icon={<Wallet className="w-4 h-4 text-muted-foreground" />}
-          description={t('start_balance')}
-        />
+        <div className="hidden lg:block">
+          <StatCard 
+            title={t('start_balance')} 
+            value={stats.startBalance} 
+            icon={<Wallet className="w-4 h-4 text-muted-foreground" />}
+            description={t('start_balance')}
+          />
+        </div>
         
-        <StatCard 
-          title={t('real_income')} 
-          value={stats.realIncome} 
-          icon={<ArrowUpCircle className="w-4 h-4 text-green-500" />}
-          description={`${t('planned_income')}: ${formatCurrency(stats.plannedIncome)}`}
-        />
+        <div className="hidden lg:block">
+          <StatCard 
+            title={t('real_income')} 
+            value={stats.realIncome} 
+            icon={<ArrowUpCircle className="w-4 h-4 text-green-500" />}
+            description={`${t('planned_income')}: ${formatCurrency(stats.plannedIncome)}`}
+          />
+        </div>
 
-        <StatCard 
-          title={t('real_expenses')} 
-          value={stats.realExpenses} 
-          icon={<ArrowDownCircle className="w-4 h-4 text-red-500" />}
-          description={`${t('planned_expenses')}: ${formatCurrency(stats.plannedExpenses)}`}
-        />
+        <div className="hidden lg:block">
+          <StatCard 
+            title={t('real_expenses')} 
+            value={stats.realExpenses} 
+            icon={<ArrowDownCircle className="w-4 h-4 text-red-500" />}
+            description={`${t('planned_expenses')}: ${formatCurrency(stats.plannedExpenses)}`}
+          />
+        </div>
 
         <StatCard 
           title={t('real_bank_balance')} 
@@ -75,13 +81,15 @@ export function DashboardStats() {
               icon={<History className="w-4 h-4 text-muted-foreground" />}
               description={t('upcoming_balance')}
             />
-            <StatCard 
-              title={t('forecast_balance')} 
-              value={stats.forecastBalance} 
-              icon={<TrendingUp className="w-4 h-4 text-primary" />}
-              description={t('forecast_balance')}
-              highlight
-            />
+            <div className="hidden lg:block">
+              <StatCard 
+                title={t('forecast_balance')} 
+                value={stats.forecastBalance} 
+                icon={<TrendingUp className="w-4 h-4 text-primary" />}
+                description={t('forecast_balance')}
+                highlight
+              />
+            </div>
           </>
         )}
       </div>
