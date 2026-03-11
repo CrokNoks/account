@@ -6,18 +6,14 @@ import { cn } from '@/lib/utils';
 import { 
   LayoutDashboard, 
   TrendingUp,
-  GitBranch,
-  PieChart,
-  CreditCard
+  Receipt
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 
 const navItems = [
   { icon: LayoutDashboard, labelKey: 'dashboard', href: '/' },
+  { icon: Receipt, labelKey: 'transactions', href: '/transactions' },
   { icon: TrendingUp, labelKey: 'evolution', href: '/evolution' },
-  { icon: GitBranch, labelKey: 'flux', href: '/flux' },
-  { icon: PieChart, labelKey: 'budgets', href: '/budgets' },
-  { icon: CreditCard, labelKey: 'accounts', href: '/accounts' },
 ];
 
 export function BottomNav() {
