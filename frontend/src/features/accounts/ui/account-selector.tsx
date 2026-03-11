@@ -31,9 +31,11 @@ export function AccountSelector() {
       value={activeAccountId || ""} 
       onValueChange={(v) => setActiveAccountId(v)}
     >
-      <SelectTrigger className="w-[200px]">
+      <SelectTrigger className="w-[140px] sm:w-[200px]">
         <SelectValue>
-          {accounts?.find(a => a.id === activeAccountId)?.name || t('select_account')}
+          <span className="truncate block">
+            {accounts?.find(a => a.id === activeAccountId)?.name || t('select_account')}
+          </span>
         </SelectValue>
       </SelectTrigger>
       <SelectContent>

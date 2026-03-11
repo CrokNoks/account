@@ -1,14 +1,15 @@
 'use client';
 
 import { TransactionList } from "@/features/transactions/ui/transaction-list";
-import { CreateTransactionDrawer } from "@/features/transactions/ui/create-transaction-drawer";
 import { useTranslations } from 'next-intl';
 import { Link } from '@/i18n/routing';
-import { FileUp } from 'lucide-react';
+import { FileUp, Plus } from 'lucide-react';
 import { Button } from "@/components/ui/button";
+import { useUiStore } from "@/shared/model/use-ui-store";
 
 export default function TransactionsPage() {
   const t = useTranslations('Transactions');
+  const setCreateTransactionDrawerOpen = useUiStore((state) => state.setCreateTransactionDrawerOpen);
 
   return (
     <div className="flex flex-col gap-8">
@@ -26,7 +27,10 @@ export default function TransactionsPage() {
               Import CSV
             </Button>
           </Link>
-          <CreateTransactionDrawer />
+          <Button className="hidden lg:flex gap-2 px-4" onClick={() => setCreateTransactionDrawerOpen(true)}>
+            <Plus className="w-4 h-4" />
+            <span>{t('add_transaction')}</span>
+          </Button>
         </div>
       </div>
 

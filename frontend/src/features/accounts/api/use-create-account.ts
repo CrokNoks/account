@@ -4,6 +4,7 @@ import { apiClient } from '@/shared/api/api-client';
 export interface CreateAccountCommand {
   name: string;
   type: string;
+  description?: string;
   currency: string;
   initialBalance: string;
 }

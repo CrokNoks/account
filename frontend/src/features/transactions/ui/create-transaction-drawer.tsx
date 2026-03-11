@@ -25,7 +25,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useAccountStore } from '@/features/accounts/model/use-account-store';
@@ -36,12 +36,12 @@ import { useCreateTransaction } from '../api/use-create-transaction';
 import { useCreateTransfer } from '../api/use-create-transfer';
 import { usePredictCategory } from '../api/use-predict-category';
 import { useUiStore } from '@/shared/model/use-ui-store';
-import { Plus, Receipt, Check, ChevronsUpDown, Sparkles, ArrowRightLeft } from 'lucide-react';
+import { Plus, Receipt, Check, ChevronsUpDown, Sparkles, ArrowRightLeft, Clock } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTranslations } from 'next-intl';
 import { cn } from '@/lib/utils';
 
-export function CreateTransactionDrawer() {
+export function CreateTransactionDrawer({ trigger, isFab = false }: { trigger?: React.ReactElement | null, isFab?: boolean }) {
   const t = useTranslations('Transactions');
   const tc = useTranslations('Common');
   const { activeAccountId } = useAccountStore();
@@ -80,7 +80,7 @@ export function CreateTransactionDrawer() {
   // Prediction Query
   const { data: prediction } = usePredictCategory(activeAccountId, debouncedDescription);
 
-  // Auto-apply prediction if user hasn't manually selected a category yet
+  // Auto-apply prediction
   useEffect(() => {
     if (mode === 'standard' && prediction?.categoryId && !categoryId && description.length >= 3) {
       setCategoryId(prediction.categoryId);
@@ -91,12 +91,11 @@ export function CreateTransactionDrawer() {
     }
   }, [prediction, categoryId, description.length, t, mode]);
 
-  // Reset form when sheet closes
+  // Reset/Focus on open change
   useEffect(() => {
     if (!isCreateTransactionDrawerOpen) {
       resetForm();
     } else {
-      // Focus date input when opening
       setTimeout(() => {
         dateInputRef.current?.focus();
       }, 100);
@@ -155,8 +154,6 @@ export function CreateTransactionDrawer() {
     }
   };
 
-  const selectedCategory = categories?.find((c) => c.id === categoryId);
-
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !comboOpen) {
       e.preventDefault();
@@ -169,28 +166,40 @@ export function CreateTransactionDrawer() {
     }
   };
 
+  const selectedCategory = categories?.find((c) => c.id === categoryId);
   const availableDestinations = accounts?.filter(a => a.id !== activeAccountId) || [];
-
   const isFormValid = activeAccountId && description && amount && (mode === 'standard' || (mode === 'transfer' && destinationAccountId));
+
+  const defaultTrigger = isFab ? (
+    <Button 
+      size="icon" 
+      className="h-14 w-14 rounded-full shadow-lg border-primary/20" 
+      onClick={() => setCreateTransactionDrawerOpen(true)}
+    >
+      <Plus className="h-6 w-6" />
+    </Button>
+  ) : (
+    <Button className="gap-2 px-4" onClick={() => setCreateTransactionDrawerOpen(true)}>
+      <Plus className="w-4 h-4" />
+      <span>{t('add_transaction')}</span>
+      <kbd className="hidden lg:inline-flex pointer-events-none h-5 select-none items-center gap-1 rounded border bg-primary-foreground/20 px-1.5 font-mono text-[10px] font-medium text-primary-foreground opacity-100 ml-1">
+        Enter
+      </kbd>
+    </Button>
+  );
 
   return (
     <Sheet open={isCreateTransactionDrawerOpen} onOpenChange={setCreateTransactionDrawerOpen}>
-      <SheetTrigger 
-        render={
-          <Button className="gap-2 px-4">
-            <Plus className="w-4 h-4" />
-            <span>{t('add_transaction')}</span>
-            <kbd className="pointer-events-none inline-flex h-5 select-none items-center gap-1 rounded border bg-primary-foreground/20 px-1.5 font-mono text-[10px] font-medium text-primary-foreground opacity-100 ml-1">
-              Enter
-            </kbd>
-          </Button>
-        }
-      />
+      {trigger !== undefined ? (
+        trigger && <SheetTrigger render={trigger} />
+      ) : (
+        <SheetTrigger render={defaultTrigger} />
+      )}
       <SheetContent side="right" className="w-[400px] sm:w-[540px] flex flex-col gap-0 p-0" onKeyDown={handleKeyDown}>
         <SheetHeader className="p-6 border-b space-y-4">
           <div className="flex items-center justify-between">
             <SheetTitle>{mode === 'standard' ? t('new_transaction_title') : 'Nouveau transfert'}</SheetTitle>
-            <div className="flex items-center gap-1 text-[10px] text-muted-foreground font-medium bg-muted/50 px-1.5 py-0.5 rounded border">
+            <div className="hidden lg:flex items-center gap-1 text-[10px] text-muted-foreground font-medium bg-muted/50 px-1.5 py-0.5 rounded border">
               <span className="opacity-70 mr-0.5 text-[9px] uppercase tracking-wider">Mode:</span>
               <kbd className="font-mono">⇧</kbd>
               <span>+</span>
@@ -210,7 +219,7 @@ export function CreateTransactionDrawer() {
         </SheetHeader>
         
         <div className="flex-1 overflow-y-auto p-6 space-y-6">
-          <div className="space-y-2" data-tour="tx-date">
+          <div className="space-y-2">
             <label className="text-sm font-medium">{t('fields.date')}</label>
             <Input 
               ref={dateInputRef}
@@ -222,7 +231,7 @@ export function CreateTransactionDrawer() {
             />
           </div>
 
-          <div className="space-y-2" data-tour="tx-description">
+          <div className="space-y-2">
             <label className="text-sm font-medium">{t('fields.description')}</label>
             <Input 
               placeholder={mode === 'transfer' ? "Virement épargne, Loyer partagé..." : "Rent, Groceries, Salary..."} 
@@ -327,7 +336,7 @@ export function CreateTransactionDrawer() {
             </div>
           )}
 
-          <div className="space-y-2" data-tour="tx-amount">
+          <div className="space-y-2">
             <label className="text-sm font-medium">{t('fields.amount')}</label>
             <div className="relative">
               <Input 
@@ -350,7 +359,7 @@ export function CreateTransactionDrawer() {
           </div>
 
           {mode === 'standard' && (
-            <div className="flex items-center gap-2 p-3 rounded-lg border bg-muted/30" data-tour="tx-pending">
+            <div className="flex items-center gap-2 p-3 rounded-lg border bg-muted/30">
               <Checkbox 
                 id="pending-field" 
                 checked={pending} 
@@ -364,7 +373,7 @@ export function CreateTransactionDrawer() {
           )}
         </div>
 
-        <SheetFooter className="p-6 border-t bg-muted/20 flex-col gap-3 sm:flex-col" data-tour="tx-shortcuts">
+        <SheetFooter className="p-6 border-t bg-muted/20 flex-col gap-3 sm:flex-col">
           <Button 
             variant="outline"
             className="w-full h-11 text-base flex justify-between px-4" 
@@ -372,7 +381,7 @@ export function CreateTransactionDrawer() {
             disabled={isPending || !isFormValid}
           >
             <span>{isPending ? tc('loading') : t('save_another')}</span>
-            <kbd className="pointer-events-none inline-flex h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground opacity-100">
+            <kbd className="hidden lg:inline-flex pointer-events-none h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground opacity-100">
               Enter
             </kbd>
           </Button>
@@ -382,7 +391,7 @@ export function CreateTransactionDrawer() {
             disabled={isPending || !isFormValid}
           >
             <span>{isPending ? tc('loading') : tc('save')}</span>
-            <kbd className="pointer-events-none inline-flex h-5 select-none items-center gap-1 rounded border bg-primary-foreground/20 px-1.5 font-mono text-[10px] font-medium text-primary-foreground opacity-100">
+            <kbd className="hidden lg:inline-flex pointer-events-none h-5 select-none items-center gap-1 rounded border bg-primary-foreground/20 px-1.5 font-mono text-[10px] font-medium text-primary-foreground opacity-100">
               <span className="text-xs">⇧</span> Enter
             </kbd>
           </Button>
