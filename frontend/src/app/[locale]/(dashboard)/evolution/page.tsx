@@ -18,7 +18,9 @@ export default function EvolutionPage() {
         </p>
       </div>
 
-      <EvolutionAIInsightsCard accountId={activeAccountId} />
+      <div className="hidden lg:block">
+        <EvolutionAIInsightsCard accountId={activeAccountId} />
+      </div>
 
       <div className="space-y-12">
         <EvolutionChart />

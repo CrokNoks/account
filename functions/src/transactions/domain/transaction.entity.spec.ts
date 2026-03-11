@@ -9,6 +9,7 @@ describe('Transaction Entity', () => {
       description: 'Groceries',
       amount: BigInt(-4550), // -45.50€
       reconciled: false,
+      pending: false,
       metadata: {},
     });
 
@@ -17,6 +18,7 @@ describe('Transaction Entity', () => {
     expect(transaction.description).toBe('Groceries');
     expect(transaction.amount).toBe(BigInt(-4550));
     expect(transaction.reconciled).toBe(false);
+    expect(transaction.pending).toBe(false);
     expect(transaction.createdAt).toBeInstanceOf(Date);
   });
 
@@ -28,6 +30,8 @@ describe('Transaction Entity', () => {
         date: new Date(),
         description: '',
         amount: BigInt(-1000),
+        reconciled: false,
+        pending: false,
         metadata: {},
       });
     }).toThrow('Description is required');
@@ -41,21 +45,24 @@ describe('Transaction Entity', () => {
         date: new Date(),
         description: 'Test',
         amount: BigInt(-1000),
+        reconciled: false,
+        pending: false,
         metadata: {},
       });
     }).toThrow('Account ID is required');
   });
 
-  it('should default reconciled to false', () => {
+  it('should default reconciled and pending to false', () => {
     const transaction = Transaction.create({
       accountId: 'acc-123',
       categoryId: 'cat-456',
       date: new Date(),
       description: 'Test',
       amount: BigInt(-1000),
-      metadata: {},
-    });
+      metadata: {} as any, // Testing defaults
+    } as any);
 
     expect(transaction.reconciled).toBe(false);
+    expect(transaction.pending).toBe(false);
   });
 });

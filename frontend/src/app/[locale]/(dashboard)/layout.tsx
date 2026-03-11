@@ -1,3 +1,5 @@
+'use client';
+
 import { Sidebar } from "@/shared/ui/layout/sidebar";
 import { Header } from "@/shared/ui/layout/header";
 import { BottomNav } from "@/shared/ui/layout/bottom-nav";

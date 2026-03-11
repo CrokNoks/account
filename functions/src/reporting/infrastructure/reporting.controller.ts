@@ -41,6 +41,7 @@ class EvolutionDataPointDto implements EvolutionDataPoint {
   @ApiProperty() periodId: string;
   @ApiProperty() startDate: string;
   @ApiProperty() endDate: string;
+  @ApiProperty() isActive: boolean;
   @ApiProperty() realIncome: string;
   @ApiProperty() realExpenses: string;
   @ApiProperty() forecastBalance: string;

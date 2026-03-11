@@ -195,7 +195,7 @@ export function CreateTransactionDrawer({ trigger, isFab = false }: { trigger?: 
       ) : (
         <SheetTrigger render={defaultTrigger} />
       )}
-      <SheetContent side="right" className="w-[400px] sm:w-[540px] flex flex-col gap-0 p-0" onKeyDown={handleKeyDown}>
+      <SheetContent side="right" className="flex flex-col gap-0 p-0" onKeyDown={handleKeyDown}>
         <SheetHeader className="p-6 border-b space-y-4">
           <div className="flex items-center justify-between">
             <SheetTitle>{mode === 'standard' ? t('new_transaction_title') : 'Nouveau transfert'}</SheetTitle>
