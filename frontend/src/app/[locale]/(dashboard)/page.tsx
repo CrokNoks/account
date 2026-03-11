@@ -3,7 +3,6 @@
 import { DashboardStats } from "@/features/reporting/ui/dashboard-stats";
 import { BudgetBreakdown } from "@/features/reporting/ui/budget-breakdown";
 import { AIInsightsCard } from "@/features/reporting/ui/ai-insights-card";
-import { CreateTransactionDrawer } from "@/features/transactions/ui/create-transaction-drawer";
 import { TransactionList } from "@/features/transactions/ui/transaction-list";
 import { useAccountStore } from "@/features/accounts/model/use-account-store";
 import { usePeriods } from "@/features/budgets/api/use-periods";
@@ -21,6 +20,8 @@ import {
 } from "@/components/ui/select";
 import { HelpButton } from "@/shared/ui/tour/HelpButton";
 import { useEffect } from 'react';
+import { Button } from "@/components/ui/button";
+import { Plus } from "lucide-react";
 
 export default function Home() {
   const t = useTranslations('Dashboard');
@@ -115,8 +116,14 @@ export default function Home() {
             {t('welcome')}
           </p>
         </div>
-        <div data-tour="add-transaction">
-          <CreateTransactionDrawer />
+        <div className="hidden lg:block" data-tour="add-transaction">
+          <Button className="gap-2 px-4" onClick={() => setCreateTransactionDrawerOpen(true)}>
+            <Plus className="w-4 h-4" />
+            <span>{tt('add_transaction')}</span>
+            <kbd className="hidden lg:inline-flex pointer-events-none h-5 select-none items-center gap-1 rounded border bg-primary-foreground/20 px-1.5 font-mono text-[10px] font-medium text-primary-foreground opacity-100 ml-1">
+              Enter
+            </kbd>
+          </Button>
         </div>
       </div>
       

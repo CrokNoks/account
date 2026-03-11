@@ -20,6 +20,12 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Account V2",
   description: "Personal finance manager",
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "Account V2",
+  },
 };
 
 export default async function LocalizedLayout({

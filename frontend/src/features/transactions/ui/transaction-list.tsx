@@ -100,9 +100,9 @@ export function TransactionList({ periodId, compact = false }: { periodId?: stri
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-end gap-2">
+      <div className="flex flex-col sm:flex-row justify-end gap-2">
         <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as 'all' | 'reconciled' | 'not_reconciled')}>
-          <SelectTrigger className="w-[180px]">
+          <SelectTrigger className="w-full sm:w-[180px]">
             <SelectValue>
               {statusFilter === 'all' ? t('status_all') : statusFilter === 'reconciled' ? t('status_reconciled') : t('status_not_reconciled')}
             </SelectValue>
@@ -116,7 +116,7 @@ export function TransactionList({ periodId, compact = false }: { periodId?: stri
 
         {!periodId && (
           <Select value={selectedPeriodId} onValueChange={(v) => setSelectedPeriodId(v || 'all')}>
-            <SelectTrigger className="w-[250px]">
+            <SelectTrigger className="w-full sm:w-[250px]">
               <SelectValue>
                 {selectedPeriodId === 'all' 
                   ? 'Toutes les périodes' 
@@ -139,7 +139,85 @@ export function TransactionList({ periodId, compact = false }: { periodId?: stri
       )}
       </div>
 
-      <div className="border rounded-md overflow-hidden" data-tour="transaction-list">
+      {/* Mobile View: Cards */}
+      <div className="lg:hidden space-y-3">
+        {transactions?.length === 0 ? (
+          <div className="p-8 text-center text-sm text-muted-foreground bg-muted/20 rounded-lg border border-dashed">
+            {t('empty')}
+          </div>
+        ) : (
+          transactions?.map((transaction) => (
+            <div 
+              key={transaction.id} 
+              className={cn(
+                "p-4 rounded-xl border bg-card shadow-sm space-y-3 active:scale-[0.98] transition-transform",
+                transaction.pending && "bg-muted/30 border-dashed"
+              )}
+              onClick={() => setEditingTransaction(transaction)}
+            >
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2 min-w-0">
+                  <button 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleReconciliation(transaction.id, transaction.reconciled);
+                    }} 
+                    disabled={isUpdating}
+                    className="shrink-0"
+                  >
+                    {transaction.reconciled ? <CheckCircle2 className="w-5 h-5 text-green-500" /> : <Circle className="w-5 h-5 text-muted-foreground" />}
+                  </button>
+                  <span className="font-semibold text-sm truncate">{transaction.description}</span>
+                </div>
+                <div className={cn(
+                  "font-bold shrink-0 text-sm",
+                  parseInt(transaction.amount, 10) < 0 ? 'text-red-500' : 'text-green-500'
+                )}>
+                  {formatCurrency(transaction.amount)}
+                </div>
+              </div>
+              
+              <div className="flex items-center justify-between text-xs text-muted-foreground">
+                <div className="flex items-center gap-2">
+                  <span>{format(new Date(transaction.date), 'dd MMM')}</span>
+                  {transaction.categoryId && (
+                    <Badge variant="outline" className="h-5 px-1.5 text-[10px] py-0" style={{ 
+                      borderColor: categories?.find(c => c.id === transaction.categoryId)?.color,
+                      color: categories?.find(c => c.id === transaction.categoryId)?.color 
+                    }}>
+                      {categories?.find(c => c.id === transaction.categoryId)?.name}
+                    </Badge>
+                  )}
+                </div>
+                <div className="flex items-center gap-2">
+                  {transaction.pending && (
+                    <div className="flex items-center gap-1 text-orange-500 font-medium">
+                      <Clock className="w-3 h-3 animate-pulse" />
+                      <span>{t('fields.pending')}</span>
+                    </div>
+                  )}
+                  {!compact && (
+                    <Button 
+                      variant="ghost" 
+                      size="icon-xs" 
+                      className="h-6 w-6 text-muted-foreground hover:text-destructive"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDelete(transaction.id, transaction.description);
+                      }}
+                    >
+                      <Trash2 className="w-3 h-3" />
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+
+      {/* Desktop View: Table */}
+      <div className="hidden lg:block border rounded-md overflow-hidden" data-tour="transaction-list">
         <Table className="w-full table-fixed">
           <TableHeader>
             <TableRow>

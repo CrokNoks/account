@@ -38,7 +38,7 @@ export function DashboardStats() {
 
   return (
     <div className="space-y-8" data-tour="stats">
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+      <div className="grid gap-4 grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
         <StatCard 
           title={t('start_balance')} 
           value={stats.startBalance} 
