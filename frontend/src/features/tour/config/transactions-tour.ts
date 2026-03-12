@@ -1,6 +1,7 @@
+import { _Translator } from 'next-intl';
 import { Step } from 'react-joyride';
 
-export const TRANSACTION_STEPS = (t: any): Step[] => [
+export const TRANSACTION_STEPS = (t: _Translator): Step[] => [
   {
     target: '[data-tour="tx-date"]',
     content: t('transactions.date'),

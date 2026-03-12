@@ -13,7 +13,7 @@ export interface Transaction {
   pending: boolean;
   paymentMethod: string | null;
   notes: string | null;
-  metadata: Record<string, any>;
+  metadata: Record<string, unknown> | null;
   createdAt: string;
   updatedAt: string;
 }

@@ -2,7 +2,7 @@
 
 import { useSankeyData } from '../api/use-sankey-data';
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Sankey, Tooltip, ResponsiveContainer, Layer, Rectangle } from 'recharts';
+import { Sankey, Tooltip, ResponsiveContainer, Layer, Rectangle, SankeyData } from 'recharts';
 import { Loader2, GitBranch } from 'lucide-react';
 
 interface SankeyChartProps {
@@ -11,7 +11,7 @@ interface SankeyChartProps {
 }
 
 const CustomNode = ({ x, y, width, height, index, payload, containerWidth }: any) => {
-  const isOut = x + width + 6 > containerWidth;
+  const isOut = (x || 0) + (width || 0) + 6 > (containerWidth || 0);
   return (
     <Layer key={`node-${index}`}>
       <Rectangle
@@ -19,13 +19,13 @@ const CustomNode = ({ x, y, width, height, index, payload, containerWidth }: any
         y={y}
         width={width}
         height={height}
-        fill={payload.color || '#6366f1'}
+        fill={payload?.color || '#6366f1'}
         fillOpacity={0.8}
         rx={2}
       />
       <text
-        x={isOut ? x - 6 : x + width + 6}
-        y={y + height / 2}
+        x={isOut ? (x || 0) - 6 : (x || 0) + (width || 0) + 6}
+        y={(y || 0) + (height || 0) / 2}
         textAnchor={isOut ? 'end' : 'start'}
         dominantBaseline="central"
         fontSize="10"
@@ -33,7 +33,7 @@ const CustomNode = ({ x, y, width, height, index, payload, containerWidth }: any
         fill="currentColor"
         className="fill-foreground"
       >
-        {payload.name}
+        {payload?.name}
       </text>
     </Layer>
   );
@@ -64,14 +64,14 @@ export function SankeyChart({ accountId, periodId }: SankeyChartProps) {
         ) : (
           <ResponsiveContainer width="100%" height="100%">
             <Sankey
-              data={data as any}
+              data={data as unknown as SankeyData}
               node={<CustomNode />}
               link={{ stroke: '#6366f1', fillOpacity: 0.1 }}
               nodePadding={40}
               margin={{ top: 20, right: 120, bottom: 20, left: 120 }}
             >
               <Tooltip 
-                formatter={(value: any) => [`${value}€`, 'Montant']}
+                formatter={(value: unknown) => [`${value as string}€`, 'Montant']}
               />
             </Sankey>
           </ResponsiveContainer>

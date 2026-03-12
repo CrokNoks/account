@@ -44,7 +44,7 @@ export function EvolutionAIInsightsCard({ accountId }: EvolutionAIInsightsCardPr
           </div>
         ) : isError ? (
           <p className="text-sm text-muted-foreground italic">
-            Impossible de charger l'analyse des tendances pour le moment.
+            Impossible de charger l&apos;analyse des tendances pour le moment.
           </p>
         ) : (
           <div className="prose prose-sm dark:prose-invert max-w-none prose-headings:font-semibold prose-p:leading-relaxed prose-li:my-0">

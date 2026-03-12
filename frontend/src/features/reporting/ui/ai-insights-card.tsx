@@ -41,7 +41,7 @@ export function AIInsightsCard({ accountId, periodId }: AIInsightsCardProps) {
         {isLoading ? (
           <div className="flex items-center gap-2 text-sm text-muted-foreground py-4">
             <Loader2 className="w-4 h-4 animate-spin" />
-            Génération de l'analyse en cours...
+            Génération de l&apos;analyse en cours...
           </div>
         ) : isError ? (
           <p className="text-sm text-muted-foreground italic">

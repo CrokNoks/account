@@ -10,7 +10,7 @@ export interface CreateTransactionCommand {
   amount: string;
   paymentMethod?: string | null;
   notes?: string | null;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown> | null;
   pending?: boolean;
 }
 

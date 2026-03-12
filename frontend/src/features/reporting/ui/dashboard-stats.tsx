@@ -97,7 +97,15 @@ export function DashboardStats() {
   );
 }
 
-function StatCard({ title, value, icon, description, highlight }: any) {
+interface StatCardProps {
+  title: string;
+  value: string;
+  icon: React.ReactNode;
+  description: string;
+  highlight?: boolean;
+}
+
+function StatCard({ title, value, icon, description, highlight }: StatCardProps) {
   const amount = parseInt(value, 10);
   const colorClass = amount < 0 ? "text-red-500" : "text-green-500";
 

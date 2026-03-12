@@ -2,8 +2,8 @@
 
 import { usePathname } from 'next/navigation';
 import { AccountSelector } from '@/features/accounts/ui/account-selector';
-import { useTranslations, useLocale } from 'next-intl';
-import { Link, routing } from '@/i18n/routing';
+import { useTranslations, useLocale, Locale } from 'next-intl';
+import { routing } from '@/i18n/routing';
 import { ThemeToggle } from './theme-toggle';
 import { 
   Select, 
@@ -41,7 +41,7 @@ export function Header() {
   const handleLocaleChange = (newLocale: string | null) => {
     if (!newLocale) return;
     // router.replace will change the locale via cookie when prefix is 'never'
-    router.replace(pathname as any, { locale: newLocale as any });
+    router.replace(pathname as string, { locale: newLocale as Locale });
   };
 
   return (

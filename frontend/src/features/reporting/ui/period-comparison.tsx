@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { usePeriodComparison } from '../api/use-period-comparison';
+import { ComparisonPoint, usePeriodComparison } from '../api/use-period-comparison';
 import { usePeriods } from '@/features/budgets/api/use-periods';
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -106,7 +106,7 @@ export function PeriodComparison({ accountId, periodId }: PeriodComparisonProps)
   );
 }
 
-function ComparisonTable({ title, data, labelA, labelB, isExpense }: { title: string, data: any[], labelA: string, labelB: string, isExpense?: boolean }) {
+function ComparisonTable({ title, data, labelA, labelB, isExpense }: { title: string, data: ComparisonPoint[], labelA: string, labelB: string, isExpense?: boolean }) {
   if (data.length === 0) return null;
 
   return (

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useAccountStore } from '@/features/accounts/model/use-account-store';
 import { useTransactions, Transaction } from '../api/use-transactions';
 import { useUpdateTransaction } from '../api/use-update-transaction';
@@ -37,12 +37,11 @@ import { CreateRecurringDialog } from '@/features/recurring/ui/create-recurring-
 
 export function TransactionList({ periodId, compact = false }: { periodId?: string, compact?: boolean }) {
   const t = useTranslations('Transactions');
-  const tc = useTranslations('Common');
   const { activeAccountId } = useAccountStore();
   const { data: periods } = usePeriods(activeAccountId);
   const { data: categories } = useCategories(activeAccountId);
   const { mutate: updateTransaction, isPending: isUpdating } = useUpdateTransaction();
-  const { mutate: deleteTransaction, isPending: isDeleting } = useDeleteTransaction();
+  const { mutate: deleteTransaction } = useDeleteTransaction();
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
   const [transactionToMakeRecurring, setTransactionToMakeRecurring] = useState<Transaction | null>(null);
   
@@ -59,13 +58,6 @@ export function TransactionList({ periodId, compact = false }: { periodId?: stri
     if (statusFilter === 'not_reconciled') return !t.reconciled;
     return true;
   });
-
-  // Sync internal state if prop changes
-  useEffect(() => {
-    if (periodId) {
-      setSelectedPeriodId(periodId);
-    }
-  }, [periodId]);
 
   const toggleReconciliation = (transactionId: string, currentStatus: boolean) => {
     if (!activeAccountId) return;
@@ -89,7 +81,7 @@ export function TransactionList({ periodId, compact = false }: { periodId?: stri
     });
   };
 
-  const handleDelete = (id: string, description: string) => {
+  const handleDelete = (id: string) => {
     if (!activeAccountId || !confirm(t('delete_confirm'))) return;
     deleteTransaction({ accountId: activeAccountId, id }, {
       onSuccess: () => toast.success(t('deleted'))
@@ -203,7 +195,7 @@ export function TransactionList({ periodId, compact = false }: { periodId?: stri
                       className="h-6 w-6 text-muted-foreground hover:text-destructive"
                       onClick={(e) => {
                         e.stopPropagation();
-                        handleDelete(transaction.id, transaction.description);
+                        handleDelete(transaction.id);
                       }}
                     >
                       <Trash2 className="w-3 h-3" />
@@ -281,7 +273,7 @@ export function TransactionList({ periodId, compact = false }: { periodId?: stri
                         <Pencil className="w-3.5 h-3.5" />
                       </Button>
                       {!compact && (
-                        <Button variant="ghost" size="icon-sm" onClick={() => handleDelete(transaction.id, transaction.description)} className="h-8 w-8 text-muted-foreground hover:text-destructive">
+                        <Button variant="ghost" size="icon-sm" onClick={() => handleDelete(transaction.id)} className="h-8 w-8 text-muted-foreground hover:text-destructive">
                           <Trash2 className="w-3.5 h-3.5" />
                         </Button>
                       )}

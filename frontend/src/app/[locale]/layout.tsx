@@ -4,7 +4,7 @@ import "./globals.css";
 import QueryProvider from "./providers/query-provider";
 import {Toaster} from "@/components/ui/sonner";
 import {NextIntlClientProvider} from 'next-intl';
-import {getMessages, getLocale} from 'next-intl/server';
+import {getMessages} from 'next-intl/server';
 import { ThemeProvider } from '../providers/theme-provider';
 
 const geistSans = Geist({

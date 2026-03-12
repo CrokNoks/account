@@ -2,10 +2,8 @@
 
 import { CashflowForecast } from "@/features/reporting/ui/cashflow-forecast";
 import { useAccountStore } from "@/features/accounts/model/use-account-store";
-import { useTranslations } from 'next-intl';
 
 export default function CashflowPage() {
-  const t = useTranslations('Reporting');
   const { activeAccountId } = useAccountStore();
 
   return (

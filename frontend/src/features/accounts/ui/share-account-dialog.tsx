@@ -75,7 +75,7 @@ export function ShareAccountDialog({ accountId, accountName, open, onOpenChange 
               required
               className="flex-1"
             />
-            <Select value={permission} onValueChange={(v: any) => setPermission(v)}>
+            <Select value={permission} onValueChange={(v: 'read' | 'write' | null) => v && setPermission(v)}>
               <SelectTrigger className="w-[140px]">
                 <SelectValue />
               </SelectTrigger>

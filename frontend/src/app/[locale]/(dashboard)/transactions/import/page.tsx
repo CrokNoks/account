@@ -13,12 +13,12 @@ import {
 } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { useAccountStore } from '@/features/accounts/model/use-account-store';
 import { useCategories } from '@/features/categories/api/use-categories';
 import { usePeriods } from '@/features/budgets/api/use-periods';
 import { useBulkCreateTransactions } from '@/features/transactions/api/use-bulk-create-transactions';
-import { Upload, FileUp, Loader2, Sparkles, X, ArrowRight, Columns, ArrowLeft, CheckCircle2 } from 'lucide-react';
+import { Upload, FileUp, Loader2, X, ArrowRight, Columns, ArrowLeft, CheckCircle2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { apiClient } from '@/shared/api/api-client';
 import { useRouter } from '@/i18n/routing';
@@ -64,18 +64,6 @@ export default function ImportTransactionsPage() {
   const [isProcessing, setIsProcessing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const activePeriod = periods?.find(p => p.isActive);
-
-  const resetState = () => {
-    setStep('upload');
-    setCsvHeaders([]);
-    setRawRows([]);
-    setHeaderRowIndex(0);
-    setAmountMode('single');
-    setParsedData([]);
-    setMapping({ date: '', description: '', amount: '', debit: '', credit: '' });
-    setIsProcessing(false);
-    if (fileInputRef.current) fileInputRef.current.value = '';
-  };
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -170,7 +158,9 @@ export default function ImportTransactionsPage() {
         } else {
           isoDate = new Date(dateVal).toISOString().split('T')[0];
         }
-      } catch (e) {}
+      } catch {
+        // Ignore date parsing error
+      }
 
       mappedData.push({
         id: `row-${i}`,
@@ -198,7 +188,9 @@ export default function ImportTransactionsPage() {
             updatedData[i].predicted = true;
             setParsedData([...updatedData]);
           }
-        } catch (e) {}
+        } catch {
+          // Ignore prediction error
+        }
       }
     }
     setIsProcessing(false);
@@ -237,7 +229,7 @@ export default function ImportTransactionsPage() {
             <h2 className="text-3xl font-bold tracking-tight">Import Transactions</h2>
             <p className="text-muted-foreground">
               {step === 'upload' && "Chargez votre relevé bancaire (CSV)"}
-              {step === 'mapping' && "Configurez la ligne d'en-tête et le mapping des colonnes"}
+              {step === 'mapping' && "Configurez la ligne d&apos;en-tête et le mapping des colonnes"}
               {step === 'validation' && `Validez les ${parsedData.length} transactions`}
             </p>
           </div>
@@ -245,7 +237,7 @@ export default function ImportTransactionsPage() {
         {step === 'validation' && (
           <Button onClick={handleImport} disabled={isPending || parsedData.length === 0} size="lg" className="gap-2">
             {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
-            Confirmer l'import
+            Confirmer l&apos;import
           </Button>
         )}
       </div>
@@ -281,7 +273,7 @@ export default function ImportTransactionsPage() {
                   <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
                     <Columns className="w-3 h-3" /> Séparateur CSV
                   </label>
-                  <Select value={delimiter} onValueChange={(v) => setDelimiter(v as any)}>
+                  <Select value={delimiter} onValueChange={(v) => setDelimiter(v as ',' | ';')}>
                     <SelectTrigger className="w-full h-11"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value=",">Virgule ( , )</SelectItem>
@@ -327,7 +319,7 @@ export default function ImportTransactionsPage() {
 
                 <div className="grid grid-cols-1 md:grid-cols-5 gap-4 bg-muted/20 p-6 rounded-xl border">
                   <div className="space-y-2">
-                    <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Ligne d'en-tête</label>
+                    <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Ligne d&apos;en-tête</label>
                     <Input type="number" min="0" value={headerRowIndex} onChange={(e) => handleHeaderRowChange(parseInt(e.target.value, 10) || 0)} className="h-10" />
                   </div>
                   <div className="space-y-2">

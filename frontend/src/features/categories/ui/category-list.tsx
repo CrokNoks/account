@@ -101,7 +101,7 @@ export function CategoryList() {
                     <CardContent>
                       <div className="flex items-center justify-between gap-2">
                         <p className="text-xs font-semibold text-foreground/80">
-                          {(category as any).budget ? formatCurrency((category as any).budget) : "-"}
+                          {formatCurrency('0')}
                         </p>
                       </div>
                     </CardContent>
@@ -131,7 +131,7 @@ function EditCategoryDialog({ category, open, onOpenChange }: { category: Catego
   const [name, setName] = useState(category.name);
   const [type, setType] = useState(category.type);
   const [color, setColor] = useState(category.color);
-  const [budget, setBudget] = useState((parseInt((category as any).budget || '0', 10) / 100).toString());
+  const [budget, setBudget] = useState('0');
   
   const { mutate: updateCategory, isPending } = useUpdateCategory();
 
@@ -146,7 +146,6 @@ function EditCategoryDialog({ category, open, onOpenChange }: { category: Catego
         name,
         type,
         color,
-        budget: Math.round(parseFloat(budget) * 100).toString(),
       }
     }, {
       onSuccess: () => {
@@ -170,20 +169,20 @@ function EditCategoryDialog({ category, open, onOpenChange }: { category: Catego
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <label className="text-sm font-medium">{t('fields.type')}</label>
-              <Select value={type} onValueChange={(v) => setType(v as any || 'expense')}>
+              <Select value={type} onValueChange={(v) => setType(v as CategoryType || CategoryType.EXPENSE)}>
                 <SelectTrigger>
                   <SelectValue>
-                    {type === 'expense' && t('types.expense')}
-                    {type === 'income' && t('types.income')}
-                    {type === 'savings' && t('types.savings')}
-                    {type === 'transfer' && t('types.transfer')}
+                    {type === CategoryType.EXPENSE && t('types.expense')}
+                    {type === CategoryType.INCOME && t('types.income')}
+                    {type === CategoryType.SAVINGS && t('types.savings')}
+                    {type === CategoryType.TRANSFER && t('types.transfer')}
                   </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="expense">{t('types.expense')}</SelectItem>
-                  <SelectItem value="income">{t('types.income')}</SelectItem>
-                  <SelectItem value="savings">{t('types.savings')}</SelectItem>
-                  <SelectItem value="transfer">{t('types.transfer')}</SelectItem>
+                  <SelectItem value={CategoryType.EXPENSE}>{t('types.expense')}</SelectItem>
+                  <SelectItem value={CategoryType.INCOME}>{t('types.income')}</SelectItem>
+                  <SelectItem value={CategoryType.SAVINGS}>{t('types.savings')}</SelectItem>
+                  <SelectItem value={CategoryType.TRANSFER}>{t('types.transfer')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
