@@ -8,8 +8,18 @@ describe('GetCategoriesUseCase', () => {
   let repository: CategoryRepository;
 
   const mockCategories = [
-    Category.create({ name: 'Food', color: '#e74c3c', type: CategoryType.EXPENSE, accountId: 'acc-1' }),
-    Category.create({ name: 'Salary', color: '#2ecc71', type: CategoryType.INCOME, accountId: 'acc-1' }),
+    Category.create({
+      name: 'Food',
+      color: '#e74c3c',
+      type: CategoryType.EXPENSE,
+      accountId: 'acc-1',
+    }),
+    Category.create({
+      name: 'Salary',
+      color: '#2ecc71',
+      type: CategoryType.INCOME,
+      accountId: 'acc-1',
+    }),
   ];
 
   beforeEach(async () => {

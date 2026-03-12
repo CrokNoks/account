@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PeriodRepository } from '../domain/period.repository.interface';
-import { BudgetRepository, CategoryStats } from '../../budgets/domain/budget.repository.interface';
+import { BudgetRepository } from '../../budgets/domain/budget.repository.interface';
 import { CategoryRepository } from '../../categories/domain/category.repository.interface';
 import { RecurringTransactionRepository } from '../../recurring/domain/recurring-transaction.repository.interface';
 
@@ -40,25 +40,33 @@ export class GetPeriodDraftUseCase {
     endDate.setDate(endDate.getDate() - 1);
 
     // 2. Historical stats
-    const stats = await this.budgetRepository.getHistoricalStatsByAccount(accountId);
-    
+    const stats =
+      await this.budgetRepository.getHistoricalStatsByAccount(accountId);
+
     // 3. Get all categories to match names
-    const categories = await this.categoryRepository.findAllByAccount(accountId);
+    const categories =
+      await this.categoryRepository.findAllByAccount(accountId);
 
     // 4. Get recurring transactions to predict initial amounts
-    const recurringTransactions = await this.recurringRepository.findAllByAccount(accountId);
+    const recurringTransactions =
+      await this.recurringRepository.findAllByAccount(accountId);
 
-    const categoriesWithStats = categories.map(cat => {
-      const catStat = stats.find(s => s.categoryId === cat.id);
+    const categoriesWithStats = categories.map((cat) => {
+      const catStat = stats.find((s) => s.categoryId === cat.id);
       const min = catStat?.minReal || BigInt(0);
       const max = catStat?.maxReal || BigInt(0);
       const avg = catStat?.avgReal || BigInt(0);
 
-      const categoryRecurringTxs = recurringTransactions.filter(rt => rt.categoryId === cat.id);
-      
+      const categoryRecurringTxs = recurringTransactions.filter(
+        (rt) => rt.categoryId === cat.id,
+      );
+
       let defaultAllocated = avg;
       if (categoryRecurringTxs.length > 0) {
-        defaultAllocated = categoryRecurringTxs.reduce((sum, rt) => sum + rt.amount, BigInt(0));
+        defaultAllocated = categoryRecurringTxs.reduce(
+          (sum, rt) => sum + rt.amount,
+          BigInt(0),
+        );
       }
 
       return {

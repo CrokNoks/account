@@ -1,5 +1,22 @@
-import { Controller, Get, Post, Body, Param, UseGuards, Request, Delete, HttpCode, Query, Patch } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiProperty } from '@nestjs/swagger';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Param,
+  UseGuards,
+  Delete,
+  HttpCode,
+  Query,
+  Patch,
+} from '@nestjs/common';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+  ApiProperty,
+} from '@nestjs/swagger';
 import { SupabaseAuthGuard } from '../../auth/supabase-auth.guard';
 import { GetTransactionsByAccountUseCase } from '../application/get-transactions-by-account.use-case';
 import { CreateTransactionUseCase } from '../application/create-transaction.use-case';
@@ -7,7 +24,17 @@ import { PredictCategoryUseCase } from '../application/predict-category.use-case
 import { BulkCreateTransactionsUseCase } from '../application/bulk-create-transactions.use-case';
 import { CreateTransferUseCase } from '../application/create-transfer.use-case';
 import { TransactionRepository } from '../domain/transaction.repository.interface';
-import { IsString, IsOptional, IsNumberString, IsDateString, IsBoolean, IsObject, IsArray, ValidateNested } from 'class-validator';
+import { Transaction } from '../domain/transaction.entity';
+import {
+  IsString,
+  IsOptional,
+  IsNumberString,
+  IsDateString,
+  IsBoolean,
+  IsObject,
+  IsArray,
+  ValidateNested,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class CreateTransactionDto {
@@ -154,31 +181,38 @@ export class TransactionsController {
   ) {}
 
   @Get('predict-category')
-  @ApiOperation({ summary: 'Predict category based on transaction description' })
+  @ApiOperation({
+    summary: 'Predict category based on transaction description',
+  })
   @ApiResponse({ status: 200, type: PredictionResponseDto })
   async predictCategory(
     @Param('accountId') accountId: string,
-    @Query('description') description: string
+    @Query('description') description: string,
   ): Promise<PredictionResponseDto> {
     return this.predictCategoryUseCase.execute(accountId, description);
   }
 
   @Get()
-  @ApiOperation({ summary: 'Get all transactions for this account, optionally filtered by period' })
+  @ApiOperation({
+    summary:
+      'Get all transactions for this account, optionally filtered by period',
+  })
   @ApiResponse({ status: 200, type: [TransactionResponseDto] })
   async findAll(
     @Param('accountId') accountId: string,
-    @Query('periodId') periodId?: string
+    @Query('periodId') periodId?: string,
   ): Promise<TransactionResponseDto[]> {
     if (periodId) {
-      const transactions = await this.transactionRepository.findAllByPeriod(periodId);
+      const transactions =
+        await this.transactionRepository.findAllByPeriod(periodId);
       return transactions
-        .filter(t => t.accountId === accountId)
-        .map(t => this.mapToResponse(t));
+        .filter((t) => t.accountId === accountId)
+        .map((t) => this.mapToResponse(t));
     }
 
-    const transactions = await this.getTransactionsByAccountUseCase.execute(accountId);
-    return transactions.map(t => this.mapToResponse(t));
+    const transactions =
+      await this.getTransactionsByAccountUseCase.execute(accountId);
+    return transactions.map((t) => this.mapToResponse(t));
   }
 
   @Patch(':id')
@@ -186,20 +220,27 @@ export class TransactionsController {
   @ApiResponse({ status: 200, type: TransactionResponseDto })
   async update(
     @Param('id') id: string,
-    @Body() dto: Partial<CreateTransactionDto> & { reconciled?: boolean, pending?: boolean }
+    @Body()
+    dto: Partial<CreateTransactionDto> & {
+      reconciled?: boolean;
+      pending?: boolean;
+    },
   ): Promise<TransactionResponseDto> {
     const existing = await this.transactionRepository.findById(id);
     if (!existing) throw new Error('Transaction not found');
 
     // If reconciling, auto-clear pending
-    const pending = dto.reconciled === true ? false : (dto.pending ?? existing.pending);
+    const pending =
+      dto.reconciled === true ? false : (dto.pending ?? existing.pending);
 
-    const updated = new (existing as any).constructor({
+    const updated = new Transaction({
       ...existing,
       ...dto,
       pending,
-      date: dto.date ? new Date(dto.date) : (existing as any).date,
-      amount: dto.amount ? BigInt(Math.round(Number(dto.amount))) : (existing as any).amount,
+      date: dto.date ? new Date(dto.date) : existing.date,
+      amount: dto.amount
+        ? BigInt(Math.round(Number(dto.amount)))
+        : existing.amount,
       updatedAt: new Date(),
     });
 
@@ -219,17 +260,17 @@ export class TransactionsController {
   @ApiResponse({ status: 201, type: [TransactionResponseDto] })
   async createBulk(
     @Param('accountId') accountId: string,
-    @Body() dto: BulkCreateTransactionsDto
+    @Body() dto: BulkCreateTransactionsDto,
   ): Promise<TransactionResponseDto[]> {
     const transactions = await this.bulkCreateTransactionsUseCase.execute({
       accountId,
-      transactions: dto.transactions.map(t => ({
+      transactions: dto.transactions.map((t) => ({
         ...t,
         date: new Date(t.date),
         amount: BigInt(Math.round(Number(t.amount))),
-      })) as any,
+      })),
     });
-    return transactions.map(t => this.mapToResponse(t));
+    return transactions.map((t) => this.mapToResponse(t));
   }
 
   @Post('transfer')
@@ -237,7 +278,7 @@ export class TransactionsController {
   @ApiResponse({ status: 201, type: [TransactionResponseDto] })
   async createTransfer(
     @Param('accountId') accountId: string,
-    @Body() dto: CreateTransferDto
+    @Body() dto: CreateTransferDto,
   ): Promise<TransactionResponseDto[]> {
     const [sourceTx, destTx] = await this.createTransferUseCase.execute({
       sourceAccountId: accountId,
@@ -254,18 +295,18 @@ export class TransactionsController {
   @ApiResponse({ status: 201, type: TransactionResponseDto })
   async create(
     @Param('accountId') accountId: string,
-    @Body() dto: Omit<CreateTransactionDto, 'accountId'>
+    @Body() dto: Omit<CreateTransactionDto, 'accountId'>,
   ): Promise<TransactionResponseDto> {
     const transaction = await this.createTransactionUseCase.execute({
       ...dto,
       accountId,
       date: new Date(dto.date),
       amount: BigInt(Math.round(Number(dto.amount))),
-    } as any);
+    });
     return this.mapToResponse(transaction);
   }
 
-  private mapToResponse(t: any): TransactionResponseDto {
+  private mapToResponse(t: Transaction): TransactionResponseDto {
     return {
       id: t.id,
       accountId: t.accountId,
@@ -278,7 +319,7 @@ export class TransactionsController {
       pending: t.pending,
       paymentMethod: t.paymentMethod || null,
       notes: t.notes || null,
-      metadata: t.metadata,
+      metadata: t.metadata || {},
       createdAt: t.createdAt.toISOString(),
       updatedAt: t.updatedAt.toISOString(),
     };

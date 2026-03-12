@@ -4,13 +4,17 @@ import { ValidationPipe, INestApplication } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { onRequest } from 'firebase-functions/v2/https';
 import express from 'express';
+import { ExpressAdapter } from '@nestjs/platform-express';
 
 let cachedApp: express.Express;
 
-async function createNestServer(expressInstance: express.Express): Promise<INestApplication> {
+async function createNestServer(
+  expressInstance: express.Express,
+): Promise<INestApplication> {
   const app = await NestFactory.create(
     AppModule,
-    new (require('@nestjs/platform-express').ExpressAdapter)(expressInstance),
+    new ExpressAdapter(expressInstance),
+    { bodyParser: false },
   );
 
   app.enableCors({
@@ -19,11 +23,13 @@ async function createNestServer(expressInstance: express.Express): Promise<INest
     credentials: true,
   });
 
-  app.useGlobalPipes(new ValidationPipe({
-    whitelist: true,
-    forbidNonWhitelisted: true,
-    transform: true,
-  }));
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transform: true,
+    }),
+  );
 
   const config = new DocumentBuilder()
     .setTitle('Account V2 API')
@@ -39,30 +45,47 @@ async function createNestServer(expressInstance: express.Express): Promise<INest
 }
 
 // Firebase Function export
-export const api = onRequest({ region: 'europe-west1', memory: '256MiB' }, async (req, res) => {
-  console.log(`[CloudFunction] ${req.method} ${req.url} - Auth: ${req.headers.authorization ? 'present' : 'missing'}`);
-  if (!cachedApp) {
-    const expressApp = express();
-    await createNestServer(expressApp);
-    cachedApp = expressApp;
-  }
-  return cachedApp(req, res);
-});
+export const api = onRequest(
+  { region: 'europe-west1', memory: '256MiB' },
+  async (req, res) => {
+    console.log(
+      `[CloudFunction] ${req.method} ${req.url} - Auth: ${req.headers.authorization ? 'present' : 'missing'}`,
+    );
+    if (!cachedApp) {
+      const expressApp = express();
+      expressApp.use(express.json({ limit: '10mb' }));
+      expressApp.use(express.urlencoded({ limit: '10mb', extended: true }));
+      await createNestServer(expressApp);
+      cachedApp = expressApp;
+    }
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+    cachedApp(req as any, res as any);
+  },
+);
 
 // Local development
 async function bootstrap() {
   if (!process.env.FUNCTIONS_EMULATOR && !process.env.FIREBASE_CONFIG) {
     const expressApp = express();
+    expressApp.use(express.json({ limit: '10mb' }));
+    expressApp.use(express.urlencoded({ limit: '10mb', extended: true }));
 
     // Global logging middleware
     expressApp.use((req, res, next) => {
-      console.log(`[Request] ${req.method} ${req.url} - Auth: ${req.headers.authorization ? 'present' : 'missing'}`);
+      console.log(
+        `[Request] ${req.method} ${req.url} - Auth: ${req.headers.authorization ? 'present' : 'missing'}`,
+      );
       next();
     });
 
     const app = await createNestServer(expressApp);
     await app.listen(process.env.PORT ?? 8080);
-    console.log(`Application is running on: http://localhost:${process.env.PORT ?? 8080}`);
+    console.log(
+      `Application is running on: http://localhost:${process.env.PORT ?? 8080}`,
+    );
   }
 }
-bootstrap();
+
+bootstrap().catch((err) => {
+  console.error('Error during bootstrap:', err);
+});

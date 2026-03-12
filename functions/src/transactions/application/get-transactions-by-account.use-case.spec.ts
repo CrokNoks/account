@@ -5,18 +5,18 @@ import { Transaction } from '../domain/transaction.entity';
 
 describe('GetTransactionsByAccountUseCase', () => {
   let useCase: GetTransactionsByAccountUseCase;
-  let repository: TransactionRepository;
+  let repository: jest.Mocked<TransactionRepository>;
 
   const mockTransactions = [
-    Transaction.create({ 
-      accountId: 'acc-1', 
-      categoryId: 'cat-1', 
-      date: new Date(), 
-      description: 'T1', 
+    Transaction.create({
+      accountId: 'acc-1',
+      categoryId: 'cat-1',
+      date: new Date(),
+      description: 'T1',
       amount: BigInt(-1000),
       reconciled: false,
       pending: false,
-      metadata: {}
+      metadata: {},
     }),
   ];
 
@@ -33,8 +33,12 @@ describe('GetTransactionsByAccountUseCase', () => {
       ],
     }).compile();
 
-    useCase = module.get<GetTransactionsByAccountUseCase>(GetTransactionsByAccountUseCase);
-    repository = module.get<TransactionRepository>(TransactionRepository);
+    useCase = module.get<GetTransactionsByAccountUseCase>(
+      GetTransactionsByAccountUseCase,
+    );
+    repository = module.get<TransactionRepository>(
+      TransactionRepository,
+    ) as jest.Mocked<TransactionRepository>;
   });
 
   it('should return transactions for an account', async () => {

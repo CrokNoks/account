@@ -27,14 +27,17 @@ export class CreatePeriodWithBudgetsUseCase {
     private readonly transactionRepository: TransactionRepository,
   ) {}
 
-  async execute(command: CreatePeriodWithBudgetsCommand): Promise<{ period: Period, budgets: BudgetInstance[] }> {
+  async execute(
+    command: CreatePeriodWithBudgetsCommand,
+  ): Promise<{ period: Period; budgets: BudgetInstance[] }> {
     // 0. Deactivate existing active periods for this account
-    const existingPeriods = await this.periodRepository.findAllByAccount(command.accountId);
+    const existingPeriods = await this.periodRepository.findAllByAccount(
+      command.accountId,
+    );
     for (const p of existingPeriods) {
       if (p.isActive) {
-        (p as any).isActive = false;
-        (p as any).updatedAt = new Date();
-        await this.periodRepository.save(p);
+        const deactivated = p.deactivate();
+        await this.periodRepository.save(deactivated);
       }
     }
 
@@ -46,40 +49,51 @@ export class CreatePeriodWithBudgetsUseCase {
     });
 
     // 2. Create Budget Instances
-    const budgetInstances = command.budgets.map(b => 
+    const budgetInstances = command.budgets.map((b) =>
       BudgetInstance.create({
         periodId: period.id,
         categoryId: b.categoryId,
         amountAllocated: b.amountAllocated,
-      })
+      }),
     );
 
     // 3. Handle Recurring Transactions injection
     const generatedTransactions: Transaction[] = [];
     if (command.injectRecurring) {
-      const recurring = await this.recurringRepository.findAllByAccount(command.accountId);
-      
+      const recurring = await this.recurringRepository.findAllByAccount(
+        command.accountId,
+      );
+
       for (const rec of recurring) {
         // Calculate the date for this month
         const transactionDate = new Date(command.startDate);
         // Set to the specific day, handling end of month (e.g. 31st in Feb)
-        const lastDayOfMonth = new Date(transactionDate.getFullYear(), transactionDate.getMonth() + 1, 0).getDate();
+        const lastDayOfMonth = new Date(
+          transactionDate.getFullYear(),
+          transactionDate.getMonth() + 1,
+          0,
+        ).getDate();
         const day = Math.min(rec.dayOfMonth, lastDayOfMonth);
         transactionDate.setDate(day);
 
         // Ensure date is within period range (if period is shorter than a month or unusual)
-        if (transactionDate >= command.startDate && transactionDate <= command.endDate) {
-          generatedTransactions.push(Transaction.create({
-            accountId: command.accountId,
-            categoryId: rec.categoryId,
-            description: rec.description,
-            amount: rec.amount,
-            date: transactionDate,
-            periodId: period.id,
-            reconciled: false,
-            pending: true,
-            metadata: { source: 'recurring', recurringId: rec.id }
-          }));
+        if (
+          transactionDate >= command.startDate &&
+          transactionDate <= command.endDate
+        ) {
+          generatedTransactions.push(
+            Transaction.create({
+              accountId: command.accountId,
+              categoryId: rec.categoryId,
+              description: rec.description,
+              amount: rec.amount,
+              date: transactionDate,
+              periodId: period.id,
+              reconciled: false,
+              pending: true,
+              metadata: { source: 'recurring', recurringId: rec.id },
+            }),
+          );
         }
       }
     }

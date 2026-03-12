@@ -1,7 +1,26 @@
 import { Injectable, Inject } from '@nestjs/common';
 import { SupabaseClient } from '@supabase/supabase-js';
-import { BudgetRepository, CategoryStats } from '../domain/budget.repository.interface';
+import {
+  BudgetRepository,
+  CategoryStats,
+} from '../domain/budget.repository.interface';
 import { BudgetInstance } from '../domain/budget-instance.entity';
+
+interface BudgetInstanceRow {
+  id: string;
+  period_id: string;
+  category_id: string;
+  amount_allocated: string;
+  created_at: string;
+  updated_at: string;
+}
+
+interface CategoryStatsRow {
+  category_id: string;
+  min_real: string;
+  max_real: string;
+  avg_real: number;
+}
 
 @Injectable()
 export class SupabaseBudgetRepository implements BudgetRepository {
@@ -14,11 +33,12 @@ export class SupabaseBudgetRepository implements BudgetRepository {
     const { data, error } = await this.supabase
       .from('budget_instances')
       .select('*')
-      .eq('period_id', periodId);
+      .eq('period_id', periodId)
+      .returns<BudgetInstanceRow[]>();
 
     if (error) throw new Error(error.message);
 
-    return (data || []).map(row => this.mapToDomain(row));
+    return (data || []).map((row) => this.mapToDomain(row));
   }
 
   async findById(id: string): Promise<BudgetInstance | null> {
@@ -26,6 +46,7 @@ export class SupabaseBudgetRepository implements BudgetRepository {
       .from('budget_instances')
       .select('*')
       .eq('id', id)
+      .returns<BudgetInstanceRow>()
       .single();
 
     if (error) return null;
@@ -34,31 +55,29 @@ export class SupabaseBudgetRepository implements BudgetRepository {
   }
 
   async save(instance: BudgetInstance): Promise<void> {
-    const { error } = await this.supabase
-      .from('budget_instances')
-      .upsert({
-        id: instance.id,
-        period_id: instance.periodId,
-        category_id: instance.categoryId,
-        amount_allocated: instance.amountAllocated.toString(),
-        created_at: instance.createdAt.toISOString(),
-        updated_at: instance.updatedAt.toISOString(),
-      });
+    const { error } = await this.supabase.from('budget_instances').upsert({
+      id: instance.id,
+      period_id: instance.periodId,
+      category_id: instance.categoryId,
+      amount_allocated: instance.amountAllocated.toString(),
+      created_at: instance.createdAt.toISOString(),
+      updated_at: instance.updatedAt.toISOString(),
+    });
 
     if (error) throw new Error(error.message);
   }
 
   async saveBulk(instances: BudgetInstance[]): Promise<void> {
-    const { error } = await this.supabase
-      .from('budget_instances')
-      .insert(instances.map(i => ({
+    const { error } = await this.supabase.from('budget_instances').insert(
+      instances.map((i) => ({
         id: i.id,
         period_id: i.periodId,
         category_id: i.categoryId,
         amount_allocated: i.amountAllocated.toString(),
         created_at: i.createdAt.toISOString(),
         updated_at: i.updatedAt.toISOString(),
-      })));
+      })),
+    );
 
     if (error) throw new Error(error.message);
   }
@@ -81,20 +100,28 @@ export class SupabaseBudgetRepository implements BudgetRepository {
     if (error) throw new Error(error.message);
   }
 
-  async getHistoricalStatsByAccount(accountId: string): Promise<CategoryStats[]> {
+  async getHistoricalStatsByAccount(
+    accountId: string,
+  ): Promise<CategoryStats[]> {
     /**
      * PostgreSQL specific query:
      * Calculates stats based on past transaction history grouped by period.
      */
     const { data, error } = await this.supabase
-      .rpc('get_category_historical_stats', { p_account_id: accountId });
+      .rpc('get_category_historical_stats', { p_account_id: accountId })
+      .returns<CategoryStatsRow[]>();
 
     if (error) {
-      console.warn('RPC get_category_historical_stats failed, falling back to empty stats', error);
+      console.warn(
+        'RPC get_category_historical_stats failed, falling back to empty stats',
+        error,
+      );
       return [];
     }
 
-    return (data || []).map(row => ({
+    const statsData = data as CategoryStatsRow[] | null;
+
+    return (statsData || []).map((row) => ({
       categoryId: row.category_id,
       minReal: BigInt(row.min_real),
       maxReal: BigInt(row.max_real),
@@ -102,7 +129,7 @@ export class SupabaseBudgetRepository implements BudgetRepository {
     }));
   }
 
-  private mapToDomain(row: any): BudgetInstance {
+  private mapToDomain(row: BudgetInstanceRow): BudgetInstance {
     return new BudgetInstance({
       id: row.id,
       periodId: row.period_id,

@@ -13,11 +13,11 @@ import { PeriodsController } from './infrastructure/periods.controller';
 
 @Module({
   imports: [
-    SupabaseModule, 
-    CategoriesModule, 
-    BudgetsModule, 
-    TransactionsModule, 
-    RecurringModule
+    SupabaseModule,
+    CategoriesModule,
+    BudgetsModule,
+    TransactionsModule,
+    RecurringModule,
   ],
   controllers: [PeriodsController],
   providers: [
@@ -29,6 +29,11 @@ import { PeriodsController } from './infrastructure/periods.controller';
     CreatePeriodWithBudgetsUseCase,
     UpdatePeriodBudgetsUseCase,
   ],
-  exports: [PeriodRepository, GetPeriodDraftUseCase, CreatePeriodWithBudgetsUseCase, UpdatePeriodBudgetsUseCase],
+  exports: [
+    PeriodRepository,
+    GetPeriodDraftUseCase,
+    CreatePeriodWithBudgetsUseCase,
+    UpdatePeriodBudgetsUseCase,
+  ],
 })
 export class PeriodsModule {}

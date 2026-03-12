@@ -3,6 +3,17 @@ import { SupabaseClient } from '@supabase/supabase-js';
 import { RecurringTransaction } from '../domain/recurring-transaction.entity';
 import { RecurringTransactionRepository } from '../domain/recurring-transaction.repository.interface';
 
+interface RecurringTransactionRow {
+  id: string;
+  account_id: string;
+  category_id: string | null;
+  description: string;
+  amount: string;
+  day_of_month: number;
+  created_at: string;
+  updated_at: string;
+}
+
 @Injectable()
 export class SupabaseRecurringTransactionRepository implements RecurringTransactionRepository {
   constructor(
@@ -15,11 +26,12 @@ export class SupabaseRecurringTransactionRepository implements RecurringTransact
       .from('recurring_transactions')
       .select('*')
       .eq('account_id', accountId)
-      .order('day_of_month', { ascending: true });
+      .order('day_of_month', { ascending: true })
+      .returns<RecurringTransactionRow[]>();
 
     if (error) throw new Error(error.message);
 
-    return (data || []).map(row => this.mapToDomain(row));
+    return (data || []).map((row) => this.mapToDomain(row));
   }
 
   async findById(id: string): Promise<RecurringTransaction | null> {
@@ -27,6 +39,7 @@ export class SupabaseRecurringTransactionRepository implements RecurringTransact
       .from('recurring_transactions')
       .select('*')
       .eq('id', id)
+      .returns<RecurringTransactionRow>()
       .single();
 
     if (error) return null;
@@ -59,7 +72,7 @@ export class SupabaseRecurringTransactionRepository implements RecurringTransact
     if (error) throw new Error(error.message);
   }
 
-  private mapToDomain(row: any): RecurringTransaction {
+  private mapToDomain(row: RecurringTransactionRow): RecurringTransaction {
     return new RecurringTransaction({
       id: row.id,
       accountId: row.account_id,

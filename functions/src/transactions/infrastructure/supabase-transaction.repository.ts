@@ -1,7 +1,27 @@
 import { Injectable, Inject } from '@nestjs/common';
 import { SupabaseClient } from '@supabase/supabase-js';
 import { Transaction } from '../domain/transaction.entity';
-import { TransactionRepository, FindAllTransactionsOptions } from '../domain/transaction.repository.interface';
+import {
+  TransactionRepository,
+  FindAllTransactionsOptions,
+} from '../domain/transaction.repository.interface';
+
+interface TransactionRow {
+  id: string;
+  account_id: string;
+  category_id: string | null;
+  period_id: string | null;
+  date: string;
+  description: string;
+  amount: string;
+  reconciled: boolean;
+  pending: boolean;
+  payment_method: string | null;
+  notes: string | null;
+  metadata: Record<string, any> | null;
+  created_at: string;
+  updated_at: string;
+}
 
 @Injectable()
 export class SupabaseTransactionRepository implements TransactionRepository {
@@ -10,7 +30,10 @@ export class SupabaseTransactionRepository implements TransactionRepository {
     private readonly supabase: SupabaseClient,
   ) {}
 
-  async findAllByAccount(accountId: string, options?: FindAllTransactionsOptions): Promise<Transaction[]> {
+  async findAllByAccount(
+    accountId: string,
+    options?: FindAllTransactionsOptions,
+  ): Promise<Transaction[]> {
     let query = this.supabase
       .from('transactions')
       .select('*')
@@ -23,36 +46,34 @@ export class SupabaseTransactionRepository implements TransactionRepository {
       query = query.lte('date', options.endDate.toISOString().split('T')[0]);
     }
 
-    const { data, error } = await query.order('date', { ascending: false });
+    const { data, error } = await query
+      .order('date', { ascending: false })
+      .returns<TransactionRow[]>();
 
     if (error) throw new Error(error.message);
 
-    return (data || []).map(row => this.mapToDomain(row));
+    return (data || []).map((row) => this.mapToDomain(row));
   }
 
-  async sumAmountByAccountBeforeDate(accountId: string, date: Date): Promise<bigint> {
-    // To bypass the 1000 limit and avoid fetching all data, we use an RPC call
-    // or a specialized query. If we don't have an RPC, we can use a select with sum if the view exists
-    // but here we'll assume we want a robust way.
-    // For now, let's use a query that only selects the amount and sum it.
-    // Actually, Supabase doesn't support .sum() client-side easily without fetching all rows.
-    // The best way is to use a PostgreSQL function (RPC).
-    
-    const { data, error } = await this.supabase
-      .rpc('sum_transactions_before_date', {
-        p_account_id: accountId,
-        p_date: date.toISOString().split('T')[0]
-      });
+  async sumAmountByAccountBeforeDate(
+    accountId: string,
+    date: Date,
+  ): Promise<bigint> {
+    const response = await this.supabase.rpc('sum_transactions_before_date', {
+      p_account_id: accountId,
+      p_date: date.toISOString().split('T')[0],
+    });
 
-    if (error) {
-      // Fallback if RPC doesn't exist yet or other error
-      // Note: In production you should ensure the RPC exists
-      console.warn('RPC sum_transactions_before_date failed, fallback to manual sum', error);
-      // Fallback logic could go here, but let's prioritize the RPC
+    if (response.error) {
+      console.warn(
+        'RPC sum_transactions_before_date failed, fallback to manual sum',
+        response.error,
+      );
       return BigInt(0);
     }
 
-    return BigInt(data || 0);
+    const dataValue = response.data as string | number | null;
+    return BigInt(dataValue || 0);
   }
 
   async findAllByPeriod(periodId: string): Promise<Transaction[]> {
@@ -60,11 +81,12 @@ export class SupabaseTransactionRepository implements TransactionRepository {
       .from('transactions')
       .select('*')
       .eq('period_id', periodId)
-      .order('date', { ascending: false });
+      .order('date', { ascending: false })
+      .returns<TransactionRow[]>();
 
     if (error) throw new Error(error.message);
 
-    return (data || []).map(row => this.mapToDomain(row));
+    return (data || []).map((row) => this.mapToDomain(row));
   }
 
   async findById(id: string): Promise<Transaction | null> {
@@ -72,6 +94,7 @@ export class SupabaseTransactionRepository implements TransactionRepository {
       .from('transactions')
       .select('*')
       .eq('id', id)
+      .returns<TransactionRow>()
       .single();
 
     if (error) return null;
@@ -80,24 +103,22 @@ export class SupabaseTransactionRepository implements TransactionRepository {
   }
 
   async save(transaction: Transaction): Promise<void> {
-    const { error } = await this.supabase
-      .from('transactions')
-      .upsert({
-        id: transaction.id,
-        account_id: transaction.accountId,
-        category_id: transaction.categoryId,
-        period_id: transaction.periodId,
-        date: transaction.date.toISOString().split('T')[0],
-        description: transaction.description,
-        amount: transaction.amount.toString(),
-        reconciled: transaction.reconciled,
-        pending: transaction.pending,
-        payment_method: transaction.paymentMethod,
-        notes: transaction.notes,
-        metadata: transaction.metadata,
-        created_at: transaction.createdAt.toISOString(),
-        updated_at: transaction.updatedAt.toISOString(),
-      });
+    const { error } = await this.supabase.from('transactions').upsert({
+      id: transaction.id,
+      account_id: transaction.accountId,
+      category_id: transaction.categoryId,
+      period_id: transaction.periodId,
+      date: transaction.date.toISOString().split('T')[0],
+      description: transaction.description,
+      amount: transaction.amount.toString(),
+      reconciled: transaction.reconciled,
+      pending: transaction.pending,
+      payment_method: transaction.paymentMethod,
+      notes: transaction.notes,
+      metadata: transaction.metadata || {},
+      created_at: transaction.createdAt.toISOString(),
+      updated_at: transaction.updatedAt.toISOString(),
+    });
 
     if (error) throw new Error(error.message);
   }
@@ -111,7 +132,7 @@ export class SupabaseTransactionRepository implements TransactionRepository {
     if (error) throw new Error(error.message);
   }
 
-  private mapToDomain(row: any): Transaction {
+  private mapToDomain(row: TransactionRow): Transaction {
     return new Transaction({
       id: row.id,
       accountId: row.account_id,
@@ -121,7 +142,7 @@ export class SupabaseTransactionRepository implements TransactionRepository {
       description: row.description,
       amount: BigInt(row.amount),
       reconciled: row.reconciled,
-      pending: row.pending || false,
+      pending: row.pending,
       paymentMethod: row.payment_method,
       notes: row.notes,
       metadata: row.metadata || {},

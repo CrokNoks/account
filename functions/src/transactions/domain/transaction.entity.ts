@@ -59,7 +59,13 @@ export class Transaction {
     }
   }
 
-  static create(props: Omit<TransactionProps, 'id' | 'createdAt' | 'updatedAt'> & { id?: string; createdAt?: Date; updatedAt?: Date }): Transaction {
+  static create(
+    props: Omit<TransactionProps, 'id' | 'createdAt' | 'updatedAt'> & {
+      id?: string;
+      createdAt?: Date;
+      updatedAt?: Date;
+    },
+  ): Transaction {
     const now = new Date();
     return new Transaction({
       ...props,

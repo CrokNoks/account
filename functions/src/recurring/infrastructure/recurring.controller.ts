@@ -1,11 +1,34 @@
-import { Controller, Get, Post, Body, Param, UseGuards, Delete, Patch } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiProperty } from '@nestjs/swagger';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Param,
+  UseGuards,
+  Delete,
+  Patch,
+} from '@nestjs/common';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+  ApiProperty,
+} from '@nestjs/swagger';
 import { SupabaseAuthGuard } from '../../auth/supabase-auth.guard';
 import { GetRecurringTransactionsUseCase } from '../application/get-recurring-transactions.use-case';
 import { CreateRecurringTransactionUseCase } from '../application/create-recurring-transaction.use-case';
 import { UpdateRecurringTransactionUseCase } from '../application/update-recurring-transaction.use-case';
 import { DeleteRecurringTransactionUseCase } from '../application/delete-recurring-transaction.use-case';
-import { IsString, IsOptional, IsNumberString, IsInt, Min, Max } from 'class-validator';
+import { RecurringTransaction } from '../domain/recurring-transaction.entity';
+import {
+  IsString,
+  IsOptional,
+  IsNumberString,
+  IsInt,
+  Min,
+  Max,
+} from 'class-validator';
 
 export class CreateRecurringTransactionDto {
   @IsOptional()
@@ -54,9 +77,11 @@ export class RecurringController {
   @Get()
   @ApiOperation({ summary: 'Get all recurring transactions for an account' })
   @ApiResponse({ status: 200, type: [RecurringTransactionResponseDto] })
-  async findAll(@Param('accountId') accountId: string): Promise<RecurringTransactionResponseDto[]> {
+  async findAll(
+    @Param('accountId') accountId: string,
+  ): Promise<RecurringTransactionResponseDto[]> {
     const transactions = await this.getRecurringUseCase.execute(accountId);
-    return transactions.map(t => this.mapToResponse(t));
+    return transactions.map((t) => this.mapToResponse(t));
   }
 
   @Post()
@@ -64,7 +89,7 @@ export class RecurringController {
   @ApiResponse({ status: 201, type: RecurringTransactionResponseDto })
   async create(
     @Param('accountId') accountId: string,
-    @Body() dto: CreateRecurringTransactionDto
+    @Body() dto: CreateRecurringTransactionDto,
   ): Promise<RecurringTransactionResponseDto> {
     const transaction = await this.createRecurringUseCase.execute({
       ...dto,
@@ -79,7 +104,7 @@ export class RecurringController {
   @ApiResponse({ status: 200, type: RecurringTransactionResponseDto })
   async update(
     @Param('id') id: string,
-    @Body() dto: Partial<CreateRecurringTransactionDto>
+    @Body() dto: Partial<CreateRecurringTransactionDto>,
   ): Promise<RecurringTransactionResponseDto> {
     const transaction = await this.updateRecurringUseCase.execute(id, {
       ...dto,
@@ -95,7 +120,9 @@ export class RecurringController {
     await this.deleteRecurringUseCase.execute(id);
   }
 
-  private mapToResponse(t: any): RecurringTransactionResponseDto {
+  private mapToResponse(
+    t: RecurringTransaction,
+  ): RecurringTransactionResponseDto {
     return {
       id: t.id,
       accountId: t.accountId,

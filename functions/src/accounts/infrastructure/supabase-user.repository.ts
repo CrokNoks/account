@@ -11,7 +11,9 @@ export class SupabaseUserRepository extends UserRepository {
     super();
   }
 
-  async findByEmail(email: string): Promise<{ id: string, email: string } | null> {
+  async findByEmail(
+    email: string,
+  ): Promise<{ id: string; email: string } | null> {
     const { data, error } = await this.supabase
       .from('app_users')
       .select('id, email')

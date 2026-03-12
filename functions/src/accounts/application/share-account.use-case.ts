@@ -22,7 +22,7 @@ export class ShareAccountUseCase {
   async execute(input: ShareAccountInput): Promise<void> {
     const account = await this.accountRepository.findById(input.accountId);
     if (!account) throw new Error('Account not found');
-    
+
     // Only owner can share
     if (account.ownerId !== input.initiatorId) {
       throw new Error('Only the account owner can manage shares');
@@ -30,17 +30,23 @@ export class ShareAccountUseCase {
 
     const targetUser = await this.userRepository.findByEmail(input.email);
     if (!targetUser) {
-      throw new Error(`User with email ${input.email} not found. They must have logged in at least once.`);
+      throw new Error(
+        `User with email ${input.email} not found. They must have logged in at least once.`,
+      );
     }
 
     if (targetUser.id === account.ownerId) {
-      throw new Error('You cannot share an account with yourself (you are the owner)');
+      throw new Error(
+        'You cannot share an account with yourself (you are the owner)',
+      );
     }
 
-    await this.accountShareRepository.save(new AccountShare({
-      accountId: input.accountId,
-      userId: targetUser.id,
-      permission: input.permission,
-    }));
+    await this.accountShareRepository.save(
+      new AccountShare({
+        accountId: input.accountId,
+        userId: targetUser.id,
+        permission: input.permission,
+      }),
+    );
   }
 }

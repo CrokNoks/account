@@ -27,21 +27,33 @@ import { SupabaseUserRepository } from './infrastructure/supabase-user.repositor
     },
     {
       provide: CreateAccountUseCase,
-      useFactory: (repository: AccountRepository) => new CreateAccountUseCase(repository),
+      useFactory: (repository: AccountRepository) =>
+        new CreateAccountUseCase(repository),
       inject: [AccountRepository],
     },
     {
       provide: GetAccountsUseCase,
-      useFactory: (repository: AccountRepository) => new GetAccountsUseCase(repository),
+      useFactory: (repository: AccountRepository) =>
+        new GetAccountsUseCase(repository),
       inject: [AccountRepository],
     },
     {
       provide: ShareAccountUseCase,
-      useFactory: (accRepo: AccountRepository, shareRepo: AccountShareRepository, userRepo: UserRepository) => 
-        new ShareAccountUseCase(accRepo, shareRepo, userRepo),
+      useFactory: (
+        accRepo: AccountRepository,
+        shareRepo: AccountShareRepository,
+        userRepo: UserRepository,
+      ) => new ShareAccountUseCase(accRepo, shareRepo, userRepo),
       inject: [AccountRepository, AccountShareRepository, UserRepository],
     },
   ],
-  exports: [AccountRepository, AccountShareRepository, UserRepository, CreateAccountUseCase, GetAccountsUseCase, ShareAccountUseCase],
+  exports: [
+    AccountRepository,
+    AccountShareRepository,
+    UserRepository,
+    CreateAccountUseCase,
+    GetAccountsUseCase,
+    ShareAccountUseCase,
+  ],
 })
 export class AccountsModule {}

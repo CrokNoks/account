@@ -14,7 +14,9 @@ export interface CreateRecurringTransactionCommand {
 export class CreateRecurringTransactionUseCase {
   constructor(private readonly repository: RecurringTransactionRepository) {}
 
-  async execute(command: CreateRecurringTransactionCommand): Promise<RecurringTransaction> {
+  async execute(
+    command: CreateRecurringTransactionCommand,
+  ): Promise<RecurringTransaction> {
     const recurring = RecurringTransaction.create(command);
     await this.repository.save(recurring);
     return recurring;

@@ -4,7 +4,7 @@ import { AccountRepository } from '../domain/account.repository.interface';
 export class GetAccountsUseCase {
   constructor(private readonly accountRepository: AccountRepository) {}
 
-  async execute(userId: string): Promise<Account[]> {
-    return this.accountRepository.findAllForUser(userId);
+  async execute(): Promise<Account[]> {
+    return this.accountRepository.findAllForUser();
   }
 }
