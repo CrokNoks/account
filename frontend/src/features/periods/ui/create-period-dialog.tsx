@@ -42,8 +42,10 @@ export function CreatePeriodDialog() {
     }
   }, [open, refetch]);
 
+   
   useEffect(() => {
     if (draft && open) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setStartDate(draft.suggestedStartDate.split('T')[0]);
       setEndDate(draft.suggestedEndDate.split('T')[0]);
       

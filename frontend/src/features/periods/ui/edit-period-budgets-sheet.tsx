@@ -36,12 +36,14 @@ export function EditPeriodBudgetsSheet({ periodId, open, onOpenChange }: EditPer
 
   const [budgets, setBudgets] = useState<Record<string, string>>({});
 
+   
   useEffect(() => {
     if (existingBudgets && open) {
       const initialBudgets: Record<string, string> = {};
       existingBudgets.forEach(b => {
         initialBudgets[b.categoryId] = (parseInt(b.amountAllocated, 10) / 100).toString();
       });
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setBudgets(initialBudgets);
     }
   }, [existingBudgets, open]);

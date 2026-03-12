@@ -1,10 +1,9 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useRef, SetStateAction } from 'react';
 import { 
   Sheet, 
   SheetContent, 
-  SheetDescription, 
   SheetHeader, 
   SheetTitle, 
   SheetTrigger,
@@ -37,7 +36,7 @@ import { useCreateTransfer } from '../api/use-create-transfer';
 import { usePredictCategory } from '../api/use-predict-category';
 import { useScanReceipt } from '@/features/reporting/api/use-scan-receipt';
 import { useUiStore } from '@/shared/model/use-ui-store';
-import { Plus, Receipt, Check, ChevronsUpDown, Sparkles, ArrowRightLeft, Clock, Camera, Loader2 } from 'lucide-react';
+import { Plus, Receipt, Check, ChevronsUpDown, Sparkles, ArrowRightLeft, Camera, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTranslations } from 'next-intl';
 import { cn } from '@/lib/utils';
@@ -53,6 +52,7 @@ export function CreateTransactionDrawer({ trigger, isFab = false }: { trigger?: 
   const { mutate: createTransaction, isPending: isCreatingTransaction } = useCreateTransaction();
   const { mutate: createTransfer, isPending: isCreatingTransfer } = useCreateTransfer();
   const { mutate: scanReceipt, isPending: isScanning } = useScanReceipt();
+  const { mutate: predictCategory } = usePredictCategory();
 
   const isPending = isCreatingTransaction || isCreatingTransfer || isScanning;
 
@@ -61,7 +61,6 @@ export function CreateTransactionDrawer({ trigger, isFab = false }: { trigger?: 
   
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [description, setDescription] = useState('');
-  const [debouncedDescription, setDebouncedDescription] = useState('');
   const [categoryId, setCategoryId] = useState<string>('');
   const [amount, setAmount] = useState('');
   const [pending, setPending] = useState(false);
@@ -69,6 +68,7 @@ export function CreateTransactionDrawer({ trigger, isFab = false }: { trigger?: 
 
   const dateInputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const predictionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const activePeriod = periods?.find(p => p.isActive);
 
@@ -76,60 +76,81 @@ export function CreateTransactionDrawer({ trigger, isFab = false }: { trigger?: 
     const file = e.target.files?.[0];
     if (!file || !activeAccountId) return;
 
+    // Use a canvas to resize/compress the image
     const reader = new FileReader();
-    reader.onload = async () => {
-      const base64 = (reader.result as string).split(',')[1];
-      scanReceipt({ 
-        accountId: activeAccountId, 
-        base64Image: base64, 
-        mimeType: file.type 
-      }, {
-        onSuccess: (data) => {
-          if (data.date) setDate(data.date);
-          if (data.amount) setAmount(data.amount.toString());
-          if (data.description) setDescription(data.description);
-          toast.success("Ticket analysé avec succès !");
-        },
-        onError: () => {
-          toast.error("Erreur lors de l'analyse du ticket.");
+    reader.onload = async (event) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const MAX_WIDTH = 1024;
+        const MAX_HEIGHT = 1024;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > MAX_WIDTH) {
+            height *= MAX_WIDTH / width;
+            width = MAX_WIDTH;
+          }
+        } else {
+          if (height > MAX_HEIGHT) {
+            width *= MAX_HEIGHT / height;
+            height = MAX_HEIGHT;
+          }
         }
-      });
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx?.drawImage(img, 0, 0, width, height);
+
+        // Get compressed base64
+        const compressedBase64 = canvas.toDataURL('image/jpeg', 0.7).split(',')[1];
+        
+        scanReceipt({ 
+          accountId: activeAccountId, 
+          base64Image: compressedBase64, 
+          mimeType: 'image/jpeg' 
+        }, {
+          onSuccess: (data) => {
+            if (data.date) setDate(data.date);
+            if (data.amount) setAmount(data.amount.toString());
+            if (data.description) setDescription(data.description);
+            toast.success("Ticket analysé avec succès !");
+          },
+          onError: () => {
+            toast.error("Erreur lors de l'analyse du ticket.");
+          }
+        });
+      };
+      img.src = event.target?.result as string;
     };
     reader.readAsDataURL(file);
   };
 
-  // Debounce description for prediction
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedDescription(description);
-    }, 600);
-    return () => clearTimeout(timer);
-  }, [description]);
+  const handleDescriptionChange = (value: string) => {
+    setDescription(value);
 
-  // Prediction Query
-  const { data: prediction } = usePredictCategory(activeAccountId, debouncedDescription);
-
-  // Auto-apply prediction
-  useEffect(() => {
-    if (mode === 'standard' && prediction?.categoryId && !categoryId && description.length >= 3) {
-      setCategoryId(prediction.categoryId);
-      toast.info(t('new_transaction_title'), {
-        description: "Catégorie suggérée automatiquement",
-        icon: <Sparkles className="w-4 h-4 text-yellow-500" />
-      });
+    if (predictionTimeoutRef.current) {
+      clearTimeout(predictionTimeoutRef.current);
     }
-  }, [prediction, categoryId, description.length, t, mode]);
 
-  // Reset/Focus on open change
-  useEffect(() => {
-    if (!isCreateTransactionDrawerOpen) {
-      resetForm();
-    } else {
-      setTimeout(() => {
-        dateInputRef.current?.focus();
-      }, 100);
+    if (mode === 'standard' && activeAccountId && value.length >= 3 && !categoryId) {
+      predictionTimeoutRef.current = setTimeout(() => {
+        predictCategory({ accountId: activeAccountId, description: value }, {
+          onSuccess: (data) => {
+            if (data.categoryId) {
+              setCategoryId(data.categoryId);
+              toast.info(t('new_transaction_title'), {
+                description: "Catégorie suggérée automatiquement",
+                icon: <Sparkles className="w-4 h-4 text-yellow-500" />
+              });
+            }
+          }
+        });
+      }, 600);
     }
-  }, [isCreateTransactionDrawerOpen]);
+  };
 
   const resetForm = () => {
     setDescription('');
@@ -138,6 +159,17 @@ export function CreateTransactionDrawer({ trigger, isFab = false }: { trigger?: 
     setCategoryId('');
     setDestinationAccountId('');
     setMode('standard');
+  };
+
+  const handleOpenChange = (open: boolean) => {
+    setCreateTransactionDrawerOpen(open);
+    if (!open) {
+      resetForm();
+    } else {
+      setTimeout(() => {
+        dateInputRef.current?.focus();
+      }, 100);
+    }
   };
 
   const handleSubmit = (addAnother = false) => {
@@ -218,7 +250,7 @@ export function CreateTransactionDrawer({ trigger, isFab = false }: { trigger?: 
   );
 
   return (
-    <Sheet open={isCreateTransactionDrawerOpen} onOpenChange={setCreateTransactionDrawerOpen}>
+    <Sheet open={isCreateTransactionDrawerOpen} onOpenChange={handleOpenChange}>
       {trigger !== undefined ? (
         trigger && <SheetTrigger render={trigger} />
       ) : (
@@ -258,7 +290,7 @@ export function CreateTransactionDrawer({ trigger, isFab = false }: { trigger?: 
               <kbd className="font-mono">Tab</kbd>
             </div>
           </div>
-          <Tabs value={mode} onValueChange={(v) => setMode(v as any)} className="w-full">
+          <Tabs value={mode} onValueChange={(v) => setMode(v as SetStateAction<'standard' | 'transfer'>)} className="w-full">
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="standard" className="gap-2">
                 <Receipt className="w-4 h-4" /> Standard
@@ -288,7 +320,7 @@ export function CreateTransactionDrawer({ trigger, isFab = false }: { trigger?: 
             <Input 
               placeholder={mode === 'transfer' ? "Virement épargne, Loyer partagé..." : "Rent, Groceries, Salary..."} 
               value={description}
-              onChange={(e) => setDescription(e.target.value)}
+              onChange={(e) => handleDescriptionChange(e.target.value)}
               required
               className="h-11"
             />

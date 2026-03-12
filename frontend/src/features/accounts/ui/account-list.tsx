@@ -5,7 +5,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { useAccounts, Account } from '../api/use-accounts';
 import { useUpdateAccount } from '../api/use-update-account';
 import { formatCurrency } from '@/shared/lib/format';
-import { CreditCard, Landmark, Wallet, Pencil, Share2 } from 'lucide-react';
+import { LucideIcon, CreditCard, Landmark, Wallet, Pencil, Share2 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { 
   Dialog, 
@@ -20,7 +20,7 @@ import { toast } from 'sonner';
 import { useTranslations } from 'next-intl';
 import { ShareAccountDialog } from './share-account-dialog';
 
-const typeIcons: Record<string, any> = {
+const typeIcons: Record<string, LucideIcon> = {
   checking: CreditCard,
   savings: Landmark,
   cash: Wallet,
@@ -119,7 +119,7 @@ function EditAccountDialog({ account, open, onOpenChange }: { account: Account, 
         name,
         description,
         initialBalance: Math.round(parseFloat(balance) * 100).toString(),
-      } as any
+      }
     }, {
       onSuccess: () => {
         toast.success(tc('success'));

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { formatCurrency } from "@/shared/lib/format";
 import { useAccountStore } from "@/features/accounts/model/use-account-store";
@@ -26,13 +26,24 @@ import {
   Bar
 } from 'recharts';
 
-function CustomTooltip({ active, payload, label }: any) {
+type CustomTooltipProps = {
+  active?: boolean;
+  payload?: Array<{
+    value: number;
+    name: string;
+    color?: string;
+    fill?: string;
+  }>;
+  label?: string;
+};
+
+function CustomTooltip({ active, payload, label }: CustomTooltipProps) {
   if (active && payload && payload.length) {
     return (
       <div className="bg-card border border-border p-3 rounded-lg shadow-md min-w-[150px]">
         <p className="text-xs font-bold mb-2 border-b pb-1">{label}</p>
         <div className="space-y-1">
-          {payload.map((entry: any, index: number) => (
+          {payload.map((entry, index: number) => (
             <div key={index} className="flex items-center justify-between gap-4 text-[11px]">
               <div className="flex items-center gap-2">
                 <div className="w-2 h-2 rounded-full" style={{ backgroundColor: entry.color || entry.fill }} />
@@ -50,7 +61,6 @@ function CustomTooltip({ active, payload, label }: any) {
 
 export function EvolutionChart() {
   const t = useTranslations('Reporting');
-  const tc = useTranslations('Categories');
   const locale = useLocale();
   const dateLocale = locale === 'fr' ? fr : enUS;
   
@@ -88,21 +98,24 @@ export function EvolutionChart() {
     };
   }, [categories, evolutionData]);
 
-  const [selectedCategoryIds, setSelectedCategoryIds] = useState<Set<string>>(new Set());
+  const [selectedCategoryIds, setSelectedCategoryIds] = useState<Set<string> | null>(null);
 
-  // Initialize selection with top 5 most variable categories
-  useEffect(() => {
-    if (sortedCategories.length > 0 && selectedCategoryIds.size === 0 && 'variance' in sortedCategories[0]) {
+  // Compute actual selection (either from state or default top 5)
+  const currentSelection = useMemo(() => {
+    if (selectedCategoryIds) return selectedCategoryIds;
+    
+    if (sortedCategories.length > 0 && 'variance' in sortedCategories[0]) {
       const top5Ids = sortedCategories
         .slice(0, 5)
         .map(v => v.id);
-
-      setSelectedCategoryIds(new Set(top5Ids));
+      return new Set(top5Ids);
     }
-  }, [sortedCategories, selectedCategoryIds.size]);
+    
+    return new Set<string>();
+  }, [selectedCategoryIds, sortedCategories]);
 
   const toggleCategory = (id: string) => {
-    const newSet = new Set(selectedCategoryIds);
+    const newSet = new Set(currentSelection);
     if (newSet.has(id)) {
       newSet.delete(id);
     } else {
@@ -112,7 +125,7 @@ export function EvolutionChart() {
   };
 
   const toggleAll = () => {
-    if (selectedCategoryIds.size === expenseCategories.length) {
+    if (currentSelection.size === expenseCategories.length) {
       setSelectedCategoryIds(new Set());
     } else {
       setSelectedCategoryIds(new Set(expenseCategories.map(c => c.id)));
@@ -122,15 +135,15 @@ export function EvolutionChart() {
   if (isLoadingEvolution || isLoadingCategories) return <div className="h-96 bg-muted animate-pulse rounded-xl" />;
   
   if (!evolutionData || evolutionData.length === 0) {
-    return <div className="h-64 flex items-center justify-center border-2 border-dashed rounded-xl text-muted-foreground italic">Aucune donnée d'évolution disponible</div>;
+    return <div className="h-64 flex items-center justify-center border-2 border-dashed rounded-xl text-muted-foreground italic">Aucune donnée d&apos;évolution disponible</div>;
   }
 
-  const chartData = evolutionData.map(d => {
+  const chartData: Array<Record<string, string | number>> = evolutionData.map(d => {
     const balance = parseInt(d.realBankBalance, 10) / 100;
     const income = parseInt(d.realIncome, 10) / 100;
     const expenses = Math.abs(parseInt(d.realExpenses, 10) / 100);
     
-    const dataPoint: any = {
+    const dataPoint: Record<string, string | number> = {
       name: format(new Date(d.startDate), 'MMM yy', { locale: dateLocale }),
       balance,
       income,
@@ -252,15 +265,15 @@ export function EvolutionChart() {
                     onClick={toggleAll}
                     className="text-[10px] text-primary hover:underline font-medium"
                   >
-                    {selectedCategoryIds.size === expenseCategories.length ? 'Tout désélectionner' : 'Tout sélectionner'}
+                    {currentSelection.size === expenseCategories.length ? 'Tout désélectionner' : 'Tout sélectionner'}
                   </button>
                 </div>
                 <div className="space-y-2 max-h-[400px] overflow-y-auto pr-2">
-                  {sortedCategories.map((cat: any) => (
+                  {sortedCategories.map((cat) => (
                     <div key={cat.id} className="flex items-center space-x-2">
                       <Checkbox 
                         id={`cat-${cat.id}`} 
-                        checked={selectedCategoryIds.has(cat.id)}
+                        checked={currentSelection.has(cat.id)}
                         onCheckedChange={() => toggleCategory(cat.id)}
                       />
                       <label 
@@ -272,7 +285,7 @@ export function EvolutionChart() {
                           <span className="truncate">{cat.name}</span>
                         </div>
                         <span className="text-[9px] text-muted-foreground shrink-0 font-mono">
-                          ±{formatCurrency(cat.variance.toString())}
+                          ±{formatCurrency(('variance' in cat ? (cat.variance as number) : 0).toString())}
                         </span>
                       </label>
                     </div>
@@ -306,7 +319,7 @@ export function EvolutionChart() {
                     <Tooltip content={<CustomTooltip />} />
                     <Legend layout="horizontal" verticalAlign="bottom" align="center" iconType="circle" wrapperStyle={{ paddingTop: '20px' }} />
                     {expenseCategories
-                      .filter(cat => selectedCategoryIds.has(cat.id))
+                      .filter(cat => currentSelection.has(cat.id))
                       .map((cat) => (
                         <Bar 
                           key={cat.id} 

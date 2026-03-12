@@ -66,14 +66,17 @@ export function CreateRecurringDialog({
     setDayOfMonth('1');
   };
 
+   
   useEffect(() => {
     if (open) {
       if (initialData) {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setDescription(initialData.description || '');
         setCategoryId(initialData.categoryId || '');
         setAmount(initialData.amount || '');
         setDayOfMonth(initialData.dayOfMonth || '1');
       } else {
+         
         resetForm();
       }
     }

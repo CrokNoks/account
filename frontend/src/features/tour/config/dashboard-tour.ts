@@ -1,6 +1,7 @@
+import { _Translator } from 'next-intl';
 import { Step } from 'react-joyride';
 
-export const DASHBOARD_STEPS = (t: any): Step[] => [
+export const DASHBOARD_STEPS = (t: _Translator): Step[] => [
   {
     target: 'body',
     content: t('dashboard.welcome'),

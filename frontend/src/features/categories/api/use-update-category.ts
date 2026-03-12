@@ -1,11 +1,12 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@/shared/api/api-client';
+import { Category } from './use-categories';
 
 export function useUpdateCategory() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ accountId, id, data }: { accountId: string, id: string, data: any }) => {
+    mutationFn: async ({ accountId, id, data }: { accountId: string, id: string, data: Partial<Category> }) => {
       const { data: result } = await apiClient.patch(`/${accountId}/categories/${id}`, data);
       return result;
     },
