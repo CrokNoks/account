@@ -1,12 +1,39 @@
-import { Controller, Get, Post, Body, Param, UseGuards, Request, Query, Patch, Delete, Put } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiProperty } from '@nestjs/swagger';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Param,
+  UseGuards,
+  Patch,
+  Delete,
+  Put,
+} from '@nestjs/common';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+  ApiProperty,
+} from '@nestjs/swagger';
 import { SupabaseAuthGuard } from '../../auth/supabase-auth.guard';
-import { GetPeriodDraftUseCase, PeriodDraft } from '../application/get-period-draft.use-case';
+import {
+  GetPeriodDraftUseCase,
+  PeriodDraft,
+} from '../application/get-period-draft.use-case';
 import { CreatePeriodWithBudgetsUseCase } from '../application/create-period-with-budgets.use-case';
 import { UpdatePeriodBudgetsUseCase } from '../application/update-period-budgets.use-case';
 import { PeriodRepository } from '../domain/period.repository.interface';
 import { BudgetRepository } from '../../budgets/domain/budget.repository.interface';
-import { IsString, IsDateString, IsArray, ValidateNested, IsOptional, IsBoolean } from 'class-validator';
+import { Period } from '../domain/period.entity';
+import {
+  IsString,
+  IsDateString,
+  IsArray,
+  ValidateNested,
+  IsOptional,
+  IsBoolean,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class BudgetInitDto {
@@ -15,7 +42,9 @@ export class BudgetInitDto {
   categoryId: string;
 
   @IsString()
-  @ApiProperty({ description: 'Amount allocated in cents (stringified BigInt)' })
+  @ApiProperty({
+    description: 'Amount allocated in cents (stringified BigInt)',
+  })
   amountAllocated: string;
 }
 
@@ -45,9 +74,18 @@ export class CreatePeriodDto {
 }
 
 export class UpdatePeriodDto {
-  @IsOptional() @IsDateString() @ApiProperty({ required: false }) startDate?: string;
-  @IsOptional() @IsDateString() @ApiProperty({ required: false }) endDate?: string;
-  @IsOptional() @IsBoolean() @ApiProperty({ required: false }) isActive?: boolean;
+  @IsOptional()
+  @IsDateString()
+  @ApiProperty({ required: false })
+  startDate?: string;
+  @IsOptional()
+  @IsDateString()
+  @ApiProperty({ required: false })
+  endDate?: string;
+  @IsOptional()
+  @IsBoolean()
+  @ApiProperty({ required: false })
+  isActive?: boolean;
 }
 
 export class UpdateBudgetsDto {
@@ -79,7 +117,9 @@ export class PeriodsController {
   }
 
   @Get('draft-init')
-  @ApiOperation({ summary: 'Get suggested dates and historical stats for a new period' })
+  @ApiOperation({
+    summary: 'Get suggested dates and historical stats for a new period',
+  })
   @ApiResponse({ status: 200 })
   async getDraft(@Param('accountId') accountId: string): Promise<PeriodDraft> {
     return this.getPeriodDraftUseCase.execute(accountId);
@@ -90,7 +130,7 @@ export class PeriodsController {
   @ApiResponse({ status: 200 })
   async getBudgets(@Param('id') id: string) {
     const budgets = await this.budgetRepository.findAllByPeriod(id);
-    return budgets.map(b => ({
+    return budgets.map((b) => ({
       id: b.id,
       categoryId: b.categoryId,
       amountAllocated: b.amountAllocated.toString(),
@@ -100,19 +140,16 @@ export class PeriodsController {
   @Put(':id/budgets')
   @ApiOperation({ summary: 'Update budgets for a period' })
   @ApiResponse({ status: 200 })
-  async updateBudgets(
-    @Param('id') id: string,
-    @Body() dto: UpdateBudgetsDto
-  ) {
+  async updateBudgets(@Param('id') id: string, @Body() dto: UpdateBudgetsDto) {
     const result = await this.updatePeriodBudgetsUseCase.execute({
       periodId: id,
-      budgets: dto.budgets.map(b => ({
+      budgets: dto.budgets.map((b) => ({
         categoryId: b.categoryId,
         amountAllocated: BigInt(b.amountAllocated),
       })),
     });
 
-    return result.map(b => ({
+    return result.map((b) => ({
       id: b.id,
       categoryId: b.categoryId,
       amountAllocated: b.amountAllocated.toString(),
@@ -122,7 +159,10 @@ export class PeriodsController {
   @Get(':id')
   @ApiOperation({ summary: 'Get a single period' })
   @ApiResponse({ status: 200 })
-  async findOne(@Param('accountId') accountId: string, @Param('id') id: string) {
+  async findOne(
+    @Param('accountId') accountId: string,
+    @Param('id') id: string,
+  ) {
     return this.periodRepository.findById(id);
   }
 
@@ -132,21 +172,28 @@ export class PeriodsController {
   async update(
     @Param('accountId') accountId: string,
     @Param('id') id: string,
-    @Body() dto: UpdatePeriodDto
+    @Body() dto: UpdatePeriodDto,
   ) {
     const existing = await this.periodRepository.findById(id);
     if (!existing) throw new Error('Period not found');
 
-    const updated = new (existing as any).constructor({
-      ...existing,
-      ...dto,
-      startDate: dto.startDate ? new Date(dto.startDate) : (existing as any).startDate,
-      endDate: dto.endDate ? new Date(dto.endDate) : (existing as any).endDate,
+    const updated = new Period({
+      id: existing.id,
+      accountId: existing.accountId,
+      startDate: dto.startDate ? new Date(dto.startDate) : existing.startDate,
+      endDate: dto.endDate ? new Date(dto.endDate) : existing.endDate,
+      isActive: dto.isActive !== undefined ? dto.isActive : existing.isActive,
+      createdAt: existing.createdAt,
       updatedAt: new Date(),
     });
 
     await this.periodRepository.save(updated);
-    return updated;
+    return {
+      id: updated.id,
+      startDate: updated.startDate.toISOString(),
+      endDate: updated.endDate.toISOString(),
+      isActive: updated.isActive,
+    };
   }
 
   @Delete(':id')
@@ -157,17 +204,19 @@ export class PeriodsController {
   }
 
   @Post()
-  @ApiOperation({ summary: 'Create a new period with initial budgets for this account' })
+  @ApiOperation({
+    summary: 'Create a new period with initial budgets for this account',
+  })
   @ApiResponse({ status: 201 })
   async create(
     @Param('accountId') accountId: string,
-    @Body() dto: Omit<CreatePeriodDto, 'accountId'>
+    @Body() dto: Omit<CreatePeriodDto, 'accountId'>,
   ) {
     const result = await this.createPeriodWithBudgetsUseCase.execute({
       accountId,
       startDate: new Date(dto.startDate),
       endDate: new Date(dto.endDate),
-      budgets: dto.budgets.map(b => ({
+      budgets: dto.budgets.map((b) => ({
         categoryId: b.categoryId,
         amountAllocated: BigInt(b.amountAllocated),
       })),

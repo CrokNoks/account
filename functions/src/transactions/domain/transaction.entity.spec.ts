@@ -1,4 +1,4 @@
-import { Transaction } from './transaction.entity';
+import { Transaction, TransactionProps } from './transaction.entity';
 
 describe('Transaction Entity', () => {
   it('should create a valid transaction', () => {
@@ -53,14 +53,21 @@ describe('Transaction Entity', () => {
   });
 
   it('should default reconciled and pending to false', () => {
-    const transaction = Transaction.create({
+    const props: TransactionProps = {
+      id: 'tx-1',
       accountId: 'acc-123',
       categoryId: 'cat-456',
       date: new Date(),
       description: 'Test',
       amount: BigInt(-1000),
-      metadata: {} as any, // Testing defaults
-    } as any);
+      reconciled: false,
+      pending: false,
+      metadata: {},
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    const transaction = new Transaction(props);
 
     expect(transaction.reconciled).toBe(false);
     expect(transaction.pending).toBe(false);

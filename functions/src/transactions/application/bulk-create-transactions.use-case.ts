@@ -12,7 +12,9 @@ export interface BulkCreateTransactionsCommand {
 export class BulkCreateTransactionsUseCase {
   constructor(private readonly repository: TransactionRepository) {}
 
-  async execute(command: BulkCreateTransactionsCommand): Promise<Transaction[]> {
+  async execute(
+    command: BulkCreateTransactionsCommand,
+  ): Promise<Transaction[]> {
     const createdTransactions: Transaction[] = [];
 
     for (const dto of command.transactions) {

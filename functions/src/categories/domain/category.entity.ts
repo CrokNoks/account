@@ -56,7 +56,13 @@ export class Category {
     }
   }
 
-  static create(props: Omit<CategoryProps, 'id' | 'createdAt' | 'updatedAt'> & { id?: string; createdAt?: Date; updatedAt?: Date }): Category {
+  static create(
+    props: Omit<CategoryProps, 'id' | 'createdAt' | 'updatedAt'> & {
+      id?: string;
+      createdAt?: Date;
+      updatedAt?: Date;
+    },
+  ): Category {
     const now = new Date();
     return new Category({
       ...props,

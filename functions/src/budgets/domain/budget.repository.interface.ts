@@ -14,10 +14,12 @@ export abstract class BudgetRepository {
   abstract saveBulk(instances: BudgetInstance[]): Promise<void>;
   abstract delete(id: string): Promise<void>;
   abstract deleteAllByPeriod(periodId: string): Promise<void>;
-  
+
   /**
    * Calculates historical stats for each category of an account
    * based on previous transactions grouped by period.
    */
-  abstract getHistoricalStatsByAccount(accountId: string): Promise<CategoryStats[]>;
+  abstract getHistoricalStatsByAccount(
+    accountId: string,
+  ): Promise<CategoryStats[]>;
 }

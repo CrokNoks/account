@@ -1,10 +1,13 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { CreateTransactionUseCase, CreateTransactionCommand } from './create-transaction.use-case';
+import {
+  CreateTransactionUseCase,
+  CreateTransactionCommand,
+} from './create-transaction.use-case';
 import { TransactionRepository } from '../domain/transaction.repository.interface';
 
 describe('CreateTransactionUseCase', () => {
   let useCase: CreateTransactionUseCase;
-  let repository: TransactionRepository;
+  let repository: jest.Mocked<TransactionRepository>;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -20,7 +23,9 @@ describe('CreateTransactionUseCase', () => {
     }).compile();
 
     useCase = module.get<CreateTransactionUseCase>(CreateTransactionUseCase);
-    repository = module.get<TransactionRepository>(TransactionRepository);
+    repository = module.get<TransactionRepository>(
+      TransactionRepository,
+    ) as jest.Mocked<TransactionRepository>;
   });
 
   it('should create and save a new transaction', async () => {

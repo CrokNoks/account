@@ -13,26 +13,41 @@ export class GetAIInsightsUseCase {
     private readonly accountRepository: AccountRepository,
   ) {}
 
-  async execute(accountId: string, periodId: string, locale: string = 'fr'): Promise<string> {
+  async execute(
+    accountId: string,
+    periodId: string,
+    locale: string = 'fr',
+  ): Promise<string> {
     const account = await this.accountRepository.findById(accountId);
-    const breakdown = await this.getBudgetBreakdownUseCase.execute(accountId, periodId);
+    const breakdown = await this.getBudgetBreakdownUseCase.execute(
+      accountId,
+      periodId,
+    );
     const stats = await this.getPeriodStatsUseCase.execute(accountId, periodId);
 
-    const accountContext = account?.description 
-      ? `Contexte du compte : ${account.description}` 
+    const accountContext = account?.description
+      ? `Contexte du compte : ${account.description}`
       : '';
 
     const prompt = `
       Agis en tant qu'expert en finances personnelles. ${accountContext}
       Analyse les données suivantes pour la période actuelle :
-...
+      - Revenus réels : ${Number(stats.realIncome) / 100}€ (Prévu: ${Number(stats.plannedIncome) / 100}€)
       - Dépenses réelles : ${Number(stats.realExpenses) / 100}€ (Prévu: ${Number(stats.plannedExpenses) / 100}€)
       - Solde prévisionnel fin de mois : ${Number(stats.forecastBalance) / 100}€
 
       Détail par catégorie (Top dépenses) :
-      ${breakdown.expenses.slice(0, 8).map(c => `- ${c.name}: ${Number(c.real) / 100}€ (Budget: ${Number(c.budget) / 100}€, ${c.percentage}% consommé)`).join('\n')}
+      ${breakdown.expenses
+        .slice(0, 8)
+        .map(
+          (c) =>
+            `- ${c.name}: ${Number(c.real) / 100}€ (Budget: ${Number(c.budget) / 100}€, ${c.percentage}% consommé)`,
+        )
+        .join('\n')}
 
-      Inclus aussi l'épargne : ${Number(breakdown.savings.reduce((sum, s) => sum + BigInt(s.real), 0n)) / 100}€
+      Inclus aussi l'épargne : ${
+        breakdown.savings.reduce((sum, s) => sum + Number(s.real), 0) / 100
+      }€
 
       Consignes d'analyse :
       1. Identifie la santé financière globale (équilibre revenus/dépenses).

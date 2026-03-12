@@ -23,6 +23,13 @@ import { TransactionsController } from './infrastructure/transactions.controller
     BulkCreateTransactionsUseCase,
     CreateTransferUseCase,
   ],
-  exports: [TransactionRepository, GetTransactionsByAccountUseCase, CreateTransactionUseCase, PredictCategoryUseCase, BulkCreateTransactionsUseCase, CreateTransferUseCase],
+  exports: [
+    TransactionRepository,
+    GetTransactionsByAccountUseCase,
+    CreateTransactionUseCase,
+    PredictCategoryUseCase,
+    BulkCreateTransactionsUseCase,
+    CreateTransferUseCase,
+  ],
 })
 export class TransactionsModule {}

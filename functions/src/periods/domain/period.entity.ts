@@ -1,3 +1,5 @@
+import { randomUUID } from 'node:crypto';
+
 export interface PeriodProps {
   id: string;
   accountId: string;
@@ -35,11 +37,26 @@ export class Period {
     }
   }
 
-  static create(props: Omit<PeriodProps, 'id' | 'createdAt' | 'updatedAt' | 'isActive'> & { id?: string; createdAt?: Date; updatedAt?: Date; isActive?: boolean }): Period {
+  public deactivate(): Period {
+    return new Period({
+      ...this,
+      isActive: false,
+      updatedAt: new Date(),
+    });
+  }
+
+  static create(
+    props: Omit<PeriodProps, 'id' | 'createdAt' | 'updatedAt' | 'isActive'> & {
+      id?: string;
+      createdAt?: Date;
+      updatedAt?: Date;
+      isActive?: boolean;
+    },
+  ): Period {
     const now = new Date();
     return new Period({
       ...props,
-      id: props.id || crypto.randomUUID(),
+      id: props.id || randomUUID(),
       isActive: props.isActive ?? true,
       createdAt: props.createdAt || now,
       updatedAt: props.updatedAt || now,

@@ -1,6 +1,8 @@
 import { Injectable } from '@nestjs/common';
-import { GetBudgetBreakdownUseCase } from './get-budget-breakdown.use-case';
-import { GetPeriodStatsUseCase } from './get-period-stats.use-case';
+import {
+  GetBudgetBreakdownUseCase,
+  BudgetCategoryBreakdown,
+} from './get-budget-breakdown.use-case';
 
 export interface SankeyNode {
   id?: string;
@@ -19,16 +21,27 @@ export interface SankeyDataResponse {
   links: SankeyLink[];
 }
 
+interface RawLink {
+  source: string;
+  target: string;
+  value: number;
+}
+
 @Injectable()
 export class GetSankeyDataUseCase {
   constructor(
     private readonly getBudgetBreakdownUseCase: GetBudgetBreakdownUseCase,
-    private readonly getPeriodStatsUseCase: GetPeriodStatsUseCase,
   ) {}
 
-  async execute(accountId: string, periodId: string): Promise<SankeyDataResponse> {
-    const breakdown = await this.getBudgetBreakdownUseCase.execute(accountId, periodId);
-    
+  async execute(
+    accountId: string,
+    periodId: string,
+  ): Promise<SankeyDataResponse> {
+    const breakdown = await this.getBudgetBreakdownUseCase.execute(
+      accountId,
+      periodId,
+    );
+
     const nodes: SankeyNode[] = [
       { id: 'income', name: 'Revenus', color: '#10b981' },
       { id: 'wallet', name: 'Compte', color: '#6366f1' },
@@ -37,9 +50,9 @@ export class GetSankeyDataUseCase {
       { id: 'transfers', name: 'Virements', color: '#8b5cf6' },
     ];
 
-    const links: any[] = []; // Temporary links with IDs
+    const links: RawLink[] = []; // Temporary links with IDs
 
-    const addIncomeLinks = (items: any[]) => {
+    const addIncomeLinks = (items: BudgetCategoryBreakdown[]) => {
       for (const item of items) {
         const val = Math.abs(Number(item.real) / 100);
         if (val > 0) {
@@ -51,21 +64,41 @@ export class GetSankeyDataUseCase {
     };
 
     addIncomeLinks(breakdown.income);
-    
-    let totalIncome = breakdown.income.reduce((sum, i) => sum + Math.abs(Number(i.real)), 0) / 100;
+
+    const totalIncome =
+      breakdown.income.reduce((sum, i) => sum + Math.abs(Number(i.real)), 0) /
+      100;
     if (totalIncome > 0) {
       links.push({ source: 'income', target: 'wallet', value: totalIncome });
     }
 
-    const expVal = Math.abs(Number(breakdown.expenses.reduce((sum, i) => sum + BigInt(i.real), BigInt(0))) / 100);
-    const savVal = Math.abs(Number(breakdown.savings.reduce((sum, i) => sum + BigInt(i.real), BigInt(0))) / 100);
-    const traVal = Math.abs(Number(breakdown.transfers.reduce((sum, i) => sum + BigInt(i.real), BigInt(0))) / 100);
+    const expVal = Math.abs(
+      Number(
+        breakdown.expenses.reduce((sum, i) => sum + BigInt(i.real), BigInt(0)),
+      ) / 100,
+    );
+    const savVal = Math.abs(
+      Number(
+        breakdown.savings.reduce((sum, i) => sum + BigInt(i.real), BigInt(0)),
+      ) / 100,
+    );
+    const traVal = Math.abs(
+      Number(
+        breakdown.transfers.reduce((sum, i) => sum + BigInt(i.real), BigInt(0)),
+      ) / 100,
+    );
 
-    if (expVal > 0) links.push({ source: 'wallet', target: 'expenses', value: expVal });
-    if (savVal > 0) links.push({ source: 'wallet', target: 'savings', value: savVal });
-    if (traVal > 0) links.push({ source: 'wallet', target: 'transfers', value: traVal });
+    if (expVal > 0)
+      links.push({ source: 'wallet', target: 'expenses', value: expVal });
+    if (savVal > 0)
+      links.push({ source: 'wallet', target: 'savings', value: savVal });
+    if (traVal > 0)
+      links.push({ source: 'wallet', target: 'transfers', value: traVal });
 
-    const addGroupLinks = (group: any[], sourceId: string) => {
+    const addGroupLinks = (
+      group: BudgetCategoryBreakdown[],
+      sourceId: string,
+    ) => {
       for (const item of group) {
         const val = Math.abs(Number(item.real) / 100);
         if (val > 0) {
@@ -81,15 +114,17 @@ export class GetSankeyDataUseCase {
     addGroupLinks(breakdown.transfers, 'transfers');
 
     // Convert links from ID to index
-    const indexedLinks: SankeyLink[] = links.map(l => ({
-      source: nodes.findIndex(n => n.id === l.source),
-      target: nodes.findIndex(n => n.id === l.target),
-      value: l.value
-    })).filter(l => l.source !== -1 && l.target !== -1);
+    const indexedLinks: SankeyLink[] = links
+      .map((l) => ({
+        source: nodes.findIndex((n) => n.id === l.source),
+        target: nodes.findIndex((n) => n.id === l.target),
+        value: l.value,
+      }))
+      .filter((l) => l.source !== -1 && l.target !== -1);
 
-    return { 
-      nodes: nodes.map(({ id, ...rest }) => rest), // Recharts only needs name (and color for custom render)
-      links: indexedLinks 
+    return {
+      nodes: nodes.map((n) => ({ name: n.name, color: n.color })), // Recharts only needs name (and color for custom render)
+      links: indexedLinks,
     };
   }
 }

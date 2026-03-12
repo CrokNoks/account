@@ -1,15 +1,51 @@
-import { Controller, Get, Param, UseGuards, Query, Post, Body } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiProperty } from '@nestjs/swagger';
+import {
+  Controller,
+  Get,
+  Param,
+  UseGuards,
+  Query,
+  Post,
+  Body,
+} from '@nestjs/common';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+  ApiProperty,
+} from '@nestjs/swagger';
 import { SupabaseAuthGuard } from '../../auth/supabase-auth.guard';
-import { GetPeriodStatsUseCase, PeriodStatsResponse } from '../application/get-period-stats.use-case';
-import { GetBudgetBreakdownUseCase, BudgetBreakdownResponse, BudgetCategoryBreakdown } from '../application/get-budget-breakdown.use-case';
-import { GetEvolutionUseCase, EvolutionDataPoint } from '../application/get-evolution.use-case';
-import { GetPeriodComparisonUseCase, PeriodComparisonResponse } from '../application/get-period-comparison.use-case';
-import { GetSankeyDataUseCase, SankeyDataResponse } from '../application/get-sankey-data.use-case';
+import {
+  GetPeriodStatsUseCase,
+  PeriodStatsResponse,
+} from '../application/get-period-stats.use-case';
+import {
+  GetBudgetBreakdownUseCase,
+  BudgetBreakdownResponse,
+  BudgetCategoryBreakdown,
+} from '../application/get-budget-breakdown.use-case';
+import {
+  GetEvolutionUseCase,
+  EvolutionDataPoint,
+} from '../application/get-evolution.use-case';
+import {
+  GetPeriodComparisonUseCase,
+  PeriodComparisonResponse,
+} from '../application/get-period-comparison.use-case';
+import {
+  GetSankeyDataUseCase,
+  SankeyDataResponse,
+} from '../application/get-sankey-data.use-case';
 import { GetAIInsightsUseCase } from '../application/get-ai-insights.use-case';
 import { GetEvolutionAIInsightsUseCase } from '../application/get-evolution-ai-insights.use-case';
-import { GetCashflowForecastUseCase, CashflowForecastResponse } from '../application/get-cashflow-forecast.use-case';
-import { ScanReceiptUseCase, ScanReceiptResult } from '../application/scan-receipt.use-case';
+import {
+  GetCashflowForecastUseCase,
+  CashflowForecastResponse,
+} from '../application/get-cashflow-forecast.use-case';
+import {
+  ScanReceiptUseCase,
+  ScanReceiptResult,
+} from '../application/scan-receipt.use-case';
 
 class BudgetCategoryBreakdownDto implements BudgetCategoryBreakdown {
   @ApiProperty() categoryId: string;
@@ -21,10 +57,14 @@ class BudgetCategoryBreakdownDto implements BudgetCategoryBreakdown {
 }
 
 class BudgetBreakdownResponseDto implements BudgetBreakdownResponse {
-  @ApiProperty({ type: [BudgetCategoryBreakdownDto] }) income: BudgetCategoryBreakdownDto[];
-  @ApiProperty({ type: [BudgetCategoryBreakdownDto] }) expenses: BudgetCategoryBreakdownDto[];
-  @ApiProperty({ type: [BudgetCategoryBreakdownDto] }) savings: BudgetCategoryBreakdownDto[];
-  @ApiProperty({ type: [BudgetCategoryBreakdownDto] }) transfers: BudgetCategoryBreakdownDto[];
+  @ApiProperty({ type: [BudgetCategoryBreakdownDto] })
+  income: BudgetCategoryBreakdownDto[];
+  @ApiProperty({ type: [BudgetCategoryBreakdownDto] })
+  expenses: BudgetCategoryBreakdownDto[];
+  @ApiProperty({ type: [BudgetCategoryBreakdownDto] })
+  savings: BudgetCategoryBreakdownDto[];
+  @ApiProperty({ type: [BudgetCategoryBreakdownDto] })
+  transfers: BudgetCategoryBreakdownDto[];
 }
 
 class PeriodStatsResponseDto implements PeriodStatsResponse {
@@ -47,7 +87,8 @@ class EvolutionDataPointDto implements EvolutionDataPoint {
   @ApiProperty() realExpenses: string;
   @ApiProperty() forecastBalance: string;
   @ApiProperty() realBankBalance: string;
-  @ApiProperty({ type: 'object', additionalProperties: { type: 'string' } }) categories: Record<string, string>;
+  @ApiProperty({ type: 'object', additionalProperties: { type: 'string' } })
+  categories: Record<string, string>;
 }
 
 @ApiTags('reporting')
@@ -72,17 +113,19 @@ export class ReportingController {
   @ApiResponse({ status: 200, type: PeriodStatsResponseDto })
   async getStats(
     @Param('accountId') accountId: string,
-    @Param('periodId') periodId: string
+    @Param('periodId') periodId: string,
   ): Promise<PeriodStatsResponseDto> {
     return this.getPeriodStatsUseCase.execute(accountId, periodId);
   }
 
   @Get('periods/:periodId/reporting/budget-breakdown')
-  @ApiOperation({ summary: 'Get budget consumption breakdown by category type' })
+  @ApiOperation({
+    summary: 'Get budget consumption breakdown by category type',
+  })
   @ApiResponse({ status: 200, type: BudgetBreakdownResponseDto })
   async getBudgetBreakdown(
     @Param('accountId') accountId: string,
-    @Param('periodId') periodId: string
+    @Param('periodId') periodId: string,
   ): Promise<BudgetBreakdownResponseDto> {
     return this.getBudgetBreakdownUseCase.execute(accountId, periodId);
   }
@@ -96,7 +139,9 @@ export class ReportingController {
     const data = await this.getEvolutionUseCase.execute(accountId);
     console.log(`[ReportingController] Evolution data points: ${data.length}`);
     if (data.length > 0) {
-      console.log(`[ReportingController] Sample point categories keys: ${Object.keys(data[0].categories).join(', ')}`);
+      console.log(
+        `[ReportingController] Sample point categories keys: ${Object.keys(data[0].categories).join(', ')}`,
+      );
     }
     return data;
   }
@@ -106,16 +151,20 @@ export class ReportingController {
   async getComparison(
     @Param('accountId') accountId: string,
     @Param('periodId') periodId: string,
-    @Query('compareWith') compareWithId: string
+    @Query('compareWith') compareWithId: string,
   ): Promise<PeriodComparisonResponse> {
-    return this.getPeriodComparisonUseCase.execute(accountId, compareWithId, periodId);
+    return this.getPeriodComparisonUseCase.execute(
+      accountId,
+      compareWithId,
+      periodId,
+    );
   }
 
   @Get('periods/:periodId/reporting/sankey')
   @ApiOperation({ summary: 'Get data for Sankey diagram' })
   async getSankey(
     @Param('accountId') accountId: string,
-    @Param('periodId') periodId: string
+    @Param('periodId') periodId: string,
   ): Promise<SankeyDataResponse> {
     return this.getSankeyDataUseCase.execute(accountId, periodId);
   }
@@ -125,9 +174,13 @@ export class ReportingController {
   async getAIInsights(
     @Param('accountId') accountId: string,
     @Param('periodId') periodId: string,
-    @Query('locale') locale: string = 'fr'
+    @Query('locale') locale: string = 'fr',
   ): Promise<{ insights: string }> {
-    const insights = await this.getAIInsightsUseCase.execute(accountId, periodId, locale);
+    const insights = await this.getAIInsightsUseCase.execute(
+      accountId,
+      periodId,
+      locale,
+    );
     return { insights };
   }
 
@@ -135,17 +188,22 @@ export class ReportingController {
   @ApiOperation({ summary: 'Get AI-generated evolution insights' })
   async getEvolutionAIInsights(
     @Param('accountId') accountId: string,
-    @Query('locale') locale: string = 'fr'
+    @Query('locale') locale: string = 'fr',
   ): Promise<{ insights: string }> {
-    const insights = await this.getEvolutionAIInsightsUseCase.execute(accountId, locale);
+    const insights = await this.getEvolutionAIInsightsUseCase.execute(
+      accountId,
+      locale,
+    );
     return { insights };
   }
 
   @Post('reporting/cashflow')
-  @ApiOperation({ summary: 'Get cashflow forecast based on recurring transactions' })
+  @ApiOperation({
+    summary: 'Get cashflow forecast based on recurring transactions',
+  })
   async getCashflow(
     @Param('accountId') accountId: string,
-    @Query('days') days?: number
+    @Query('days') days?: number,
   ): Promise<CashflowForecastResponse> {
     return this.getCashflowForecastUseCase.execute(accountId, days);
   }
@@ -153,7 +211,7 @@ export class ReportingController {
   @Post('reporting/scan-receipt')
   @ApiOperation({ summary: 'Scan a receipt image to extract data' })
   async scanReceipt(
-    @Body() dto: { base64Image: string, mimeType: string }
+    @Body() dto: { base64Image: string; mimeType: string },
   ): Promise<ScanReceiptResult> {
     return this.scanReceiptUseCase.execute(dto.base64Image, dto.mimeType);
   }

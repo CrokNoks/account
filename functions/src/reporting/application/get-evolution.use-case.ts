@@ -26,34 +26,46 @@ export class GetEvolutionUseCase {
     private readonly categoryRepository: CategoryRepository,
   ) {}
 
-  async execute(accountId: string, onlyClosed: boolean = false): Promise<EvolutionDataPoint[]> {
+  async execute(
+    accountId: string,
+    onlyClosed: boolean = false,
+  ): Promise<EvolutionDataPoint[]> {
     const account = await this.accountRepository.findById(accountId);
     if (!account) throw new Error('Account not found');
 
     let periods = await this.periodRepository.findAllByAccount(accountId);
-    
+
     if (onlyClosed) {
-      periods = periods.filter(p => !p.isActive);
+      periods = periods.filter((p) => !p.isActive);
     }
 
     // Sort periods chronologically
     periods.sort((a, b) => a.startDate.getTime() - b.startDate.getTime());
 
-    const categories = await this.categoryRepository.findAllByAccount(accountId);
+    const categories =
+      await this.categoryRepository.findAllByAccount(accountId);
     const result: EvolutionDataPoint[] = [];
 
     // Pre-fetch all transactions to avoid N+1 queries if there are many periods
-    const allTransactions = await this.transactionRepository.findAllByAccount(accountId);
+    const allTransactions =
+      await this.transactionRepository.findAllByAccount(accountId);
 
     for (const period of periods) {
       // 1. Start Balance calculation (Initial + transactions before start date)
-      const transactionsBeforeStart = allTransactions.filter(t => t.date < period.startDate);
-      const sumBeforeStart = transactionsBeforeStart.reduce((sum, t) => sum + t.amount, BigInt(0));
+      const transactionsBeforeStart = allTransactions.filter(
+        (t) => t.date < period.startDate,
+      );
+      const sumBeforeStart = transactionsBeforeStart.reduce(
+        (sum, t) => sum + t.amount,
+        BigInt(0),
+      );
       const startBalance = account.initialBalance + sumBeforeStart;
 
       // 2. Period Transactions
-      const periodTransactions = allTransactions.filter(t => t.date >= period.startDate && t.date <= period.endDate);
-      
+      const periodTransactions = allTransactions.filter(
+        (t) => t.date >= period.startDate && t.date <= period.endDate,
+      );
+
       const realByCategory = new Map<string, bigint>();
       for (const t of periodTransactions) {
         if (t.categoryId) {
@@ -68,22 +80,29 @@ export class GetEvolutionUseCase {
 
       for (const cat of categories) {
         const catReal = realByCategory.get(cat.id) || BigInt(0);
-        const isIncome = cat.type === CategoryType.INCOME || cat.type === CategoryType.TRANSFER;
-        
+        const isIncome =
+          cat.type === CategoryType.INCOME ||
+          cat.type === CategoryType.TRANSFER;
+
         if (isIncome) {
           realIncome += catReal;
         } else {
           realExpenses += catReal;
         }
-        
+
         categoriesJson[cat.id] = catReal.toString();
       }
 
       // 3. Balances
-      const reconciledInPeriod = periodTransactions.filter(t => t.reconciled).reduce((sum, t) => sum + t.amount, BigInt(0));
+      const reconciledInPeriod = periodTransactions
+        .filter((t) => t.reconciled)
+        .reduce((sum, t) => sum + t.amount, BigInt(0));
       const realBankBalance = startBalance + reconciledInPeriod;
 
-      const allInPeriod = periodTransactions.reduce((sum, t) => sum + t.amount, BigInt(0));
+      const allInPeriod = periodTransactions.reduce(
+        (sum, t) => sum + t.amount,
+        BigInt(0),
+      );
       const forecastBalance = startBalance + allInPeriod;
 
       result.push({

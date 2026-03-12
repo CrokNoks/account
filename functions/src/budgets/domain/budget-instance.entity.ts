@@ -33,7 +33,13 @@ export class BudgetInstance {
     }
   }
 
-  static create(props: Omit<BudgetInstanceProps, 'id' | 'createdAt' | 'updatedAt'> & { id?: string; createdAt?: Date; updatedAt?: Date }): BudgetInstance {
+  static create(
+    props: Omit<BudgetInstanceProps, 'id' | 'createdAt' | 'updatedAt'> & {
+      id?: string;
+      createdAt?: Date;
+      updatedAt?: Date;
+    },
+  ): BudgetInstance {
     const now = new Date();
     return new BudgetInstance({
       ...props,

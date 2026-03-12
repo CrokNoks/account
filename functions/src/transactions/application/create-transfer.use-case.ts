@@ -15,7 +15,9 @@ export interface CreateTransferCommand {
 export class CreateTransferUseCase {
   constructor(private readonly transactionRepository: TransactionRepository) {}
 
-  async execute(command: CreateTransferCommand): Promise<[Transaction, Transaction]> {
+  async execute(
+    command: CreateTransferCommand,
+  ): Promise<[Transaction, Transaction]> {
     if (command.amount <= BigInt(0)) {
       throw new Error('Transfer amount must be strictly positive');
     }
@@ -31,7 +33,11 @@ export class CreateTransferUseCase {
       date: command.date,
       description: command.description,
       amount: -command.amount,
-      metadata: { transferId, type: 'transfer_out', relatedAccountId: command.destinationAccountId },
+      metadata: {
+        transferId,
+        type: 'transfer_out',
+        relatedAccountId: command.destinationAccountId,
+      },
       reconciled: false,
       pending: false,
     });
@@ -42,7 +48,11 @@ export class CreateTransferUseCase {
       date: command.date,
       description: command.description,
       amount: command.amount,
-      metadata: { transferId, type: 'transfer_in', relatedAccountId: command.sourceAccountId },
+      metadata: {
+        transferId,
+        type: 'transfer_in',
+        relatedAccountId: command.sourceAccountId,
+      },
       reconciled: false,
       pending: false,
     });

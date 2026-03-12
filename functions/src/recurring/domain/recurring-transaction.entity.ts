@@ -41,7 +41,13 @@ export class RecurringTransaction {
     }
   }
 
-  static create(props: Omit<RecurringTransactionProps, 'id' | 'createdAt' | 'updatedAt'> & { id?: string; createdAt?: Date; updatedAt?: Date }): RecurringTransaction {
+  static create(
+    props: Omit<RecurringTransactionProps, 'id' | 'createdAt' | 'updatedAt'> & {
+      id?: string;
+      createdAt?: Date;
+      updatedAt?: Date;
+    },
+  ): RecurringTransaction {
     const now = new Date();
     return new RecurringTransaction({
       ...props,

@@ -6,7 +6,12 @@ import { RecurringTransaction } from '../domain/recurring-transaction.entity';
 export class UpdateRecurringTransactionUseCase {
   constructor(private readonly repository: RecurringTransactionRepository) {}
 
-  async execute(id: string, data: Partial<Omit<RecurringTransaction, 'id' | 'accountId' | 'createdAt' | 'updatedAt'>>): Promise<RecurringTransaction> {
+  async execute(
+    id: string,
+    data: Partial<
+      Omit<RecurringTransaction, 'id' | 'accountId' | 'createdAt' | 'updatedAt'>
+    >,
+  ): Promise<RecurringTransaction> {
     const existing = await this.repository.findById(id);
     if (!existing) throw new Error('Recurring transaction not found');
 

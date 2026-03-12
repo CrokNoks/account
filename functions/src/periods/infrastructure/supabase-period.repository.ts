@@ -3,6 +3,16 @@ import { SupabaseClient } from '@supabase/supabase-js';
 import { Period } from '../domain/period.entity';
 import { PeriodRepository } from '../domain/period.repository.interface';
 
+interface PeriodRow {
+  id: string;
+  account_id: string;
+  start_date: string;
+  end_date: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
 @Injectable()
 export class SupabasePeriodRepository implements PeriodRepository {
   constructor(
@@ -15,6 +25,7 @@ export class SupabasePeriodRepository implements PeriodRepository {
       .from('periods')
       .select('*')
       .eq('id', id)
+      .returns<PeriodRow>()
       .single();
 
     if (error) return null;
@@ -29,9 +40,11 @@ export class SupabasePeriodRepository implements PeriodRepository {
       .eq('account_id', accountId)
       .order('end_date', { ascending: false })
       .limit(1)
-      .single();
+      .returns<PeriodRow>()
+      .maybeSingle();
 
     if (error) return null;
+    if (!data) return null;
 
     return this.mapToDomain(data);
   }
@@ -41,39 +54,35 @@ export class SupabasePeriodRepository implements PeriodRepository {
       .from('periods')
       .select('*')
       .eq('account_id', accountId)
-      .order('start_date', { ascending: false });
+      .order('start_date', { ascending: false })
+      .returns<PeriodRow[]>();
 
     if (error) throw new Error(error.message);
 
-    return (data || []).map(row => this.mapToDomain(row));
+    return (data || []).map((row) => this.mapToDomain(row));
   }
 
   async save(period: Period): Promise<void> {
-    const { error } = await this.supabase
-      .from('periods')
-      .upsert({
-        id: period.id,
-        account_id: period.accountId,
-        start_date: period.startDate.toISOString().split('T')[0],
-        end_date: period.endDate.toISOString().split('T')[0],
-        is_active: period.isActive,
-        created_at: period.createdAt.toISOString(),
-        updated_at: period.updatedAt.toISOString(),
-      });
+    const { error } = await this.supabase.from('periods').upsert({
+      id: period.id,
+      account_id: period.accountId,
+      start_date: period.startDate.toISOString().split('T')[0],
+      end_date: period.endDate.toISOString().split('T')[0],
+      is_active: period.isActive,
+      created_at: period.createdAt.toISOString(),
+      updated_at: period.updatedAt.toISOString(),
+    });
 
     if (error) throw new Error(error.message);
   }
 
   async delete(id: string): Promise<void> {
-    const { error } = await this.supabase
-      .from('periods')
-      .delete()
-      .eq('id', id);
+    const { error } = await this.supabase.from('periods').delete().eq('id', id);
 
     if (error) throw new Error(error.message);
   }
 
-  private mapToDomain(row: any): Period {
+  private mapToDomain(row: PeriodRow): Period {
     return new Period({
       id: row.id,
       accountId: row.account_id,

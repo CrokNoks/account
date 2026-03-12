@@ -4,14 +4,14 @@ import { Account } from '../domain/account.entity';
 
 describe('CreateAccountUseCase', () => {
   let useCase: CreateAccountUseCase;
-  let repository: AccountRepository;
+  let repository: jest.Mocked<AccountRepository>;
 
   beforeEach(() => {
     repository = {
       save: jest.fn(),
-      findAllByOwner: jest.fn(),
+      findAllForUser: jest.fn(),
       findById: jest.fn(),
-    } as any;
+    } as unknown as jest.Mocked<AccountRepository>;
     useCase = new CreateAccountUseCase(repository);
   });
 

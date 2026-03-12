@@ -3,6 +3,16 @@ import { SupabaseClient } from '@supabase/supabase-js';
 import { AccountRepository } from '../domain/account.repository.interface';
 import { Account } from '../domain/account.entity';
 
+interface AccountRow {
+  id: string;
+  name: string;
+  owner_id: string;
+  description: string | null;
+  initial_balance: string;
+  created_at: string;
+  updated_at: string;
+}
+
 @Injectable()
 export class SupabaseAccountRepository extends AccountRepository {
   constructor(
@@ -13,28 +23,27 @@ export class SupabaseAccountRepository extends AccountRepository {
   }
 
   async save(account: Account): Promise<void> {
-    const { error } = await this.supabase
-      .from('accounts')
-      .upsert({
-        id: account.id,
-        name: account.name,
-        owner_id: account.ownerId,
-        description: account.description,
-        initial_balance: account.initialBalance.toString(), // Convert to string for BIGINT
-        updated_at: account.updatedAt.toISOString(),
-      });
+    const { error } = await this.supabase.from('accounts').upsert({
+      id: account.id,
+      name: account.name,
+      owner_id: account.ownerId,
+      description: account.description,
+      initial_balance: account.initialBalance.toString(), // Convert to string for BIGINT
+      updated_at: account.updatedAt.toISOString(),
+    });
 
     if (error) {
       throw new Error(`Failed to save account: ${error.message}`);
     }
   }
 
-  async findAllForUser(userId: string): Promise<Account[]> {
+  async findAllForUser(): Promise<Account[]> {
     // We rely on RLS (Row Level Security) which is already configured in Supabase
     // to return only the accounts the user has access to (owner or shared).
     const { data, error } = await this.supabase
       .from('accounts')
-      .select('*');
+      .select('*')
+      .returns<AccountRow[]>();
 
     if (error) {
       throw new Error(`Failed to fetch accounts: ${error.message}`);
@@ -48,6 +57,7 @@ export class SupabaseAccountRepository extends AccountRepository {
       .from('accounts')
       .select('*')
       .eq('id', id)
+      .returns<AccountRow>()
       .single();
 
     if (error) {
@@ -58,7 +68,7 @@ export class SupabaseAccountRepository extends AccountRepository {
     return this.mapToDomain(data);
   }
 
-  private mapToDomain(row: any): Account {
+  private mapToDomain(row: AccountRow): Account {
     return new Account({
       id: row.id,
       name: row.name,

@@ -12,23 +12,23 @@ export interface UpdatePeriodBudgetsCommand {
 
 @Injectable()
 export class UpdatePeriodBudgetsUseCase {
-  constructor(
-    private readonly budgetRepository: BudgetRepository,
-  ) {}
+  constructor(private readonly budgetRepository: BudgetRepository) {}
 
-  async execute(command: UpdatePeriodBudgetsCommand): Promise<BudgetInstance[]> {
+  async execute(
+    command: UpdatePeriodBudgetsCommand,
+  ): Promise<BudgetInstance[]> {
     // 1. Delete existing budgets for the period
     await this.budgetRepository.deleteAllByPeriod(command.periodId);
 
     // 2. Create new Budget Instances
     const budgetInstances = command.budgets
-      .filter(b => b.amountAllocated !== BigInt(0)) // Optional: don't save 0 budgets if desired
-      .map(b => 
+      .filter((b) => b.amountAllocated !== BigInt(0)) // Optional: don't save 0 budgets if desired
+      .map((b) =>
         BudgetInstance.create({
           periodId: command.periodId,
           categoryId: b.categoryId,
           amountAllocated: b.amountAllocated,
-        })
+        }),
       );
 
     // 3. Save new instances

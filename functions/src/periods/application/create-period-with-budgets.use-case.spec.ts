@@ -2,6 +2,8 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { CreatePeriodWithBudgetsUseCase } from './create-period-with-budgets.use-case';
 import { PeriodRepository } from '../domain/period.repository.interface';
 import { BudgetRepository } from '../../budgets/domain/budget.repository.interface';
+import { TransactionRepository } from '../../transactions/domain/transaction.repository.interface';
+import { RecurringTransactionRepository } from '../../recurring/domain/recurring-transaction.repository.interface';
 
 describe('CreatePeriodWithBudgetsUseCase', () => {
   let useCase: CreatePeriodWithBudgetsUseCase;
@@ -12,12 +14,25 @@ describe('CreatePeriodWithBudgetsUseCase', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         CreatePeriodWithBudgetsUseCase,
-        { provide: PeriodRepository, useValue: { save: jest.fn() } },
+        {
+          provide: PeriodRepository,
+          useValue: {
+            save: jest.fn(),
+            findAllByAccount: jest.fn().mockResolvedValue([]),
+          },
+        },
         { provide: BudgetRepository, useValue: { saveBulk: jest.fn() } },
+        {
+          provide: RecurringTransactionRepository,
+          useValue: { findAllByAccount: jest.fn().mockResolvedValue([]) },
+        },
+        { provide: TransactionRepository, useValue: { save: jest.fn() } },
       ],
     }).compile();
 
-    useCase = module.get<CreatePeriodWithBudgetsUseCase>(CreatePeriodWithBudgetsUseCase);
+    useCase = module.get<CreatePeriodWithBudgetsUseCase>(
+      CreatePeriodWithBudgetsUseCase,
+    );
     periodRepo = module.get<PeriodRepository>(PeriodRepository);
     budgetRepo = module.get<BudgetRepository>(BudgetRepository);
   });

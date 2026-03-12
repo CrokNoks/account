@@ -4,14 +4,14 @@ import { Account } from '../domain/account.entity';
 
 describe('GetAccountsUseCase', () => {
   let useCase: GetAccountsUseCase;
-  let repository: AccountRepository;
+  let repository: jest.Mocked<AccountRepository>;
 
   beforeEach(() => {
     repository = {
       save: jest.fn(),
       findAllForUser: jest.fn(),
       findById: jest.fn(),
-    } as any;
+    } as unknown as jest.Mocked<AccountRepository>;
     useCase = new GetAccountsUseCase(repository);
   });
 
@@ -21,13 +21,13 @@ describe('GetAccountsUseCase', () => {
       new Account({ id: 'acc-1', name: 'Main', ownerId }),
       new Account({ id: 'acc-2', name: 'Savings', ownerId }),
     ];
-    jest.spyOn(repository, 'findAllForUser').mockResolvedValue(accounts);
+    repository.findAllForUser.mockResolvedValue(accounts);
 
-    const result = await useCase.execute(ownerId);
+    const result = await useCase.execute();
 
-    expect(result.length).toBe(2);
+    expect(result).toHaveLength(2);
     expect(result[0].id).toBe('acc-1');
     expect(result[1].id).toBe('acc-2');
-    expect(repository.findAllForUser).toHaveBeenCalledWith(ownerId);
+    expect(repository.findAllForUser).toHaveBeenCalled();
   });
 });
