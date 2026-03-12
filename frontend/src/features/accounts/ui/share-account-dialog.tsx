@@ -6,8 +6,7 @@ import {
   DialogContent, 
   DialogDescription, 
   DialogHeader, 
-  DialogTitle, 
-  DialogFooter 
+  DialogTitle 
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -44,6 +43,7 @@ export function ShareAccountDialog({ accountId, accountName, open, onOpenChange 
         toast.success(t('share_success'));
         setEmail('');
       },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       onError: (err: any) => {
         toast.error(err.response?.data?.message || tc('error'));
       }

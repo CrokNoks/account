@@ -57,7 +57,7 @@ export function EditPeriodBudgetsSheet({ periodId, open, onOpenChange }: EditPer
       periodId,
       data: {
         budgets: Object.entries(budgets)
-          .filter(([_, amount]) => amount !== '' && !isNaN(parseFloat(amount)))
+          .filter(([, amount]) => amount !== '' && !isNaN(parseFloat(amount)))
           .map(([categoryId, amount]) => ({
             categoryId,
             amountAllocated: Math.round(parseFloat(amount) * 100).toString(),

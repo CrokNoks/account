@@ -38,7 +38,6 @@ import { useTranslations } from 'next-intl';
 
 export function RecurringTransactionList() {
   const t = useTranslations('Recurring');
-  const tc = useTranslations('Common');
   const { activeAccountId } = useAccountStore();
   const { data: transactions, isLoading } = useRecurringTransactions(activeAccountId);
   const { data: categories } = useCategories(activeAccountId);

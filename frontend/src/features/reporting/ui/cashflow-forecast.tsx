@@ -1,6 +1,6 @@
 'use client';
 
-import { useCashflowForecast, CashflowEvent } from '../api/use-cashflow-forecast';
+import { useCashflowForecast } from '../api/use-cashflow-forecast';
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { formatCurrency } from '@/shared/lib/format';
 import { format, isToday, isTomorrow, parseISO } from 'date-fns';

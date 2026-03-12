@@ -3,7 +3,7 @@
 import { useEvolutionAIInsights } from '../api/use-evolution-ai-insights';
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Sparkles, Loader2, RefreshCw, TrendingUp } from 'lucide-react';
+import { Loader2, RefreshCw, TrendingUp } from 'lucide-react';
 import { useLocale } from 'next-intl';
 import ReactMarkdown from 'react-markdown';
 
