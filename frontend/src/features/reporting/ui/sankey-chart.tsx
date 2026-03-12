@@ -10,6 +10,7 @@ interface SankeyChartProps {
   periodId: string | null;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const CustomNode = ({ x, y, width, height, index, payload, containerWidth }: any) => {
   const isOut = (x || 0) + (width || 0) + 6 > (containerWidth || 0);
   return (
