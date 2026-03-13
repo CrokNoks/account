@@ -10,11 +10,8 @@ import { cn } from '@/lib/utils';
 import { useState } from 'react';
 
 export function AnomaliesWidget() {
-  const { activeAccountId } = useAccountStore();
-  const { data: periods } = usePeriods(activeAccountId);
-  
-  const activePeriod = periods?.find(p => p.isActive);
-  const { data: anomalies, isLoading } = useAnomalies(activeAccountId, activePeriod?.id);
+  const { activeAccountId, activePeriodId } = useAccountStore();
+  const { data: anomalies, isLoading } = useAnomalies(activeAccountId, activePeriodId);
   const [dismissedIds, setDismissedIds] = useState<Set<string>>(new Set());
 
   if (isLoading) return null;

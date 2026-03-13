@@ -27,6 +27,7 @@ export function useCreateTransaction() {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['transactions', variables.accountId] });
       queryClient.invalidateQueries({ queryKey: ['reporting'] });
+      queryClient.invalidateQueries({ queryKey: ['anomalies', variables.accountId] });
     },
   });
 }

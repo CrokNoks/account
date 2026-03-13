@@ -66,7 +66,10 @@ import {
 
 class AnomalyDto implements Anomaly {
   @ApiProperty() id: string;
-  @ApiProperty({ enum: ['duplicate', 'spike', 'outlier'] }) type: 'duplicate' | 'spike' | 'outlier';
+  @ApiProperty({ enum: ['duplicate', 'spike', 'outlier'] }) type:
+    | 'duplicate'
+    | 'spike'
+    | 'outlier';
   @ApiProperty() title: string;
   @ApiProperty() description: string;
   @ApiProperty({ enum: ['medium', 'high'] }) severity: 'medium' | 'high';
