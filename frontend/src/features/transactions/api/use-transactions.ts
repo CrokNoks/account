@@ -19,13 +19,24 @@ export interface Transaction {
   updatedAt: string;
 }
 
-export function useTransactions(accountId: string | null, periodId?: string | null) {
+export interface FindTransactionsOptions {
+  periodId?: string | null;
+  search?: string;
+  categoryId?: string | null;
+  tagIds?: string[];
+  minAmount?: string;
+  maxAmount?: string;
+  reconciled?: boolean;
+  startDate?: string;
+  endDate?: string;
+}
+
+export function useTransactions(accountId: string | null, options: FindTransactionsOptions = {}) {
   return useQuery<Transaction[]>({
-    queryKey: ['transactions', accountId, periodId],
+    queryKey: ['transactions', accountId, options],
     queryFn: async () => {
       if (!accountId) return [];
-      const params = periodId ? { periodId } : {};
-      const { data } = await apiClient.get(`/${accountId}/transactions`, { params });
+      const { data } = await apiClient.get(`/${accountId}/transactions`, { params: options });
       return data;
     },
     enabled: !!accountId,

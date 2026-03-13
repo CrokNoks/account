@@ -179,6 +179,48 @@ export class PredictionResponseDto {
   categoryId: string | null;
 }
 
+export class FindTransactionsQueryDto {
+  @IsOptional()
+  @IsString()
+  periodId?: string;
+
+  @IsOptional()
+  @IsString()
+  search?: string;
+
+  @IsOptional()
+  @IsString()
+  categoryId?: string;
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  @Type(() => String)
+  @ApiProperty({ required: false, type: [String] })
+  tagIds?: string[];
+
+  @IsOptional()
+  @IsNumberString()
+  minAmount?: string;
+
+  @IsOptional()
+  @IsNumberString()
+  maxAmount?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  @Type(() => Boolean)
+  reconciled?: boolean;
+
+  @IsOptional()
+  @IsDateString()
+  startDate?: string;
+
+  @IsOptional()
+  @IsDateString()
+  endDate?: string;
+}
+
 @ApiTags('transactions')
 @ApiBearerAuth()
 @UseGuards(SupabaseAuthGuard)
@@ -213,18 +255,29 @@ export class TransactionsController {
   @ApiResponse({ status: 200, type: [TransactionResponseDto] })
   async findAll(
     @Param('accountId') accountId: string,
-    @Query('periodId') periodId?: string,
+    @Query() query: FindTransactionsQueryDto,
   ): Promise<TransactionResponseDto[]> {
-    if (periodId) {
+    if (query.periodId) {
       const transactions =
-        await this.transactionRepository.findAllByPeriod(periodId);
+        await this.transactionRepository.findAllByPeriod(query.periodId);
       return transactions
         .filter((t) => t.accountId === accountId)
         .map((t) => this.mapToResponse(t));
     }
 
-    const transactions =
-      await this.getTransactionsByAccountUseCase.execute(accountId);
+    const transactions = await this.getTransactionsByAccountUseCase.execute(
+      accountId,
+      {
+        startDate: query.startDate ? new Date(query.startDate) : undefined,
+        endDate: query.endDate ? new Date(query.endDate) : undefined,
+        search: query.search,
+        categoryId: query.categoryId,
+        tagIds: query.tagIds,
+        minAmount: query.minAmount ? BigInt(query.minAmount) : undefined,
+        maxAmount: query.maxAmount ? BigInt(query.maxAmount) : undefined,
+        reconciled: query.reconciled,
+      },
+    );
     return transactions.map((t) => this.mapToResponse(t));
   }
 
