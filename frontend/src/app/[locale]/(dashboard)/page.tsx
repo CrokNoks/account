@@ -1,6 +1,7 @@
 'use client';
 
 import { DashboardStats } from "@/features/reporting/ui/dashboard-stats";
+import { AnomaliesWidget } from "@/features/reporting/ui/anomalies-widget";
 import { BudgetBreakdown } from "@/features/reporting/ui/budget-breakdown";
 import { TagStatsSummary } from "@/features/tags/ui/tag-stats-summary";
 import { AIInsightsCard } from "@/features/reporting/ui/ai-insights-card";
@@ -128,6 +129,7 @@ export default function Home() {
         </div>
       </div>
       
+      <AnomaliesWidget />
       <DashboardStats />
 
       {currentPeriod?.isActive && (
