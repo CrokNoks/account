@@ -6,6 +6,7 @@
     "prevision": "Prévisions",
     "accounts": "Comptes",
     "categories": "Catégories",
+    "tags": "Tags",
     "transactions": "Transactions",
     "budgets": "Budgets",
     "recurring": "Récurrences",
@@ -122,6 +123,17 @@
       "savings": "Épargne"
     },
     "empty": "Aucune catégorie configurée"
+  },
+  "Tags": {
+    "title": "Tags",
+    "description": "Utilisez les tags pour une catégorisation transversale (ex: #vacances, #cadeaux).",
+    "add_tag": "Nouveau tag",
+    "fields": {
+      "name": "Nom",
+      "color": "Couleur"
+    },
+    "empty": "Aucun tag configuré",
+    "delete_confirm": "Voulez-vous vraiment supprimer ce tag ?"
   },
   "Budgets": {
     "title": "Périodes Financières",

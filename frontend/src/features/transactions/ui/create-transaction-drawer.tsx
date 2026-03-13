@@ -36,6 +36,7 @@ import { useCreateTransfer } from '../api/use-create-transfer';
 import { usePredictCategory } from '../api/use-predict-category';
 import { useScanReceipt } from '@/features/reporting/api/use-scan-receipt';
 import { useUiStore } from '@/shared/model/use-ui-store';
+import { TagSelector } from '@/features/tags/ui/tag-selector';
 import { Plus, Receipt, Check, ChevronsUpDown, Sparkles, ArrowRightLeft, Camera, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTranslations } from 'next-intl';
@@ -62,6 +63,7 @@ export function CreateTransactionDrawer({ trigger, isFab = false }: { trigger?: 
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [description, setDescription] = useState('');
   const [categoryId, setCategoryId] = useState<string>('');
+  const [tagIds, setTagIds] = useState<string[]>([]);
   const [amount, setAmount] = useState('');
   const [pending, setPending] = useState(false);
   const [destinationAccountId, setDestinationAccountId] = useState<string>('');
@@ -157,6 +159,7 @@ export function CreateTransactionDrawer({ trigger, isFab = false }: { trigger?: 
     setAmount('');
     setPending(false);
     setCategoryId('');
+    setTagIds([]);
     setDestinationAccountId('');
     setMode('standard');
   };
@@ -202,6 +205,7 @@ export function CreateTransactionDrawer({ trigger, isFab = false }: { trigger?: 
         amount: Math.round(parseFloat(amount) * 100).toString(),
         periodId: activePeriod?.id,
         pending,
+        tagIds,
       }, {
         onSuccess: () => {
           toast.success(`Transaction "${description}" added`);
@@ -397,6 +401,19 @@ export function CreateTransactionDrawer({ trigger, isFab = false }: { trigger?: 
                   </Command>
                 </PopoverContent>
               </Popover>
+            </div>
+          )}
+
+          {mode === 'standard' && (
+            <div className="space-y-2 flex flex-col">
+              <label className="text-sm font-medium">Tags</label>
+              {activeAccountId && (
+                <TagSelector 
+                  accountId={activeAccountId} 
+                  selectedTagIds={tagIds} 
+                  onChange={setTagIds} 
+                />
+              )}
             </div>
           )}
 

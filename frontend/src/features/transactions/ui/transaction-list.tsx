@@ -7,6 +7,8 @@ import { useUpdateTransaction } from '../api/use-update-transaction';
 import { useDeleteTransaction } from '../api/use-delete-transaction';
 import { usePeriods } from '@/features/budgets/api/use-periods';
 import { useCategories } from '@/features/categories/api/use-categories';
+import { useTags } from '@/features/tags/api/use-tags';
+import { TagSelector } from '@/features/tags/ui/tag-selector';
 import { 
   Table, 
   TableBody, 
@@ -40,6 +42,7 @@ export function TransactionList({ periodId, compact = false }: { periodId?: stri
   const { activeAccountId } = useAccountStore();
   const { data: periods } = usePeriods(activeAccountId);
   const { data: categories } = useCategories(activeAccountId);
+  const { data: tags } = useTags(activeAccountId);
   const { mutate: updateTransaction, isPending: isUpdating } = useUpdateTransaction();
   const { mutate: deleteTransaction } = useDeleteTransaction();
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
@@ -180,6 +183,23 @@ export function TransactionList({ periodId, compact = false }: { periodId?: stri
                       {categories?.find(c => c.id === transaction.categoryId)?.name}
                     </Badge>
                   )}
+                  {transaction.tagIds?.map(tagId => {
+                    const tag = tags?.find(t => t.id === tagId);
+                    return (
+                      <Badge 
+                        key={tagId} 
+                        variant="secondary" 
+                        className="h-4 px-1 text-[9px] py-0"
+                        style={{ 
+                          backgroundColor: tag?.color ? `${tag.color}20` : undefined,
+                          color: tag?.color,
+                          borderColor: tag?.color ? `${tag.color}40` : undefined
+                        }}
+                      >
+                        {tag?.name || 'Tag'}
+                      </Badge>
+                    );
+                  })}
                 </div>
                 <div className="flex items-center gap-2">
                   {transaction.pending && (
@@ -242,7 +262,28 @@ export function TransactionList({ periodId, compact = false }: { periodId?: stri
                   <TableCell className="font-medium whitespace-nowrap">{format(new Date(transaction.date), 'dd MMM yyyy')}</TableCell>
                   <TableCell>
                     <div className="truncate max-w-full" title={transaction.description}>
-                      {transaction.description}
+                      <div className="flex flex-col gap-1">
+                        <span className="truncate">{transaction.description}</span>
+                        <div className="flex gap-1 flex-wrap">
+                          {transaction.tagIds?.map(tagId => {
+                            const tag = tags?.find(t => t.id === tagId);
+                            return (
+                              <Badge 
+                                key={tagId} 
+                                variant="secondary" 
+                                className="h-4 px-1 text-[9px] py-0 font-normal"
+                                style={{ 
+                                  backgroundColor: tag?.color ? `${tag.color}20` : undefined,
+                                  color: tag?.color,
+                                  borderColor: tag?.color ? `${tag.color}40` : undefined
+                                }}
+                              >
+                                {tag?.name || 'Tag'}
+                              </Badge>
+                            );
+                          })}
+                        </div>
+                      </div>
                     </div>
                   </TableCell>
                   <TableCell>
@@ -318,6 +359,7 @@ function EditTransactionDialog({ transaction, open, onOpenChange }: { transactio
   const [date, setDate] = useState(transaction.date.split('T')[0]);
   const [description, setDescription] = useState(transaction.description);
   const [categoryId, setCategoryId] = useState(transaction.categoryId || '');
+  const [tagIds, setTagIds] = useState<string[]>(transaction.tagIds || []);
   const [amount, setAmount] = useState((parseInt(transaction.amount, 10) / 100).toString());
   const [pending, setPending] = useState(transaction.pending);
   
@@ -334,6 +376,7 @@ function EditTransactionDialog({ transaction, open, onOpenChange }: { transactio
         date,
         description,
         categoryId: categoryId || null,
+        tagIds,
         amount: Math.round(parseFloat(amount) * 100).toString(),
         pending,
       }
@@ -383,6 +426,16 @@ function EditTransactionDialog({ transaction, open, onOpenChange }: { transactio
                 ))}
               </SelectContent>
             </Select>
+          </div>
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Tags</label>
+            {activeAccountId && (
+              <TagSelector 
+                accountId={activeAccountId} 
+                selectedTagIds={tagIds} 
+                onChange={setTagIds} 
+              />
+            )}
           </div>
           <div className="space-y-2">
             <label className="text-sm font-medium">{t('fields.amount')}</label>

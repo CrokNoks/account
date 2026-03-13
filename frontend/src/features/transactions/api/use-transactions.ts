@@ -14,6 +14,7 @@ export interface Transaction {
   paymentMethod: string | null;
   notes: string | null;
   metadata: Record<string, unknown> | null;
+  tagIds: string[];
   createdAt: string;
   updatedAt: string;
 }

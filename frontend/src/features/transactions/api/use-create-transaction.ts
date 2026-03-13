@@ -12,6 +12,7 @@ export interface CreateTransactionCommand {
   notes?: string | null;
   metadata?: Record<string, unknown> | null;
   pending?: boolean;
+  tagIds?: string[];
 }
 
 export function useCreateTransaction() {
