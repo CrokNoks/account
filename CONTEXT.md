@@ -45,3 +45,6 @@ Refonte complète de l'application de gestion de budget et de comptes bancaires 
     - tirer une branche de main SI et SEULEMENT SI on est sur la branche main
     - donner un nom cohérent et en lien avec les modification en cours.
     - grouper les modifications en plusieurs commit en fonction  de leur impact
+
+## Autres points
+1. Informe l'utilisateur lorsque tu as chargé correctement ce fichier et les skills du projet.
