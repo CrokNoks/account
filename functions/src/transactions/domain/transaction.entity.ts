@@ -11,6 +11,7 @@ export interface TransactionProps {
   paymentMethod?: string | null;
   notes?: string | null;
   metadata: Record<string, any> | undefined;
+  tagIds: string[];
   createdAt: Date;
   updatedAt: Date;
 }
@@ -28,6 +29,7 @@ export class Transaction {
   public readonly paymentMethod?: string | null;
   public readonly notes?: string | null;
   public readonly metadata: Record<string, any> | undefined;
+  public readonly tagIds: string[];
   public readonly createdAt: Date;
   public readonly updatedAt: Date;
 
@@ -44,6 +46,7 @@ export class Transaction {
     this.paymentMethod = props.paymentMethod;
     this.notes = props.notes;
     this.metadata = props.metadata;
+    this.tagIds = props.tagIds || [];
     this.createdAt = props.createdAt;
     this.updatedAt = props.updatedAt;
     this.validate();
@@ -60,8 +63,12 @@ export class Transaction {
   }
 
   static create(
-    props: Omit<TransactionProps, 'id' | 'createdAt' | 'updatedAt'> & {
+    props: Omit<
+      TransactionProps,
+      'id' | 'createdAt' | 'updatedAt' | 'tagIds'
+    > & {
       id?: string;
+      tagIds?: string[];
       createdAt?: Date;
       updatedAt?: Date;
     },
@@ -70,6 +77,7 @@ export class Transaction {
     return new Transaction({
       ...props,
       id: props.id || crypto.randomUUID(),
+      tagIds: props.tagIds || [],
       createdAt: props.createdAt || now,
       updatedAt: props.updatedAt || now,
       reconciled: props.reconciled ?? false,
