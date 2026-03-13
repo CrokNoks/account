@@ -56,9 +56,22 @@ import {
   CalendarEvent,
 } from '../application/get-calendar-data.use-case';
 import {
+  GetAnomaliesUseCase,
+  Anomaly,
+} from '../application/get-anomalies.use-case';
+import {
   ScanReceiptUseCase,
   ScanReceiptResult,
 } from '../application/scan-receipt.use-case';
+
+class AnomalyDto implements Anomaly {
+  @ApiProperty() id: string;
+  @ApiProperty({ enum: ['duplicate', 'spike', 'outlier'] }) type: 'duplicate' | 'spike' | 'outlier';
+  @ApiProperty() title: string;
+  @ApiProperty() description: string;
+  @ApiProperty({ enum: ['medium', 'high'] }) severity: 'medium' | 'high';
+  @ApiProperty() transactionIds: string[];
+}
 
 class CalendarEventDto implements CalendarEvent {
   @ApiProperty() id: string;
@@ -161,6 +174,7 @@ export class ReportingController {
     private readonly getTagsSummaryUseCase: GetTagsSummaryUseCase,
     private readonly getTagDetailsUseCase: GetTagDetailsUseCase,
     private readonly getCalendarDataUseCase: GetCalendarDataUseCase,
+    private readonly getAnomaliesUseCase: GetAnomaliesUseCase,
     private readonly scanReceiptUseCase: ScanReceiptUseCase,
   ) {}
 
@@ -306,5 +320,15 @@ export class ReportingController {
       Number(year),
       Number(month),
     );
+  }
+
+  @Get('reporting/anomalies')
+  @ApiOperation({ summary: 'Detect transaction anomalies for a given period' })
+  @ApiResponse({ status: 200, type: [AnomalyDto] })
+  async getAnomalies(
+    @Param('accountId') accountId: string,
+    @Query('periodId') periodId?: string,
+  ): Promise<AnomalyDto[]> {
+    return this.getAnomaliesUseCase.execute(accountId, periodId);
   }
 }
