@@ -2,6 +2,7 @@
 
 import { DashboardStats } from "@/features/reporting/ui/dashboard-stats";
 import { BudgetBreakdown } from "@/features/reporting/ui/budget-breakdown";
+import { TagStatsSummary } from "@/features/tags/ui/tag-stats-summary";
 import { AIInsightsCard } from "@/features/reporting/ui/ai-insights-card";
 import { TransactionList } from "@/features/transactions/ui/transaction-list";
 import { useAccountStore } from "@/features/accounts/model/use-account-store";
@@ -136,9 +137,12 @@ export default function Home() {
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <div className="hidden lg:flex flex-col gap-4" data-tour="budget-breakdown">
-          <h2 className="text-2xl font-bold tracking-tight">{t('breakdown')}</h2>
-          <BudgetBreakdown />
+        <div className="hidden lg:flex flex-col gap-8" data-tour="budget-breakdown">
+          <div className="flex flex-col gap-4">
+            <h2 className="text-2xl font-bold tracking-tight">{t('breakdown')}</h2>
+            <BudgetBreakdown />
+          </div>
+          <TagStatsSummary />
         </div>
         
         <div className="flex flex-col gap-4" data-tour="transaction-list">

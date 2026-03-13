@@ -43,9 +43,49 @@ import {
   CashflowForecastResponse,
 } from '../application/get-cashflow-forecast.use-case';
 import {
+  GetTagsSummaryUseCase,
+  TagSummary,
+} from '../application/get-tags-summary.use-case';
+import {
+  GetTagDetailsUseCase,
+  TagDetails,
+  TagCategoryBreakdown,
+} from '../application/get-tag-details.use-case';
+import {
   ScanReceiptUseCase,
   ScanReceiptResult,
 } from '../application/scan-receipt.use-case';
+
+class TagSummaryDto implements TagSummary {
+  @ApiProperty() tagId: string;
+  @ApiProperty() name: string;
+  @ApiProperty() color: string;
+  @ApiProperty() totalAmount: string;
+  @ApiProperty() transactionCount: number;
+}
+
+class TagCategoryBreakdownDto implements TagCategoryBreakdown {
+  @ApiProperty({ nullable: true }) categoryId: string | null;
+  @ApiProperty() name: string;
+  @ApiProperty() amount: string;
+  @ApiProperty() percentage: number;
+}
+
+class TagRecentTransactionDto {
+  @ApiProperty() id: string;
+  @ApiProperty() description: string;
+  @ApiProperty() date: string;
+  @ApiProperty() amount: string;
+}
+
+class TagDetailsDto implements TagDetails {
+  @ApiProperty({ type: TagSummaryDto })
+  summary: TagSummaryDto;
+  @ApiProperty({ type: [TagCategoryBreakdownDto] })
+  categoryBreakdown: TagCategoryBreakdownDto[];
+  @ApiProperty({ type: [TagRecentTransactionDto] })
+  recentTransactions: TagRecentTransactionDto[];
+}
 
 class BudgetCategoryBreakdownDto implements BudgetCategoryBreakdown {
   @ApiProperty() categoryId: string;
@@ -105,6 +145,8 @@ export class ReportingController {
     private readonly getAIInsightsUseCase: GetAIInsightsUseCase,
     private readonly getEvolutionAIInsightsUseCase: GetEvolutionAIInsightsUseCase,
     private readonly getCashflowForecastUseCase: GetCashflowForecastUseCase,
+    private readonly getTagsSummaryUseCase: GetTagsSummaryUseCase,
+    private readonly getTagDetailsUseCase: GetTagDetailsUseCase,
     private readonly scanReceiptUseCase: ScanReceiptUseCase,
   ) {}
 
@@ -214,5 +256,26 @@ export class ReportingController {
     @Body() dto: { base64Image: string; mimeType: string },
   ): Promise<ScanReceiptResult> {
     return this.scanReceiptUseCase.execute(dto.base64Image, dto.mimeType);
+  }
+
+  @Get('reporting/tags-summary')
+  @ApiOperation({ summary: 'Get summary of all tags for a period or global' })
+  @ApiResponse({ status: 200, type: [TagSummaryDto] })
+  async getTagsSummary(
+    @Param('accountId') accountId: string,
+    @Query('periodId') periodId?: string,
+  ): Promise<TagSummaryDto[]> {
+    return this.getTagsSummaryUseCase.execute(accountId, periodId);
+  }
+
+  @Get('reporting/tags/:tagId')
+  @ApiOperation({ summary: 'Get detailed stats for a specific tag' })
+  @ApiResponse({ status: 200, type: TagDetailsDto })
+  async getTagDetails(
+    @Param('accountId') accountId: string,
+    @Param('tagId') tagId: string,
+    @Query('periodId') periodId?: string,
+  ): Promise<TagDetailsDto> {
+    return this.getTagDetailsUseCase.execute(accountId, tagId, periodId);
   }
 }
