@@ -39,9 +39,10 @@ export class SupabaseTransactionRepository implements TransactionRepository {
     accountId: string,
     options?: FindAllTransactionsOptions,
   ): Promise<Transaction[]> {
-    const select = options?.tagIds && options.tagIds.length > 0 
-      ? '*, transaction_tags!inner(tag_id)' 
-      : '*, transaction_tags(tag_id)';
+    const select =
+      options?.tagIds && options.tagIds.length > 0
+        ? '*, transaction_tags!inner(tag_id)'
+        : '*, transaction_tags(tag_id)';
 
     let query = this.supabase
       .from('transactions')
@@ -55,7 +56,9 @@ export class SupabaseTransactionRepository implements TransactionRepository {
       query = query.lte('date', options.endDate.toISOString().split('T')[0]);
     }
     if (options?.search) {
-      query = query.or(`description.ilike.%${options.search}%,notes.ilike.%${options.search}%`);
+      query = query.or(
+        `description.ilike.%${options.search}%,notes.ilike.%${options.search}%`,
+      );
     }
     if (options?.categoryId) {
       query = query.eq('category_id', options.categoryId);

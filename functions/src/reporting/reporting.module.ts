@@ -16,6 +16,7 @@ import { GetEvolutionAIInsightsUseCase } from './application/get-evolution-ai-in
 import { GetCashflowForecastUseCase } from './application/get-cashflow-forecast.use-case';
 import { GetTagsSummaryUseCase } from './application/get-tags-summary.use-case';
 import { GetTagDetailsUseCase } from './application/get-tag-details.use-case';
+import { GetCalendarDataUseCase } from './application/get-calendar-data.use-case';
 import { ScanReceiptUseCase } from './application/scan-receipt.use-case';
 import { GeminiService } from './application/gemini.service';
 import { ReportingController } from './infrastructure/reporting.controller';
@@ -42,6 +43,7 @@ import { ReportingController } from './infrastructure/reporting.controller';
     GetCashflowForecastUseCase,
     GetTagsSummaryUseCase,
     GetTagDetailsUseCase,
+    GetCalendarDataUseCase,
     ScanReceiptUseCase,
     GeminiService,
   ],

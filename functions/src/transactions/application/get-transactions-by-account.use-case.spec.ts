@@ -44,6 +44,15 @@ describe('GetTransactionsByAccountUseCase', () => {
   it('should return transactions for an account', async () => {
     const result = await useCase.execute('acc-1');
     expect(result).toEqual(mockTransactions);
-    expect(repository.findAllByAccount).toHaveBeenCalledWith('acc-1');
+    expect(repository.findAllByAccount).toHaveBeenCalledWith(
+      'acc-1',
+      undefined,
+    );
+  });
+
+  it('should pass options to repository', async () => {
+    const options = { search: 'test' };
+    await useCase.execute('acc-1', options);
+    expect(repository.findAllByAccount).toHaveBeenCalledWith('acc-1', options);
   });
 });

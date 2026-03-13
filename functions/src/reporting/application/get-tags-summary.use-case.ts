@@ -19,10 +19,7 @@ export class GetTagsSummaryUseCase {
     private readonly periodRepository: PeriodRepository,
   ) {}
 
-  async execute(
-    accountId: string,
-    periodId?: string,
-  ): Promise<TagSummary[]> {
+  async execute(accountId: string, periodId?: string): Promise<TagSummary[]> {
     let startDate: Date | undefined;
     let endDate: Date | undefined;
 
@@ -53,20 +50,28 @@ export class GetTagsSummaryUseCase {
       }
     }
 
-    return tags.map((tag) => {
-      const stats = tagStats.get(tag.id) || { total: BigInt(0), count: 0 };
-      return {
-        tagId: tag.id,
-        name: tag.name,
-        color: tag.color || '#94a3b8',
-        totalAmount: stats.total.toString(),
-        transactionCount: stats.count,
-      };
-    }).sort((a, b) => {
+    return tags
+      .map((tag) => {
+        const stats = tagStats.get(tag.id) || { total: BigInt(0), count: 0 };
+        return {
+          tagId: tag.id,
+          name: tag.name,
+          color: tag.color || '#94a3b8',
+          totalAmount: stats.total.toString(),
+          transactionCount: stats.count,
+        };
+      })
+      .sort((a, b) => {
         // Sort by absolute total amount (most significant first)
-        const absA = BigInt(a.totalAmount) < BigInt(0) ? -BigInt(a.totalAmount) : BigInt(a.totalAmount);
-        const absB = BigInt(b.totalAmount) < BigInt(0) ? -BigInt(b.totalAmount) : BigInt(b.totalAmount);
+        const absA =
+          BigInt(a.totalAmount) < BigInt(0)
+            ? -BigInt(a.totalAmount)
+            : BigInt(a.totalAmount);
+        const absB =
+          BigInt(b.totalAmount) < BigInt(0)
+            ? -BigInt(b.totalAmount)
+            : BigInt(b.totalAmount);
         return absA > absB ? -1 : 1;
-    });
+      });
   }
 }

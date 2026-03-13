@@ -3,7 +3,6 @@ import { TransactionRepository } from '../../transactions/domain/transaction.rep
 import { TagRepository } from '../../tags/domain/tag.repository.interface';
 import { PeriodRepository } from '../../periods/domain/period.repository.interface';
 import { CategoryRepository } from '../../categories/domain/category.repository.interface';
-import { Transaction } from '../../transactions/domain/transaction.entity';
 import { TagSummary } from './get-tags-summary.use-case';
 
 export interface TagCategoryBreakdown {
@@ -110,8 +109,10 @@ export class GetTagDetailsUseCase {
 
     // Sort by absolute amount
     categoryBreakdown.sort((a, b) => {
-      const absA = BigInt(a.amount) < BigInt(0) ? -BigInt(a.amount) : BigInt(a.amount);
-      const absB = BigInt(b.amount) < BigInt(0) ? -BigInt(b.amount) : BigInt(b.amount);
+      const absA =
+        BigInt(a.amount) < BigInt(0) ? -BigInt(a.amount) : BigInt(a.amount);
+      const absB =
+        BigInt(b.amount) < BigInt(0) ? -BigInt(b.amount) : BigInt(b.amount);
       return absA > absB ? -1 : 1;
     });
 
