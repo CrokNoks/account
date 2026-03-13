@@ -11,6 +11,9 @@ interface UiState {
   isCreateAccountDialogOpen: boolean;
   setCreateAccountDialogOpen: (open: boolean) => void;
   toggleCreateAccountDialog: () => void;
+
+  tagDetailId: string | null;
+  setTagDetailId: (id: string | null) => void;
   
   // Tour State
   activeTour: TourName;
@@ -36,6 +39,9 @@ export const useUiStore = create<UiState>()(
       isCreateAccountDialogOpen: false,
       setCreateAccountDialogOpen: (open) => set({ isCreateAccountDialogOpen: open }),
       toggleCreateAccountDialog: () => set((state) => ({ isCreateAccountDialogOpen: !state.isCreateAccountDialogOpen })),
+
+      tagDetailId: null,
+      setTagDetailId: (id) => set({ tagDetailId: id }),
 
       // Tour Initial State
       activeTour: 'none',

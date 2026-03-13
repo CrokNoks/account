@@ -6,6 +6,7 @@ import { useTags, Tag } from '../api/use-tags';
 import { useUpdateTag } from '../api/use-update-tag';
 import { useDeleteTag } from '../api/use-delete-tag';
 import { useAccountStore } from '@/features/accounts/model/use-account-store';
+import { useUiStore } from '@/shared/model/use-ui-store';
 import { Button } from "@/components/ui/button";
 import { Pencil, Trash2 } from 'lucide-react';
 import { 
@@ -23,6 +24,7 @@ export function TagList() {
   const t = useTranslations('Tags');
   const tc = useTranslations('Common');
   const { activeAccountId } = useAccountStore();
+  const setTagDetailId = useUiStore((state) => state.setTagDetailId);
   const { data: tags, isLoading } = useTags(activeAccountId);
   const { mutate: deleteTag } = useDeleteTag();
   const [editingTag, setEditingTag] = useState<Tag | null>(null);
@@ -46,7 +48,11 @@ export function TagList() {
     <>
       <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6">
         {tags?.map((tag) => (
-          <Card key={tag.id} className="group hover:border-primary transition-all relative border-2">
+          <Card 
+            key={tag.id} 
+            className="group hover:border-primary transition-all relative border-2 cursor-pointer"
+            onClick={() => setTagDetailId(tag.id)}
+          >
             <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
               <CardTitle className="text-sm font-bold flex items-center gap-2 truncate pr-16">
                 <div 

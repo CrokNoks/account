@@ -4,6 +4,7 @@ import { Sidebar } from "@/shared/ui/layout/sidebar";
 import { Header } from "@/shared/ui/layout/header";
 import { BottomNav } from "@/shared/ui/layout/bottom-nav";
 import { CreateTransactionDrawer } from "@/features/transactions/ui/create-transaction-drawer";
+import { TagDetailDrawer } from "@/features/tags/ui/tag-detail-drawer";
 import { useUiStore } from "@/shared/model/use-ui-store";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -42,6 +43,7 @@ export default function DashboardLayout({
 
       {/* Global Drawer Instance (Headless) */}
       <CreateTransactionDrawer trigger={null} />
+      <TagDetailDrawer />
 
       <BottomNav />
     </div>

@@ -33,6 +33,7 @@ import {
   DialogFooter 
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { useUiStore } from '@/shared/model/use-ui-store';
 import { toast } from 'sonner';
 import { useTranslations } from 'next-intl';
 import { CreateRecurringDialog } from '@/features/recurring/ui/create-recurring-dialog';
@@ -40,6 +41,7 @@ import { CreateRecurringDialog } from '@/features/recurring/ui/create-recurring-
 export function TransactionList({ periodId, compact = false }: { periodId?: string, compact?: boolean }) {
   const t = useTranslations('Transactions');
   const { activeAccountId } = useAccountStore();
+  const { setTagDetailId } = useUiStore();
   const { data: periods } = usePeriods(activeAccountId);
   const { data: categories } = useCategories(activeAccountId);
   const { data: tags } = useTags(activeAccountId);
@@ -189,11 +191,15 @@ export function TransactionList({ periodId, compact = false }: { periodId?: stri
                       <Badge 
                         key={tagId} 
                         variant="secondary" 
-                        className="h-4 px-1 text-[9px] py-0"
+                        className="h-4 px-1 text-[9px] py-0 cursor-pointer hover:brightness-90 transition-all"
                         style={{ 
                           backgroundColor: tag?.color ? `${tag.color}20` : undefined,
                           color: tag?.color,
                           borderColor: tag?.color ? `${tag.color}40` : undefined
+                        }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setTagDetailId(tagId);
                         }}
                       >
                         {tag?.name || 'Tag'}
@@ -271,11 +277,15 @@ export function TransactionList({ periodId, compact = false }: { periodId?: stri
                               <Badge 
                                 key={tagId} 
                                 variant="secondary" 
-                                className="h-4 px-1 text-[9px] py-0 font-normal"
+                                className="h-4 px-1 text-[9px] py-0 font-normal cursor-pointer hover:brightness-90 transition-all"
                                 style={{ 
                                   backgroundColor: tag?.color ? `${tag.color}20` : undefined,
                                   color: tag?.color,
                                   borderColor: tag?.color ? `${tag.color}40` : undefined
+                                }}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setTagDetailId(tagId);
                                 }}
                               >
                                 {tag?.name || 'Tag'}
