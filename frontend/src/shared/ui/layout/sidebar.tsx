@@ -13,6 +13,7 @@ import {
   Receipt, 
   PieChart, 
   Settings,
+  Tag,
   Repeat,
   LogOut
 } from 'lucide-react';
@@ -28,6 +29,7 @@ const menuItems = [
   { isSeparator: true },
   { icon: CreditCard, labelKey: 'accounts', href: '/accounts', shortcut: 'F6' },
   { icon: Settings, labelKey: 'categories', href: '/categories', shortcut: 'F7' },
+  { icon: Tag, labelKey: 'tags', href: '/tags', shortcut: 'F11' },
   { icon: Repeat, labelKey: 'recurring', href: '/recurring', shortcut: 'F8' },
   { icon: PieChart, labelKey: 'budgets', href: '/budgets', shortcut: 'F9' },
   { icon: Receipt, labelKey: 'transactions', href: '/transactions', shortcut: 'F10' },

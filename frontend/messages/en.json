@@ -6,6 +6,7 @@
     "prevision": "Forecast",
     "accounts": "Accounts",
     "categories": "Categories",
+    "tags": "Tags",
     "transactions": "Transactions",
     "budgets": "Budgets",
     "recurring": "Recurring",
@@ -122,6 +123,17 @@
       "savings": "Savings"
     },
     "empty": "No categories configured"
+  },
+  "Tags": {
+    "title": "Tags",
+    "description": "Use tags for cross-cutting categorization (e.g., #vacation, #gifts).",
+    "add_tag": "New Tag",
+    "fields": {
+      "name": "Name",
+      "color": "Color"
+    },
+    "empty": "No tags configured",
+    "delete_confirm": "Do you really want to delete this tag?"
   },
   "Budgets": {
     "title": "Financial Periods",
