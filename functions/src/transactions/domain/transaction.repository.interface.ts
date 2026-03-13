@@ -3,6 +3,12 @@ import { Transaction } from './transaction.entity';
 export interface FindAllTransactionsOptions {
   startDate?: Date;
   endDate?: Date;
+  search?: string;
+  categoryId?: string;
+  tagIds?: string[];
+  minAmount?: bigint;
+  maxAmount?: bigint;
+  reconciled?: boolean;
 }
 
 export abstract class TransactionRepository {
