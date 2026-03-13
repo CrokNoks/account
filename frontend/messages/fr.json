@@ -1,6 +1,7 @@
 {
   "Navigation": {
     "dashboard": "Tableau de bord",
+    "calendar": "Calendrier",
     "evolution": "Évolution",
     "flux": "Flux",
     "prevision": "Prévisions",

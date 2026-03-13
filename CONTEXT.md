@@ -42,7 +42,7 @@ Refonte complète de l'application de gestion de budget et de comptes bancaires 
     - Le code est conforme au norme (`npm run lint`).
     - Une tâche est considérée comme terminée uniquement lorsque ces quatres étapes sont validées.
 6. **Commit** : Ne jamais commit sans instruction direct. Si l'utilisateur donne l'ordre de commiter : 
-    - tirer une branche de main SI et SEULEMENT SI on est sur la branche main
+    - tirer une branche de main après avoir mis main à jour SI et SEULEMENT SI on est sur la branche main
     - donner un nom cohérent et en lien avec les modification en cours.
     - grouper les modifications en plusieurs commit en fonction  de leur impact
 

@@ -258,8 +258,9 @@ export class TransactionsController {
     @Query() query: FindTransactionsQueryDto,
   ): Promise<TransactionResponseDto[]> {
     if (query.periodId) {
-      const transactions =
-        await this.transactionRepository.findAllByPeriod(query.periodId);
+      const transactions = await this.transactionRepository.findAllByPeriod(
+        query.periodId,
+      );
       return transactions
         .filter((t) => t.accountId === accountId)
         .map((t) => this.mapToResponse(t));

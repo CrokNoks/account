@@ -52,9 +52,22 @@ import {
   TagCategoryBreakdown,
 } from '../application/get-tag-details.use-case';
 import {
+  GetCalendarDataUseCase,
+  CalendarEvent,
+} from '../application/get-calendar-data.use-case';
+import {
   ScanReceiptUseCase,
   ScanReceiptResult,
 } from '../application/scan-receipt.use-case';
+
+class CalendarEventDto implements CalendarEvent {
+  @ApiProperty() id: string;
+  @ApiProperty() date: string;
+  @ApiProperty() description: string;
+  @ApiProperty() amount: string;
+  @ApiProperty({ enum: ['actual', 'recurring'] }) type: 'actual' | 'recurring';
+  @ApiProperty({ nullable: true }) categoryId: string | null;
+}
 
 class TagSummaryDto implements TagSummary {
   @ApiProperty() tagId: string;
@@ -147,6 +160,7 @@ export class ReportingController {
     private readonly getCashflowForecastUseCase: GetCashflowForecastUseCase,
     private readonly getTagsSummaryUseCase: GetTagsSummaryUseCase,
     private readonly getTagDetailsUseCase: GetTagDetailsUseCase,
+    private readonly getCalendarDataUseCase: GetCalendarDataUseCase,
     private readonly scanReceiptUseCase: ScanReceiptUseCase,
   ) {}
 
@@ -277,5 +291,20 @@ export class ReportingController {
     @Query('periodId') periodId?: string,
   ): Promise<TagDetailsDto> {
     return this.getTagDetailsUseCase.execute(accountId, tagId, periodId);
+  }
+
+  @Get('reporting/calendar')
+  @ApiOperation({ summary: 'Get financial calendar data for a specific month' })
+  @ApiResponse({ status: 200, type: [CalendarEventDto] })
+  async getCalendar(
+    @Param('accountId') accountId: string,
+    @Query('year') year: number,
+    @Query('month') month: number,
+  ): Promise<CalendarEventDto[]> {
+    return this.getCalendarDataUseCase.execute(
+      accountId,
+      Number(year),
+      Number(month),
+    );
   }
 }

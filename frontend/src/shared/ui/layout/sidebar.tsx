@@ -23,6 +23,7 @@ import {useTranslations} from 'next-intl';
 
 const menuItems = [
   { icon: LayoutDashboard, labelKey: 'dashboard', href: '/', shortcut: 'F2' },
+  { icon: Calendar, labelKey: 'calendar', href: '/calendar', shortcut: 'F12' },
   { icon: TrendingUp, labelKey: 'evolution', href: '/evolution', shortcut: 'F3' },
   { icon: GitBranch, labelKey: 'flux', href: '/flux', shortcut: 'F4' },
   { icon: Calendar, labelKey: 'prevision', href: '/cashflow', shortcut: 'F5' },
