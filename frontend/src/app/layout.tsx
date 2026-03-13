@@ -1,3 +1,11 @@
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  icons: {
+    icon: "/piggy-bank.svg",
+  },
+};
+
 export default function RootLayout({
   children,
 }: {

@@ -21,6 +21,9 @@ export const metadata: Metadata = {
   title: "Account V2",
   description: "Personal finance manager",
   manifest: "/manifest.json",
+  icons: {
+    icon: "/piggy-bank.svg",
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
