@@ -89,6 +89,16 @@ export class CreateTransactionDto {
   @IsObject()
   @ApiProperty({ description: 'Additional metadata', required: false })
   metadata?: Record<string, any>;
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  @ApiProperty({
+    description: 'Tag IDs associated with the transaction',
+    required: false,
+    type: [String],
+  })
+  tagIds?: string[];
 }
 
 export class CreateTransferDto {
@@ -153,6 +163,9 @@ export class TransactionResponseDto {
 
   @ApiProperty()
   metadata: Record<string, any>;
+
+  @ApiProperty({ type: [String] })
+  tagIds: string[];
 
   @ApiProperty()
   createdAt: string;
@@ -237,6 +250,7 @@ export class TransactionsController {
       ...existing,
       ...dto,
       pending,
+      tagIds: dto.tagIds !== undefined ? dto.tagIds : existing.tagIds,
       date: dto.date ? new Date(dto.date) : existing.date,
       amount: dto.amount
         ? BigInt(Math.round(Number(dto.amount)))
@@ -320,6 +334,7 @@ export class TransactionsController {
       paymentMethod: t.paymentMethod || null,
       notes: t.notes || null,
       metadata: t.metadata || {},
+      tagIds: t.tagIds || [],
       createdAt: t.createdAt.toISOString(),
       updatedAt: t.updatedAt.toISOString(),
     };

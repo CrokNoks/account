@@ -6,6 +6,10 @@ import {
   FindAllTransactionsOptions,
 } from '../domain/transaction.repository.interface';
 
+interface TransactionTagRow {
+  tag_id: string;
+}
+
 interface TransactionRow {
   id: string;
   account_id: string;
@@ -21,6 +25,7 @@ interface TransactionRow {
   metadata: Record<string, any> | null;
   created_at: string;
   updated_at: string;
+  transaction_tags?: TransactionTagRow[];
 }
 
 @Injectable()
@@ -36,7 +41,7 @@ export class SupabaseTransactionRepository implements TransactionRepository {
   ): Promise<Transaction[]> {
     let query = this.supabase
       .from('transactions')
-      .select('*')
+      .select('*, transaction_tags(tag_id)')
       .eq('account_id', accountId);
 
     if (options?.startDate) {
@@ -79,7 +84,7 @@ export class SupabaseTransactionRepository implements TransactionRepository {
   async findAllByPeriod(periodId: string): Promise<Transaction[]> {
     const { data, error } = await this.supabase
       .from('transactions')
-      .select('*')
+      .select('*, transaction_tags(tag_id)')
       .eq('period_id', periodId)
       .order('date', { ascending: false })
       .returns<TransactionRow[]>();
@@ -92,7 +97,7 @@ export class SupabaseTransactionRepository implements TransactionRepository {
   async findById(id: string): Promise<Transaction | null> {
     const { data, error } = await this.supabase
       .from('transactions')
-      .select('*')
+      .select('*, transaction_tags(tag_id)')
       .eq('id', id)
       .returns<TransactionRow>()
       .single();
@@ -121,6 +126,27 @@ export class SupabaseTransactionRepository implements TransactionRepository {
     });
 
     if (error) throw new Error(error.message);
+
+    // Update tags
+    // First, delete existing tags for this transaction
+    await this.supabase
+      .from('transaction_tags')
+      .delete()
+      .eq('transaction_id', transaction.id);
+
+    // Then, insert new tags
+    if (transaction.tagIds && transaction.tagIds.length > 0) {
+      const tagInserts = transaction.tagIds.map((tagId) => ({
+        transaction_id: transaction.id,
+        tag_id: tagId,
+      }));
+
+      const { error: tagsError } = await this.supabase
+        .from('transaction_tags')
+        .insert(tagInserts);
+
+      if (tagsError) throw new Error(tagsError.message);
+    }
   }
 
   async delete(id: string): Promise<void> {
@@ -133,6 +159,10 @@ export class SupabaseTransactionRepository implements TransactionRepository {
   }
 
   private mapToDomain(row: TransactionRow): Transaction {
+    const tagIds = row.transaction_tags
+      ? row.transaction_tags.map((tt) => tt.tag_id)
+      : [];
+
     return new Transaction({
       id: row.id,
       accountId: row.account_id,
@@ -146,6 +176,7 @@ export class SupabaseTransactionRepository implements TransactionRepository {
       paymentMethod: row.payment_method,
       notes: row.notes,
       metadata: row.metadata || {},
+      tagIds: tagIds,
       createdAt: new Date(row.created_at),
       updatedAt: new Date(row.updated_at),
     });

@@ -14,6 +14,7 @@ export interface CreateTransactionCommand {
   paymentMethod?: string | null;
   notes?: string | null;
   metadata?: Record<string, any>;
+  tagIds?: string[];
 }
 
 @Injectable()
@@ -33,6 +34,7 @@ export class CreateTransactionUseCase {
       metadata: command.metadata || {},
       reconciled: command.reconciled ?? false,
       pending: command.pending ?? false,
+      tagIds: command.tagIds || [],
     });
 
     await this.transactionRepository.save(transaction);
