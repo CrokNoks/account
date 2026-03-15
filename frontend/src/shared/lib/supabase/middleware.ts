@@ -36,8 +36,9 @@ export async function updateSession(request: NextRequest, response?: NextRespons
     }
   )
 
-  // IMPORTANT: Use getUser instead of getSession in middleware for better security
-  const { data: { user } } = await supabase.auth.getUser();
+  // IMPORTANT: Using getSession in middleware for performance
+  const { data: { session } } = await supabase.auth.getSession();
+  const user = session?.user;
 
   const pathname = request.nextUrl.pathname;
   const isLoginPage = pathname === '/login' || pathname.endsWith('/login');
@@ -48,7 +49,7 @@ export async function updateSession(request: NextRequest, response?: NextRespons
     url.pathname = '/login';
     const redirectResponse = NextResponse.redirect(url);
     // Copy all cookies from our current response to the redirect
-    supabaseResponse.cookies.getAll().forEach(c => redirectResponse.cookies.set(c.name, c.value, c));
+    supabaseResponse.cookies.getAll().forEach(c => redirectResponse.cookies.set(c));
     return redirectResponse;
   }
 
@@ -57,7 +58,7 @@ export async function updateSession(request: NextRequest, response?: NextRespons
     const url = request.nextUrl.clone();
     url.pathname = '/';
     const redirectResponse = NextResponse.redirect(url);
-    supabaseResponse.cookies.getAll().forEach(c => redirectResponse.cookies.set(c.name, c.value, c));
+    supabaseResponse.cookies.getAll().forEach(c => redirectResponse.cookies.set(c));
     return redirectResponse;
   }
 

@@ -19,6 +19,7 @@ apiClient.interceptors.request.use(async (config) => {
     
     if (session?.access_token) {
       config.headers.Authorization = `Bearer ${session.access_token}`;
+      // Debug: console.log(`[API Client] Sending token for: ${config.url}`);
     }
   }
   
