@@ -196,7 +196,11 @@
     "back": "Back",
     "skip": "Skip",
     "finish": "Finish",
-    "close": "Close"
+    "close": "Close",
+    "waking_up_backend": "Waking up server...",
+    "backend_unavailable": "Server Unavailable",
+    "backend_error_desc": "Could not reach the server. It might be down for maintenance or taking too long to start.",
+    "retry": "Retry"
   },
   "Tour": {
     "dashboard": {

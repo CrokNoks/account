@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { AppController } from './app.controller';
 import { SupabaseModule } from './supabase/supabase.module';
 import { AuthModule } from './auth/auth.module';
 import { AccountsModule } from './accounts/accounts.module';
@@ -27,5 +28,6 @@ import { TagsModule } from './tags/tags.module';
     RecurringModule,
     TagsModule,
   ],
+  controllers: [AppController],
 })
 export class AppModule {}
