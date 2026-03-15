@@ -6,12 +6,18 @@ import {routing} from './i18n/routing';
 const intlMiddleware = createMiddleware(routing);
 
 export async function middleware(request: NextRequest) {
-  // 1. First run the intl middleware to get locale headers and potentially redirects
-  const response = intlMiddleware(request);
+  // 1. First run Supabase logic to handle session and auth redirects
+  // This will return a response (either a 200 OK or a 307 Redirect to /login)
+  const supabaseResponse = await updateSession(request);
 
-  // 2. Pass that response to Supabase to add auth logic and cookies
-  // updateSession will now correctly merge cookies into the intl response
-  return await updateSession(request, response);
+  // 2. If it's a redirect (like to /login), return it immediately
+  if (supabaseResponse.status !== 200) {
+    return supabaseResponse;
+  }
+
+  // 3. Otherwise, apply intl logic on top of the Supabase response
+  // This will handle the locale and perform rewrites for [locale]
+  return intlMiddleware(request, supabaseResponse);
 }
 
 export const config = {
