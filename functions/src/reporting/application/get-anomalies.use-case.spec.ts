@@ -3,6 +3,7 @@ import { GetAnomaliesUseCase } from './get-anomalies.use-case';
 import { TransactionRepository } from '../../transactions/domain/transaction.repository.interface';
 import { PeriodRepository } from '../../periods/domain/period.repository.interface';
 import { Transaction } from '../../transactions/domain/transaction.entity';
+import { subMonths } from 'date-fns';
 
 describe('GetAnomaliesUseCase', () => {
   let useCase: GetAnomaliesUseCase;
@@ -12,6 +13,7 @@ describe('GetAnomaliesUseCase', () => {
   const now = new Date(2026, 5, 15); // June 15, 2026
 
   beforeEach(async () => {
+    jest.clearAllMocks();
     jest.useFakeTimers().setSystemTime(now);
 
     const module: TestingModule = await Test.createTestingModule({
@@ -194,5 +196,31 @@ describe('GetAnomaliesUseCase', () => {
     expect(anomalies).toHaveLength(1);
     expect(anomalies[0].type).toBe('outlier');
     expect(anomalies[0].transactionIds).toEqual(['out-1']);
+  });
+
+  it('should ignore anomalies marked in metadata', async () => {
+    const accountId = 'acc-1';
+    const now = new Date();
+
+    const transactions = [
+      Transaction.create({
+        id: 'out-1',
+        accountId,
+        categoryId: 'cat-1',
+        date: now,
+        description: 'Outlier',
+        amount: BigInt(-100000), // 1000€
+        metadata: { ignoredAnomalies: ['outlier'] },
+      }),
+      Transaction.create({ id: 'h1', accountId, categoryId: 'cat-1', date: subMonths(now, 1), description: 'H1', amount: BigInt(-1000) }),
+      Transaction.create({ id: 'h2', accountId, categoryId: 'cat-1', date: subMonths(now, 2), description: 'H2', amount: BigInt(-1100) }),
+      Transaction.create({ id: 'h3', accountId, categoryId: 'cat-1', date: subMonths(now, 3), description: 'H3', amount: BigInt(-900) }),
+    ];
+
+    transactionRepository.findAllByAccount.mockResolvedValue(transactions);
+
+    const anomalies = await useCase.execute(accountId);
+
+    expect(anomalies).toHaveLength(0);
   });
 });
