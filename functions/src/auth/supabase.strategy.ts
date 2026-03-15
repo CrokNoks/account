@@ -52,12 +52,14 @@ export class SupabaseStrategy extends PassportStrategy(Strategy) {
     }
   }
 
-  validate(payload: JwtPayload): { id: string; email: string } {
+  validate(payload: JwtPayload): { id: string; email: string } | null {
     if (!payload || !payload.sub) {
-      this.logger.error('[SupabaseStrategy] Validation failed: invalid payload');
+      this.logger.error(
+        '[SupabaseStrategy] Validation failed: invalid payload',
+      );
       return null;
     }
-    
+
     console.log(
       `[SupabaseStrategy] Token validated for user: ${payload.sub} (${payload.email})`,
     );
