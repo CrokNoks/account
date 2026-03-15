@@ -59,10 +59,16 @@ import {
   GetAnomaliesUseCase,
   Anomaly,
 } from '../application/get-anomalies.use-case';
+import { IgnoreAnomalyUseCase } from '../application/ignore-anomaly.use-case';
 import {
   ScanReceiptUseCase,
   ScanReceiptResult,
 } from '../application/scan-receipt.use-case';
+
+export class IgnoreAnomalyDto {
+  @ApiProperty() transactionIds: string[];
+  @ApiProperty() type: string;
+}
 
 class AnomalyDto implements Anomaly {
   @ApiProperty() id: string;
@@ -178,8 +184,20 @@ export class ReportingController {
     private readonly getTagDetailsUseCase: GetTagDetailsUseCase,
     private readonly getCalendarDataUseCase: GetCalendarDataUseCase,
     private readonly getAnomaliesUseCase: GetAnomaliesUseCase,
+    private readonly ignoreAnomalyUseCase: IgnoreAnomalyUseCase,
     private readonly scanReceiptUseCase: ScanReceiptUseCase,
   ) {}
+
+  @Post('reporting/anomalies/ignore')
+  @ApiOperation({ summary: 'Ignore specific anomalies for given transactions' })
+  @ApiResponse({ status: 201 })
+  async ignoreAnomaly(
+    @Param('accountId') accountId: string,
+    @Body() dto: IgnoreAnomalyDto,
+  ): Promise<{ success: boolean }> {
+    await this.ignoreAnomalyUseCase.execute(accountId, dto.transactionIds, dto.type);
+    return { success: true };
+  }
 
   @Get('periods/:periodId/reporting/stats')
   @ApiOperation({ summary: 'Get financial stats for a specific period' })

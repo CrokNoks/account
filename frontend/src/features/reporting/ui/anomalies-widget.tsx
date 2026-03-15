@@ -1,17 +1,21 @@
 'use client';
 
 import { useAccountStore } from '@/features/accounts/model/use-account-store';
-import { usePeriods } from '@/features/budgets/api/use-periods';
 import { useAnomalies, Anomaly } from '../api/use-anomalies';
+import { useIgnoreAnomaly } from '../api/use-ignore-anomaly';
 import { AlertCircle, Copy, ArrowUpRight, TrendingUp, X } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useState } from 'react';
+import { toast } from 'sonner';
 
 export function AnomaliesWidget() {
   const { activeAccountId, activePeriodId } = useAccountStore();
   const { data: anomalies, isLoading } = useAnomalies(activeAccountId, activePeriodId);
+  const { mutate: ignoreAnomaly } = useIgnoreAnomaly(activePeriodId);
+  
+  // Keep local state for immediate optimistic UI update
   const [dismissedIds, setDismissedIds] = useState<Set<string>>(new Set());
 
   if (isLoading) return null;
@@ -20,12 +24,34 @@ export function AnomaliesWidget() {
 
   if (activeAnomalies.length === 0) return null;
 
-  const dismiss = (id: string) => {
+  const dismiss = (anomaly: Anomaly) => {
+    if (!activeAccountId) return;
+    
+    // Optimistic hide
     setDismissedIds(prev => {
       const next = new Set(prev);
-      next.add(id);
+      next.add(anomaly.id);
       return next;
     });
+
+    ignoreAnomaly(
+      { 
+        accountId: activeAccountId, 
+        transactionIds: anomaly.transactionIds, 
+        type: anomaly.type 
+      },
+      {
+        onError: () => {
+          // Revert optimistic update on error
+          setDismissedIds(prev => {
+            const next = new Set(prev);
+            next.delete(anomaly.id);
+            return next;
+          });
+          toast.error("Erreur lors de la mise à jour de l'anomalie");
+        }
+      }
+    );
   };
 
   const getIcon = (type: Anomaly['type']) => {
@@ -62,13 +88,12 @@ export function AnomaliesWidget() {
               <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
                 {anomaly.description}
               </p>
-              {/* Optional: Add a button to open specific transactions */}
             </div>
             <Button 
               variant="ghost" 
               size="icon-xs" 
               className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
-              onClick={() => dismiss(anomaly.id)}
+              onClick={() => dismiss(anomaly)}
               title="Ignorer cette alerte"
             >
               <X className="w-3.5 h-3.5" />
