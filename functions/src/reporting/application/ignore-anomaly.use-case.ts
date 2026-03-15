@@ -15,8 +15,10 @@ export class IgnoreAnomalyUseCase {
       const tx = await this.transactionRepository.findById(id);
       if (!tx || tx.accountId !== accountId) continue;
 
-      const metadata = tx.metadata || {};
-      const ignoredAnomalies = new Set<string>(metadata.ignoredAnomalies || []);
+      const metadata = (tx.metadata as Record<string, any>) || {};
+      const ignoredAnomalies = new Set<string>(
+        (metadata.ignoredAnomalies as string[]) || [],
+      );
       ignoredAnomalies.add(type);
 
       const updated = new Transaction({

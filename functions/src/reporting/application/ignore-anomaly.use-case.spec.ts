@@ -35,7 +35,7 @@ describe('IgnoreAnomalyUseCase', () => {
     const accountId = 'acc-1';
     const transactionId = 'tx-1';
     const anomalyType = 'outlier';
-    
+
     const existingTx = Transaction.create({
       id: transactionId,
       accountId,
@@ -53,6 +53,7 @@ describe('IgnoreAnomalyUseCase', () => {
     expect(transactionRepository.save).toHaveBeenCalledWith(
       expect.objectContaining({
         id: transactionId,
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         metadata: expect.objectContaining({
           original: 'data',
           ignoredAnomalies: [anomalyType],
@@ -64,7 +65,7 @@ describe('IgnoreAnomalyUseCase', () => {
   it('should not update if transaction belongs to another account', async () => {
     const accountId = 'acc-1';
     const transactionId = 'tx-1';
-    
+
     const existingTx = Transaction.create({
       id: transactionId,
       accountId: 'other-acc',
@@ -84,16 +85,18 @@ describe('IgnoreAnomalyUseCase', () => {
   it('should handle multiple transactions', async () => {
     const accountId = 'acc-1';
     const txIds = ['tx-1', 'tx-2'];
-    
-    transactionRepository.findById.mockImplementation((id) => 
-      Promise.resolve(Transaction.create({
-        id,
-        accountId,
-        categoryId: 'cat-1',
-        date: new Date(),
-        description: 'Desc',
-        amount: BigInt(-1000),
-      }))
+
+    transactionRepository.findById.mockImplementation((id) =>
+      Promise.resolve(
+        Transaction.create({
+          id,
+          accountId,
+          categoryId: 'cat-1',
+          date: new Date(),
+          description: 'Desc',
+          amount: BigInt(-1000),
+        }),
+      ),
     );
 
     await useCase.execute(accountId, txIds, 'duplicate');

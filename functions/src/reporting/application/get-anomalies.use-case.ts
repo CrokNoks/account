@@ -88,8 +88,9 @@ export class GetAnomaliesUseCase {
 
     for (const t of transactions) {
       if (t.amount >= BigInt(0) || t.amount > BigInt(-500)) continue;
-      
-      const ignoredAnomalies = t.metadata?.ignoredAnomalies || [];
+
+      const metadata = t.metadata;
+      const ignoredAnomalies = (metadata?.ignoredAnomalies as string[]) || [];
       if (ignoredAnomalies.includes('duplicate')) continue;
 
       const key = `${format(t.date, 'yyyy-MM-dd')}_${t.amount.toString()}`;
@@ -126,7 +127,8 @@ export class GetAnomaliesUseCase {
     for (const t of targetTransactions) {
       if (!t.categoryId || t.amount >= BigInt(0)) continue;
 
-      const ignoredAnomalies = t.metadata?.ignoredAnomalies || [];
+      const metadata = t.metadata;
+      const ignoredAnomalies = (metadata?.ignoredAnomalies as string[]) || [];
       if (ignoredAnomalies.includes('outlier')) continue;
 
       const stats = categoryAverages.get(t.categoryId);

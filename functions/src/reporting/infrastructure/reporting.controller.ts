@@ -64,10 +64,18 @@ import {
   ScanReceiptUseCase,
   ScanReceiptResult,
 } from '../application/scan-receipt.use-case';
+import { IsArray, IsString, IsIn } from 'class-validator';
 
 export class IgnoreAnomalyDto {
-  @ApiProperty() transactionIds: string[];
-  @ApiProperty() type: string;
+  @IsArray()
+  @IsString({ each: true })
+  @ApiProperty()
+  transactionIds: string[];
+
+  @IsString()
+  @IsIn(['duplicate', 'spike', 'outlier'])
+  @ApiProperty({ enum: ['duplicate', 'spike', 'outlier'] })
+  type: 'duplicate' | 'spike' | 'outlier';
 }
 
 class AnomalyDto implements Anomaly {
@@ -195,7 +203,11 @@ export class ReportingController {
     @Param('accountId') accountId: string,
     @Body() dto: IgnoreAnomalyDto,
   ): Promise<{ success: boolean }> {
-    await this.ignoreAnomalyUseCase.execute(accountId, dto.transactionIds, dto.type);
+    await this.ignoreAnomalyUseCase.execute(
+      accountId,
+      dto.transactionIds,
+      dto.type,
+    );
     return { success: true };
   }
 

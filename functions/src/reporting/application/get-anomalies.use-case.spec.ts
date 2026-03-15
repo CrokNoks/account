@@ -212,9 +212,30 @@ describe('GetAnomaliesUseCase', () => {
         amount: BigInt(-100000), // 1000€
         metadata: { ignoredAnomalies: ['outlier'] },
       }),
-      Transaction.create({ id: 'h1', accountId, categoryId: 'cat-1', date: subMonths(now, 1), description: 'H1', amount: BigInt(-1000) }),
-      Transaction.create({ id: 'h2', accountId, categoryId: 'cat-1', date: subMonths(now, 2), description: 'H2', amount: BigInt(-1100) }),
-      Transaction.create({ id: 'h3', accountId, categoryId: 'cat-1', date: subMonths(now, 3), description: 'H3', amount: BigInt(-900) }),
+      Transaction.create({
+        id: 'h1',
+        accountId,
+        categoryId: 'cat-1',
+        date: subMonths(now, 1),
+        description: 'H1',
+        amount: BigInt(-1000),
+      }),
+      Transaction.create({
+        id: 'h2',
+        accountId,
+        categoryId: 'cat-1',
+        date: subMonths(now, 2),
+        description: 'H2',
+        amount: BigInt(-1100),
+      }),
+      Transaction.create({
+        id: 'h3',
+        accountId,
+        categoryId: 'cat-1',
+        date: subMonths(now, 3),
+        description: 'H3',
+        amount: BigInt(-900),
+      }),
     ];
 
     transactionRepository.findAllByAccount.mockResolvedValue(transactions);
