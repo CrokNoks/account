@@ -4,7 +4,7 @@ import React from 'react';
 import { useBackendHealth } from '@/shared/api/use-backend-health';
 import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
-import { Loader2, AlertCircle } from 'lucide-react';
+import { PiggyBank, AlertCircle } from 'lucide-react';
 
 interface BackendHealthGuardProps {
   children: React.ReactNode;
@@ -17,9 +17,28 @@ export function BackendHealthGuard({ children }: BackendHealthGuardProps) {
   if (isLoading) {
     return (
       <div className="flex flex-col items-center justify-center h-screen w-full bg-background text-foreground space-y-6">
-        <div className="flex flex-col items-center space-y-4 animate-in fade-in duration-500">
-          <Loader2 className="h-12 w-12 animate-spin text-primary" />
-          <p className="text-lg font-medium text-muted-foreground">{t('waking_up_backend')}</p>
+        <style jsx global>{`
+          @keyframes draw {
+            0% { stroke-dashoffset: 100; }
+            50% { stroke-dashoffset: 0; }
+            80% { stroke-dashoffset: 0; opacity: 1; }
+            100% { stroke-dashoffset: 0; opacity: 0; }
+          }
+          .animate-draw path {
+            stroke-dasharray: 100;
+            stroke-dashoffset: 100;
+            animation: draw 3s infinite ease-in-out;
+          }
+          .animate-draw path:nth-child(2) { animation-delay: 0.5s; }
+          .animate-draw path:nth-child(3) { animation-delay: 0.8s; }
+        `}</style>
+        <div className="flex flex-col items-center space-y-12 animate-in fade-in duration-700">
+          <div className="text-primary animate-draw">
+            <PiggyBank size={192} strokeWidth={1.5} />
+          </div>
+          <p className="text-sm font-medium tracking-[0.2em] uppercase text-muted-foreground/60">
+            {t('loading')}
+          </p>
         </div>
       </div>
     );
