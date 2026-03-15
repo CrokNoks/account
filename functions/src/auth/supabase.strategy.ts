@@ -14,13 +14,19 @@ export class SupabaseStrategy extends PassportStrategy(Strategy) {
   private readonly logger = new Logger(SupabaseStrategy.name);
 
   constructor(private readonly configService: ConfigService) {
-    const supabaseUrl = configService.get<string>('SUPABASE_URL');
+    const supabaseUrl = configService.get<string>('SUPABASE_URL') || '';
     const secret = configService.get<string>('SUPABASE_JWT_SECRET');
     const jwksUrl = `${supabaseUrl}/auth/v1/.well-known/jwks.json`;
 
-    // If we have a secret, we use HS256 validation (standard for Supabase)
-    // If not, we try JWKS validation (only if we have a URL)
-    const useHS256 = !!secret;
+    // Local environment detection (localhost, 127.0.0.1, or no URL)
+    const isLocal =
+      !supabaseUrl ||
+      supabaseUrl.includes('localhost') ||
+      supabaseUrl.includes('127.0.0.1') ||
+      supabaseUrl.includes('0.0.0.0');
+
+    // Use HS256 only in production when a secret is explicitly provided
+    const useHS256 = !!secret && !isLocal;
 
     const strategyOptions = {
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
@@ -43,11 +49,11 @@ export class SupabaseStrategy extends PassportStrategy(Strategy) {
 
     if (useHS256) {
       console.log(
-        `[SupabaseStrategy] Using HS256 validation (Secret length: ${secret?.length})`,
+        `[SupabaseStrategy] Using HS256 validation (Production mode)`,
       );
     } else {
       console.log(
-        `[SupabaseStrategy] Using ES256/JWKS validation (JWKS URL: ${jwksUrl})`,
+        `[SupabaseStrategy] Using JWKS validation (Local/Fallback mode). URL: ${jwksUrl}`,
       );
     }
   }
