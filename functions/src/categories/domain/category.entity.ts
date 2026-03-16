@@ -12,7 +12,6 @@ export interface CategoryProps {
   color: string;
   type: CategoryType;
   accountId?: string | null;
-  userId?: string | null;
   budget?: bigint | null;
   createdAt: Date;
   updatedAt: Date;
@@ -25,7 +24,6 @@ export class Category {
   public readonly color: string;
   public readonly type: CategoryType;
   public readonly accountId?: string | null;
-  public readonly userId?: string | null;
   public readonly budget?: bigint | null;
   public readonly createdAt: Date;
   public readonly updatedAt: Date;
@@ -37,7 +35,6 @@ export class Category {
     this.color = props.color;
     this.type = props.type;
     this.accountId = props.accountId;
-    this.userId = props.userId;
     this.budget = props.budget;
     this.createdAt = props.createdAt;
     this.updatedAt = props.updatedAt;

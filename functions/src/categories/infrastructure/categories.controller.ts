@@ -133,7 +133,6 @@ export class CategoriesController {
       color: dto.color ?? existing.color,
       type: dto.type ?? existing.type,
       accountId: existing.accountId,
-      userId: existing.userId,
       budget: dto.budget ? BigInt(dto.budget) : existing.budget,
       createdAt: existing.createdAt,
       updatedAt: new Date(),
@@ -154,7 +153,6 @@ export class CategoriesController {
     const category = await this.createCategoryUseCase.execute({
       ...dto,
       accountId,
-      userId: req.user.id,
       budget: dto.budget ? BigInt(dto.budget) : null,
     });
 

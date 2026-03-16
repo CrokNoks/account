@@ -8,7 +8,6 @@ export interface CreateCategoryCommand {
   color: string;
   type: CategoryType;
   accountId: string;
-  userId: string;
   budget?: bigint | null;
 }
 
@@ -23,7 +22,6 @@ export class CreateCategoryUseCase {
       color: command.color,
       type: command.type,
       accountId: command.accountId,
-      userId: command.userId,
       budget: command.budget,
     });
 
