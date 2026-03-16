@@ -1,22 +1,19 @@
 'use client';
 
 import { useAccountStore } from '@/features/accounts/model/use-account-store';
-import { usePeriods } from '@/features/budgets/api/use-periods';
 import { useTagsSummary } from '../api/use-tags-summary';
 import { useUiStore } from '@/shared/model/use-ui-store';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { formatCurrency } from '@/shared/lib/format';
 import { Badge } from '@/components/ui/badge';
-import { BarChart3, ChevronRight, Tag as TagIcon } from 'lucide-react';
+import { BarChart3, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export function TagStatsSummary() {
-  const { activeAccountId } = useAccountStore();
-  const { data: periods } = usePeriods(activeAccountId);
+  const { activeAccountId, activePeriodId } = useAccountStore();
   const setTagDetailId = useUiStore((state) => state.setTagDetailId);
   
-  const activePeriod = periods?.find(p => p.isActive);
-  const { data: summary, isLoading } = useTagsSummary(activeAccountId, activePeriod?.id);
+  const { data: summary, isLoading } = useTagsSummary(activeAccountId, activePeriodId);
 
   if (isLoading) return <div className="h-48 bg-muted animate-pulse rounded-xl" />;
   

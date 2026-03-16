@@ -51,8 +51,11 @@ export function TransactionList({ periodId, compact = false }: { periodId?: stri
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
   const [transactionToMakeRecurring, setTransactionToMakeRecurring] = useState<Transaction | null>(null);
   
-  const [selectedPeriodId, setSelectedPeriodId] = useState<string | 'all'>(periodId || 'all');
+  const [selectedPeriodId, setSelectedPeriodId] = useState<string | 'all'>('all');
   const [statusFilter, setStatusFilter] = useState<'all' | 'reconciled' | 'not_reconciled'>('all');
+  
+  // Use prop if provided (Dashboard), otherwise use local filter state (Transactions page)
+  const effectivePeriodId = periodId || selectedPeriodId;
   
   // Advanced filters state
   const [isFilterOpen, setIsFilterOpen] = useState(false);
@@ -70,7 +73,7 @@ export function TransactionList({ periodId, compact = false }: { periodId?: stri
   const debouncedEndDate = useDebounce(endDate, 500);
 
   const filterOptions = useMemo(() => ({
-    periodId: selectedPeriodId === 'all' ? undefined : selectedPeriodId,
+    periodId: effectivePeriodId === 'all' ? undefined : effectivePeriodId,
     search: debouncedSearch || undefined,
     categoryId: selectedCategoryId === 'all' ? undefined : selectedCategoryId,
     tagIds: selectedTagIds.length > 0 ? selectedTagIds : undefined,
@@ -80,7 +83,7 @@ export function TransactionList({ periodId, compact = false }: { periodId?: stri
     endDate: debouncedEndDate || undefined,
     reconciled: statusFilter === 'all' ? undefined : statusFilter === 'reconciled',
   }), [
-    selectedPeriodId, 
+    effectivePeriodId, 
     debouncedSearch, 
     selectedCategoryId, 
     selectedTagIds, 
@@ -506,13 +509,13 @@ export function TransactionList({ periodId, compact = false }: { periodId?: stri
 
                     <div className="space-y-1.5 sm:col-span-2">
                       <label className="text-[10px] font-bold uppercase text-muted-foreground px-1">{t('budget_period')}</label>
-                      <Select value={selectedPeriodId} onValueChange={(v) => setSelectedPeriodId(v || 'all')}>
+                      <Select value={effectivePeriodId} onValueChange={(v) => setSelectedPeriodId(v || 'all')}>
                         <SelectTrigger className="h-10 bg-background">
                           <SelectValue>
-                            {selectedPeriodId === 'all' 
+                            {effectivePeriodId === 'all' 
                               ? t('all_periods') 
                               : (function() {
-                                  const p = periods?.find(p => p.id === selectedPeriodId);
+                                  const p = periods?.find(p => p.id === effectivePeriodId);
                                   return p ? `${format(new Date(p.startDate), 'dd/MM/yy')} - ${format(new Date(p.endDate), 'dd/MM/yy')}` : t('budget_period');
                                 })()
                             }
