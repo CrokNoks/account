@@ -28,7 +28,7 @@ export class GetAnomaliesUseCase {
       const period = await this.periodRepository.findById(periodId);
       if (!period) throw new Error('Period not found');
       targetStartDate = period.startDate;
-      targetEndDate = period.endDate;
+      targetEndDate = period.endDate || new Date();
     } else {
       const now = new Date();
       targetStartDate = startOfMonth(now);

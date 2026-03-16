@@ -49,7 +49,7 @@ export class GetTagDetailsUseCase {
       const period = await this.periodRepository.findById(periodId);
       if (period) {
         startDate = period.startDate;
-        endDate = period.endDate;
+        endDate = period.endDate || undefined;
       }
     }
 

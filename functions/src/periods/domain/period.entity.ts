@@ -4,7 +4,7 @@ export interface PeriodProps {
   id: string;
   accountId: string;
   startDate: Date;
-  endDate: Date;
+  endDate: Date | null;
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -14,7 +14,7 @@ export class Period {
   public readonly id: string;
   public readonly accountId: string;
   public readonly startDate: Date;
-  public readonly endDate: Date;
+  public readonly endDate: Date | null;
   public readonly isActive: boolean;
   public readonly createdAt: Date;
   public readonly updatedAt: Date;
@@ -32,7 +32,7 @@ export class Period {
 
   private validate() {
     if (!this.accountId) throw new Error('Account ID is required');
-    if (this.endDate < this.startDate) {
+    if (this.endDate && this.endDate < this.startDate) {
       throw new Error('End date must be after start date');
     }
   }
@@ -46,8 +46,9 @@ export class Period {
   }
 
   static create(
-    props: Omit<PeriodProps, 'id' | 'createdAt' | 'updatedAt' | 'isActive'> & {
+    props: Omit<PeriodProps, 'id' | 'createdAt' | 'updatedAt' | 'isActive' | 'endDate'> & {
       id?: string;
+      endDate?: Date | null;
       createdAt?: Date;
       updatedAt?: Date;
       isActive?: boolean;
@@ -57,6 +58,7 @@ export class Period {
     return new Period({
       ...props,
       id: props.id || randomUUID(),
+      endDate: props.endDate ?? null,
       isActive: props.isActive ?? true,
       createdAt: props.createdAt || now,
       updatedAt: props.updatedAt || now,

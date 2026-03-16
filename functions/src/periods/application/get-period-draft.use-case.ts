@@ -31,7 +31,7 @@ export class GetPeriodDraftUseCase {
     const lastPeriod = await this.periodRepository.findLastByAccount(accountId);
     let startDate = new Date();
     if (lastPeriod) {
-      startDate = new Date(lastPeriod.endDate);
+      startDate = new Date(lastPeriod.endDate || lastPeriod.startDate);
       startDate.setDate(startDate.getDate() + 1);
     }
     const endDate = new Date(startDate);

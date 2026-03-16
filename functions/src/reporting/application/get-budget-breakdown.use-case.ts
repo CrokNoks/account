@@ -45,7 +45,7 @@ export class GetBudgetBreakdownUseCase {
     const periodTransactions =
       await this.transactionRepository.findAllByAccount(accountId, {
         startDate: period.startDate,
-        endDate: period.endDate,
+        endDate: period.endDate || undefined,
       });
 
     const realByCategory = new Map<string, bigint>();

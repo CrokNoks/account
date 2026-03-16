@@ -63,7 +63,7 @@ export class GetEvolutionUseCase {
 
       // 2. Period Transactions
       const periodTransactions = allTransactions.filter(
-        (t) => t.date >= period.startDate && t.date <= period.endDate,
+        (t) => t.date >= period.startDate && (!period.endDate || t.date <= period.endDate),
       );
 
       const realByCategory = new Map<string, bigint>();
@@ -108,7 +108,7 @@ export class GetEvolutionUseCase {
       result.push({
         periodId: period.id,
         startDate: period.startDate.toISOString(),
-        endDate: period.endDate.toISOString(),
+        endDate: period.endDate ? period.endDate.toISOString() : '',
         isActive: period.isActive,
         realIncome: realIncome.toString(),
         realExpenses: realExpenses.toString(),

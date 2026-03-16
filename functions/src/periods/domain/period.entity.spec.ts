@@ -36,6 +36,16 @@ describe('Period Entity', () => {
     expect(period.endDate).toEqual(start);
   });
 
+  it('should allow end date to be null', () => {
+    const start = new Date('2026-03-01');
+    const period = Period.create({
+      accountId: 'acc-123',
+      startDate: start,
+      endDate: null,
+    });
+    expect(period.endDate).toBeNull();
+  });
+
   it('should throw if accountId is missing', () => {
     expect(() => {
       Period.create({

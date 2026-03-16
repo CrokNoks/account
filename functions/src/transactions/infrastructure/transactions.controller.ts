@@ -268,7 +268,7 @@ export class TransactionsController {
       const period = await this.periodRepository.findById(query.periodId);
       if (!period) throw new NotFoundException('Period not found');
       startDate = period.startDate;
-      endDate = period.endDate;
+      endDate = period.endDate || undefined;
     }
 
     const transactions = await this.getTransactionsByAccountUseCase.execute(

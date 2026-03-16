@@ -51,7 +51,7 @@ export class GetPeriodStatsUseCase {
     const periodTransactions =
       await this.transactionRepository.findAllByAccount(accountId, {
         startDate: period.startDate,
-        endDate: period.endDate,
+        endDate: period.endDate || undefined,
       });
 
     // Categorize real sums by categoryId

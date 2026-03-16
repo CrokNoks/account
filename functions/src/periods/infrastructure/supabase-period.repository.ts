@@ -30,12 +30,7 @@ export class SupabasePeriodRepository implements PeriodRepository {
 
     if (error) return null;
 
-    try {
-      return this.mapToDomain(data);
-    } catch (e) {
-      console.error(`[SupabasePeriodRepository] Error mapping period in findById:`, data);
-      throw e;
-    }
+    return this.mapToDomain(data);
   }
 
   async findLastByAccount(accountId: string): Promise<Period | null> {
@@ -51,12 +46,7 @@ export class SupabasePeriodRepository implements PeriodRepository {
     if (error) return null;
     if (!data) return null;
 
-    try {
-      return this.mapToDomain(data);
-    } catch (e) {
-      console.error(`[SupabasePeriodRepository] Error mapping period in findLastByAccount:`, data);
-      throw e;
-    }
+    return this.mapToDomain(data);
   }
 
   async findAllByAccount(accountId: string): Promise<Period[]> {
@@ -69,14 +59,7 @@ export class SupabasePeriodRepository implements PeriodRepository {
 
     if (error) throw new Error(error.message);
 
-    return (data || []).map((row) => {
-      try {
-        return this.mapToDomain(row);
-      } catch (e) {
-        console.error(`[SupabasePeriodRepository] Error mapping period row:`, row);
-        throw e;
-      }
-    });
+    return (data || []).map((row) => this.mapToDomain(row));
   }
 
   async save(period: Period): Promise<void> {
@@ -84,7 +67,7 @@ export class SupabasePeriodRepository implements PeriodRepository {
       id: period.id,
       account_id: period.accountId,
       start_date: period.startDate.toISOString().split('T')[0],
-      end_date: period.endDate.toISOString().split('T')[0],
+      end_date: period.endDate ? period.endDate.toISOString().split('T')[0] : null,
       is_active: period.isActive,
       created_at: period.createdAt.toISOString(),
       updated_at: period.updatedAt.toISOString(),
@@ -104,7 +87,7 @@ export class SupabasePeriodRepository implements PeriodRepository {
       id: row.id,
       accountId: row.account_id,
       startDate: new Date(row.start_date),
-      endDate: new Date(row.end_date),
+      endDate: row.end_date ? new Date(row.end_date) : null,
       isActive: row.is_active,
       createdAt: new Date(row.created_at),
       updatedAt: new Date(row.updated_at),
