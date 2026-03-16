@@ -36,6 +36,8 @@ import {
   ValidateNested,
 } from 'class-validator';
 import { Type } from 'class-transformer';
+import { PeriodRepository } from '../../periods/domain/period.repository.interface';
+import { Inject, NotFoundException } from '@nestjs/common';
 
 export class CreateTransactionDto {
   @IsOptional()
@@ -233,6 +235,8 @@ export class TransactionsController {
     private readonly createTransferUseCase: CreateTransferUseCase,
     private readonly predictCategoryUseCase: PredictCategoryUseCase,
     private readonly transactionRepository: TransactionRepository,
+    @Inject(PeriodRepository)
+    private readonly periodRepository: PeriodRepository,
   ) {}
 
   @Get('predict-category')
@@ -257,20 +261,21 @@ export class TransactionsController {
     @Param('accountId') accountId: string,
     @Query() query: FindTransactionsQueryDto,
   ): Promise<TransactionResponseDto[]> {
+    let startDate = query.startDate ? new Date(query.startDate) : undefined;
+    let endDate = query.endDate ? new Date(query.endDate) : undefined;
+
     if (query.periodId) {
-      const transactions = await this.transactionRepository.findAllByPeriod(
-        query.periodId,
-      );
-      return transactions
-        .filter((t) => t.accountId === accountId)
-        .map((t) => this.mapToResponse(t));
+      const period = await this.periodRepository.findById(query.periodId);
+      if (!period) throw new NotFoundException('Period not found');
+      startDate = period.startDate;
+      endDate = period.endDate;
     }
 
     const transactions = await this.getTransactionsByAccountUseCase.execute(
       accountId,
       {
-        startDate: query.startDate ? new Date(query.startDate) : undefined,
-        endDate: query.endDate ? new Date(query.endDate) : undefined,
+        startDate,
+        endDate,
         search: query.search,
         categoryId: query.categoryId,
         tagIds: query.tagIds,

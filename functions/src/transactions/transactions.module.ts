@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { SupabaseModule } from '../supabase/supabase.module';
 import { TransactionRepository } from './domain/transaction.repository.interface';
 import { SupabaseTransactionRepository } from './infrastructure/supabase-transaction.repository';
@@ -8,9 +8,10 @@ import { PredictCategoryUseCase } from './application/predict-category.use-case'
 import { BulkCreateTransactionsUseCase } from './application/bulk-create-transactions.use-case';
 import { CreateTransferUseCase } from './application/create-transfer.use-case';
 import { TransactionsController } from './infrastructure/transactions.controller';
+import { PeriodsModule } from '../periods/periods.module';
 
 @Module({
-  imports: [SupabaseModule],
+  imports: [SupabaseModule, forwardRef(() => PeriodsModule)],
   controllers: [TransactionsController],
   providers: [
     {
