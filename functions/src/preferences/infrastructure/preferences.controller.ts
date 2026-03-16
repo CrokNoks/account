@@ -16,11 +16,19 @@ import {
 import { SupabaseAuthGuard } from '../../auth/supabase-auth.guard';
 import { GetUserPreferencesUseCase } from '../application/get-user-preferences.use-case';
 import { UpdateUserPreferencesUseCase } from '../application/update-user-preferences.use-case';
-import { DashboardLayout } from '../domain/user-preferences.entity';
+import { DashboardLayout, DashboardWidgetConfig } from '../domain/user-preferences.entity';
+
+class DashboardWidgetConfigDto implements DashboardWidgetConfig {
+  @ApiProperty()
+  id: string;
+
+  @ApiProperty()
+  width: number;
+}
 
 class DashboardLayoutDto implements DashboardLayout {
-  @ApiProperty({ type: [String] })
-  widgets: string[];
+  @ApiProperty({ type: [DashboardWidgetConfigDto] })
+  widgets: DashboardWidgetConfigDto[];
 }
 
 class UserPreferencesResponseDto {

@@ -1,5 +1,10 @@
+export interface DashboardWidgetConfig {
+  id: string;
+  width: number; // 4, 6, or 12
+}
+
 export interface DashboardLayout {
-  widgets: string[];
+  widgets: DashboardWidgetConfig[];
 }
 
 export interface UserPreferencesProps {
@@ -23,7 +28,14 @@ export class UserPreferences {
     return new UserPreferences({
       userId,
       dashboardLayout: layout || {
-        widgets: ['anomalies', 'stats', 'insights', 'breakdown', 'tags', 'transactions'],
+        widgets: [
+          { id: 'anomalies', width: 12 },
+          { id: 'stats', width: 12 },
+          { id: 'insights', width: 12 },
+          { id: 'breakdown', width: 6 },
+          { id: 'tags', width: 6 },
+          { id: 'transactions', width: 12 },
+        ],
       },
       updatedAt: new Date(),
     });

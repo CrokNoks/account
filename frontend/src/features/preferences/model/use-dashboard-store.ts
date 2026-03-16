@@ -1,11 +1,13 @@
 import { create } from 'zustand';
+import { DashboardWidgetConfig } from '../api/use-user-preferences';
 
 interface DashboardState {
   isEditing: boolean;
   setEditing: (isEditing: boolean) => void;
-  tempLayout: string[] | null;
-  setTempLayout: (layout: string[] | null) => void;
+  tempLayout: DashboardWidgetConfig[] | null;
+  setTempLayout: (layout: DashboardWidgetConfig[] | null) => void;
   toggleWidget: (widgetId: string) => void;
+  updateWidgetWidth: (widgetId: string, width: number) => void;
 }
 
 export const useDashboardStore = create<DashboardState>((set) => ({
@@ -16,9 +18,19 @@ export const useDashboardStore = create<DashboardState>((set) => ({
   toggleWidget: (widgetId) => set((state) => {
     if (!state.tempLayout) return state;
     
-    const newLayout = state.tempLayout.includes(widgetId)
-      ? state.tempLayout.filter(id => id !== widgetId)
-      : [...state.tempLayout, widgetId];
+    const exists = state.tempLayout.find(w => w.id === widgetId);
+    const newLayout = exists
+      ? state.tempLayout.filter(w => w.id !== widgetId)
+      : [...state.tempLayout, { id: widgetId, width: 12 }];
+      
+    return { tempLayout: newLayout };
+  }),
+  updateWidgetWidth: (widgetId, width) => set((state) => {
+    if (!state.tempLayout) return state;
+    
+    const newLayout = state.tempLayout.map(w => 
+      w.id === widgetId ? { ...w, width } : w
+    );
       
     return { tempLayout: newLayout };
   }),

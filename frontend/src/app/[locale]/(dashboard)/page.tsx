@@ -40,7 +40,7 @@ import {
   arrayMove,
   SortableContext,
   sortableKeyboardCoordinates,
-  verticalListSortingStrategy,
+  rectSortingStrategy,
   useSortable,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
@@ -56,7 +56,7 @@ export default function Home() {
 
   const { data: preferences } = useUserPreferences();
   const { mutate: updatePreferences } = useUpdateUserPreferences();
-  const { isEditing, setEditing, tempLayout, setTempLayout, toggleWidget } = useDashboardStore();
+  const { isEditing, setEditing, tempLayout, setTempLayout, toggleWidget, updateWidgetWidth } = useDashboardStore();
 
   const allAvailableWidgets = useMemo(() => [
     { id: 'anomalies', label: 'Anomalies' },
@@ -69,11 +69,25 @@ export default function Home() {
 
   const layout = useMemo(() => {
     if (isEditing && tempLayout) return tempLayout;
-    return preferences?.dashboardLayout.widgets || ['anomalies', 'stats', 'insights', 'breakdown', 'tags', 'transactions'];
+    return preferences?.dashboardLayout.widgets || [
+      { id: 'anomalies', width: 12 },
+      { id: 'stats', width: 12 },
+      { id: 'insights', width: 12 },
+      { id: 'breakdown', width: 6 },
+      { id: 'tags', width: 6 },
+      { id: 'transactions', width: 12 },
+    ];
   }, [isEditing, tempLayout, preferences]);
 
   const handleStartEditing = () => {
-    setTempLayout(preferences?.dashboardLayout.widgets || ['anomalies', 'stats', 'insights', 'breakdown', 'tags', 'transactions']);
+    setTempLayout(preferences?.dashboardLayout.widgets || [
+      { id: 'anomalies', width: 12 },
+      { id: 'stats', width: 12 },
+      { id: 'insights', width: 12 },
+      { id: 'breakdown', width: 6 },
+      { id: 'tags', width: 6 },
+      { id: 'transactions', width: 12 },
+    ]);
     setEditing(true);
   };
 
@@ -101,8 +115,8 @@ export default function Home() {
     const { active, over } = event;
 
     if (over && active.id !== over.id) {
-      const oldIndex = layout.indexOf(active.id as string);
-      const newIndex = layout.indexOf(over.id as string);
+      const oldIndex = layout.findIndex(w => w.id === active.id);
+      const newIndex = layout.findIndex(w => w.id === over.id);
       setTempLayout(arrayMove(layout, oldIndex, newIndex));
     }
   }
@@ -229,7 +243,7 @@ export default function Home() {
             {allAvailableWidgets.map(widget => (
               <Button
                 key={widget.id}
-                variant={layout.includes(widget.id) ? "default" : "outline"}
+                variant={layout.find(w => w.id === widget.id) ? "default" : "outline"}
                 size="sm"
                 onClick={() => toggleWidget(widget.id)}
                 className="rounded-full"
@@ -239,50 +253,53 @@ export default function Home() {
             ))}
           </div>
           <p className="text-[10px] text-muted-foreground italic flex items-center gap-1">
-            <GripVertical className="w-3 h-3" /> Glissez-déposez les widgets pour réorganiser
+            <GripVertical className="w-3 h-3" /> Glissez-déposez les widgets pour réorganiser. Cliquez sur l&apos;icône de taille pour redimensionner.
           </p>
         </div>
       )}
       
-      <div className={cn("flex flex-col gap-12", isEditing && "opacity-80")}>
+      <div className={cn("grid grid-cols-12 gap-8", isEditing && "opacity-80")}>
         <DndContext 
           sensors={sensors}
           collisionDetection={closestCenter}
           onDragEnd={handleDragEnd}
         >
           <SortableContext 
-            items={layout}
-            strategy={verticalListSortingStrategy}
+            items={layout.map(w => w.id)}
+            strategy={rectSortingStrategy}
             disabled={!isEditing}
           >
-            {layout.map((widgetId) => (
-              <SortableWidget 
-                key={widgetId} 
-                id={widgetId} 
-                isEditing={isEditing}
-              >
-                {widgetId === 'anomalies' && <AnomaliesWidget />}
-                {widgetId === 'stats' && <DashboardStats />}
-                {widgetId === 'insights' && currentPeriod?.isActive && (
-                  <div className="hidden lg:block">
+            {layout.map((widget) => {
+              const widgetId = widget.id;
+              return (
+                <SortableWidget 
+                  key={widgetId} 
+                  id={widgetId} 
+                  isEditing={isEditing}
+                  width={widget.width}
+                  onWidthChange={(newWidth) => updateWidgetWidth(widgetId, newWidth)}
+                >
+                  {widgetId === 'anomalies' && <AnomaliesWidget />}
+                  {widgetId === 'stats' && <DashboardStats />}
+                  {widgetId === 'insights' && currentPeriod?.isActive && (
                     <AIInsightsCard accountId={activeAccountId} periodId={activePeriodId} />
-                  </div>
-                )}
-                {widgetId === 'breakdown' && (
-                  <div className="flex flex-col gap-4" data-tour="budget-breakdown">
-                    <h2 className="text-2xl font-bold tracking-tight">{t('breakdown')}</h2>
-                    <BudgetBreakdown />
-                  </div>
-                )}
-                {widgetId === 'tags' && <TagStatsSummary />}
-                {widgetId === 'transactions' && (
-                  <div className="flex flex-col gap-4" data-tour="transaction-list">
-                    <h2 className="text-2xl font-bold tracking-tight">{tt('title')}</h2>
-                    <TransactionList periodId={activePeriodId || undefined} compact />
-                  </div>
-                )}
-              </SortableWidget>
-            ))}
+                  )}
+                  {widgetId === 'breakdown' && (
+                    <div className="flex flex-col gap-4" data-tour="budget-breakdown">
+                      <h2 className="text-2xl font-bold tracking-tight">{t('breakdown')}</h2>
+                      <BudgetBreakdown />
+                    </div>
+                  )}
+                  {widgetId === 'tags' && <TagStatsSummary />}
+                  {widgetId === 'transactions' && (
+                    <div className="flex flex-col gap-4" data-tour="transaction-list">
+                      <h2 className="text-2xl font-bold tracking-tight">{tt('title')}</h2>
+                      <TransactionList periodId={activePeriodId || undefined} compact />
+                    </div>
+                  )}
+                </SortableWidget>
+              );
+            })}
           </SortableContext>
         </DndContext>
       </div>
@@ -290,7 +307,19 @@ export default function Home() {
   );
 }
 
-function SortableWidget({ id, children, isEditing }: { id: string, children: React.ReactNode, isEditing: boolean }) {
+function SortableWidget({ 
+  id, 
+  children, 
+  isEditing, 
+  width,
+  onWidthChange 
+}: { 
+  id: string, 
+  children: React.ReactNode, 
+  isEditing: boolean,
+  width: number,
+  onWidthChange: (width: number) => void
+}) {
   const {
     attributes,
     listeners,
@@ -303,29 +332,50 @@ function SortableWidget({ id, children, isEditing }: { id: string, children: Rea
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
-    zIndex: isDragging ? 1 : 0,
+    zIndex: isDragging ? 10 : 0,
   };
 
   if (!children) return null;
+
+  const toggleWidth = () => {
+    const widths = [4, 6, 12];
+    const currentIndex = widths.indexOf(width);
+    const nextWidth = widths[(currentIndex + 1) % widths.length];
+    onWidthChange(nextWidth);
+  };
 
   return (
     <div 
       ref={setNodeRef} 
       style={style} 
       className={cn(
-        "relative transition-all duration-200",
+        "relative transition-all duration-200 col-span-12",
+        width === 4 && "lg:col-span-4",
+        width === 6 && "lg:col-span-6",
+        width === 12 && "lg:col-span-12",
         isDragging && "opacity-50 scale-105 shadow-2xl",
-        isEditing && "cursor-default group p-2 border-2 border-dashed border-transparent hover:border-primary/20 rounded-3xl"
+        isEditing && "group p-2 border-2 border-dashed border-transparent hover:border-primary/20 rounded-3xl"
       )}
     >
       {isEditing && (
-        <div 
-          {...attributes} 
-          {...listeners}
-          className="absolute -left-2 top-1/2 -translate-y-1/2 p-2 bg-primary text-primary-foreground rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-all cursor-grab active:cursor-grabbing z-50 hover:scale-110"
-        >
-          <GripVertical className="w-4 h-4" />
-        </div>
+        <>
+          <div 
+            {...attributes} 
+            {...listeners}
+            className="absolute -left-2 top-1/2 -translate-y-1/2 p-2 bg-primary text-primary-foreground rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-all cursor-grab active:cursor-grabbing z-50 hover:scale-110"
+          >
+            <GripVertical className="w-4 h-4" />
+          </div>
+          <button
+            onClick={toggleWidth}
+            className="absolute -right-2 top-1/2 -translate-y-1/2 p-2 bg-background border border-border text-foreground rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-all z-50 hover:bg-muted"
+            title="Redimensionner"
+          >
+            <div className="flex gap-0.5 items-center justify-center w-4 h-4">
+              <div className={cn("bg-current rounded-full transition-all", width === 4 ? "w-1.5 h-1.5" : width === 6 ? "w-2.5 h-1.5" : "w-4 h-1.5")} />
+            </div>
+          </button>
+        </>
       )}
       {children}
     </div>
