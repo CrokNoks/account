@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { SupabaseModule } from '../supabase/supabase.module';
 import { CategoriesModule } from '../categories/categories.module';
 import { BudgetsModule } from '../budgets/budgets.module';
@@ -16,7 +16,7 @@ import { PeriodsController } from './infrastructure/periods.controller';
     SupabaseModule,
     CategoriesModule,
     BudgetsModule,
-    TransactionsModule,
+    forwardRef(() => TransactionsModule),
     RecurringModule,
   ],
   controllers: [PeriodsController],
