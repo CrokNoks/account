@@ -32,7 +32,7 @@ export class Period {
 
   private validate() {
     if (!this.accountId) throw new Error('Account ID is required');
-    if (this.endDate <= this.startDate) {
+    if (this.endDate < this.startDate) {
       throw new Error('End date must be after start date');
     }
   }

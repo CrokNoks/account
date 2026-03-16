@@ -30,7 +30,12 @@ export class SupabasePeriodRepository implements PeriodRepository {
 
     if (error) return null;
 
-    return this.mapToDomain(data);
+    try {
+      return this.mapToDomain(data);
+    } catch (e) {
+      console.error(`[SupabasePeriodRepository] Error mapping period in findById:`, data);
+      throw e;
+    }
   }
 
   async findLastByAccount(accountId: string): Promise<Period | null> {
@@ -46,7 +51,12 @@ export class SupabasePeriodRepository implements PeriodRepository {
     if (error) return null;
     if (!data) return null;
 
-    return this.mapToDomain(data);
+    try {
+      return this.mapToDomain(data);
+    } catch (e) {
+      console.error(`[SupabasePeriodRepository] Error mapping period in findLastByAccount:`, data);
+      throw e;
+    }
   }
 
   async findAllByAccount(accountId: string): Promise<Period[]> {
@@ -59,7 +69,14 @@ export class SupabasePeriodRepository implements PeriodRepository {
 
     if (error) throw new Error(error.message);
 
-    return (data || []).map((row) => this.mapToDomain(row));
+    return (data || []).map((row) => {
+      try {
+        return this.mapToDomain(row);
+      } catch (e) {
+        console.error(`[SupabasePeriodRepository] Error mapping period row:`, row);
+        throw e;
+      }
+    });
   }
 
   async save(period: Period): Promise<void> {

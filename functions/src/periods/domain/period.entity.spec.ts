@@ -26,6 +26,16 @@ describe('Period Entity', () => {
     }).toThrow('End date must be after start date');
   });
 
+  it('should allow end date to be same as start date', () => {
+    const start = new Date('2026-03-01');
+    const period = Period.create({
+      accountId: 'acc-123',
+      startDate: start,
+      endDate: start,
+    });
+    expect(period.endDate).toEqual(start);
+  });
+
   it('should throw if accountId is missing', () => {
     expect(() => {
       Period.create({
