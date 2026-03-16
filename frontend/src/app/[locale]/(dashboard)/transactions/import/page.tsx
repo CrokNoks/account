@@ -325,14 +325,22 @@ export default function ImportTransactionsPage() {
                   <div className="space-y-2">
                     <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Colonne Date</label>
                     <Select value={mapping.date || ''} onValueChange={(v) => setMapping({...mapping, date: v || ''})}>
-                      <SelectTrigger className="h-10"><SelectValue placeholder="Date" /></SelectTrigger>
+                      <SelectTrigger className="h-10">
+                        <SelectValue placeholder="Date">
+                          {mapping.date || "Date"}
+                        </SelectValue>
+                      </SelectTrigger>
                       <SelectContent>{csvHeaders.map((h, i) => <SelectItem key={i} value={h}>{h || `Col ${i}`}</SelectItem>)}</SelectContent>
                     </Select>
                   </div>
                   <div className="space-y-2 md:col-span-1">
                     <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Colonne Description</label>
                     <Select value={mapping.description || ''} onValueChange={(v) => setMapping({...mapping, description: v || ''})}>
-                      <SelectTrigger className="h-10"><SelectValue placeholder="Description" /></SelectTrigger>
+                      <SelectTrigger className="h-10">
+                        <SelectValue placeholder="Description">
+                          {mapping.description || "Description"}
+                        </SelectValue>
+                      </SelectTrigger>
                       <SelectContent>{csvHeaders.map((h, i) => <SelectItem key={i} value={h}>{h || `Col ${i}`}</SelectItem>)}</SelectContent>
                     </Select>
                   </div>
@@ -341,7 +349,11 @@ export default function ImportTransactionsPage() {
                     <div className="space-y-2 md:col-span-2 text-primary">
                       <label className="text-[10px] font-bold uppercase tracking-wider">Colonne Montant</label>
                       <Select value={mapping.amount || ''} onValueChange={(v) => setMapping({...mapping, amount: v || ''})}>
-                        <SelectTrigger className="h-10 border-primary/30"><SelectValue placeholder="Montant" /></SelectTrigger>
+                        <SelectTrigger className="h-10 border-primary/30">
+                          <SelectValue placeholder="Montant">
+                            {mapping.amount || "Montant"}
+                          </SelectValue>
+                        </SelectTrigger>
                         <SelectContent>{csvHeaders.map((h, i) => <SelectItem key={i} value={h}>{h || `Col ${i}`}</SelectItem>)}</SelectContent>
                       </Select>
                     </div>
@@ -350,14 +362,22 @@ export default function ImportTransactionsPage() {
                       <div className="space-y-2 text-red-500">
                         <label className="text-[10px] font-bold uppercase tracking-wider">Colonne Débit</label>
                         <Select value={mapping.debit || ''} onValueChange={(v) => setMapping({...mapping, debit: v || ''})}>
-                          <SelectTrigger className="h-10 border-red-200"><SelectValue placeholder="Débit" /></SelectTrigger>
+                          <SelectTrigger className="h-10 border-red-200">
+                            <SelectValue placeholder="Débit">
+                              {mapping.debit || "Débit"}
+                            </SelectValue>
+                          </SelectTrigger>
                           <SelectContent>{csvHeaders.map((h, i) => <SelectItem key={i} value={h}>{h || `Col ${i}`}</SelectItem>)}</SelectContent>
                         </Select>
                       </div>
                       <div className="space-y-2 text-green-500">
                         <label className="text-[10px] font-bold uppercase tracking-wider">Colonne Crédit</label>
                         <Select value={mapping.credit || ''} onValueChange={(v) => setMapping({...mapping, credit: v || ''})}>
-                          <SelectTrigger className="h-10 border-green-200"><SelectValue placeholder="Crédit" /></SelectTrigger>
+                          <SelectTrigger className="h-10 border-green-200">
+                            <SelectValue placeholder="Crédit">
+                              {mapping.credit || "Crédit"}
+                            </SelectValue>
+                          </SelectTrigger>
                           <SelectContent>{csvHeaders.map((h, i) => <SelectItem key={i} value={h}>{h || `Col ${i}`}</SelectItem>)}</SelectContent>
                         </Select>
                       </div>
