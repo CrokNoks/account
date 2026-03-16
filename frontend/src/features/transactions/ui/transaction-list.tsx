@@ -17,7 +17,7 @@ import {
   TableHeader, 
   TableRow 
 } from "@/components/ui/table";
-import { formatCurrency } from '@/shared/lib/format';
+import { formatCurrency, toCents } from '@/shared/lib/format';
 import { format } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -77,8 +77,8 @@ export function TransactionList({ periodId, compact = false }: { periodId?: stri
     search: debouncedSearch || undefined,
     categoryId: selectedCategoryId === 'all' ? undefined : selectedCategoryId,
     tagIds: selectedTagIds.length > 0 ? selectedTagIds : undefined,
-    minAmount: debouncedMinAmount ? Math.round(parseFloat(debouncedMinAmount) * 100).toString() : undefined,
-    maxAmount: debouncedMaxAmount ? Math.round(parseFloat(debouncedMaxAmount) * 100).toString() : undefined,
+    minAmount: debouncedMinAmount ? toCents(debouncedMinAmount) : undefined,
+    maxAmount: debouncedMaxAmount ? toCents(debouncedMaxAmount) : undefined,
     startDate: debouncedStartDate || undefined,
     endDate: debouncedEndDate || undefined,
     reconciled: statusFilter === 'all' ? undefined : statusFilter === 'reconciled',
@@ -588,7 +588,7 @@ function EditTransactionDialog({ transaction, open, onOpenChange }: { transactio
         description,
         categoryId: categoryId || null,
         tagIds,
-        amount: Math.round(parseFloat(amount) * 100).toString(),
+        amount: toCents(amount),
         pending,
       }
     }, {

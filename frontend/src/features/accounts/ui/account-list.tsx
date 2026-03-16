@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { useAccounts, Account } from '../api/use-accounts';
 import { useUpdateAccount } from '../api/use-update-account';
-import { formatCurrency } from '@/shared/lib/format';
+import { formatCurrency, toCents } from '@/shared/lib/format';
 import { LucideIcon, CreditCard, Landmark, Wallet, Pencil, Share2 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { 
@@ -118,7 +118,7 @@ function EditAccountDialog({ account, open, onOpenChange }: { account: Account, 
       data: {
         name,
         description,
-        initialBalance: Math.round(parseFloat(balance) * 100).toString(),
+        initialBalance: toCents(balance),
       }
     }, {
       onSuccess: () => {

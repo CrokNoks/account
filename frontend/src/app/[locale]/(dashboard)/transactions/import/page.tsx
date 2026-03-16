@@ -22,7 +22,7 @@ import { Upload, FileUp, Loader2, X, ArrowRight, Columns, ArrowLeft, CheckCircle
 import { toast } from 'sonner';
 import { apiClient } from '@/shared/api/api-client';
 import { useRouter } from '@/i18n/routing';
-import { formatCurrency } from '@/shared/lib/format';
+import { formatCurrency, toCents } from '@/shared/lib/format';
 
 interface ParsedTransaction {
   id: string;
@@ -202,7 +202,7 @@ export default function ImportTransactionsPage() {
     const payload = parsedData.map(item => ({
       date: item.date,
       description: item.description,
-      amount: Math.round(parseFloat(item.amount) * 100).toString(),
+      amount: toCents(item.amount),
       categoryId: item.categoryId || null,
       periodId: activePeriod?.id || null,
       reconciled: true,
@@ -416,7 +416,7 @@ export default function ImportTransactionsPage() {
                       <TableCell className="pl-8 font-medium text-xs">{row.date}</TableCell>
                       <TableCell className="truncate text-xs" title={row.description}>{row.description}</TableCell>
                       <TableCell className={`text-right font-bold text-xs ${parseFloat(row.amount) < 0 ? 'text-red-500' : 'text-green-500'}`}>
-                        {formatCurrency((Math.round(parseFloat(row.amount) * 100)).toString())}
+                        {formatCurrency(toCents(row.amount))}
                       </TableCell>
                       <TableCell>
                         <Select value={row.categoryId || 'none'} onValueChange={(v) => {

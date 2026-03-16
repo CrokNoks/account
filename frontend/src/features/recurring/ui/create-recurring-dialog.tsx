@@ -24,6 +24,7 @@ import { useCategories } from '@/features/categories/api/use-categories';
 import { useCreateRecurringTransaction } from '../api/use-create-recurring-transaction';
 import { Plus, Repeat } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { toCents } from '@/shared/lib/format';
 
 export interface CreateRecurringDialogProps {
   trigger?: React.ReactNode;
@@ -89,7 +90,7 @@ export function CreateRecurringDialog({
       accountId: activeAccountId,
       description,
       categoryId: categoryId || null,
-      amount: Math.round(parseFloat(amount) * 100).toString(),
+      amount: toCents(amount),
       dayOfMonth: parseInt(dayOfMonth, 10),
     }, {
       onSuccess: () => {

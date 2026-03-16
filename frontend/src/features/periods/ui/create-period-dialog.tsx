@@ -17,7 +17,7 @@ import { useAccountStore } from '@/features/accounts/model/use-account-store';
 import { usePeriodDraft } from '../api/use-period-draft';
 import { useCreatePeriod } from '../api/use-create-period';
 import { Plus, Calculator } from 'lucide-react';
-import { formatCurrency } from '@/shared/lib/format';
+import { formatCurrency, toCents } from '@/shared/lib/format';
 import { useTranslations } from 'next-intl';
 
 export function CreatePeriodDialog() {
@@ -67,7 +67,7 @@ export function CreatePeriodDialog() {
       endDate,
       budgets: Object.entries(budgets).map(([categoryId, amount]) => ({
         categoryId,
-        amountAllocated: Math.round(parseFloat(amount) * 100).toString(),
+        amountAllocated: toCents(amount),
       })),
       injectRecurring,
     }, {

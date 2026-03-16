@@ -41,6 +41,7 @@ import { Plus, Receipt, Check, ChevronsUpDown, Sparkles, ArrowRightLeft, Camera,
 import { toast } from 'sonner';
 import { useTranslations } from 'next-intl';
 import { cn } from '@/lib/utils';
+import { toCents, toAbsCents } from '@/shared/lib/format';
 
 export function CreateTransactionDrawer({ trigger, isFab = false }: { trigger?: React.ReactElement | null, isFab?: boolean }) {
   const t = useTranslations('Transactions');
@@ -183,7 +184,7 @@ export function CreateTransactionDrawer({ trigger, isFab = false }: { trigger?: 
       createTransfer({
         sourceAccountId: activeAccountId,
         destinationAccountId,
-        amount: Math.round(Math.abs(parseFloat(amount)) * 100).toString(),
+        amount: toAbsCents(amount),
         date,
         description,
       }, {
@@ -202,7 +203,7 @@ export function CreateTransactionDrawer({ trigger, isFab = false }: { trigger?: 
         date,
         description,
         categoryId: categoryId || null,
-        amount: Math.round(parseFloat(amount) * 100).toString(),
+        amount: toCents(amount),
         periodId: activePeriod?.id,
         pending,
         tagIds,

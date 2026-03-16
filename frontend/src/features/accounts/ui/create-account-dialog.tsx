@@ -24,6 +24,7 @@ import { useCreateAccount } from '../api/use-create-account';
 import { Plus } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useUiStore } from '@/shared/model/use-ui-store';
+import { toCents } from '@/shared/lib/format';
 
 export function CreateAccountDialog() {
   const t = useTranslations('Accounts');
@@ -45,7 +46,7 @@ export function CreateAccountDialog() {
       type,
       description,
       currency,
-      initialBalance: Math.round(parseFloat(balance) * 100).toString(),
+      initialBalance: toCents(balance),
     }, {
       onSuccess: () => {
         setCreateAccountDialogOpen(false);

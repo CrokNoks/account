@@ -14,7 +14,7 @@ import {
   TableHeader, 
   TableRow 
 } from "@/components/ui/table";
-import { formatCurrency } from '@/shared/lib/format';
+import { formatCurrency, toCents } from '@/shared/lib/format';
 import { Badge } from '@/components/ui/badge';
 import { Trash2, CalendarDays, Pencil } from 'lucide-react';
 import { Button } from "@/components/ui/button";
@@ -143,7 +143,7 @@ function EditRecurringDialog({ transaction, open, onOpenChange }: { transaction:
       data: {
         description,
         categoryId: categoryId || null,
-        amount: Math.round(parseFloat(amount) * 100).toString(),
+        amount: toCents(amount),
         dayOfMonth: parseInt(dayOfMonth, 10),
       }
     }, {

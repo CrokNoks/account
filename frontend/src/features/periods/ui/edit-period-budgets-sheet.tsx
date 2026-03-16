@@ -16,6 +16,7 @@ import { useCategories } from '@/features/categories/api/use-categories';
 import { usePeriodBudgets } from '../api/use-period-budgets';
 import { useUpdatePeriodBudgets } from '../api/use-update-period-budgets';
 import { toast } from 'sonner';
+import { toCents } from '@/shared/lib/format';
 import { useTranslations } from 'next-intl';
 import { Calculator } from 'lucide-react';
 
@@ -57,10 +58,9 @@ export function EditPeriodBudgetsSheet({ periodId, open, onOpenChange }: EditPer
       periodId,
       data: {
         budgets: Object.entries(budgets)
-          .filter(([, amount]) => amount !== '' && !isNaN(parseFloat(amount)))
           .map(([categoryId, amount]) => ({
             categoryId,
-            amountAllocated: Math.round(parseFloat(amount) * 100).toString(),
+            amountAllocated: toCents(amount),
           })),
       }
     }, {
