@@ -11,6 +11,7 @@ import { PeriodsModule } from './periods/periods.module';
 import { ReportingModule } from './reporting/reporting.module';
 import { RecurringModule } from './recurring/recurring.module';
 import { TagsModule } from './tags/tags.module';
+import { PreferencesModule } from './preferences/preferences.module';
 
 @Module({
   imports: [
@@ -27,6 +28,7 @@ import { TagsModule } from './tags/tags.module';
     ReportingModule,
     RecurringModule,
     TagsModule,
+    PreferencesModule,
   ],
   controllers: [AppController],
 })

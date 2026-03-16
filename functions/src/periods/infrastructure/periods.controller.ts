@@ -191,7 +191,7 @@ export class PeriodsController {
     return {
       id: updated.id,
       startDate: updated.startDate.toISOString(),
-      endDate: updated.endDate.toISOString(),
+      endDate: updated.endDate?.toISOString() || null,
       isActive: updated.isActive,
     };
   }
@@ -226,7 +226,7 @@ export class PeriodsController {
     return {
       id: result.period.id,
       startDate: result.period.startDate.toISOString(),
-      endDate: result.period.endDate.toISOString(),
+      endDate: result.period.endDate?.toISOString() || null,
       budgetsCreated: result.budgets.length,
     };
   }

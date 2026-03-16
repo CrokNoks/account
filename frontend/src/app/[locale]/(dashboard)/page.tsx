@@ -21,9 +21,29 @@ import {
   SelectValue 
 } from "@/components/ui/select";
 import { HelpButton } from "@/shared/ui/tour/HelpButton";
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
+import { Plus, Settings2, Check, X, GripVertical } from "lucide-react";
+import { useUserPreferences, useUpdateUserPreferences } from "@/features/preferences/api/use-user-preferences";
+import { useDashboardStore } from "@/features/preferences/model/use-dashboard-store";
+import { cn } from "@/lib/utils";
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+  useSortable,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 export default function Home() {
   const t = useTranslations('Dashboard');
@@ -33,7 +53,60 @@ export default function Home() {
   const { isCreateTransactionDrawerOpen, setCreateTransactionDrawerOpen, startTour, completedTours } = useUiStore();
   const { data: accounts, isLoading: isLoadingAccounts } = useAccounts();
   const { data: periods } = usePeriods(activeAccountId);
-  
+
+  const { data: preferences } = useUserPreferences();
+  const { mutate: updatePreferences } = useUpdateUserPreferences();
+  const { isEditing, setEditing, tempLayout, setTempLayout, toggleWidget } = useDashboardStore();
+
+  const allAvailableWidgets = useMemo(() => [
+    { id: 'anomalies', label: 'Anomalies' },
+    { id: 'stats', label: 'Statistiques globales' },
+    { id: 'insights', label: 'IA Insights' },
+    { id: 'breakdown', label: 'Répartition du budget' },
+    { id: 'tags', label: 'Statistiques par Tags' },
+    { id: 'transactions', label: 'Dernières transactions' },
+  ], []);
+
+  const layout = useMemo(() => {
+    if (isEditing && tempLayout) return tempLayout;
+    return preferences?.dashboardLayout.widgets || ['anomalies', 'stats', 'insights', 'breakdown', 'tags', 'transactions'];
+  }, [isEditing, tempLayout, preferences]);
+
+  const handleStartEditing = () => {
+    setTempLayout(preferences?.dashboardLayout.widgets || ['anomalies', 'stats', 'insights', 'breakdown', 'tags', 'transactions']);
+    setEditing(true);
+  };
+
+  const handleSaveLayout = () => {
+    if (tempLayout) {
+      updatePreferences({ widgets: tempLayout });
+    }
+    setEditing(false);
+    setTempLayout(null);
+  };
+
+  const handleCancelEdit = () => {
+    setEditing(false);
+    setTempLayout(null);
+  };
+
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  function handleDragEnd(event: DragEndEvent) {
+    const { active, over } = event;
+
+    if (over && active.id !== over.id) {
+      const oldIndex = layout.indexOf(active.id as string);
+      const newIndex = layout.indexOf(over.id as string);
+      setTempLayout(arrayMove(layout, oldIndex, newIndex));
+    }
+  }
+
   // Redirect to accounts if none exist
   useEffect(() => {
     if (!isLoadingAccounts && (!accounts || accounts.length === 0)) {
@@ -118,40 +191,143 @@ export default function Home() {
             {t('welcome')}
           </p>
         </div>
-        <div className="hidden lg:block" data-tour="add-transaction">
-          <Button className="gap-2 px-4" onClick={() => setCreateTransactionDrawerOpen(true)}>
-            <Plus className="w-4 h-4" />
-            <span>{tt('add_transaction')}</span>
-            <kbd className="hidden lg:inline-flex pointer-events-none h-5 select-none items-center gap-1 rounded border bg-primary-foreground/20 px-1.5 font-mono text-[10px] font-medium text-primary-foreground opacity-100 ml-1">
-              Enter
-            </kbd>
-          </Button>
+        <div className="flex items-center gap-2">
+          {!isEditing ? (
+            <>
+              <Button variant="outline" size="icon" onClick={handleStartEditing} title="Personnaliser le dashboard">
+                <Settings2 className="w-4 h-4" />
+              </Button>
+              <div className="hidden lg:block" data-tour="add-transaction">
+                <Button className="gap-2 px-4" onClick={() => setCreateTransactionDrawerOpen(true)}>
+                  <Plus className="w-4 h-4" />
+                  <span>{tt('add_transaction')}</span>
+                  <kbd className="hidden lg:inline-flex pointer-events-none h-5 select-none items-center gap-1 rounded border bg-primary-foreground/20 px-1.5 font-mono text-[10px] font-medium text-primary-foreground opacity-100 ml-1">
+                    Enter
+                  </kbd>
+                </Button>
+              </div>
+            </>
+          ) : (
+            <div className="flex items-center gap-2 animate-in fade-in zoom-in duration-200">
+              <Button variant="outline" size="sm" onClick={handleCancelEdit} className="gap-2">
+                <X className="w-4 h-4" /> Annuler
+              </Button>
+              <Button size="sm" onClick={handleSaveLayout} className="gap-2">
+                <Check className="w-4 h-4" /> Enregistrer
+              </Button>
+            </div>
+          )}
         </div>
       </div>
-      
-      <AnomaliesWidget />
-      <DashboardStats />
 
-      {currentPeriod?.isActive && (
-        <div className="hidden lg:block">
-          <AIInsightsCard accountId={activeAccountId} periodId={activePeriodId} />
+      {isEditing && (
+        <div className="p-6 bg-primary/5 border border-primary/20 rounded-2xl animate-in slide-in-from-top-4 duration-300">
+          <h3 className="text-sm font-bold uppercase tracking-wider mb-4 flex items-center gap-2">
+            <Settings2 className="w-4 h-4" /> Sélectionner les widgets
+          </h3>
+          <div className="flex flex-wrap gap-2 mb-6">
+            {allAvailableWidgets.map(widget => (
+              <Button
+                key={widget.id}
+                variant={layout.includes(widget.id) ? "default" : "outline"}
+                size="sm"
+                onClick={() => toggleWidget(widget.id)}
+                className="rounded-full"
+              >
+                {widget.label}
+              </Button>
+            ))}
+          </div>
+          <p className="text-[10px] text-muted-foreground italic flex items-center gap-1">
+            <GripVertical className="w-3 h-3" /> Glissez-déposez les widgets pour réorganiser
+          </p>
         </div>
       )}
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <div className="hidden lg:flex flex-col gap-8" data-tour="budget-breakdown">
-          <div className="flex flex-col gap-4">
-            <h2 className="text-2xl font-bold tracking-tight">{t('breakdown')}</h2>
-            <BudgetBreakdown />
-          </div>
-          <TagStatsSummary />
-        </div>
-        
-        <div className="flex flex-col gap-4" data-tour="transaction-list">
-          <h2 className="text-2xl font-bold tracking-tight">{tt('title')}</h2>
-          <TransactionList periodId={activePeriodId || undefined} compact />
-        </div>
+      
+      <div className={cn("flex flex-col gap-12", isEditing && "opacity-80")}>
+        <DndContext 
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragEnd={handleDragEnd}
+        >
+          <SortableContext 
+            items={layout}
+            strategy={verticalListSortingStrategy}
+            disabled={!isEditing}
+          >
+            {layout.map((widgetId) => (
+              <SortableWidget 
+                key={widgetId} 
+                id={widgetId} 
+                isEditing={isEditing}
+              >
+                {widgetId === 'anomalies' && <AnomaliesWidget />}
+                {widgetId === 'stats' && <DashboardStats />}
+                {widgetId === 'insights' && currentPeriod?.isActive && (
+                  <div className="hidden lg:block">
+                    <AIInsightsCard accountId={activeAccountId} periodId={activePeriodId} />
+                  </div>
+                )}
+                {widgetId === 'breakdown' && (
+                  <div className="flex flex-col gap-4" data-tour="budget-breakdown">
+                    <h2 className="text-2xl font-bold tracking-tight">{t('breakdown')}</h2>
+                    <BudgetBreakdown />
+                  </div>
+                )}
+                {widgetId === 'tags' && <TagStatsSummary />}
+                {widgetId === 'transactions' && (
+                  <div className="flex flex-col gap-4" data-tour="transaction-list">
+                    <h2 className="text-2xl font-bold tracking-tight">{tt('title')}</h2>
+                    <TransactionList periodId={activePeriodId || undefined} compact />
+                  </div>
+                )}
+              </SortableWidget>
+            ))}
+          </SortableContext>
+        </DndContext>
       </div>
+    </div>
+  );
+}
+
+function SortableWidget({ id, children, isEditing }: { id: string, children: React.ReactNode, isEditing: boolean }) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    zIndex: isDragging ? 1 : 0,
+  };
+
+  if (!children) return null;
+
+  return (
+    <div 
+      ref={setNodeRef} 
+      style={style} 
+      className={cn(
+        "relative transition-all duration-200",
+        isDragging && "opacity-50 scale-105 shadow-2xl",
+        isEditing && "cursor-default group p-2 border-2 border-dashed border-transparent hover:border-primary/20 rounded-3xl"
+      )}
+    >
+      {isEditing && (
+        <div 
+          {...attributes} 
+          {...listeners}
+          className="absolute -left-2 top-1/2 -translate-y-1/2 p-2 bg-primary text-primary-foreground rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-all cursor-grab active:cursor-grabbing z-50 hover:scale-110"
+        >
+          <GripVertical className="w-4 h-4" />
+        </div>
+      )}
+      {children}
     </div>
   );
 }
