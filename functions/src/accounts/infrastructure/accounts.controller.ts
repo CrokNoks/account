@@ -9,6 +9,7 @@ import {
   Param,
   Delete,
 } from '@nestjs/common';
+import { Request as ExpressRequest } from 'express';
 import { CreateAccountUseCase } from '../application/create-account.use-case';
 import { GetAccountsUseCase } from '../application/get-accounts.use-case';
 import { ShareAccountUseCase } from '../application/share-account.use-case';
@@ -80,7 +81,7 @@ export class ShareAccountDto {
   permission: 'read' | 'write';
 }
 
-interface AuthenticatedRequest extends Request {
+interface AuthenticatedRequest extends ExpressRequest {
   user: {
     id: string;
     email: string;

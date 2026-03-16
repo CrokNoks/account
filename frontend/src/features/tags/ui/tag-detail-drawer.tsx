@@ -12,9 +12,8 @@ import {
 } from "@/components/ui/sheet";
 import { formatCurrency } from '@/shared/lib/format';
 import { Progress } from '@/components/ui/progress';
-import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
-import { Clock, Receipt, BarChart3, List } from 'lucide-react';
+import { Receipt, BarChart3, List } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export function TagDetailDrawer() {

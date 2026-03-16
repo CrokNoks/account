@@ -31,7 +31,7 @@ interface TagSelectorProps {
 export function TagSelector({ accountId, selectedTagIds, onChange }: TagSelectorProps) {
   const [open, setOpen] = React.useState(false);
   const [inputValue, setInputValue] = React.useState('');
-  const { data: tags, isLoading } = useTags(accountId);
+  const { data: tags } = useTags(accountId);
   const { mutate: createTag } = useCreateTag();
 
   const handleUnselect = (tagId: string) => {
@@ -120,7 +120,7 @@ export function TagSelector({ accountId, selectedTagIds, onChange }: TagSelector
                   className="w-full justify-start text-xs h-8 px-2"
                   onClick={handleCreateTag}
                 >
-                  Créer le tag "#{inputValue}"
+                  Créer le tag &quot;#{inputValue}&quot;
                 </Button>
               </CommandEmpty>
               <CommandGroup>

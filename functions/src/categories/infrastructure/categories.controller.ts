@@ -88,13 +88,6 @@ export class CategoryResponseDto {
   @ApiProperty() updatedAt: string;
 }
 
-interface AuthenticatedRequest extends Request {
-  user: {
-    id: string;
-    email: string;
-  };
-}
-
 @ApiTags('categories')
 @ApiBearerAuth()
 @UseGuards(SupabaseAuthGuard)
@@ -148,7 +141,6 @@ export class CategoriesController {
   async create(
     @Param('accountId') accountId: string,
     @Body() dto: Omit<CreateCategoryDto, 'accountId'>,
-    @Request() req: AuthenticatedRequest,
   ): Promise<CategoryResponseDto> {
     const category = await this.createCategoryUseCase.execute({
       ...dto,

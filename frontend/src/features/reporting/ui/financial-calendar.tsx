@@ -23,7 +23,7 @@ import { useAccountStore } from '@/features/accounts/model/use-account-store';
 import { useCalendarData, CalendarEvent } from '../api/use-calendar-data';
 import { formatCurrency } from '@/shared/lib/format';
 import { cn } from '@/lib/utils';
-import { useTranslations, useLocale } from 'next-intl';
+import { useLocale } from 'next-intl';
 import { 
   Sheet, 
   SheetContent, 
@@ -34,7 +34,6 @@ import { Badge } from '@/components/ui/badge';
 import { useCategories } from '@/features/categories/api/use-categories';
 
 export function FinancialCalendar() {
-  const t = useTranslations('Reporting');
   const localeStr = useLocale();
   const dateLocale = localeStr === 'fr' ? fr : enUS;
   const { activeAccountId } = useAccountStore();
@@ -45,7 +44,7 @@ export function FinancialCalendar() {
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth() + 1;
   
-  const { data: events, isLoading } = useCalendarData(activeAccountId, year, month);
+  const { data: events } = useCalendarData(activeAccountId, year, month);
   const { data: categories } = useCategories(activeAccountId);
 
   const monthStart = startOfMonth(currentDate);
@@ -87,7 +86,7 @@ export function FinancialCalendar() {
           </div>
           <div className="flex items-center gap-2">
             <Button variant="outline" size="sm" onClick={goToToday} className="h-8">
-              Aujourd'hui
+              Aujourd&apos;hui
             </Button>
             <div className="flex items-center border rounded-lg overflow-hidden">
               <Button variant="ghost" size="icon" onClick={prevMonth} className="h-8 w-8 rounded-none border-r">
@@ -187,7 +186,7 @@ export function FinancialCalendar() {
         </div>
         <div className="flex items-center gap-2">
           <div className="w-2 h-2 rounded-full bg-primary" />
-          <span>Aujourd'hui</span>
+          <span>Aujourd&apos;hui</span>
         </div>
       </div>
 
@@ -274,7 +273,7 @@ export function FinancialCalendar() {
                   <div className="p-4 rounded-xl border border-primary/20 bg-primary/5 flex gap-3 items-start">
                     <Info className="w-4 h-4 text-primary shrink-0 mt-0.5" />
                     <p className="text-[11px] text-primary/80 leading-relaxed italic">
-                      Les prévisions sont basées sur vos opérations récurrentes. Elles disparaissent automatiquement une fois l'opération réelle détectée.
+                      Les prévisions sont basées sur vos opérations récurrentes. Elles disparaissent automatiquement une fois l&apos;opération réelle detectée.
                     </p>
                   </div>
                 )}

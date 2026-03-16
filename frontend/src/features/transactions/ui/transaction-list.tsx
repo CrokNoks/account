@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { useAccountStore } from '@/features/accounts/model/use-account-store';
 import { useTransactions, Transaction } from '../api/use-transactions';
 import { useUpdateTransaction } from '../api/use-update-transaction';
@@ -117,6 +117,24 @@ export function TransactionList({ periodId, compact = false }: { periodId?: stri
     endDate, 
     statusFilter !== 'all'
   ].filter(Boolean).length;
+
+  const toggleReconciliation = useCallback((transactionId: string, currentStatus: boolean) => {
+    if (!activeAccountId) return;
+    updateTransaction({
+      accountId: activeAccountId,
+      id: transactionId,
+      data: { reconciled: !currentStatus }
+    }, {
+      onSuccess: () => toast.success(t('toggled'))
+    });
+  }, [activeAccountId, updateTransaction, t]);
+
+  const handleDelete = useCallback((id: string) => {
+    if (!activeAccountId || !confirm(t('delete_confirm'))) return;
+    deleteTransaction({ accountId: activeAccountId, id }, {
+      onSuccess: () => toast.success(t('deleted'))
+    });
+  }, [activeAccountId, deleteTransaction, t]);
 
   // Memoize the heavy list rendering to prevent latency when toggling filters
   const memoizedList = useMemo(() => {
@@ -337,36 +355,7 @@ export function TransactionList({ periodId, compact = false }: { periodId?: stri
         </div>
       </>
     );
-  }, [transactions, categories, tags, t, isUpdating, isUpdating]);
-
-  const toggleReconciliation = (transactionId: string, currentStatus: boolean) => {
-    if (!activeAccountId) return;
-    updateTransaction({
-      accountId: activeAccountId,
-      id: transactionId,
-      data: { reconciled: !currentStatus }
-    }, {
-      onSuccess: () => toast.success(t('toggled'))
-    });
-  };
-
-  const togglePending = (transactionId: string, currentStatus: boolean) => {
-    if (!activeAccountId) return;
-    updateTransaction({
-      accountId: activeAccountId,
-      id: transactionId,
-      data: { pending: !currentStatus }
-    }, {
-      onSuccess: () => toast.success(t('toggled'))
-    });
-  };
-
-  const handleDelete = (id: string) => {
-    if (!activeAccountId || !confirm(t('delete_confirm'))) return;
-    deleteTransaction({ accountId: activeAccountId, id }, {
-      onSuccess: () => toast.success(t('deleted'))
-    });
-  };
+  }, [transactions, categories, tags, t, isUpdating, handleDelete, setTagDetailId, toggleReconciliation]);
 
   if (isLoading) return <div className="h-64 bg-muted animate-pulse rounded-xl" />;
 
@@ -449,7 +438,7 @@ export function TransactionList({ periodId, compact = false }: { periodId?: stri
                 {/* Status */}
                 <div className="space-y-1.5">
                   <label className="text-[10px] font-bold uppercase text-muted-foreground px-1">{t('filter_status')}</label>
-                  <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as any)}>
+                  <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as 'all' | 'reconciled' | 'not_reconciled')}>
                     <SelectTrigger className="h-10 bg-background">
                       <SelectValue>
                         {statusFilter === 'all' ? t('status_all') : statusFilter === 'reconciled' ? t('status_reconciled') : t('status_not_reconciled')}

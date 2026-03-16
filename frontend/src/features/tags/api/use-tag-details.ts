@@ -1,7 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { apiClient } from '@/shared/api/api-client';
 import { TagSummary } from './use-tags-summary';
-import { Transaction } from '../../transactions/api/use-transactions';
 
 export interface TagCategoryBreakdown {
   categoryId: string | null;
@@ -24,10 +23,10 @@ export interface TagDetails {
 }
 
 export function useTagDetails(accountId: string | null, tagId: string | null, periodId?: string | null) {
-  return useQuery<TagDetails>({
+  return useQuery<TagDetails | null>({
     queryKey: ['tag-details', accountId, tagId, periodId],
     queryFn: async () => {
-      if (!accountId || !tagId) return null as any;
+      if (!accountId || !tagId) return null;
       const params = periodId ? { periodId } : {};
       const { data } = await apiClient.get(`/${accountId}/reporting/tags/${tagId}`, { params });
       return data;
