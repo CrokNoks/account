@@ -16,7 +16,7 @@ import { useCategories } from '@/features/categories/api/use-categories';
 import { usePeriodBudgets } from '../api/use-period-budgets';
 import { useUpdatePeriodBudgets } from '../api/use-update-period-budgets';
 import { toast } from 'sonner';
-import { toCents } from '@/shared/lib/format';
+import { toCents, fromCents } from '@/shared/lib/format';
 import { useTranslations } from 'next-intl';
 import { Calculator } from 'lucide-react';
 
@@ -42,7 +42,7 @@ export function EditPeriodBudgetsSheet({ periodId, open, onOpenChange }: EditPer
     if (existingBudgets && open) {
       const initialBudgets: Record<string, string> = {};
       existingBudgets.forEach(b => {
-        initialBudgets[b.categoryId] = (parseInt(b.amountAllocated, 10) / 100).toString();
+        initialBudgets[b.categoryId] = fromCents(b.amountAllocated);
       });
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setBudgets(initialBudgets);

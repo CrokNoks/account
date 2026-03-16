@@ -14,7 +14,7 @@ import {
   TableHeader, 
   TableRow 
 } from "@/components/ui/table";
-import { formatCurrency, toCents } from '@/shared/lib/format';
+import { formatCurrency, toCents, fromCents } from '@/shared/lib/format';
 import { Badge } from '@/components/ui/badge';
 import { Trash2, CalendarDays, Pencil } from 'lucide-react';
 import { Button } from "@/components/ui/button";
@@ -128,7 +128,7 @@ function EditRecurringDialog({ transaction, open, onOpenChange }: { transaction:
   
   const [description, setDescription] = useState(transaction.description);
   const [categoryId, setCategoryId] = useState(transaction.categoryId || '');
-  const [amount, setAmount] = useState((parseInt(transaction.amount, 10) / 100).toString());
+  const [amount, setAmount] = useState(fromCents(transaction.amount));
   const [dayOfMonth, setDayOfMonth] = useState(transaction.dayOfMonth.toString());
   
   const { mutate: updateRecurring, isPending } = useUpdateRecurringTransaction();

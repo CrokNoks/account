@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { useAccounts, Account } from '../api/use-accounts';
 import { useUpdateAccount } from '../api/use-update-account';
-import { formatCurrency, toCents } from '@/shared/lib/format';
+import { formatCurrency, toCents, fromCents } from '@/shared/lib/format';
 import { LucideIcon, CreditCard, Landmark, Wallet, Pencil, Share2 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { 
@@ -108,7 +108,7 @@ function EditAccountDialog({ account, open, onOpenChange }: { account: Account, 
   const tc = useTranslations('Common');
   const [name, setName] = useState(account.name);
   const [description, setDescription] = useState(account.description || '');
-  const [balance, setBalance] = useState((parseInt(account.initialBalance, 10) / 100).toString());
+  const [balance, setBalance] = useState(fromCents(account.initialBalance));
   const { mutate: updateAccount, isPending } = useUpdateAccount();
 
   const handleSubmit = (e: React.FormEvent) => {

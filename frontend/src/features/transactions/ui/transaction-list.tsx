@@ -17,7 +17,7 @@ import {
   TableHeader, 
   TableRow 
 } from "@/components/ui/table";
-import { formatCurrency, toCents } from '@/shared/lib/format';
+import { formatCurrency, toCents, fromCents } from '@/shared/lib/format';
 import { format } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -553,7 +553,7 @@ export function TransactionList({ periodId, compact = false }: { periodId?: stri
           onOpenChange={(o) => !o && setTransactionToMakeRecurring(null)}
           initialData={{
             description: transactionToMakeRecurring.description,
-            amount: transactionToMakeRecurring.amount,
+            amount: fromCents(transactionToMakeRecurring.amount),
             categoryId: transactionToMakeRecurring.categoryId || undefined,
           }}
         />
@@ -571,7 +571,7 @@ function EditTransactionDialog({ transaction, open, onOpenChange }: { transactio
   const [description, setDescription] = useState(transaction.description);
   const [categoryId, setCategoryId] = useState(transaction.categoryId || '');
   const [tagIds, setTagIds] = useState<string[]>(transaction.tagIds || []);
-  const [amount, setAmount] = useState((parseInt(transaction.amount, 10) / 100).toString());
+  const [amount, setAmount] = useState(fromCents(transaction.amount));
   const [pending, setPending] = useState(transaction.pending);
   
   const { mutate: updateTransaction, isPending } = useUpdateTransaction();

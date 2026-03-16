@@ -17,7 +17,7 @@ import { useAccountStore } from '@/features/accounts/model/use-account-store';
 import { usePeriodDraft } from '../api/use-period-draft';
 import { useCreatePeriod } from '../api/use-create-period';
 import { Plus, Calculator } from 'lucide-react';
-import { formatCurrency, toCents } from '@/shared/lib/format';
+import { formatCurrency, toCents, fromCents } from '@/shared/lib/format';
 import { useTranslations } from 'next-intl';
 
 export function CreatePeriodDialog() {
@@ -51,7 +51,7 @@ export function CreatePeriodDialog() {
       
       const initialBudgets: Record<string, string> = {};
       draft.categoriesWithStats.forEach(cat => {
-        initialBudgets[cat.categoryId] = (parseInt(cat.defaultAllocated, 10) / 100).toString();
+        initialBudgets[cat.categoryId] = fromCents(cat.defaultAllocated);
       });
       setBudgets(initialBudgets);
     }

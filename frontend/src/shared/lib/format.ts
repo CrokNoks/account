@@ -24,3 +24,12 @@ export function toAbsCents(amount: string): string {
   if (isNaN(parsed)) return '0';
   return Math.round(parsed * 100).toString();
 }
+
+/**
+ * Converts cents (string or number) to a string amount (e.g. "10.50").
+ */
+export function fromCents(amountCents: string | number): string {
+  const amount = typeof amountCents === 'string' ? parseInt(amountCents, 10) : amountCents;
+  if (isNaN(amount)) return '0';
+  return (amount / 100).toString();
+}
