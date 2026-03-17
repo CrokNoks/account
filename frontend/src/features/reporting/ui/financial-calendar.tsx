@@ -87,45 +87,89 @@ export function FinancialCalendar() {
     return dayEvents.reduce((sum, e) => sum + BigInt(e.amount), BigInt(0));
   };
 
+  const totals = React.useMemo(() => {
+    if (!events) return { income: BigInt(0), expenses: BigInt(0) };
+    
+    // Only count events that are in the currently displayed days
+    const visibleEvents = events.filter(e => {
+      const date = parseISO(e.date);
+      return days.some(d => isSameDay(d, date));
+    });
+
+    return visibleEvents.reduce((acc, e) => {
+      const amount = BigInt(e.amount);
+      if (amount > 0) acc.income += amount;
+      else acc.expenses += amount;
+      return acc;
+    }, { income: BigInt(0), expenses: BigInt(0) });
+  }, [events, days]);
+
   return (
     <div className="space-y-6">
       <Card className="shadow-sm overflow-hidden border-2">
-        <CardHeader className="flex flex-col md:flex-row items-start md:items-center justify-between space-y-4 md:space-y-0 pb-4 bg-muted/20">
-          <div className="flex items-center gap-4">
-            <div className="p-2 bg-primary/10 rounded-lg text-primary">
-              <CalendarIcon className="w-5 h-5" />
+        <CardHeader className="flex flex-col space-y-4 bg-muted/20 pb-6">
+          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <div className="p-2 bg-primary/10 rounded-lg text-primary">
+                <CalendarIcon className="w-5 h-5" />
+              </div>
+              <div>
+                <CardTitle className="text-xl font-bold capitalize">
+                  {view === 'month' 
+                    ? format(currentDate, 'MMMM yyyy', { locale: dateLocale })
+                    : `Semaine du ${format(calendarStart, 'd MMMM', { locale: dateLocale })}`
+                  }
+                </CardTitle>
+                <p className="text-xs text-muted-foreground">Calendrier financier prévisionnel</p>
+              </div>
             </div>
-            <div>
-              <CardTitle className="text-xl font-bold capitalize">
-                {view === 'month' 
-                  ? format(currentDate, 'MMMM yyyy', { locale: dateLocale })
-                  : `Semaine du ${format(calendarStart, 'd MMMM', { locale: dateLocale })}`
-                }
-              </CardTitle>
-              <p className="text-xs text-muted-foreground">Calendrier financier prévisionnel</p>
+            
+            <div className="flex flex-wrap items-center gap-3">
+              <Tabs value={view} onValueChange={(v) => setView(v as 'month' | 'week')} className="w-auto">
+                <TabsList className="grid w-[160px] grid-cols-2 h-8">
+                  <TabsTrigger value="month" className="text-xs">Mois</TabsTrigger>
+                  <TabsTrigger value="week" className="text-xs">Semaine</TabsTrigger>
+                </TabsList>
+              </Tabs>
+
+              <div className="flex items-center gap-2">
+                <Button variant="outline" size="sm" onClick={goToToday} className="h-8">
+                  Aujourd&apos;hui
+                </Button>
+                <div className="flex items-center border rounded-lg overflow-hidden bg-background">
+                  <Button variant="ghost" size="icon" onClick={prev} className="h-8 w-8 rounded-none border-r">
+                    <ChevronLeft className="w-4 h-4" />
+                  </Button>
+                  <Button variant="ghost" size="icon" onClick={next} className="h-8 w-8 rounded-none">
+                    <ChevronRight className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
             </div>
           </div>
-          
-          <div className="flex flex-wrap items-center gap-3">
-            <Tabs value={view} onValueChange={(v) => setView(v as 'month' | 'week')} className="w-auto">
-              <TabsList className="grid w-[160px] grid-cols-2 h-8">
-                <TabsTrigger value="month" className="text-xs">Mois</TabsTrigger>
-                <TabsTrigger value="week" className="text-xs">Semaine</TabsTrigger>
-              </TabsList>
-            </Tabs>
 
-            <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm" onClick={goToToday} className="h-8">
-                Aujourd&apos;hui
-              </Button>
-              <div className="flex items-center border rounded-lg overflow-hidden bg-background">
-                <Button variant="ghost" size="icon" onClick={prev} className="h-8 w-8 rounded-none border-r">
-                  <ChevronLeft className="w-4 h-4" />
-                </Button>
-                <Button variant="ghost" size="icon" onClick={next} className="h-8 w-8 rounded-none">
-                  <ChevronRight className="w-4 h-4" />
-                </Button>
-              </div>
+          {/* Totals Summary */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 pt-2 border-t border-muted">
+            <div className="flex flex-col">
+              <span className="text-[10px] font-bold uppercase text-muted-foreground">Reçu</span>
+              <span className="text-lg font-black text-green-500">
+                {formatCurrency(totals.income.toString())}
+              </span>
+            </div>
+            <div className="flex flex-col">
+              <span className="text-[10px] font-bold uppercase text-muted-foreground">Dépensé</span>
+              <span className="text-lg font-black text-red-500">
+                {formatCurrency((totals.expenses < BigInt(0) ? -totals.expenses : totals.expenses).toString())}
+              </span>
+            </div>
+            <div className="flex flex-col col-span-2 sm:col-span-1">
+              <span className="text-[10px] font-bold uppercase text-muted-foreground">Net</span>
+              <span className={cn(
+                "text-lg font-black",
+                totals.income + totals.expenses >= BigInt(0) ? "text-green-500" : "text-red-500"
+              )}>
+                {formatCurrency((totals.income + totals.expenses).toString())}
+              </span>
             </div>
           </div>
         </CardHeader>
