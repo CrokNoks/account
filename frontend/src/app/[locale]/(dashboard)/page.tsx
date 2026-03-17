@@ -1,6 +1,13 @@
 'use client';
 
-import { DashboardStats } from "@/features/reporting/ui/dashboard-stats";
+import { 
+  StatStartBalance,
+  StatRealIncome,
+  StatRealExpenses,
+  StatBankBalance,
+  StatUpcomingBalance,
+  StatForecastBalance
+} from "@/features/reporting/ui/dashboard-stats";
 import { AnomaliesWidget } from "@/features/reporting/ui/anomalies-widget";
 import { BudgetBreakdown } from "@/features/reporting/ui/budget-breakdown";
 import { Card, CardContent } from "@/components/ui/card";
@@ -65,7 +72,12 @@ export default function Home() {
   const { isEditing, setEditing, tempLayout, setTempLayout, toggleWidget, updateWidgetWidth } = useDashboardStore();
 
   const allAvailableWidgets = useMemo(() => [
-    { id: 'stats', label: 'Statistiques globales' },
+    { id: 'stat-start', label: 'Solde initial' },
+    { id: 'stat-income', label: 'Revenus réels' },
+    { id: 'stat-expenses', label: 'Dépenses réelles' },
+    { id: 'stat-bank', label: 'Solde en banque' },
+    { id: 'stat-upcoming', label: 'Solde à venir' },
+    { id: 'stat-forecast', label: 'Solde prévisionnel' },
     { id: 'net-worth', label: 'Patrimoine Net' },
     { id: 'pulse', label: 'Le Pulse (vs M-1)' },
     { id: 'anomalies', label: 'Anomalies' },
@@ -81,7 +93,12 @@ export default function Home() {
   const layout = useMemo(() => {
     if (isEditing && tempLayout) return tempLayout;
     return preferences?.dashboardLayout.widgets || [
-      { id: 'stats', width: 12 },
+      { id: 'stat-start', width: 2 },
+      { id: 'stat-income', width: 2 },
+      { id: 'stat-expenses', width: 2 },
+      { id: 'stat-bank', width: 2 },
+      { id: 'stat-upcoming', width: 2 },
+      { id: 'stat-forecast', width: 2 },
       { id: 'net-worth', width: 6 },
       { id: 'pulse', width: 6 },
       { id: 'anomalies', width: 12 },
@@ -93,7 +110,12 @@ export default function Home() {
 
   const handleStartEditing = () => {
     setTempLayout(preferences?.dashboardLayout.widgets || [
-      { id: 'stats', width: 12 },
+      { id: 'stat-start', width: 2 },
+      { id: 'stat-income', width: 2 },
+      { id: 'stat-expenses', width: 2 },
+      { id: 'stat-bank', width: 2 },
+      { id: 'stat-upcoming', width: 2 },
+      { id: 'stat-forecast', width: 2 },
       { id: 'net-worth', width: 6 },
       { id: 'pulse', width: 6 },
       { id: 'anomalies', width: 12 },
@@ -257,8 +279,13 @@ export default function Home() {
                   width={widget.width}
                   onWidthChange={(newWidth) => updateWidgetWidth(widgetId, newWidth)}
                 >
+                  {widgetId === 'stat-start' && <StatStartBalance />}
+                  {widgetId === 'stat-income' && <StatRealIncome />}
+                  {widgetId === 'stat-expenses' && <StatRealExpenses />}
+                  {widgetId === 'stat-bank' && <StatBankBalance />}
+                  {widgetId === 'stat-upcoming' && <StatUpcomingBalance />}
+                  {widgetId === 'stat-forecast' && <StatForecastBalance />}
                   {widgetId === 'anomalies' && <AnomaliesWidget />}
-                  {widgetId === 'stats' && <DashboardStats />}
                   {widgetId === 'net-worth' && <NetWorthWidget />}
                   {widgetId === 'pulse' && <MonthlyPulseWidget />}
                   {widgetId === 'top-expenses' && <TopExpensesWidget />}
