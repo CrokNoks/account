@@ -6,11 +6,12 @@ import {
   StatRealExpenses,
   StatBankBalance,
   StatUpcomingBalance,
-  StatForecastBalance
+  StatForecastBalance,
+  StatCard
 } from "@/features/reporting/ui/dashboard-stats";
 import { AnomaliesWidget } from "@/features/reporting/ui/anomalies-widget";
 import { BudgetBreakdown } from "@/features/reporting/ui/budget-breakdown";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { TagStatsSummary } from "@/features/tags/ui/tag-stats-summary";
 import { PieChart as PieChartIcon, Receipt } from "lucide-react";
 import { SavingsGoalsWidget } from "@/features/savings/ui/savings-goals-widget";
@@ -35,9 +36,9 @@ import {
   SelectValue 
 } from "@/components/ui/select";
 import { HelpButton } from "@/shared/ui/tour/HelpButton";
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Button } from "@/components/ui/button";
-import { Settings2, Check, X, GripVertical, Monitor, Smartphone } from "lucide-react";
+import { Settings2, Check, X, GripVertical, Monitor, Smartphone, PlusCircle } from "lucide-react";
 import { useUserPreferences, useUpdateUserPreferences } from "@/features/preferences/api/use-user-preferences";
 import { useDashboardStore } from "@/features/preferences/model/use-dashboard-store";
 import { cn } from "@/lib/utils";
@@ -55,6 +56,7 @@ import {
   SortableContext,
   sortableKeyboardCoordinates,
   rectSortingStrategy,
+  horizontalListSortingStrategy,
   useSortable,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
@@ -108,6 +110,17 @@ export default function Home() {
     ];
   }, [isEditing, tempLayout, preferences]);
 
+  const activeWidgets = useMemo(() => {
+    return layout.map(w => ({
+      ...w,
+      label: allAvailableWidgets.find(aw => aw.id === w.id)?.label || w.id
+    }));
+  }, [layout, allAvailableWidgets]);
+
+  const inactiveWidgets = useMemo(() => {
+    return allAvailableWidgets.filter(aw => !layout.find(w => w.id === aw.id));
+  }, [layout, allAvailableWidgets]);
+
   const handleStartEditing = () => {
     const currentWidgets = preferences?.dashboardLayout.widgets || [
       { id: 'stat-start', width: 2, desktopVisible: true, mobileVisible: true },
@@ -124,7 +137,6 @@ export default function Home() {
       { id: 'transactions', width: 12, desktopVisible: true, mobileVisible: true },
     ];
 
-    // Ensure all widgets have the new visibility properties
     const normalizedWidgets = currentWidgets.map(w => ({
       ...w,
       desktopVisible: w.desktopVisible ?? true,
@@ -161,18 +173,19 @@ export default function Home() {
     if (over && active.id !== over.id) {
       const oldIndex = layout.findIndex(w => w.id === active.id);
       const newIndex = layout.findIndex(w => w.id === over.id);
-      setTempLayout(arrayMove(layout, oldIndex, newIndex));
+      
+      if (oldIndex !== -1 && newIndex !== -1) {
+        setTempLayout(arrayMove(layout, oldIndex, newIndex));
+      }
     }
   }
 
-  // Redirect to accounts if none exist
   useEffect(() => {
     if (!isLoadingAccounts && (!accounts || accounts.length === 0)) {
       router.push('/accounts');
     }
   }, [accounts, isLoadingAccounts, router]);
 
-  // Auto-select active period on first load if nothing selected
   useEffect(() => {
     if (periods && periods.length > 0 && !activePeriodId) {
       const active = periods.find(p => p.isActive);
@@ -181,10 +194,8 @@ export default function Home() {
     }
   }, [periods, activePeriodId, setActivePeriodId]);
 
-  // Auto-start tour if dashboard tour not completed AND account tour IS completed
   useEffect(() => {
     if (!completedTours['dashboard'] && completedTours['account']) {
-      // Small delay to ensure everything is rendered
       const timer = setTimeout(() => {
         startTour('dashboard');
       }, 1000);
@@ -200,9 +211,7 @@ export default function Home() {
         <div className="flex flex-col gap-2">
           <div className="flex items-center gap-4">
             <h2 className="text-3xl font-bold tracking-tight">{t('title')}</h2>
-            
             <HelpButton tour="dashboard" className="h-8 w-8" />
-            
             <Select value={activePeriodId || ""} onValueChange={setActivePeriodId}>
               <SelectTrigger className="h-8 rounded-full bg-primary/10 text-primary border-primary/20 px-4 hover:bg-primary/20 transition-colors">
                 <SelectValue>
@@ -244,124 +253,135 @@ export default function Home() {
       </div>
 
       {isEditing && (
-        <div className="p-6 bg-primary/5 border border-primary/20 rounded-2xl animate-in slide-in-from-top-4 duration-300">
-          <h3 className="text-sm font-bold uppercase tracking-wider mb-4 flex items-center gap-2">
-            <Settings2 className="w-4 h-4" /> Sélectionner les widgets
-          </h3>
-          <div className="flex flex-wrap gap-2 mb-6">
-            {allAvailableWidgets.map(widget => (
-              <Button
-                key={widget.id}
-                variant={layout.find(w => w.id === widget.id) ? "default" : "outline"}
-                size="sm"
-                onClick={() => toggleWidget(widget.id)}
-                className="rounded-full"
-              >
-                {widget.label}
-              </Button>
-            ))}
+        <div className="p-8 bg-primary/5 border-2 border-primary/20 rounded-3xl animate-in slide-in-from-top-4 duration-300 space-y-8">
+          <div>
+            <h3 className="text-xs font-black uppercase tracking-widest mb-4 flex items-center gap-2 text-primary">
+              <Settings2 className="w-4 h-4" /> Widgets Actifs (Glissez pour réorganiser)
+            </h3>
+            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+              <SortableContext items={layout.map(w => w.id)} strategy={horizontalListSortingStrategy}>
+                <div className="flex flex-wrap gap-2">
+                  {activeWidgets.map((widget) => (
+                    <ManagementItem 
+                      key={widget.id} 
+                      id={widget.id} 
+                      label={widget.label}
+                      onRemove={() => toggleWidget(widget.id)}
+                      isActive
+                    />
+                  ))}
+                </div>
+              </SortableContext>
+            </DndContext>
           </div>
-          <p className="text-[10px] text-muted-foreground italic flex items-center gap-1">
-            <GripVertical className="w-3 h-3" /> Glissez-déposez les widgets pour réorganiser. Cliquez sur l&apos;icône de taille pour redimensionner.
-          </p>
+
+          <div>
+            <h3 className="text-xs font-black uppercase tracking-widest mb-4 flex items-center gap-2 text-muted-foreground">
+              <PlusCircle className="w-4 h-4" /> Widgets Disponibles
+            </h3>
+            <div className="flex flex-wrap gap-2">
+              {inactiveWidgets.map((widget) => (
+                <ManagementItem 
+                  key={widget.id} 
+                  id={widget.id} 
+                  label={widget.label}
+                  onAdd={() => toggleWidget(widget.id)}
+                />
+              ))}
+            </div>
+          </div>
         </div>
       )}
       
       <div className={cn("grid grid-cols-12 gap-8", isEditing && "opacity-80")}>
-        <DndContext 
-          sensors={sensors}
-          collisionDetection={closestCenter}
-          onDragEnd={handleDragEnd}
-        >
-          <SortableContext 
-            items={layout.map(w => w.id)}
-            strategy={rectSortingStrategy}
-            disabled={!isEditing}
-          >
-            {layout.map((widget) => {
-              const widgetId = widget.id;
-              return (
-                <SortableWidget 
-                  key={widgetId} 
-                  id={widgetId} 
-                  isEditing={isEditing}
-                  width={widget.width}
-                  desktopVisible={widget.desktopVisible}
-                  mobileVisible={widget.mobileVisible}
-                  onWidthChange={(newWidth) => updateWidgetWidth(widgetId, newWidth)}
-                  onToggleDevice={(device) => toggleDeviceVisibility(widgetId, device)}
-                >
-                  {widgetId === 'stat-start' && <StatStartBalance />}
-                  {widgetId === 'stat-income' && <StatRealIncome />}
-                  {widgetId === 'stat-expenses' && <StatRealExpenses />}
-                  {widgetId === 'stat-bank' && <StatBankBalance />}
-                  {widgetId === 'stat-upcoming' && <StatUpcomingBalance />}
-                  {widgetId === 'stat-forecast' && <StatForecastBalance />}
-                  {widgetId === 'anomalies' && <AnomaliesWidget />}
-                  {widgetId === 'net-worth' && <NetWorthWidget />}
-                  {widgetId === 'pulse' && <MonthlyPulseWidget />}
-                  {widgetId === 'top-expenses' && <TopExpensesWidget />}
-                  {widgetId === 'upcoming' && <UpcomingDeadlinesWidget />}
-                  {widgetId === 'insights' && currentPeriod?.isActive && (
-                    <AIInsightsCard accountId={activeAccountId} periodId={activePeriodId} />
-                  )}
-                  {widgetId === 'breakdown' && (
-                    <div data-tour="budget-breakdown" className="h-full">
-                      <BudgetBreakdown />
-                    </div>
-                  )}
-                  {widgetId === 'tags' && <TagStatsSummary />}
-                  {widgetId === 'savings' && <SavingsGoalsWidget />}
-                  {widgetId === 'transactions' && (
-                    <div data-tour="transaction-list" className="h-full min-h-0">
-                      <Card className="border-2 shadow-sm h-full overflow-hidden flex flex-col pt-0">
-                        <TransactionList periodId={activePeriodId || undefined} compact />
-                      </Card>
-                    </div>
-                  )}
-                </SortableWidget>
-              );
-            })}
-          </SortableContext>
-        </DndContext>
+        {layout.map((widget) => {
+          const widgetId = widget.id;
+          return (
+            <SortableWidget 
+              key={widgetId} 
+              id={widgetId} 
+              isEditing={isEditing}
+              width={widget.width}
+              desktopVisible={widget.desktopVisible}
+              mobileVisible={widget.mobileVisible}
+              onWidthChange={(newWidth) => updateWidgetWidth(widgetId, newWidth)}
+              onToggleDevice={(device) => toggleDeviceVisibility(widgetId, device)}
+            >
+              {widgetId === 'stat-start' && <StatStartBalance />}
+              {widgetId === 'stat-income' && <StatRealIncome />}
+              {widgetId === 'stat-expenses' && <StatRealExpenses />}
+              {widgetId === 'stat-bank' && <StatBankBalance />}
+              {widgetId === 'stat-upcoming' && <StatUpcomingBalance />}
+              {widgetId === 'stat-forecast' && <StatForecastBalance />}
+              {widgetId === 'anomalies' && <AnomaliesWidget />}
+              {widgetId === 'net-worth' && <NetWorthWidget />}
+              {widgetId === 'pulse' && <MonthlyPulseWidget />}
+              {widgetId === 'top-expenses' && <TopExpensesWidget />}
+              {widgetId === 'upcoming' && <UpcomingDeadlinesWidget />}
+              {widgetId === 'insights' && currentPeriod?.isActive && (
+                <AIInsightsCard accountId={activeAccountId} periodId={activePeriodId} />
+              )}
+              {widgetId === 'breakdown' && (
+                <div data-tour="budget-breakdown" className="h-full">
+                  <BudgetBreakdown />
+                </div>
+              )}
+              {widgetId === 'tags' && <TagStatsSummary />}
+              {widgetId === 'savings' && <SavingsGoalsWidget />}
+              {widgetId === 'transactions' && (
+                <div data-tour="transaction-list" className="h-full min-h-0">
+                  <Card className="border-2 shadow-sm h-full overflow-hidden flex flex-col pt-0">
+                    <TransactionList periodId={activePeriodId || undefined} compact />
+                  </Card>
+                </div>
+              )}
+            </SortableWidget>
+          );
+        })}
       </div>
     </div>
   );
 }
 
+function ManagementItem({ id, label, onAdd, onRemove, isActive = false }: { id: string, label: string, onAdd?: () => void, onRemove?: () => void, isActive?: boolean }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
+  const style = { transform: CSS.Transform.toString(transform), transition, zIndex: isDragging ? 100 : 0 };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={cn(
+        "flex items-center gap-2 px-3 py-1.5 rounded-full border-2 transition-all",
+        isActive 
+          ? "bg-primary text-primary-foreground border-primary shadow-sm cursor-grab active:cursor-grabbing" 
+          : "bg-background text-muted-foreground border-dashed border-muted-foreground/30 hover:border-primary hover:text-primary cursor-pointer",
+        isDragging && "opacity-50 scale-95"
+      )}
+      onClick={!isActive ? onAdd : undefined}
+      {...(isActive ? attributes : {})}
+      {...(isActive ? listeners : {})}
+    >
+      {isActive && <GripVertical className="w-3 h-3 opacity-50" />}
+      <span className="text-[10px] font-black uppercase tracking-wider">{label}</span>
+      {isActive && (
+        <button onClick={(e) => { e.stopPropagation(); onRemove?.(); }} className="ml-1 hover:bg-primary-foreground/20 rounded-full p-0.5">
+          <X className="w-3 h-3" />
+        </button>
+      )}
+    </div>
+  );
+}
+
 function SortableWidget({ 
-  id, 
-  children, 
-  isEditing, 
-  width,
-  desktopVisible,
-  mobileVisible,
-  onWidthChange,
-  onToggleDevice
+  id, children, isEditing, width, desktopVisible, mobileVisible, onWidthChange, onToggleDevice 
 }: { 
-  id: string, 
-  children: React.ReactNode, 
-  isEditing: boolean,
-  width: number,
-  desktopVisible: boolean,
-  mobileVisible: boolean,
-  onWidthChange: (width: number) => void,
+  id: string, children: React.ReactNode, isEditing: boolean, width: number,
+  desktopVisible: boolean, mobileVisible: boolean, onWidthChange: (width: number) => void,
   onToggleDevice: (device: 'mobile' | 'desktop') => void
 }) {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id });
-
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    zIndex: isDragging ? 10 : 0,
-  };
+  const { setNodeRef, transform, transition, isDragging } = useSortable({ id, disabled: true });
+  const style = { transform: CSS.Transform.toString(transform), transition, zIndex: isDragging ? 10 : 0 };
 
   if (!children) return null;
 
@@ -392,49 +412,19 @@ function SortableWidget({
       )}
     >
       {isEditing && (
-        <>
-          <div 
-            {...attributes} 
-            {...listeners}
-            className="absolute -left-2 top-1/2 -translate-y-1/2 p-2 bg-primary text-primary-foreground rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-all cursor-grab active:cursor-grabbing z-50 hover:scale-110"
-          >
-            <GripVertical className="w-4 h-4" />
-          </div>
-          
-          <div className="absolute -right-2 top-1/2 -translate-y-1/2 flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-all z-50">
-            <button
-              onClick={toggleWidth}
-              className="p-2 bg-background border border-border text-foreground rounded-full shadow-md hover:bg-muted"
-              title="Redimensionner"
-            >
-              <div className="flex gap-0.5 items-center justify-center w-4 h-4">
-                <div className={cn("bg-current rounded-full transition-all", width === 2 ? "w-1 h-1" : width === 3 ? "w-1.5 h-1.5" : width === 4 ? "w-2 h-1.5" : width === 6 ? "w-3 h-1.5" : "w-4 h-1.5")} />
-              </div>
-            </button>
-            
-            <button
-              onClick={() => onToggleDevice('desktop')}
-              className={cn(
-                "p-2 border shadow-md rounded-full hover:bg-muted",
-                desktopVisible ? "bg-primary text-primary-foreground border-primary" : "bg-background text-muted-foreground border-border"
-              )}
-              title={desktopVisible ? "Masquer sur Desktop" : "Afficher sur Desktop"}
-            >
-              <Monitor className="w-3.5 h-3.5" />
-            </button>
-
-            <button
-              onClick={() => onToggleDevice('mobile')}
-              className={cn(
-                "p-2 border shadow-md rounded-full hover:bg-muted",
-                mobileVisible ? "bg-primary text-primary-foreground border-primary" : "bg-background text-muted-foreground border-border"
-              )}
-              title={mobileVisible ? "Masquer sur Mobile" : "Afficher sur Mobile"}
-            >
-              <Smartphone className="w-3.5 h-3.5" />
-            </button>
-          </div>
-        </>
+        <div className="absolute -right-2 top-1/2 -translate-y-1/2 flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-all z-50">
+          <button onClick={toggleWidth} className="p-2 bg-background border border-border text-foreground rounded-full shadow-md hover:bg-muted" title="Redimensionner">
+            <div className="flex gap-0.5 items-center justify-center w-4 h-4">
+              <div className={cn("bg-current rounded-full transition-all", width === 2 ? "w-1 h-1" : width === 3 ? "w-1.5 h-1.5" : width === 4 ? "w-2 h-1.5" : width === 6 ? "w-3 h-1.5" : "w-4 h-1.5")} />
+            </div>
+          </button>
+          <button onClick={() => onToggleDevice('desktop')} className={cn("p-2 border shadow-md rounded-full hover:bg-muted", desktopVisible ? "bg-primary text-primary-foreground border-primary" : "bg-background text-muted-foreground border-border")} title={desktopVisible ? "Masquer sur Desktop" : "Afficher sur Desktop"}>
+            <Monitor className="w-3.5 h-3.5" />
+          </button>
+          <button onClick={() => onToggleDevice('mobile')} className={cn("p-2 border shadow-md rounded-full hover:bg-muted", mobileVisible ? "bg-primary text-primary-foreground border-primary" : "bg-background text-muted-foreground border-border")} title={mobileVisible ? "Masquer sur Mobile" : "Afficher sur Mobile"}>
+            <Smartphone className="w-3.5 h-3.5" />
+          </button>
+        </div>
       )}
       {children}
     </div>
