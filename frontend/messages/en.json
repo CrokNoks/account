@@ -28,10 +28,10 @@
   "Dashboard": {
     "title": "Dashboard",
     "welcome": "Welcome to your personal finance manager",
-    "stats": "Period Stats",
-    "breakdown": "Budget Breakdown"
+    "stats": "Period Stats"
   },
   "Reporting": {
+    "breakdown": "Budget Breakdown",
     "start_balance": "Start Balance",
     "real_income": "Real Income",
     "planned_income": "Planned Income",

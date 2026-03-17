@@ -28,10 +28,10 @@
   "Dashboard": {
     "title": "Tableau de bord",
     "welcome": "Bienvenue sur votre gestionnaire de finances",
-    "stats": "Statistiques de la période",
-    "breakdown": "Répartition budgétaire"
+    "stats": "Statistiques de la période"
   },
   "Reporting": {
+    "breakdown": "Répartition budgétaire",
     "start_balance": "Solde initial",
     "real_income": "Revenus réels",
     "planned_income": "Revenus prévus",
