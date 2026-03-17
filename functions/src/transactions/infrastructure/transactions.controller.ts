@@ -22,6 +22,8 @@ import { GetTransactionsByAccountUseCase } from '../application/get-transactions
 import { CreateTransactionUseCase } from '../application/create-transaction.use-case';
 import { PredictCategoryUseCase } from '../application/predict-category.use-case';
 import { BulkCreateTransactionsUseCase } from '../application/bulk-create-transactions.use-case';
+import { BulkUpdateTransactionsUseCase } from '../application/bulk-update-transactions.use-case';
+import { BulkDeleteTransactionsUseCase } from '../application/bulk-delete-transactions.use-case';
 import { CreateTransferUseCase } from '../application/create-transfer.use-case';
 import { TransactionRepository } from '../domain/transaction.repository.interface';
 import { Transaction } from '../domain/transaction.entity';
@@ -129,6 +131,29 @@ export class BulkCreateTransactionsDto {
   transactions: CreateTransactionDto[];
 }
 
+export class BulkUpdateTransactionsDto {
+  @IsArray()
+  @IsString({ each: true })
+  @ApiProperty({ type: [String] })
+  ids: string[];
+
+  @IsObject()
+  @ApiProperty()
+  data: {
+    categoryId?: string | null;
+    tagIds?: string[];
+    reconciled?: boolean;
+    pending?: boolean;
+  };
+}
+
+export class BulkDeleteTransactionsDto {
+  @IsArray()
+  @IsString({ each: true })
+  @ApiProperty({ type: [String] })
+  ids: string[];
+}
+
 export class TransactionResponseDto {
   @ApiProperty()
   id: string;
@@ -232,6 +257,8 @@ export class TransactionsController {
     private readonly getTransactionsByAccountUseCase: GetTransactionsByAccountUseCase,
     private readonly createTransactionUseCase: CreateTransactionUseCase,
     private readonly bulkCreateTransactionsUseCase: BulkCreateTransactionsUseCase,
+    private readonly bulkUpdateTransactionsUseCase: BulkUpdateTransactionsUseCase,
+    private readonly bulkDeleteTransactionsUseCase: BulkDeleteTransactionsUseCase,
     private readonly createTransferUseCase: CreateTransferUseCase,
     private readonly predictCategoryUseCase: PredictCategoryUseCase,
     private readonly transactionRepository: TransactionRepository,
@@ -344,6 +371,33 @@ export class TransactionsController {
       })),
     });
     return transactions.map((t) => this.mapToResponse(t));
+  }
+
+  @Patch('bulk')
+  @ApiOperation({ summary: 'Update multiple transactions at once' })
+  @ApiResponse({ status: 200 })
+  async updateBulk(
+    @Param('accountId') accountId: string,
+    @Body() dto: BulkUpdateTransactionsDto,
+  ): Promise<void> {
+    await this.bulkUpdateTransactionsUseCase.execute({
+      accountId,
+      ids: dto.ids,
+      data: dto.data,
+    });
+  }
+
+  @Delete('bulk')
+  @ApiOperation({ summary: 'Delete multiple transactions at once' })
+  @ApiResponse({ status: 200 })
+  async deleteBulk(
+    @Param('accountId') accountId: string,
+    @Body() dto: BulkDeleteTransactionsDto,
+  ): Promise<void> {
+    await this.bulkDeleteTransactionsUseCase.execute({
+      accountId,
+      ids: dto.ids,
+    });
   }
 
   @Post('transfer')

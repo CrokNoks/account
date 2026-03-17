@@ -11,6 +11,8 @@
     "transactions": "Transactions",
     "budgets": "Budgets",
     "recurring": "Récurrences",
+    "smart_rules": "Règles",
+    "savings": "Épargne",
     "logout": "Déconnexion"
   },
   "Auth": {
@@ -181,6 +183,40 @@
     "delete_confirm": "Supprimer cette récurrence ?",
     "deleted": "Récurrence supprimée",
     "inject_label": "Injecter les opérations récurrentes"
+  },
+  "SmartRules": {
+    "title": "Règles Intelligentes",
+    "description": "Automatisez la catégorisation et l'étiquetage de vos transactions.",
+    "add_rule": "Nouvelle règle",
+    "new_rule_title": "Créer une règle automatique",
+    "fields": {
+      "pattern": "Si la description contient...",
+      "category": "Assigner la catégorie",
+      "tags": "Ajouter les tags",
+      "priority": "Priorité",
+      "result": "Résultat attendu"
+    },
+    "no_category": "Aucune catégorie",
+    "empty": "Aucune règle configurée",
+    "delete_confirm": "Voulez-vous vraiment supprimer cette règle ?",
+    "deleted": "Règle supprimée",
+    "create_confirm": "Créer la règle"
+  },
+  "Savings": {
+    "title": "Objectifs d'Épargne",
+    "description": "Donnez du sens à votre épargne en fixant des objectifs précis.",
+    "add_goal": "Nouvel objectif",
+    "new_goal_title": "Créer un objectif d'épargne",
+    "fields": {
+      "name": "Nom de l'objectif",
+      "target_amount": "Montant cible",
+      "current_amount": "Montant actuel",
+      "deadline": "Échéance",
+      "color": "Couleur"
+    },
+    "empty": "Aucun objectif configuré",
+    "delete_confirm": "Voulez-vous vraiment supprimer cet objectif ?",
+    "deleted": "Objectif supprimé"
   },
   "Common": {
     "add": "Ajouter",

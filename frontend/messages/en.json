@@ -11,6 +11,8 @@
     "transactions": "Transactions",
     "budgets": "Budgets",
     "recurring": "Recurring",
+    "smart_rules": "Rules",
+    "savings": "Savings",
     "logout": "Logout"
   },
   "Auth": {
@@ -181,6 +183,40 @@
     "delete_confirm": "Delete this recurrence?",
     "deleted": "Recurring deleted",
     "inject_label": "Inject recurring operations"
+  },
+  "SmartRules": {
+    "title": "Smart Rules",
+    "description": "Automate categorization and tagging of your transactions.",
+    "add_rule": "New Rule",
+    "new_rule_title": "Create automatic rule",
+    "fields": {
+      "pattern": "If description contains...",
+      "category": "Assign category",
+      "tags": "Add tags",
+      "priority": "Priority",
+      "result": "Expected result"
+    },
+    "no_category": "No category",
+    "empty": "No rules configured",
+    "delete_confirm": "Do you really want to delete this rule?",
+    "deleted": "Rule deleted",
+    "create_confirm": "Create rule"
+  },
+  "Savings": {
+    "title": "Savings Goals",
+    "description": "Give meaning to your savings by setting precise objectives.",
+    "add_goal": "New Goal",
+    "new_goal_title": "Create savings goal",
+    "fields": {
+      "name": "Goal name",
+      "target_amount": "Target amount",
+      "current_amount": "Current amount",
+      "deadline": "Deadline",
+      "color": "Color"
+    },
+    "empty": "No goals configured",
+    "delete_confirm": "Do you really want to delete this goal?",
+    "deleted": "Goal deleted"
   },
   "Common": {
     "add": "Add",

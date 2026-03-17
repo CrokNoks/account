@@ -4,6 +4,7 @@ import { DashboardStats } from "@/features/reporting/ui/dashboard-stats";
 import { AnomaliesWidget } from "@/features/reporting/ui/anomalies-widget";
 import { BudgetBreakdown } from "@/features/reporting/ui/budget-breakdown";
 import { TagStatsSummary } from "@/features/tags/ui/tag-stats-summary";
+import { SavingsGoalsWidget } from "@/features/savings/ui/savings-goals-widget";
 import { AIInsightsCard } from "@/features/reporting/ui/ai-insights-card";
 import { TransactionList } from "@/features/transactions/ui/transaction-list";
 import { useAccountStore } from "@/features/accounts/model/use-account-store";
@@ -63,6 +64,7 @@ export default function Home() {
     { id: 'insights', label: 'IA Insights' },
     { id: 'breakdown', label: 'Répartition du budget' },
     { id: 'tags', label: 'Statistiques par Tags' },
+    { id: 'savings', label: 'Objectifs d\'épargne' },
     { id: 'transactions', label: 'Dernières transactions' },
   ], []);
 
@@ -254,6 +256,7 @@ export default function Home() {
                     </div>
                   )}
                   {widgetId === 'tags' && <TagStatsSummary />}
+                  {widgetId === 'savings' && <SavingsGoalsWidget />}
                   {widgetId === 'transactions' && (
                     <div data-tour="transaction-list">
                       <TransactionList periodId={activePeriodId || undefined} compact />

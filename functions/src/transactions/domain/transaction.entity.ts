@@ -10,7 +10,7 @@ export interface TransactionProps {
   pending: boolean;
   paymentMethod?: string | null;
   notes?: string | null;
-  metadata: Record<string, any> | undefined;
+  metadata?: Record<string, any>;
   tagIds: string[];
   createdAt: Date;
   updatedAt: Date;
@@ -60,6 +60,14 @@ export class Transaction {
     if (this.amount === undefined || this.amount === null) {
       throw new Error('Amount is required');
     }
+  }
+
+  public update(props: Partial<TransactionProps>): Transaction {
+    return new Transaction({
+      ...this,
+      ...props,
+      updatedAt: new Date(),
+    });
   }
 
   static create(

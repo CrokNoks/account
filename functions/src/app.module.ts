@@ -12,6 +12,8 @@ import { ReportingModule } from './reporting/reporting.module';
 import { RecurringModule } from './recurring/recurring.module';
 import { TagsModule } from './tags/tags.module';
 import { PreferencesModule } from './preferences/preferences.module';
+import { SmartRulesModule } from './smart-rules/smart-rules.module';
+import { SavingsGoalsModule } from './savings-goals/savings-goals.module';
 
 @Module({
   imports: [
@@ -29,6 +31,8 @@ import { PreferencesModule } from './preferences/preferences.module';
     RecurringModule,
     TagsModule,
     PreferencesModule,
+    SmartRulesModule,
+    SavingsGoalsModule,
   ],
   controllers: [AppController],
 })

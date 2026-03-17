@@ -1,20 +1,33 @@
 import { Injectable } from '@nestjs/common';
 import { TransactionRepository } from '../domain/transaction.repository.interface';
+import { MatchSmartRulesUseCase } from '../../smart-rules/application/match-smart-rules.use-case';
 import * as natural from 'natural';
 
 @Injectable()
 export class PredictCategoryUseCase {
-  constructor(private readonly transactionRepository: TransactionRepository) {}
+  constructor(
+    private readonly transactionRepository: TransactionRepository,
+    private readonly matchRulesUseCase: MatchSmartRulesUseCase,
+  ) {}
 
   async execute(
     accountId: string,
     description: string,
-  ): Promise<{ categoryId: string | null }> {
+  ): Promise<{ categoryId: string | null; tagIds?: string[] }> {
     if (!description || description.trim().length < 3) {
       return { categoryId: null };
     }
 
-    // Récupérer toutes les transactions pour avoir le maximum de données d'entraînement
+    // 1. Try smart rules first (Explicit user configuration)
+    const ruleMatch = await this.matchRulesUseCase.execute(accountId, description);
+    if (ruleMatch.categoryId || ruleMatch.tagIds.length > 0) {
+      return {
+        categoryId: ruleMatch.categoryId,
+        tagIds: ruleMatch.tagIds,
+      };
+    }
+
+    // 2. Fallback to ML classifier (Historical data)
     const transactions =
       await this.transactionRepository.findAllByAccount(accountId);
 

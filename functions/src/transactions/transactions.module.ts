@@ -6,12 +6,15 @@ import { GetTransactionsByAccountUseCase } from './application/get-transactions-
 import { CreateTransactionUseCase } from './application/create-transaction.use-case';
 import { PredictCategoryUseCase } from './application/predict-category.use-case';
 import { BulkCreateTransactionsUseCase } from './application/bulk-create-transactions.use-case';
+import { BulkUpdateTransactionsUseCase } from './application/bulk-update-transactions.use-case';
+import { BulkDeleteTransactionsUseCase } from './application/bulk-delete-transactions.use-case';
 import { CreateTransferUseCase } from './application/create-transfer.use-case';
 import { TransactionsController } from './infrastructure/transactions.controller';
 import { PeriodsModule } from '../periods/periods.module';
+import { SmartRulesModule } from '../smart-rules/smart-rules.module';
 
 @Module({
-  imports: [SupabaseModule, forwardRef(() => PeriodsModule)],
+  imports: [SupabaseModule, forwardRef(() => PeriodsModule), SmartRulesModule],
   controllers: [TransactionsController],
   providers: [
     {
@@ -22,6 +25,8 @@ import { PeriodsModule } from '../periods/periods.module';
     CreateTransactionUseCase,
     PredictCategoryUseCase,
     BulkCreateTransactionsUseCase,
+    BulkUpdateTransactionsUseCase,
+    BulkDeleteTransactionsUseCase,
     CreateTransferUseCase,
   ],
   exports: [
@@ -30,6 +35,8 @@ import { PeriodsModule } from '../periods/periods.module';
     CreateTransactionUseCase,
     PredictCategoryUseCase,
     BulkCreateTransactionsUseCase,
+    BulkUpdateTransactionsUseCase,
+    BulkDeleteTransactionsUseCase,
     CreateTransferUseCase,
   ],
 })

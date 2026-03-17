@@ -21,10 +21,11 @@ import { formatCurrency, toCents, fromCents } from '@/shared/lib/format';
 import { format } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { CheckCircle2, Circle, Trash2, Pencil, Repeat, Clock, Search, Filter, X, Plus } from 'lucide-react';
+import { CheckCircle2, Circle, Trash2, Pencil, Repeat, Clock, Search, Filter, X, Plus, CheckSquare, Square } from 'lucide-react';
 import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { useBulkUpdateTransactions, useBulkDeleteTransactions } from '../api/use-bulk-transactions';
 import { 
   Dialog, 
   DialogContent, 
@@ -56,8 +57,11 @@ export function TransactionList({
   const { data: tags } = useTags(activeAccountId);
   const { mutate: updateTransaction, isPending: isUpdating } = useUpdateTransaction();
   const { mutate: deleteTransaction } = useDeleteTransaction();
+  const { mutate: bulkUpdate } = useBulkUpdateTransactions();
+  const { mutate: bulkDelete } = useBulkDeleteTransactions();
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
   const [transactionToMakeRecurring, setTransactionToMakeRecurring] = useState<Transaction | null>(null);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
   
   const [selectedPeriodId, setSelectedPeriodId] = useState<string | 'all'>('all');
   const [statusFilter, setStatusFilter] = useState<'all' | 'reconciled' | 'not_reconciled'>('all');
@@ -103,6 +107,20 @@ export function TransactionList({
   ]);
 
   const { data: transactions, isLoading } = useTransactions(activeAccountId, filterOptions);
+
+  const toggleSelectAll = () => {
+    if (transactions && selectedIds.length === transactions.length) {
+      setSelectedIds([]);
+    } else {
+      setSelectedIds(transactions?.map(t => t.id) || []);
+    }
+  };
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds(prev => 
+      prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
+    );
+  };
 
   // Handle Enter key to open transaction drawer
   useEffect(() => {
@@ -185,79 +203,90 @@ export function TransactionList({
               <div 
                 key={transaction.id} 
                 className={cn(
-                  "p-4 rounded-xl border bg-card shadow-sm space-y-3 active:scale-[0.98] transition-transform",
-                  transaction.pending && "bg-muted/30 border-dashed"
+                  "p-4 rounded-xl border bg-card transition-all active:scale-[0.98] flex gap-3",
+                  transaction.reconciled ? "border-green-500/20 bg-green-500/5" : "shadow-sm",
+                  selectedIds.includes(transaction.id) && "ring-2 ring-primary bg-primary/5"
                 )}
-                onClick={() => setEditingTransaction(transaction)}
+                onClick={() => selectedIds.length > 0 ? toggleSelect(transaction.id) : setEditingTransaction(transaction)}
               >
-                <div className="flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <button 
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        toggleReconciliation(transaction.id, transaction.reconciled);
-                      }} 
-                      disabled={isUpdating}
-                      className="shrink-0"
-                    >
-                      {transaction.reconciled ? (
-                        <CheckCircle2 className="w-5 h-5 text-green-500 fill-green-500/10" />
-                      ) : (
-                        <Circle className="w-5 h-5 text-muted-foreground/30" />
-                      )}
-                    </button>
-                    <div className="flex flex-col min-w-0">
-                      <span className="text-sm font-bold truncate">{transaction.description}</span>
-                      <div className="flex items-center gap-2">
-                        <span className="text-[10px] text-muted-foreground">{format(new Date(transaction.date), 'dd MMM')}</span>
-                        {transaction.categoryId && (
-                          <Badge variant="outline" className="h-5 px-1.5 text-[10px] py-0" style={{ 
-                            borderColor: categories?.find(c => c.id === transaction.categoryId)?.color,
-                            color: categories?.find(c => c.id === transaction.categoryId)?.color 
-                          }}>
-                            {categories?.find(c => c.id === transaction.categoryId)?.name}
-                          </Badge>
+                <div onClick={(e) => e.stopPropagation()} className="flex items-center">
+                  <Checkbox 
+                    checked={selectedIds.includes(transaction.id)} 
+                    onCheckedChange={() => toggleSelect(transaction.id)}
+                  />
+                </div>
+                <div className="flex-1 space-y-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <button 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleReconciliation(transaction.id, transaction.reconciled);
+                        }} 
+                        disabled={isUpdating}
+                        className="shrink-0"
+                      >
+                        {transaction.reconciled ? (
+                          <CheckCircle2 className="w-5 h-5 text-green-500 fill-green-500/10" />
+                        ) : (
+                          <Circle className="w-5 h-5 text-muted-foreground/30" />
                         )}
-                        {transaction.tagIds?.map(tagId => {
-                          const tag = tags?.find(t => t.id === tagId);
-                          return (
-                            <Badge 
-                              key={tagId} 
-                              variant="secondary" 
-                              className="h-4 px-1 text-[9px] py-0 cursor-pointer hover:brightness-90 transition-all"
-                              style={{ 
-                                backgroundColor: tag?.color ? `${tag.color}20` : undefined,
-                                color: tag?.color,
-                                borderColor: tag?.color ? `${tag.color}40` : undefined
-                              }}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setTagDetailId(tagId);
-                              }}
-                            >
-                              {tag?.name || 'Tag'}
+                      </button>
+                      <div className="flex flex-col min-w-0">
+                        <span className="text-sm font-bold truncate">{transaction.description}</span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-[10px] text-muted-foreground">{format(new Date(transaction.date), 'dd MMM')}</span>
+                          {transaction.categoryId && (
+                            <Badge variant="outline" className="h-5 px-1.5 text-[10px] py-0" style={{ 
+                              borderColor: categories?.find(c => c.id === transaction.categoryId)?.color,
+                              color: categories?.find(c => c.id === transaction.categoryId)?.color 
+                            }}>
+                              {categories?.find(c => c.id === transaction.categoryId)?.name}
                             </Badge>
-                          );
-                        })}
+                          )}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                  <div className="flex flex-col items-end gap-1">
-                    <span className={cn(
-                      "text-sm font-black tracking-tight",
-                      parseInt(transaction.amount, 10) < 0 ? "text-red-500" : "text-green-500"
-                    )}>
-                      {formatCurrency(transaction.amount)}
-                    </span>
-                    <div className="flex items-center gap-2">
-                    {transaction.pending && (
-                      <div className="flex items-center gap-1 text-orange-500 font-medium">
-                        <Clock className="w-3 h-3 animate-pulse" />
-                        <span className="text-[9px] uppercase tracking-wider">Attente</span>
-                      </div>
-                    )}
+                    <div className="flex flex-col items-end gap-1 shrink-0">
+                      <span className={cn(
+                        "text-sm font-black tracking-tight",
+                        parseInt(transaction.amount, 10) < 0 ? "text-red-500" : "text-green-500"
+                      )}>
+                        {formatCurrency(transaction.amount)}
+                      </span>
+                      {transaction.pending && (
+                        <div className="flex items-center gap-1 text-orange-500 font-medium">
+                          <Clock className="w-3 h-3 animate-pulse" />
+                          <span className="text-[9px] uppercase tracking-wider">Attente</span>
+                        </div>
+                      )}
                     </div>
                   </div>
+                  {transaction.tagIds && transaction.tagIds.length > 0 && (
+                    <div className="flex flex-wrap gap-1">
+                      {transaction.tagIds.map(tagId => {
+                        const tag = tags?.find(t => t.id === tagId);
+                        return (
+                          <Badge 
+                            key={tagId} 
+                            variant="secondary" 
+                            className="h-4 px-1 text-[9px] py-0 cursor-pointer hover:brightness-90 transition-all"
+                            style={{ 
+                              backgroundColor: tag?.color ? `${tag.color}20` : undefined,
+                              color: tag?.color,
+                              borderColor: tag?.color ? `${tag.color}40` : undefined
+                            }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setTagDetailId(tagId);
+                            }}
+                          >
+                            {tag?.name || 'Tag'}
+                          </Badge>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
               </div>
             ))
@@ -269,6 +298,12 @@ export function TransactionList({
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead className="w-[40px]">
+                  <Checkbox 
+                    checked={transactions.length > 0 && selectedIds.length === transactions.length}
+                    onCheckedChange={toggleSelectAll}
+                  />
+                </TableHead>
                 <TableHead className="w-[50px]"></TableHead>
                 <TableHead className="w-[120px]">{t('fields.date')}</TableHead>
                 <TableHead className="min-w-[200px] max-w-[400px]">{t('fields.description')}</TableHead>
@@ -290,10 +325,17 @@ export function TransactionList({
                     key={transaction.id} 
                     className={cn(
                       "group cursor-pointer",
-                      transaction.pending && "bg-muted/20 opacity-80"
+                      transaction.pending && "bg-muted/20 opacity-80",
+                      selectedIds.includes(transaction.id) && "bg-primary/5"
                     )}
-                    onClick={() => setEditingTransaction(transaction)}
+                    onClick={() => selectedIds.length > 0 ? toggleSelect(transaction.id) : setEditingTransaction(transaction)}
                   >
+                    <TableCell onClick={(e) => e.stopPropagation()}>
+                      <Checkbox 
+                        checked={selectedIds.includes(transaction.id)} 
+                        onCheckedChange={() => toggleSelect(transaction.id)}
+                      />
+                    </TableCell>
                     <TableCell onClick={(e) => e.stopPropagation()}>
                       <button 
                         onClick={() => toggleReconciliation(transaction.id, transaction.reconciled)}
@@ -603,6 +645,74 @@ export function TransactionList({
             categoryId: transactionToMakeRecurring.categoryId || undefined,
           }}
         />
+      )}
+
+      {/* Bulk Actions Floating Bar */}
+      {selectedIds.length > 0 && (
+        <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 animate-in slide-in-from-bottom-8 duration-300">
+          <div className="bg-primary text-primary-foreground px-6 py-3 rounded-2xl shadow-2xl flex items-center gap-6 border border-primary-foreground/20">
+            <div className="flex items-center gap-2 pr-4 border-r border-primary-foreground/20">
+              <span className="text-sm font-black">{selectedIds.length}</span>
+              <span className="text-xs uppercase tracking-wider font-bold opacity-80">Sélectionnés</span>
+            </div>
+            
+            <div className="flex items-center gap-2">
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="text-primary-foreground hover:bg-primary-foreground/10 gap-2 h-9"
+                onClick={() => {
+                  if (confirm(`Supprimer ${selectedIds.length} opérations ?`)) {
+                    if (activeAccountId) {
+                      bulkDelete({ accountId: activeAccountId, ids: selectedIds }, {
+                        onSuccess: () => {
+                          toast.success(`${selectedIds.length} opérations supprimées`);
+                          setSelectedIds([]);
+                        }
+                      });
+                    }
+                  }
+                }}
+              >
+                <Trash2 className="w-4 h-4" />
+                <span className="text-xs font-bold">Supprimer</span>
+              </Button>
+
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="text-primary-foreground hover:bg-primary-foreground/10 gap-2 h-9"
+                onClick={() => {
+                  if (activeAccountId) {
+                    bulkUpdate({ 
+                      accountId: activeAccountId, 
+                      command: { ids: selectedIds, data: { reconciled: true } }
+                    }, {
+                      onSuccess: () => {
+                        toast.success(`${selectedIds.length} opérations pointées`);
+                        setSelectedIds([]);
+                      }
+                    });
+                  }
+                }}
+              >
+                <CheckCircle2 className="w-4 h-4" />
+                <span className="text-xs font-bold">Pointer</span>
+              </Button>
+
+              <div className="w-px h-6 bg-primary-foreground/20 mx-2" />
+
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="text-primary-foreground hover:bg-primary-foreground/10 h-9"
+                onClick={() => setSelectedIds([])}
+              >
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

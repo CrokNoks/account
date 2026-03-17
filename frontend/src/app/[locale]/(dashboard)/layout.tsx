@@ -9,6 +9,7 @@ import { useUiStore } from "@/shared/model/use-ui-store";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { BackendHealthGuard } from "@/shared/ui/layout/backend-health-guard";
+import { CommandMenu } from "@/shared/ui/layout/command-menu";
 
 export default function DashboardLayout({
   children,
@@ -46,6 +47,7 @@ export default function DashboardLayout({
         {/* Global Drawer Instance (Headless) */}
         <CreateTransactionDrawer />
         <TagDetailDrawer />
+        <CommandMenu />
 
         <BottomNav />
       </div>
