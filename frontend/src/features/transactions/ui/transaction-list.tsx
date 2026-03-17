@@ -368,9 +368,11 @@ export function TransactionList({
                     </TableCell>
                     <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
                       <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <Button variant="ghost" size="icon-xs" onClick={() => setTransactionToMakeRecurring(transaction)} title="Rendre récurrente">
-                          <Repeat className="w-3.5 h-3.5" />
-                        </Button>
+                        {!compact && (
+                          <Button variant="ghost" size="icon-xs" onClick={() => setTransactionToMakeRecurring(transaction)} title="Rendre récurrente">
+                            <Repeat className="w-3.5 h-3.5" />
+                          </Button>
+                        )}
                         <Button variant="ghost" size="icon-xs" onClick={() => setEditingTransaction(transaction)}>
                           <Pencil className="w-3.5 h-3.5" />
                         </Button>
