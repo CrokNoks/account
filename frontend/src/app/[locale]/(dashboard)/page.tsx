@@ -256,18 +256,22 @@ export default function Home() {
         <div className="p-8 bg-primary/5 border-2 border-primary/20 rounded-3xl animate-in slide-in-from-top-4 duration-300 space-y-8">
           <div>
             <h3 className="text-xs font-black uppercase tracking-widest mb-4 flex items-center gap-2 text-primary">
-              <Settings2 className="w-4 h-4" /> Widgets Actifs (Glissez pour réorganiser)
+              <Settings2 className="w-4 h-4" /> Disposition du Dashboard (Glissez pour réorganiser)
             </h3>
             <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-              <SortableContext items={layout.map(w => w.id)} strategy={horizontalListSortingStrategy}>
-                <div className="flex flex-wrap gap-2">
+              <SortableContext items={layout.map(w => w.id)} strategy={rectSortingStrategy}>
+                <div className="grid grid-cols-12 gap-4 bg-background/50 p-4 rounded-2xl border-2 border-dashed border-primary/20 min-h-[200px]">
                   {activeWidgets.map((widget) => (
-                    <ManagementItem 
+                    <MiniWidget 
                       key={widget.id} 
                       id={widget.id} 
                       label={widget.label}
+                      width={widget.width}
+                      desktopVisible={widget.desktopVisible}
+                      mobileVisible={widget.mobileVisible}
                       onRemove={() => toggleWidget(widget.id)}
-                      isActive
+                      onWidthChange={(newWidth) => updateWidgetWidth(widget.id, newWidth)}
+                      onToggleDevice={(device) => toggleDeviceVisibility(widget.id, device)}
                     />
                   ))}
                 </div>
@@ -293,7 +297,8 @@ export default function Home() {
         </div>
       )}
       
-      <div className={cn("grid grid-cols-12 gap-8", isEditing && "opacity-80")}>
+      {!isEditing && (
+      <div className="grid grid-cols-12 gap-8">
         {layout.map((widget) => {
           const widgetId = widget.id;
           return (
@@ -339,6 +344,71 @@ export default function Home() {
           );
         })}
       </div>
+      )}
+    </div>
+  );
+}
+
+function MiniWidget({ 
+  id, label, width, desktopVisible, mobileVisible, onRemove, onWidthChange, onToggleDevice 
+}: { 
+  id: string, label: string, width: number, desktopVisible: boolean, mobileVisible: boolean,
+  onRemove: () => void, onWidthChange: (width: number) => void, onToggleDevice: (device: 'mobile' | 'desktop') => void
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
+  const style = { transform: CSS.Transform.toString(transform), transition, zIndex: isDragging ? 100 : 0 };
+
+  const toggleWidth = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const widths = [2, 3, 4, 6, 12];
+    const currentIndex = widths.indexOf(width);
+    const nextWidth = widths[(currentIndex + 1) % widths.length];
+    onWidthChange(nextWidth);
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={cn(
+        "relative flex flex-col items-center justify-center p-4 rounded-2xl border-2 transition-all cursor-grab active:cursor-grabbing min-h-[120px]",
+        width === 2 && "col-span-12 lg:col-span-2",
+        width === 3 && "col-span-12 lg:col-span-3",
+        width === 4 && "col-span-12 lg:col-span-4",
+        width === 6 && "col-span-12 lg:col-span-6",
+        width === 12 && "col-span-12",
+        "bg-primary/5 border-primary/20 hover:border-primary/50 text-foreground shadow-sm",
+        isDragging && "opacity-50 scale-105 z-50 shadow-xl",
+        (!desktopVisible || !mobileVisible) && "opacity-60"
+      )}
+      {...attributes}
+      {...listeners}
+    >
+      <div className="absolute top-2 right-2 flex gap-1 z-10">
+        <button onPointerDown={(e) => { e.stopPropagation(); onToggleDevice('desktop'); }} className={cn("p-1.5 rounded-full hover:bg-background/80 transition-colors", desktopVisible ? "text-primary" : "text-muted-foreground")} title={desktopVisible ? "Masquer sur Desktop" : "Afficher sur Desktop"}>
+          <Monitor className="w-3.5 h-3.5" />
+        </button>
+        <button onPointerDown={(e) => { e.stopPropagation(); onToggleDevice('mobile'); }} className={cn("p-1.5 rounded-full hover:bg-background/80 transition-colors", mobileVisible ? "text-primary" : "text-muted-foreground")} title={mobileVisible ? "Masquer sur Mobile" : "Afficher sur Mobile"}>
+          <Smartphone className="w-3.5 h-3.5" />
+        </button>
+        <button onPointerDown={(e) => { e.stopPropagation(); onRemove(); }} className="p-1.5 rounded-full text-destructive hover:bg-destructive/10 transition-colors" title="Supprimer">
+          <X className="w-3.5 h-3.5" />
+        </button>
+      </div>
+      
+      <div className="flex flex-col items-center gap-2 mt-2">
+        <GripVertical className="w-5 h-5 text-muted-foreground/30" />
+        <span className="text-sm font-bold text-center px-2">{label}</span>
+      </div>
+
+      <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-10">
+        <button onPointerDown={(e) => { e.stopPropagation(); toggleWidth(e); }} className="flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-black uppercase tracking-wider bg-background hover:bg-muted text-muted-foreground rounded-full border border-border/50 shadow-sm transition-colors">
+          <div className="flex gap-0.5 items-center justify-center w-4 h-3">
+            <div className={cn("bg-current rounded-full transition-all", width === 2 ? "w-1 h-1" : width === 3 ? "w-1.5 h-1.5" : width === 4 ? "w-2 h-1.5" : width === 6 ? "w-3 h-1.5" : "w-4 h-1.5")} />
+          </div>
+          {width}/12
+        </button>
+      </div>
     </div>
   );
 }
@@ -380,52 +450,21 @@ function SortableWidget({
   desktopVisible: boolean, mobileVisible: boolean, onWidthChange: (width: number) => void,
   onToggleDevice: (device: 'mobile' | 'desktop') => void
 }) {
-  const { setNodeRef, transform, transition, isDragging } = useSortable({ id, disabled: true });
-  const style = { transform: CSS.Transform.toString(transform), transition, zIndex: isDragging ? 10 : 0 };
-
   if (!children) return null;
-
-  const toggleWidth = () => {
-    const widths = [2, 3, 4, 6, 12];
-    const currentIndex = widths.indexOf(width);
-    const nextWidth = widths[(currentIndex + 1) % widths.length];
-    onWidthChange(nextWidth);
-  };
 
   return (
     <div 
-      ref={setNodeRef} 
-      style={style} 
       className={cn(
-        "relative transition-all duration-200 col-span-12 max-h-[80vh] flex flex-col",
-        !isEditing && !desktopVisible && "lg:hidden",
-        !isEditing && !mobileVisible && "hidden lg:flex",
+        "relative col-span-12 max-h-[80vh] flex flex-col",
+        !desktopVisible && "lg:hidden",
+        !mobileVisible && "hidden lg:flex",
         width === 2 && "lg:col-span-2",
         width === 3 && "lg:col-span-3",
         width === 4 && "lg:col-span-4",
         width === 6 && "lg:col-span-6",
-        width === 12 && "lg:col-span-12",
-        isDragging && "opacity-50 scale-105 shadow-2xl",
-        isEditing && "group p-2 border-2 border-dashed border-transparent hover:border-primary/20 rounded-3xl",
-        isEditing && !desktopVisible && "opacity-40 grayscale",
-        isEditing && !mobileVisible && "opacity-40"
+        width === 12 && "lg:col-span-12"
       )}
     >
-      {isEditing && (
-        <div className="absolute -right-2 top-1/2 -translate-y-1/2 flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-all z-50">
-          <button onClick={toggleWidth} className="p-2 bg-background border border-border text-foreground rounded-full shadow-md hover:bg-muted" title="Redimensionner">
-            <div className="flex gap-0.5 items-center justify-center w-4 h-4">
-              <div className={cn("bg-current rounded-full transition-all", width === 2 ? "w-1 h-1" : width === 3 ? "w-1.5 h-1.5" : width === 4 ? "w-2 h-1.5" : width === 6 ? "w-3 h-1.5" : "w-4 h-1.5")} />
-            </div>
-          </button>
-          <button onClick={() => onToggleDevice('desktop')} className={cn("p-2 border shadow-md rounded-full hover:bg-muted", desktopVisible ? "bg-primary text-primary-foreground border-primary" : "bg-background text-muted-foreground border-border")} title={desktopVisible ? "Masquer sur Desktop" : "Afficher sur Desktop"}>
-            <Monitor className="w-3.5 h-3.5" />
-          </button>
-          <button onClick={() => onToggleDevice('mobile')} className={cn("p-2 border shadow-md rounded-full hover:bg-muted", mobileVisible ? "bg-primary text-primary-foreground border-primary" : "bg-background text-muted-foreground border-border")} title={mobileVisible ? "Masquer sur Mobile" : "Afficher sur Mobile"}>
-            <Smartphone className="w-3.5 h-3.5" />
-          </button>
-        </div>
-      )}
       {children}
     </div>
   );

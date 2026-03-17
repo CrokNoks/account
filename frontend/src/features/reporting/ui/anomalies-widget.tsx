@@ -3,7 +3,7 @@
 import { useAccountStore } from '@/features/accounts/model/use-account-store';
 import { useAnomalies, Anomaly } from '../api/use-anomalies';
 import { useIgnoreAnomaly } from '../api/use-ignore-anomaly';
-import { AlertCircle, Copy, ArrowUpRight, TrendingUp, X } from 'lucide-react';
+import { AlertCircle, Copy, ArrowUpRight, TrendingUp, X, CheckCircle2 } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -20,7 +20,23 @@ export function AnomaliesWidget() {
 
   const activeAnomalies = anomalies?.filter(a => !dismissedIds.has(a.id)) || [];
 
-  if (isLoading || activeAnomalies.length === 0) return null;
+  if (isLoading) return null;
+
+  if (activeAnomalies.length === 0) {
+    return (
+      <Card className="border-2 border-emerald-500/30 shadow-sm h-full overflow-hidden bg-emerald-500/5 flex flex-col items-center justify-center p-8 transition-all hover:bg-emerald-500/10">
+        <div className="p-4 rounded-full bg-emerald-100 text-emerald-600 mb-4 animate-in zoom-in duration-500">
+          <CheckCircle2 className="w-8 h-8" />
+        </div>
+        <CardTitle className="text-sm font-black uppercase tracking-widest text-emerald-700 dark:text-emerald-400">
+          Tout est en ordre
+        </CardTitle>
+        <p className="text-xs text-emerald-600/70 mt-2 text-center font-medium">
+          Aucune anomalie détectée pour cette période.
+        </p>
+      </Card>
+    );
+  }
 
   const dismiss = (anomaly: Anomaly) => {
     if (!activeAccountId) return;
