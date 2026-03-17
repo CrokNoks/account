@@ -39,16 +39,16 @@ export function BudgetBreakdown({ title }: { title?: React.ReactNode }) {
         <TabsTrigger value="transfers">{t('transfers')}</TabsTrigger>
       </TabsList>
       
-      <TabsContent value="expenses" className="flex-1 min-h-0 data-[state=active]:flex flex-col">
+      <TabsContent value="expenses" className="flex-1 min-h-0 data-[state=active]:flex flex-col  overflow-y-auto">
         <BudgetGroup title={t('expenses')} items={breakdown.expenses} isExpense />
       </TabsContent>
-      <TabsContent value="income" className="flex-1 min-h-0 data-[state=active]:flex flex-col">
+      <TabsContent value="income" className="flex-1 min-h-0 data-[state=active]:flex flex-col overflow-y-auto">
         <BudgetGroup title={t('income')} items={breakdown.income} />
       </TabsContent>
-      <TabsContent value="savings" className="flex-1 min-h-0 data-[state=active]:flex flex-col">
+      <TabsContent value="savings" className="flex-1 min-h-0 data-[state=active]:flex flex-col overflow-y-auto">
         <BudgetGroup title={t('savings')} items={breakdown.savings} isExpense />
       </TabsContent>
-      <TabsContent value="transfers" className="flex-1 min-h-0 data-[state=active]:flex flex-col">
+      <TabsContent value="transfers" className="flex-1 min-h-0 data-[state=active]:flex flex-col overflow-y-auto">
         <BudgetGroup title={t('transfers')} items={breakdown.transfers} />
       </TabsContent>
       </Tabs>

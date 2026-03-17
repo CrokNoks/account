@@ -275,7 +275,7 @@ export default function Home() {
                   {widgetId === 'savings' && <SavingsGoalsWidget />}
                   {widgetId === 'transactions' && (
                     <div data-tour="transaction-list" className="h-full min-h-0">
-                      <Card className="border-2 shadow-sm h-full overflow-hidden flex flex-col">
+                      <Card className="border-2 shadow-sm h-full overflow-hidden flex flex-col pt-0">
                         <TransactionList periodId={activePeriodId || undefined} compact />
                       </Card>
                     </div>
