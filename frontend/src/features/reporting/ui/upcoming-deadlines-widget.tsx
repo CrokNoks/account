@@ -40,7 +40,7 @@ export function UpcomingDeadlinesWidget() {
           Prochaines Échéances (7j)
         </CardTitle>
       </CardHeader>
-      <CardContent className="pt-2 flex-1 overflow-y-auto">
+      <CardContent className="pt-2 flex-1 overflow-y-auto min-h-0">
         <div className="space-y-4">
           {!upcoming || upcoming.length === 0 ? (
             <div className="h-24 flex flex-col items-center justify-center text-muted-foreground gap-2">
