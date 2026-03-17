@@ -25,20 +25,19 @@ import {useTranslations} from 'next-intl';
 
 const menuItems = [
   { icon: LayoutDashboard, labelKey: 'dashboard', href: '/', shortcut: 'F2' },
-  { icon: Calendar, labelKey: 'calendar', href: '/calendar', shortcut: 'F12' },
-  { icon: TrendingUp, labelKey: 'evolution', href: '/evolution', shortcut: 'F3' },
-  { icon: GitBranch, labelKey: 'flux', href: '/flux', shortcut: 'F4' },
-  { icon: Calendar, labelKey: 'prevision', href: '/cashflow', shortcut: 'F5' },
+  { icon: Calendar, labelKey: 'calendar', href: '/calendar', shortcut: 'F3' },
+  { icon: TrendingUp, labelKey: 'evolution', href: '/evolution', shortcut: 'F4' },
+  { icon: GitBranch, labelKey: 'flux', href: '/flux', shortcut: 'F5' },
+  { icon: Calendar, labelKey: 'prevision', href: '/cashflow', shortcut: 'F6' },
   { isSeparator: true },
+  { icon: CreditCard, labelKey: 'accounts', href: '/accounts' },
+  { icon: Settings, labelKey: 'categories', href: '/categories' },
+  { icon: Tag, labelKey: 'tags', href: '/tags' },
   { icon: Sparkles, labelKey: 'smart_rules', href: '/smart-rules' },
   { icon: Target, labelKey: 'savings', href: '/savings' },
-  { isSeparator: true },
-  { icon: CreditCard, labelKey: 'accounts', href: '/accounts', shortcut: 'F6' },
-  { icon: Settings, labelKey: 'categories', href: '/categories', shortcut: 'F7' },
-  { icon: Tag, labelKey: 'tags', href: '/tags', shortcut: 'F11' },
-  { icon: Repeat, labelKey: 'recurring', href: '/recurring', shortcut: 'F8' },
-  { icon: PieChart, labelKey: 'budgets', href: '/budgets', shortcut: 'F9' },
-  { icon: Receipt, labelKey: 'transactions', href: '/transactions', shortcut: 'F10' },
+  { icon: Repeat, labelKey: 'recurring', href: '/recurring' },
+  { icon: PieChart, labelKey: 'budgets', href: '/budgets' },
+  { icon: Receipt, labelKey: 'transactions', href: '/transactions' },
 ];
 
 export function Sidebar() {
@@ -58,7 +57,7 @@ export function Sidebar() {
         return;
       }
 
-      const match = e.key.match(/^F([2-9]|10)$/);
+      const match = e.key.match(/^F([2-6])$/);
       if (!match) return;
 
       e.preventDefault();
