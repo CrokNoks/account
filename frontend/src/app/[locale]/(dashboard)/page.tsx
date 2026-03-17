@@ -109,7 +109,7 @@ export default function Home() {
   }, [isEditing, tempLayout, preferences]);
 
   const handleStartEditing = () => {
-    setTempLayout(preferences?.dashboardLayout.widgets || [
+    const currentWidgets = preferences?.dashboardLayout.widgets || [
       { id: 'stat-start', width: 2, desktopVisible: true, mobileVisible: true },
       { id: 'stat-income', width: 2, desktopVisible: true, mobileVisible: true },
       { id: 'stat-expenses', width: 2, desktopVisible: true, mobileVisible: true },
@@ -122,7 +122,16 @@ export default function Home() {
       { id: 'breakdown', width: 6, desktopVisible: true, mobileVisible: true },
       { id: 'top-expenses', width: 6, desktopVisible: true, mobileVisible: true },
       { id: 'transactions', width: 12, desktopVisible: true, mobileVisible: true },
-    ]);
+    ];
+
+    // Ensure all widgets have the new visibility properties
+    const normalizedWidgets = currentWidgets.map(w => ({
+      ...w,
+      desktopVisible: w.desktopVisible ?? true,
+      mobileVisible: w.mobileVisible ?? true,
+    }));
+
+    setTempLayout(normalizedWidgets);
     setEditing(true);
   };
 

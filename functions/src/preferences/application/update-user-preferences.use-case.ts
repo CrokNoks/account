@@ -15,9 +15,18 @@ export class UpdateUserPreferencesUseCase {
   ) {}
 
   async execute(command: UpdateUserPreferencesCommand): Promise<UserPreferences> {
+    const normalizedWidgets = command.dashboardLayout.widgets.map(w => ({
+      ...w,
+      desktopVisible: w.desktopVisible ?? true,
+      mobileVisible: w.mobileVisible ?? true,
+    }));
+
     const preferences = new UserPreferences({
       userId: command.userId,
-      dashboardLayout: command.dashboardLayout,
+      dashboardLayout: {
+        ...command.dashboardLayout,
+        widgets: normalizedWidgets,
+      },
       updatedAt: new Date(),
     });
 

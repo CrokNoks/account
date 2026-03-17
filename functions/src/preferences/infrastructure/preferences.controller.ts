@@ -20,6 +20,7 @@ import {
   IsBoolean,
   ValidateNested,
   IsObject,
+  IsOptional,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { SupabaseAuthGuard } from '../../auth/supabase-auth.guard';
@@ -37,11 +38,13 @@ class DashboardWidgetConfigDto implements DashboardWidgetConfig {
   width: number;
 
   @IsBoolean()
-  @ApiProperty()
+  @IsOptional()
+  @ApiProperty({ required: false })
   desktopVisible: boolean;
 
   @IsBoolean()
-  @ApiProperty()
+  @IsOptional()
+  @ApiProperty({ required: false })
   mobileVisible: boolean;
 }
 
