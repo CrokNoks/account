@@ -20,9 +20,12 @@ export function BudgetBreakdown({ title }: { title?: React.ReactNode }) {
   if (!breakdown) return null;
 
   return (
-    <div className="flex flex-col gap-4">
-      {title}
-      <Tabs defaultValue="expenses" className="w-full">
+    <Card className="border-2 shadow-sm h-full overflow-hidden">
+      <CardHeader className="bg-muted/10 pb-4">
+        {title}
+      </CardHeader>
+      <CardContent className="pt-6 flex flex-col gap-4">
+        <Tabs defaultValue="expenses" className="w-full">
       <TabsList className="grid w-full grid-cols-4 mb-4">
         <TabsTrigger value="expenses">{t('expenses')}</TabsTrigger>
         <TabsTrigger value="income">{t('income')}</TabsTrigger>
@@ -43,7 +46,8 @@ export function BudgetBreakdown({ title }: { title?: React.ReactNode }) {
         <BudgetGroup title={t('transfers')} items={breakdown.transfers} />
       </TabsContent>
       </Tabs>
-    </div>
+      </CardContent>
+    </Card>
   );
 }
 

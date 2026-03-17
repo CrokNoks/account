@@ -64,14 +64,14 @@ export function AnomaliesWidget() {
   };
 
   return (
-    <Card className="border-orange-500/50 shadow-sm bg-orange-500/5">
-      <CardHeader className="pb-3 flex flex-row items-center gap-2 space-y-0">
+    <Card className="border-2 border-orange-500/20 shadow-sm bg-orange-500/5 h-full">
+      <CardHeader className="pb-3 flex flex-row items-center gap-2 space-y-0 bg-orange-500/10">
         <AlertCircle className="w-5 h-5 text-orange-500" />
         <CardTitle className="text-sm font-bold text-orange-700 uppercase tracking-wider">
           Anomalies détectées ({activeAnomalies.length})
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-3">
+      <CardContent className="space-y-3 pt-4">
         {activeAnomalies.map((anomaly) => (
           <div 
             key={anomaly.id} 

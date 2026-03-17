@@ -3,6 +3,7 @@
 import { DashboardStats } from "@/features/reporting/ui/dashboard-stats";
 import { AnomaliesWidget } from "@/features/reporting/ui/anomalies-widget";
 import { BudgetBreakdown } from "@/features/reporting/ui/budget-breakdown";
+import { Card, CardContent } from "@/components/ui/card";
 import { TagStatsSummary } from "@/features/tags/ui/tag-stats-summary";
 import { SavingsGoalsWidget } from "@/features/savings/ui/savings-goals-widget";
 import { NetWorthWidget } from "@/features/reporting/ui/net-worth-widget";
@@ -272,8 +273,12 @@ export default function Home() {
                   {widgetId === 'tags' && <TagStatsSummary />}
                   {widgetId === 'savings' && <SavingsGoalsWidget />}
                   {widgetId === 'transactions' && (
-                    <div data-tour="transaction-list">
-                      <TransactionList periodId={activePeriodId || undefined} compact />
+                    <div data-tour="transaction-list" className="h-full">
+                      <Card className="border-2 shadow-sm h-full overflow-hidden">
+                        <CardContent className="p-6">
+                          <TransactionList periodId={activePeriodId || undefined} compact />
+                        </CardContent>
+                      </Card>
                     </div>
                   )}
                 </SortableWidget>

@@ -23,12 +23,12 @@ export function NetWorthWidget() {
   }));
 
   return (
-    <Card className="h-full">
-      <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-        <CardTitle className="text-sm font-medium">Patrimoine Net (Tous comptes)</CardTitle>
-        <Landmark className="w-4 h-4 text-muted-foreground" />
+    <Card className="h-full border-2 shadow-sm overflow-hidden">
+      <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0 bg-muted/10">
+        <CardTitle className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Patrimoine Net (Tous comptes)</CardTitle>
+        <Landmark className="w-4 h-4 text-primary" />
       </CardHeader>
-      <CardContent className="flex flex-col gap-4">
+      <CardContent className="flex flex-col gap-4 pt-4">
         <div className={`text-2xl font-bold ${colorClass}`}>
           {formatCurrency(data.currentTotal)}
         </div>

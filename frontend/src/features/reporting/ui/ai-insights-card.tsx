@@ -19,8 +19,8 @@ export function AIInsightsCard({ accountId, periodId }: AIInsightsCardProps) {
   if (!accountId || !periodId) return null;
 
   return (
-    <Card className="border-primary/20 bg-primary/5 relative group">
-      <CardHeader className="pb-2 flex flex-row items-center justify-between space-y-0">
+    <Card className="border-2 border-primary/20 bg-primary/5 relative group h-full overflow-hidden">
+      <CardHeader className="pb-2 flex flex-row items-center justify-between space-y-0 bg-primary/10">
         <CardTitle className="text-sm font-semibold flex items-center gap-2">
           <Sparkles className="w-4 h-4 text-primary" />
           Analyse IA

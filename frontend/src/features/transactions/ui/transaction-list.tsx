@@ -438,13 +438,13 @@ export function TransactionList({
   return (
     <div className="space-y-4">
       {/* Header with Title and Add Button */}
-      <div className="flex items-center justify-between">
-        <h2 className={cn("font-bold tracking-tight", compact ? "text-2xl" : "text-3xl")}>{t('title')}</h2>
+      <div className={cn("flex items-center justify-between", compact && "bg-muted/10 p-4 -mx-6 -mt-6 mb-4 border-b")}>
+        <h2 className={cn("font-bold tracking-tight", compact ? "text-sm uppercase tracking-wider text-muted-foreground" : "text-3xl")}>{t('title')}</h2>
         <div className="flex items-center gap-2">
           {extraActions}
-          <Button size="sm" className="gap-2" onClick={() => setCreateTransactionDrawerOpen(true)}>
+          <Button size={compact ? "icon-xs" : "sm"} variant={compact ? "ghost" : "default"} className="gap-2" onClick={() => setCreateTransactionDrawerOpen(true)}>
             <Plus className="w-4 h-4" />
-            <span className="hidden sm:inline">{t('add_transaction')}</span>
+            {!compact && <span className="hidden sm:inline">{t('add_transaction')}</span>}
           </Button>
         </div>
       </div>

@@ -7,6 +7,7 @@ import { usePeriods } from "@/features/budgets/api/use-periods";
 import { useReportingStats } from "../api/use-reporting-stats";
 import { ArrowUpCircle, ArrowDownCircle, Wallet, History, TrendingUp } from "lucide-react";
 import { useTranslations } from "next-intl";
+import { cn } from "@/lib/utils";
 
 export function DashboardStats() {
   const t = useTranslations('Reporting');
@@ -39,32 +40,26 @@ export function DashboardStats() {
   return (
     <div className="space-y-8" data-tour="stats">
       <div className="grid gap-4 grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
-        <div className="hidden lg:block">
-          <StatCard 
-            title={t('start_balance')} 
-            value={stats.startBalance} 
-            icon={<Wallet className="w-4 h-4 text-muted-foreground" />}
-            description={t('start_balance')}
-          />
-        </div>
+        <StatCard 
+          title={t('start_balance')} 
+          value={stats.startBalance} 
+          icon={<Wallet className="w-4 h-4 text-muted-foreground" />}
+          description={t('start_balance')}
+        />
         
-        <div className="hidden lg:block">
-          <StatCard 
-            title={t('real_income')} 
-            value={stats.realIncome} 
-            icon={<ArrowUpCircle className="w-4 h-4 text-green-500" />}
-            description={`${t('planned_income')}: ${formatCurrency(stats.plannedIncome)}`}
-          />
-        </div>
+        <StatCard 
+          title={t('real_income')} 
+          value={stats.realIncome} 
+          icon={<ArrowUpCircle className="w-4 h-4 text-green-500" />}
+          description={`${t('planned_income')}: ${formatCurrency(stats.plannedIncome)}`}
+        />
 
-        <div className="hidden lg:block">
-          <StatCard 
-            title={t('real_expenses')} 
-            value={stats.realExpenses} 
-            icon={<ArrowDownCircle className="w-4 h-4 text-red-500" />}
-            description={`${t('planned_expenses')}: ${formatCurrency(stats.plannedExpenses)}`}
-          />
-        </div>
+        <StatCard 
+          title={t('real_expenses')} 
+          value={stats.realExpenses} 
+          icon={<ArrowDownCircle className="w-4 h-4 text-red-500" />}
+          description={`${t('planned_expenses')}: ${formatCurrency(stats.plannedExpenses)}`}
+        />
 
         <StatCard 
           title={t('real_bank_balance')} 
@@ -81,15 +76,13 @@ export function DashboardStats() {
               icon={<History className="w-4 h-4 text-muted-foreground" />}
               description={t('upcoming_balance')}
             />
-            <div className="hidden lg:block">
-              <StatCard 
-                title={t('forecast_balance')} 
-                value={stats.forecastBalance} 
-                icon={<TrendingUp className="w-4 h-4 text-primary" />}
-                description={t('forecast_balance')}
-                highlight
-              />
-            </div>
+            <StatCard 
+              title={t('forecast_balance')} 
+              value={stats.forecastBalance} 
+              icon={<TrendingUp className="w-4 h-4 text-primary" />}
+              description={t('forecast_balance')}
+              highlight
+            />
           </>
         )}
       </div>
@@ -110,16 +103,16 @@ function StatCard({ title, value, icon, description, highlight }: StatCardProps)
   const colorClass = amount < 0 ? "text-red-500" : "text-green-500";
 
   return (
-    <Card className={highlight ? "border-primary/50 shadow-sm" : ""}>
-      <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-        <CardTitle className="text-sm font-medium">{title}</CardTitle>
+    <Card className={cn("border-2 shadow-sm h-full", highlight && "border-primary/50 bg-primary/5")}>
+      <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0 bg-muted/10">
+        <CardTitle className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">{title}</CardTitle>
         {icon}
       </CardHeader>
-      <CardContent>
-        <div className={`text-2xl font-bold ${colorClass}`}>
+      <CardContent className="pt-4">
+        <div className={`text-xl font-black tracking-tight ${colorClass}`}>
           {formatCurrency(value)}
         </div>
-        <p className="text-xs text-muted-foreground mt-1">
+        <p className="text-[10px] text-muted-foreground mt-1 truncate">
           {description}
         </p>
       </CardContent>

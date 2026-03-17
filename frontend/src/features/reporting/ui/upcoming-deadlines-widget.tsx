@@ -33,14 +33,14 @@ export function UpcomingDeadlinesWidget() {
     .slice(0, 5);
 
   return (
-    <Card className="h-full">
-      <CardHeader className="pb-2">
-        <CardTitle className="text-sm font-medium flex items-center gap-2">
-          <Clock className="w-4 h-4 text-muted-foreground" />
+    <Card className="h-full border-2 shadow-sm overflow-hidden">
+      <CardHeader className="pb-2 bg-muted/10">
+        <CardTitle className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+          <Clock className="w-4 h-4 text-primary" />
           Prochaines Échéances (7j)
         </CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="pt-4">
         <div className="space-y-4">
           {!upcoming || upcoming.length === 0 ? (
             <div className="h-24 flex flex-col items-center justify-center text-muted-foreground gap-2">

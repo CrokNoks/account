@@ -39,14 +39,14 @@ export function MonthlyPulseWidget() {
   const isMoreExpensive = totalExpenseB < totalExpenseA; // Both negative, so B < A means B spent MORE
 
   return (
-    <Card className="h-full">
-      <CardHeader className="pb-2">
-        <CardTitle className="text-sm font-medium flex items-center gap-2">
-          <Activity className="w-4 h-4 text-muted-foreground" />
+    <Card className="h-full border-2 shadow-sm overflow-hidden">
+      <CardHeader className="pb-2 bg-muted/10">
+        <CardTitle className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+          <Activity className="w-4 h-4 text-primary" />
           Le Pulse (vs mois dernier)
         </CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="pt-4">
         <div className="flex items-center justify-between gap-4">
           <div className="space-y-1">
             <p className="text-2xl font-black">
