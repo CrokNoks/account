@@ -108,8 +108,8 @@ export function FinancialCalendar() {
     <div className="space-y-6">
       <Card className="shadow-sm overflow-hidden border-2">
         <CardHeader className="flex flex-col space-y-4 bg-muted/20 pb-6">
-          <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
-            <div className="flex items-center gap-4">
+          <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 w-full">
+            <div className="flex items-center gap-4 min-w-[250px]">
               <div className="p-2 bg-primary/10 rounded-lg text-primary">
                 <CalendarIcon className="w-5 h-5" />
               </div>
@@ -124,8 +124,8 @@ export function FinancialCalendar() {
               </div>
             </div>
 
-            {/* Totals Summary - Positioned between title and actions */}
-            <div className="flex-1 flex justify-center w-full lg:w-auto">
+            {/* Totals Summary - Perfectly centered */}
+            <div className="flex-1 flex justify-center">
               <div className="flex items-center gap-8 px-6 py-2 bg-background/50 rounded-2xl border border-border/50">
                 <div className="flex flex-col">
                   <span className="text-[9px] font-bold uppercase text-muted-foreground tracking-tighter">Reçu</span>
@@ -153,7 +153,7 @@ export function FinancialCalendar() {
               </div>
             </div>
             
-            <div className="flex flex-wrap items-center gap-3 lg:ml-auto">
+            <div className="flex flex-wrap items-center gap-3 min-w-[250px] justify-end">
               <Tabs value={view} onValueChange={(v) => setView(v as 'month' | 'week')} className="w-auto">
                 <TabsList className="grid w-[160px] grid-cols-2 h-8">
                   <TabsTrigger value="month" className="text-xs">Mois</TabsTrigger>
