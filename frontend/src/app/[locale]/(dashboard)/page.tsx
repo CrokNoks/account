@@ -348,7 +348,7 @@ function SortableWidget({
   if (!children) return null;
 
   const toggleWidth = () => {
-    const widths = [4, 6, 12];
+    const widths = [2, 3, 4, 6, 12];
     const currentIndex = widths.indexOf(width);
     const nextWidth = widths[(currentIndex + 1) % widths.length];
     onWidthChange(nextWidth);
@@ -360,6 +360,8 @@ function SortableWidget({
       style={style} 
       className={cn(
         "relative transition-all duration-200 col-span-12 max-h-[80vh] flex flex-col",
+        width === 2 && "lg:col-span-2",
+        width === 3 && "lg:col-span-3",
         width === 4 && "lg:col-span-4",
         width === 6 && "lg:col-span-6",
         width === 12 && "lg:col-span-12",
