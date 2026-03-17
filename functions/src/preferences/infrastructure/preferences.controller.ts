@@ -13,20 +13,32 @@ import {
   ApiBearerAuth,
   ApiProperty,
 } from '@nestjs/swagger';
+import {
+  IsArray,
+  IsNumber,
+  IsString,
+  ValidateNested,
+} from 'class-validator';
+import { Type } from 'class-transformer';
 import { SupabaseAuthGuard } from '../../auth/supabase-auth.guard';
 import { GetUserPreferencesUseCase } from '../application/get-user-preferences.use-case';
 import { UpdateUserPreferencesUseCase } from '../application/update-user-preferences.use-case';
 import { DashboardLayout, DashboardWidgetConfig } from '../domain/user-preferences.entity';
 
 class DashboardWidgetConfigDto implements DashboardWidgetConfig {
+  @IsString()
   @ApiProperty()
   id: string;
 
+  @IsNumber()
   @ApiProperty()
   width: number;
 }
 
 class DashboardLayoutDto implements DashboardLayout {
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => DashboardWidgetConfigDto)
   @ApiProperty({ type: [DashboardWidgetConfigDto] })
   widgets: DashboardWidgetConfigDto[];
 }
