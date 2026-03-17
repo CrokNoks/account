@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import { useAccountStore } from '@/features/accounts/model/use-account-store';
 import { useTransactions, Transaction } from '../api/use-transactions';
 import { useUpdateTransaction } from '../api/use-update-transaction';
@@ -21,7 +21,7 @@ import { formatCurrency, toCents, fromCents } from '@/shared/lib/format';
 import { format } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { CheckCircle2, Circle, Trash2, Pencil, Repeat, Clock, Search, Filter, X } from 'lucide-react';
+import { CheckCircle2, Circle, Trash2, Pencil, Repeat, Clock, Search, Filter, X, Plus } from 'lucide-react';
 import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -39,10 +39,18 @@ import { toast } from 'sonner';
 import { useTranslations } from 'next-intl';
 import { CreateRecurringDialog } from '@/features/recurring/ui/create-recurring-dialog';
 
-export function TransactionList({ periodId, compact = false }: { periodId?: string, compact?: boolean }) {
+export function TransactionList({ 
+  periodId, 
+  compact = false,
+  extraActions
+}: { 
+  periodId?: string, 
+  compact?: boolean,
+  extraActions?: React.ReactNode
+}) {
   const t = useTranslations('Transactions');
   const { activeAccountId } = useAccountStore();
-  const { setTagDetailId } = useUiStore();
+  const { setTagDetailId, isCreateTransactionDrawerOpen, setCreateTransactionDrawerOpen } = useUiStore();
   const { data: periods } = usePeriods(activeAccountId);
   const { data: categories } = useCategories(activeAccountId);
   const { data: tags } = useTags(activeAccountId);
@@ -95,6 +103,30 @@ export function TransactionList({ periodId, compact = false }: { periodId?: stri
   ]);
 
   const { data: transactions, isLoading } = useTransactions(activeAccountId, filterOptions);
+
+  // Handle Enter key to open transaction drawer
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Only trigger if not already open and not in an input
+      if (isCreateTransactionDrawerOpen) return;
+      
+      if (
+        document.activeElement?.tagName === 'INPUT' ||
+        document.activeElement?.tagName === 'TEXTAREA' ||
+        document.activeElement?.hasAttribute('contenteditable')
+      ) {
+        return;
+      }
+
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        setCreateTransactionDrawerOpen(true);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isCreateTransactionDrawerOpen, setCreateTransactionDrawerOpen]);
 
   const resetFilters = () => {
     setSearch('');
@@ -361,6 +393,18 @@ export function TransactionList({ periodId, compact = false }: { periodId?: stri
 
   return (
     <div className="space-y-4">
+      {/* Header with Title and Add Button */}
+      <div className="flex items-center justify-between">
+        <h2 className={cn("font-bold tracking-tight", compact ? "text-2xl" : "text-3xl")}>{t('title')}</h2>
+        <div className="flex items-center gap-2">
+          {extraActions}
+          <Button size="sm" className="gap-2" onClick={() => setCreateTransactionDrawerOpen(true)}>
+            <Plus className="w-4 h-4" />
+            <span className="hidden sm:inline">{t('add_transaction')}</span>
+          </Button>
+        </div>
+      </div>
+
       {/* Search & Filter Header - Only shown if not compact */}
       {!compact && (
         <div className="flex flex-col gap-4">

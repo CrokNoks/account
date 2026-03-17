@@ -44,7 +44,7 @@ export default function DashboardLayout({
         </div>
 
         {/* Global Drawer Instance (Headless) */}
-        <CreateTransactionDrawer trigger={null} />
+        <CreateTransactionDrawer />
         <TagDetailDrawer />
 
         <BottomNav />

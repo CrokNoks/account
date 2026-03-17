@@ -7,7 +7,7 @@ import { useBudgetBreakdown, BudgetCategoryBreakdown } from "../api/use-budget-b
 import { useTranslations } from "next-intl";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-export function BudgetBreakdown() {
+export function BudgetBreakdown({ title }: { title?: React.ReactNode }) {
   const t = useTranslations('Reporting');
   const { activeAccountId, activePeriodId } = useAccountStore();
   
@@ -20,7 +20,9 @@ export function BudgetBreakdown() {
   if (!breakdown) return null;
 
   return (
-    <Tabs defaultValue="expenses" className="w-full">
+    <div className="flex flex-col gap-4">
+      {title}
+      <Tabs defaultValue="expenses" className="w-full">
       <TabsList className="grid w-full grid-cols-4 mb-4">
         <TabsTrigger value="expenses">{t('expenses')}</TabsTrigger>
         <TabsTrigger value="income">{t('income')}</TabsTrigger>
@@ -40,7 +42,8 @@ export function BudgetBreakdown() {
       <TabsContent value="transfers">
         <BudgetGroup title={t('transfers')} items={breakdown.transfers} />
       </TabsContent>
-    </Tabs>
+      </Tabs>
+    </div>
   );
 }
 

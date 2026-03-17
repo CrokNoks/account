@@ -23,7 +23,7 @@ import {
 import { HelpButton } from "@/shared/ui/tour/HelpButton";
 import { useEffect, useMemo } from 'react';
 import { Button } from "@/components/ui/button";
-import { Plus, Settings2, Check, X, GripVertical } from "lucide-react";
+import { Settings2, Check, X, GripVertical } from "lucide-react";
 import { useUserPreferences, useUpdateUserPreferences } from "@/features/preferences/api/use-user-preferences";
 import { useDashboardStore } from "@/features/preferences/model/use-dashboard-store";
 import { cn } from "@/lib/utils";
@@ -47,10 +47,9 @@ import { CSS } from '@dnd-kit/utilities';
 
 export default function Home() {
   const t = useTranslations('Dashboard');
-  const tt = useTranslations('Transactions');
   const router = useRouter();
   const { activeAccountId, activePeriodId, setActivePeriodId } = useAccountStore();
-  const { isCreateTransactionDrawerOpen, setCreateTransactionDrawerOpen, startTour, completedTours } = useUiStore();
+  const { startTour, completedTours } = useUiStore();
   const { data: accounts, isLoading: isLoadingAccounts } = useAccounts();
   const { data: periods } = usePeriods(activeAccountId);
 
@@ -137,30 +136,6 @@ export default function Home() {
     }
   }, [periods, activePeriodId, setActivePeriodId]);
 
-  // Handle Enter key to open transaction drawer
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      // Only trigger if not already open and not in an input
-      if (isCreateTransactionDrawerOpen) return;
-      
-      if (
-        document.activeElement?.tagName === 'INPUT' ||
-        document.activeElement?.tagName === 'TEXTAREA' ||
-        document.activeElement?.hasAttribute('contenteditable')
-      ) {
-        return;
-      }
-
-      if (e.key === 'Enter') {
-        e.preventDefault();
-        setCreateTransactionDrawerOpen(true);
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isCreateTransactionDrawerOpen, setCreateTransactionDrawerOpen]);
-
   // Auto-start tour if dashboard tour not completed AND account tour IS completed
   useEffect(() => {
     if (!completedTours['dashboard'] && completedTours['account']) {
@@ -207,20 +182,9 @@ export default function Home() {
         </div>
         <div className="flex items-center gap-2">
           {!isEditing ? (
-            <>
-              <Button variant="outline" size="icon" onClick={handleStartEditing} title="Personnaliser le dashboard">
-                <Settings2 className="w-4 h-4" />
-              </Button>
-              <div className="hidden lg:block" data-tour="add-transaction">
-                <Button className="gap-2 px-4" onClick={() => setCreateTransactionDrawerOpen(true)}>
-                  <Plus className="w-4 h-4" />
-                  <span>{tt('add_transaction')}</span>
-                  <kbd className="hidden lg:inline-flex pointer-events-none h-5 select-none items-center gap-1 rounded border bg-primary-foreground/20 px-1.5 font-mono text-[10px] font-medium text-primary-foreground opacity-100 ml-1">
-                    Enter
-                  </kbd>
-                </Button>
-              </div>
-            </>
+            <Button variant="outline" size="icon" onClick={handleStartEditing} title="Personnaliser le dashboard">
+              <Settings2 className="w-4 h-4" />
+            </Button>
           ) : (
             <div className="flex items-center gap-2 animate-in fade-in zoom-in duration-200">
               <Button variant="outline" size="sm" onClick={handleCancelEdit} className="gap-2">
@@ -285,15 +249,13 @@ export default function Home() {
                     <AIInsightsCard accountId={activeAccountId} periodId={activePeriodId} />
                   )}
                   {widgetId === 'breakdown' && (
-                    <div className="flex flex-col gap-4" data-tour="budget-breakdown">
-                      <h2 className="text-2xl font-bold tracking-tight">{t('breakdown')}</h2>
-                      <BudgetBreakdown />
+                    <div data-tour="budget-breakdown">
+                      <BudgetBreakdown title={<h2 className="text-2xl font-bold tracking-tight">{t('breakdown')}</h2>} />
                     </div>
                   )}
                   {widgetId === 'tags' && <TagStatsSummary />}
                   {widgetId === 'transactions' && (
-                    <div className="flex flex-col gap-4" data-tour="transaction-list">
-                      <h2 className="text-2xl font-bold tracking-tight">{tt('title')}</h2>
+                    <div data-tour="transaction-list">
                       <TransactionList periodId={activePeriodId || undefined} compact />
                     </div>
                   )}

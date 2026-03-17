@@ -43,7 +43,7 @@ import { useTranslations } from 'next-intl';
 import { cn } from '@/lib/utils';
 import { toCents, toAbsCents } from '@/shared/lib/format';
 
-export function CreateTransactionDrawer({ trigger, isFab = false }: { trigger?: React.ReactElement | null, isFab?: boolean }) {
+export function CreateTransactionDrawer() {
   const t = useTranslations('Transactions');
   const tc = useTranslations('Common');
   const { activeAccountId } = useAccountStore();
@@ -236,31 +236,8 @@ export function CreateTransactionDrawer({ trigger, isFab = false }: { trigger?: 
   const availableDestinations = accounts?.filter(a => a.id !== activeAccountId) || [];
   const isFormValid = activeAccountId && description && amount && (mode === 'standard' || (mode === 'transfer' && destinationAccountId));
 
-  const defaultTrigger = isFab ? (
-    <Button 
-      size="icon" 
-      className="h-14 w-14 rounded-full shadow-lg border-primary/20" 
-      onClick={() => setCreateTransactionDrawerOpen(true)}
-    >
-      <Plus className="h-6 w-6" />
-    </Button>
-  ) : (
-    <Button className="gap-2 px-4" onClick={() => setCreateTransactionDrawerOpen(true)}>
-      <Plus className="w-4 h-4" />
-      <span>{t('add_transaction')}</span>
-      <kbd className="hidden lg:inline-flex pointer-events-none h-5 select-none items-center gap-1 rounded border bg-primary-foreground/20 px-1.5 font-mono text-[10px] font-medium text-primary-foreground opacity-100 ml-1">
-        Enter
-      </kbd>
-    </Button>
-  );
-
   return (
     <Sheet open={isCreateTransactionDrawerOpen} onOpenChange={handleOpenChange}>
-      {trigger !== undefined ? (
-        trigger && <SheetTrigger render={trigger} />
-      ) : (
-        <SheetTrigger render={defaultTrigger} />
-      )}
       <SheetContent side="right" className="flex flex-col gap-0 p-0" onKeyDown={handleKeyDown}>
         <SheetHeader className="p-6 border-b space-y-4">
           <div className="flex items-center justify-between">
