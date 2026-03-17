@@ -19,6 +19,7 @@ import { GetTagDetailsUseCase } from './application/get-tag-details.use-case';
 import { GetCalendarDataUseCase } from './application/get-calendar-data.use-case';
 import { GetAnomaliesUseCase } from './application/get-anomalies.use-case';
 import { IgnoreAnomalyUseCase } from './application/ignore-anomaly.use-case';
+import { GetNetWorthUseCase } from './application/get-net-worth.use-case';
 import { ScanReceiptUseCase } from './application/scan-receipt.use-case';
 import { GeminiService } from './application/gemini.service';
 import { ReportingController } from './infrastructure/reporting.controller';
@@ -48,6 +49,7 @@ import { ReportingController } from './infrastructure/reporting.controller';
     GetCalendarDataUseCase,
     GetAnomaliesUseCase,
     IgnoreAnomalyUseCase,
+    GetNetWorthUseCase,
     ScanReceiptUseCase,
     GeminiService,
   ],

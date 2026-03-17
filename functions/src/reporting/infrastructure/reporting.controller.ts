@@ -6,6 +6,7 @@ import {
   Query,
   Post,
   Body,
+  Request,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -60,6 +61,7 @@ import {
   Anomaly,
 } from '../application/get-anomalies.use-case';
 import { IgnoreAnomalyUseCase } from '../application/ignore-anomaly.use-case';
+import { GetNetWorthUseCase, NetWorthResponse } from '../application/get-net-worth.use-case';
 import {
   ScanReceiptUseCase,
   ScanReceiptResult,
@@ -174,6 +176,16 @@ class EvolutionDataPointDto implements EvolutionDataPoint {
   categories: Record<string, string>;
 }
 
+class NetWorthDataPointDto {
+  @ApiProperty() date: string;
+  @ApiProperty() amount: string;
+}
+
+class NetWorthResponseDto implements NetWorthResponse {
+  @ApiProperty() currentTotal: string;
+  @ApiProperty({ type: [NetWorthDataPointDto] }) history: NetWorthDataPointDto[];
+}
+
 @ApiTags('reporting')
 @ApiBearerAuth()
 @UseGuards(SupabaseAuthGuard)
@@ -193,6 +205,7 @@ export class ReportingController {
     private readonly getCalendarDataUseCase: GetCalendarDataUseCase,
     private readonly getAnomaliesUseCase: GetAnomaliesUseCase,
     private readonly ignoreAnomalyUseCase: IgnoreAnomalyUseCase,
+    private readonly getNetWorthUseCase: GetNetWorthUseCase,
     private readonly scanReceiptUseCase: ScanReceiptUseCase,
   ) {}
 
@@ -209,6 +222,13 @@ export class ReportingController {
       dto.type,
     );
     return { success: true };
+  }
+
+  @Get('reporting/net-worth')
+  @ApiOperation({ summary: 'Get total net worth evolution across all accounts' })
+  @ApiResponse({ status: 200, type: NetWorthResponseDto })
+  async getNetWorth(@Request() req: any): Promise<NetWorthResponseDto> {
+    return this.getNetWorthUseCase.execute(req.user.id);
   }
 
   @Get('periods/:periodId/reporting/stats')

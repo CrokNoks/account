@@ -5,6 +5,10 @@ import { AnomaliesWidget } from "@/features/reporting/ui/anomalies-widget";
 import { BudgetBreakdown } from "@/features/reporting/ui/budget-breakdown";
 import { TagStatsSummary } from "@/features/tags/ui/tag-stats-summary";
 import { SavingsGoalsWidget } from "@/features/savings/ui/savings-goals-widget";
+import { NetWorthWidget } from "@/features/reporting/ui/net-worth-widget";
+import { UpcomingDeadlinesWidget } from "@/features/reporting/ui/upcoming-deadlines-widget";
+import { MonthlyPulseWidget } from "@/features/reporting/ui/monthly-pulse-widget";
+import { TopExpensesWidget } from "@/features/reporting/ui/top-expenses-widget";
 import { AIInsightsCard } from "@/features/reporting/ui/ai-insights-card";
 import { TransactionList } from "@/features/transactions/ui/transaction-list";
 import { useAccountStore } from "@/features/accounts/model/use-account-store";
@@ -59,34 +63,40 @@ export default function Home() {
   const { isEditing, setEditing, tempLayout, setTempLayout, toggleWidget, updateWidgetWidth } = useDashboardStore();
 
   const allAvailableWidgets = useMemo(() => [
-    { id: 'anomalies', label: 'Anomalies' },
     { id: 'stats', label: 'Statistiques globales' },
+    { id: 'net-worth', label: 'Patrimoine Net' },
+    { id: 'pulse', label: 'Le Pulse (vs M-1)' },
+    { id: 'anomalies', label: 'Anomalies' },
     { id: 'insights', label: 'IA Insights' },
     { id: 'breakdown', label: 'Répartition du budget' },
+    { id: 'top-expenses', label: 'Top Dépenses' },
     { id: 'tags', label: 'Statistiques par Tags' },
     { id: 'savings', label: 'Objectifs d\'épargne' },
+    { id: 'upcoming', label: 'Prochaines Échéances' },
     { id: 'transactions', label: 'Dernières transactions' },
   ], []);
 
   const layout = useMemo(() => {
     if (isEditing && tempLayout) return tempLayout;
     return preferences?.dashboardLayout.widgets || [
-      { id: 'anomalies', width: 12 },
       { id: 'stats', width: 12 },
-      { id: 'insights', width: 12 },
+      { id: 'net-worth', width: 6 },
+      { id: 'pulse', width: 6 },
+      { id: 'anomalies', width: 12 },
       { id: 'breakdown', width: 6 },
-      { id: 'tags', width: 6 },
+      { id: 'top-expenses', width: 6 },
       { id: 'transactions', width: 12 },
     ];
   }, [isEditing, tempLayout, preferences]);
 
   const handleStartEditing = () => {
     setTempLayout(preferences?.dashboardLayout.widgets || [
-      { id: 'anomalies', width: 12 },
       { id: 'stats', width: 12 },
-      { id: 'insights', width: 12 },
+      { id: 'net-worth', width: 6 },
+      { id: 'pulse', width: 6 },
+      { id: 'anomalies', width: 12 },
       { id: 'breakdown', width: 6 },
-      { id: 'tags', width: 6 },
+      { id: 'top-expenses', width: 6 },
       { id: 'transactions', width: 12 },
     ]);
     setEditing(true);
@@ -247,6 +257,10 @@ export default function Home() {
                 >
                   {widgetId === 'anomalies' && <AnomaliesWidget />}
                   {widgetId === 'stats' && <DashboardStats />}
+                  {widgetId === 'net-worth' && <NetWorthWidget />}
+                  {widgetId === 'pulse' && <MonthlyPulseWidget />}
+                  {widgetId === 'top-expenses' && <TopExpensesWidget />}
+                  {widgetId === 'upcoming' && <UpcomingDeadlinesWidget />}
                   {widgetId === 'insights' && currentPeriod?.isActive && (
                     <AIInsightsCard accountId={activeAccountId} periodId={activePeriodId} />
                   )}
