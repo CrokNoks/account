@@ -69,7 +69,7 @@ export function AnomaliesWidget() {
           Anomalies détectées ({activeAnomalies.length})
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-3 pt-2 bg-transparent">
+      <CardContent className="space-y-3 pt-2 bg-transparent overflow-y-auto">
         {activeAnomalies.map((anomaly) => (
           <div 
             key={anomaly.id} 

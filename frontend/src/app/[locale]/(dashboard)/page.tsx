@@ -334,7 +334,7 @@ function SortableWidget({
       ref={setNodeRef} 
       style={style} 
       className={cn(
-        "relative transition-all duration-200 col-span-12",
+        "relative transition-all duration-200 col-span-12 max-h-[80vh] flex flex-col",
         width === 4 && "lg:col-span-4",
         width === 6 && "lg:col-span-6",
         width === 12 && "lg:col-span-12",

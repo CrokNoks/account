@@ -15,14 +15,14 @@ export function SavingsGoalsWidget() {
   if (!goals || goals.length === 0) return null;
 
   return (
-    <Card className="border-2 shadow-sm overflow-hidden h-full">
-      <CardHeader className="pb-3 bg-muted/10">
+    <Card className="border-2 shadow-sm overflow-hidden h-full flex flex-col">
+      <CardHeader className="pb-3 bg-muted/10 shrink-0">
         <CardTitle className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
           <Target className="w-4 h-4 text-primary" />
           Objectifs d&apos;épargne
         </CardTitle>
       </CardHeader>
-      <CardContent className="pt-2 space-y-6">
+      <CardContent className="pt-2 space-y-6 flex-1 overflow-y-auto">
         {goals.map((goal) => {
           const target = parseInt(goal.targetAmount, 10);
           const current = parseInt(goal.currentAmount, 10);

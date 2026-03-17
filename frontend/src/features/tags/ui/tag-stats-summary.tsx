@@ -23,14 +23,14 @@ export function TagStatsSummary() {
   if (activeTags.length === 0) return null;
 
   return (
-    <Card className="border-2 shadow-sm h-full overflow-hidden">
-      <CardHeader className="pb-3 bg-muted/10">
+    <Card className="border-2 shadow-sm h-full overflow-hidden flex flex-col">
+      <CardHeader className="pb-3 bg-muted/10 shrink-0">
         <CardTitle className="text-[10px] font-bold flex items-center gap-2 uppercase tracking-wider text-muted-foreground">
           <BarChart3 className="w-4 h-4 text-primary" />
           Top Tags de la période
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-1 px-2 pt-2">
+      <CardContent className="space-y-1 px-2 pt-2 flex-1 overflow-y-auto">
         {activeTags.map((tag) => (
           <button
             key={tag.tagId}

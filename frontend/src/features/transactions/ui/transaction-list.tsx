@@ -442,9 +442,9 @@ export function TransactionList({
   if (isLoading) return <div className="h-64 bg-muted animate-pulse rounded-xl" />;
 
   return (
-    <div className={cn(!compact && "space-y-4")}>
+    <div className={cn("flex flex-col h-full", !compact && "space-y-4")}>
       {/* Header with Title and Add Button */}
-      <div className={cn("flex items-center justify-between", compact && "bg-muted/10 px-6 py-3 -mx-6 -mt-6")}>
+      <div className={cn("flex items-center justify-between shrink-0", compact && "bg-muted/10 px-6 py-3 -mx-6 -mt-6 mb-0 border-b")}>
         <div className="flex items-center gap-2">
           {compact && <Receipt className="w-4 h-4 text-primary" />}
           <h2 className={cn("font-bold tracking-tight", compact ? "text-[10px] uppercase tracking-wider text-muted-foreground" : "text-3xl")}>{t('title')}</h2>
@@ -460,7 +460,7 @@ export function TransactionList({
 
       {/* Search & Filter Header - Only shown if not compact */}
       {!compact && (
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-4 shrink-0">
           <div className="flex items-center gap-2">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -632,7 +632,7 @@ export function TransactionList({
         </div>
       )}
 
-      <div className="rounded-xl border shadow-sm overflow-hidden">
+      <div className="flex-1 min-h-0 overflow-y-auto">
         {memoizedList}
       </div>
 

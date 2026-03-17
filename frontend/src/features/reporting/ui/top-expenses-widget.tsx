@@ -27,14 +27,14 @@ export function TopExpensesWidget() {
   const COLORS = ['#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6'];
 
   return (
-    <Card className="h-full border-2 shadow-sm overflow-hidden">
-      <CardHeader className="pb-3 bg-muted/10">
+    <Card className="h-full border-2 shadow-sm overflow-hidden flex flex-col">
+      <CardHeader className="pb-3 bg-muted/10 shrink-0">
         <CardTitle className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
           <PieChartIcon className="w-4 h-4 text-primary" />
           Top Dépenses
         </CardTitle>
       </CardHeader>
-      <CardContent className="pt-2">
+      <CardContent className="pt-2 flex-1 overflow-y-auto">
         <div className="h-48 w-full">
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
