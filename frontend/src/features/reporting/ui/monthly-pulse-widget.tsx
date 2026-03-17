@@ -46,7 +46,7 @@ export function MonthlyPulseWidget() {
           Le Pulse (vs mois dernier)
         </CardTitle>
       </CardHeader>
-      <CardContent className="pt-4">
+      <CardContent className="pt-2">
         <div className="flex items-center justify-between gap-4">
           <div className="space-y-1">
             <p className="text-2xl font-black">

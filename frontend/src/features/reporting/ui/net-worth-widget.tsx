@@ -30,7 +30,7 @@ export function NetWorthWidget() {
           Patrimoine Net (Tous comptes)
         </CardTitle>
       </CardHeader>
-      <CardContent className="flex flex-col gap-4 pt-4">
+      <CardContent className="flex flex-col gap-4 pt-2">
         <div className={`text-2xl font-bold ${colorClass}`}>
           {formatCurrency(data.currentTotal)}
         </div>

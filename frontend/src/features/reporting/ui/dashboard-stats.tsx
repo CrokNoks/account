@@ -108,7 +108,7 @@ function StatCard({ title, value, icon, description, highlight }: StatCardProps)
         {icon}
         <CardTitle className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">{title}</CardTitle>
       </CardHeader>
-      <CardContent className="pt-4">
+      <CardContent className="pt-2">
         <div className={cn(
           "text-xl font-black tracking-tight",
           highlight ? "text-primary underline decoration-primary/30 underline-offset-4" : colorClass

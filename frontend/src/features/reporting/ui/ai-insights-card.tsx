@@ -37,7 +37,7 @@ export function AIInsightsCard({ accountId, periodId }: AIInsightsCardProps) {
           </Button>
         )}
       </CardHeader>
-      <CardContent className="pt-4">
+      <CardContent className="pt-2">
         {isLoading ? (
           <div className="flex items-center gap-2 text-sm text-muted-foreground py-4">
             <Loader2 className="w-4 h-4 animate-spin" />

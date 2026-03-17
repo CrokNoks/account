@@ -30,7 +30,7 @@ export function TagStatsSummary() {
           Top Tags de la période
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-1 px-2 pt-4">
+      <CardContent className="space-y-1 px-2 pt-2">
         {activeTags.map((tag) => (
           <button
             key={tag.tagId}

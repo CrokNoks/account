@@ -22,7 +22,7 @@ export function SavingsGoalsWidget() {
           Objectifs d&apos;épargne
         </CardTitle>
       </CardHeader>
-      <CardContent className="pt-6 space-y-6">
+      <CardContent className="pt-2 space-y-6">
         {goals.map((goal) => {
           const target = parseInt(goal.targetAmount, 10);
           const current = parseInt(goal.currentAmount, 10);

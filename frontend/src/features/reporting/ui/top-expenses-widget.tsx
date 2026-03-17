@@ -34,7 +34,7 @@ export function TopExpensesWidget() {
           Top Dépenses
         </CardTitle>
       </CardHeader>
-      <CardContent className="pt-4">
+      <CardContent className="pt-2">
         <div className="h-48 w-full">
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
