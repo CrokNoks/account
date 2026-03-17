@@ -108,19 +108,46 @@ export function FinancialCalendar() {
     <div className="space-y-6">
       <Card className="shadow-sm overflow-hidden border-2">
         <CardHeader className="flex flex-col space-y-4 bg-muted/20 pb-6">
-          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+          <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
             <div className="flex items-center gap-4">
               <div className="p-2 bg-primary/10 rounded-lg text-primary">
                 <CalendarIcon className="w-5 h-5" />
               </div>
               <div>
-                <CardTitle className="text-xl font-bold capitalize">
+                <CardTitle className="text-xl font-bold capitalize whitespace-nowrap">
                   {view === 'month' 
                     ? format(currentDate, 'MMMM yyyy', { locale: dateLocale })
                     : `Semaine du ${format(calendarStart, 'd MMMM', { locale: dateLocale })}`
                   }
                 </CardTitle>
-                <p className="text-xs text-muted-foreground">Calendrier financier prévisionnel</p>
+                <p className="text-xs text-muted-foreground whitespace-nowrap">Calendrier financier prévisionnel</p>
+              </div>
+            </div>
+
+            {/* Totals Summary - Positioned between title and actions */}
+            <div className="flex items-center gap-8 px-6 py-2 bg-background/50 rounded-2xl border border-border/50">
+              <div className="flex flex-col">
+                <span className="text-[9px] font-bold uppercase text-muted-foreground tracking-tighter">Reçu</span>
+                <span className="text-sm font-black text-green-500">
+                  {formatCurrency(totals.income.toString())}
+                </span>
+              </div>
+              <div className="w-px h-8 bg-border/50" />
+              <div className="flex flex-col">
+                <span className="text-[9px] font-bold uppercase text-muted-foreground tracking-tighter">Dépensé</span>
+                <span className="text-sm font-black text-red-500">
+                  {formatCurrency((totals.expenses < BigInt(0) ? -totals.expenses : totals.expenses).toString())}
+                </span>
+              </div>
+              <div className="w-px h-8 bg-border/50" />
+              <div className="flex flex-col">
+                <span className="text-[9px] font-bold uppercase text-muted-foreground tracking-tighter">Net</span>
+                <span className={cn(
+                  "text-sm font-black",
+                  totals.income + totals.expenses >= BigInt(0) ? "text-green-500" : "text-red-500"
+                )}>
+                  {formatCurrency((totals.income + totals.expenses).toString())}
+                </span>
               </div>
             </div>
             
@@ -145,31 +172,6 @@ export function FinancialCalendar() {
                   </Button>
                 </div>
               </div>
-            </div>
-          </div>
-
-          {/* Totals Summary */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 pt-2 border-t border-muted">
-            <div className="flex flex-col">
-              <span className="text-[10px] font-bold uppercase text-muted-foreground">Reçu</span>
-              <span className="text-lg font-black text-green-500">
-                {formatCurrency(totals.income.toString())}
-              </span>
-            </div>
-            <div className="flex flex-col">
-              <span className="text-[10px] font-bold uppercase text-muted-foreground">Dépensé</span>
-              <span className="text-lg font-black text-red-500">
-                {formatCurrency((totals.expenses < BigInt(0) ? -totals.expenses : totals.expenses).toString())}
-              </span>
-            </div>
-            <div className="flex flex-col col-span-2 sm:col-span-1">
-              <span className="text-[10px] font-bold uppercase text-muted-foreground">Net</span>
-              <span className={cn(
-                "text-lg font-black",
-                totals.income + totals.expenses >= BigInt(0) ? "text-green-500" : "text-red-500"
-              )}>
-                {formatCurrency((totals.income + totals.expenses).toString())}
-              </span>
             </div>
           </div>
         </CardHeader>
