@@ -103,8 +103,8 @@ function StatCard({ title, value, icon, description, highlight }: StatCardProps)
   const colorClass = amount < 0 ? "text-red-500" : "text-green-500";
 
   return (
-    <Card className={cn("border-2 shadow-sm h-full", highlight && "border-primary/50 bg-primary/5")}>
-      <CardHeader className="flex flex-row items-center justify-between pb-3 space-y-0 bg-muted/10">
+    <Card className={cn("border-2 shadow-sm h-full", highlight && "border-primary/30")}>
+      <CardHeader className={cn("flex flex-row items-center justify-between pb-3 space-y-0 bg-muted/10", highlight && "bg-primary/10")}>
         <CardTitle className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">{title}</CardTitle>
         {icon}
       </CardHeader>

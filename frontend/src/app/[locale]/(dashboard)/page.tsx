@@ -5,6 +5,7 @@ import { AnomaliesWidget } from "@/features/reporting/ui/anomalies-widget";
 import { BudgetBreakdown } from "@/features/reporting/ui/budget-breakdown";
 import { Card, CardContent } from "@/components/ui/card";
 import { TagStatsSummary } from "@/features/tags/ui/tag-stats-summary";
+import { PieChart as PieChartIcon, Receipt } from "lucide-react";
 import { SavingsGoalsWidget } from "@/features/savings/ui/savings-goals-widget";
 import { NetWorthWidget } from "@/features/reporting/ui/net-worth-widget";
 import { UpcomingDeadlinesWidget } from "@/features/reporting/ui/upcoming-deadlines-widget";
@@ -267,7 +268,12 @@ export default function Home() {
                   )}
                   {widgetId === 'breakdown' && (
                     <div data-tour="budget-breakdown">
-                      <BudgetBreakdown title={<h2 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">{t('breakdown')}</h2>} />
+                      <BudgetBreakdown title={
+                        <div className="flex items-center gap-2">
+                          <PieChartIcon className="w-4 h-4 text-primary" />
+                          <h2 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">{t('breakdown')}</h2>
+                        </div>
+                      } />
                     </div>
                   )}
                   {widgetId === 'tags' && <TagStatsSummary />}

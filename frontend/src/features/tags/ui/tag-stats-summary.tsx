@@ -25,7 +25,7 @@ export function TagStatsSummary() {
   return (
     <Card className="border-2 shadow-sm h-full overflow-hidden">
       <CardHeader className="pb-3 bg-muted/10">
-        <CardTitle className="text-sm font-bold flex items-center gap-2 uppercase tracking-wider text-muted-foreground">
+        <CardTitle className="text-[10px] font-bold flex items-center gap-2 uppercase tracking-wider text-muted-foreground">
           <BarChart3 className="w-4 h-4 text-primary" />
           Top Tags de la période
         </CardTitle>

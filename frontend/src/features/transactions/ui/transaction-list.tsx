@@ -21,7 +21,7 @@ import { formatCurrency, toCents, fromCents } from '@/shared/lib/format';
 import { format } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { CheckCircle2, Circle, Trash2, Pencil, Repeat, Clock, Search, Filter, X, Plus, CheckSquare, Square } from 'lucide-react';
+import { CheckCircle2, Circle, Trash2, Pencil, Repeat, Clock, Search, Filter, X, Plus, CheckSquare, Square, Receipt } from 'lucide-react';
 import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -210,10 +210,12 @@ export function TransactionList({
                 onClick={() => selectedIds.length > 0 ? toggleSelect(transaction.id) : setEditingTransaction(transaction)}
               >
                 <div onClick={(e) => e.stopPropagation()} className="flex items-center">
-                  <Checkbox 
-                    checked={selectedIds.includes(transaction.id)} 
-                    onCheckedChange={() => toggleSelect(transaction.id)}
-                  />
+                  {!compact && (
+                    <Checkbox 
+                      checked={selectedIds.includes(transaction.id)} 
+                      onCheckedChange={() => toggleSelect(transaction.id)}
+                    />
+                  )}
                 </div>
                 <div className="flex-1 space-y-3">
                   <div className="flex items-center justify-between gap-2">
@@ -298,12 +300,14 @@ export function TransactionList({
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-[40px]">
-                  <Checkbox 
-                    checked={transactions.length > 0 && selectedIds.length === transactions.length}
-                    onCheckedChange={toggleSelectAll}
-                  />
-                </TableHead>
+                {!compact && (
+                  <TableHead className="w-[40px]">
+                    <Checkbox 
+                      checked={transactions.length > 0 && selectedIds.length === transactions.length}
+                      onCheckedChange={toggleSelectAll}
+                    />
+                  </TableHead>
+                )}
                 <TableHead className="w-[50px]"></TableHead>
                 <TableHead className="w-[120px]">{t('fields.date')}</TableHead>
                 <TableHead className="min-w-[200px] max-w-[400px]">{t('fields.description')}</TableHead>
@@ -330,12 +334,14 @@ export function TransactionList({
                     )}
                     onClick={() => selectedIds.length > 0 ? toggleSelect(transaction.id) : setEditingTransaction(transaction)}
                   >
-                    <TableCell onClick={(e) => e.stopPropagation()}>
-                      <Checkbox 
-                        checked={selectedIds.includes(transaction.id)} 
-                        onCheckedChange={() => toggleSelect(transaction.id)}
-                      />
-                    </TableCell>
+                    {!compact && (
+                      <TableCell onClick={(e) => e.stopPropagation()}>
+                        <Checkbox 
+                          checked={selectedIds.includes(transaction.id)} 
+                          onCheckedChange={() => toggleSelect(transaction.id)}
+                        />
+                      </TableCell>
+                    )}
                     <TableCell onClick={(e) => e.stopPropagation()}>
                       <button 
                         onClick={() => toggleReconciliation(transaction.id, transaction.reconciled)}
@@ -438,8 +444,11 @@ export function TransactionList({
   return (
     <div className="space-y-4">
       {/* Header with Title and Add Button */}
-      <div className={cn("flex items-center justify-between", compact && "bg-muted/10 px-6 py-3 -mx-6 -mt-6 mb-4 border-b")}>
-        <h2 className={cn("font-bold tracking-tight", compact ? "text-[10px] uppercase tracking-wider text-muted-foreground" : "text-3xl")}>{t('title')}</h2>
+      <div className={cn("flex items-center justify-between", compact && "bg-muted/10 px-6 py-3 -mx-6 -mt-6 border-b")}>
+        <div className="flex items-center gap-2">
+          {compact && <Receipt className="w-4 h-4 text-primary" />}
+          <h2 className={cn("font-bold tracking-tight", compact ? "text-[10px] uppercase tracking-wider text-muted-foreground" : "text-3xl")}>{t('title')}</h2>
+        </div>
         <div className="flex items-center gap-2">
           {extraActions}
           <Button size={compact ? "icon-xs" : "sm"} variant={compact ? "ghost" : "default"} className="gap-2" onClick={() => setCreateTransactionDrawerOpen(true)}>
