@@ -1,6 +1,6 @@
 {
   "name": "account-v2",
-  "version": "2.20.2",
+  "version": "2.21.0",
   "description": "Personal finance manager with Supabase and NestJS",
   "keywords": [
     "personal-finance",
