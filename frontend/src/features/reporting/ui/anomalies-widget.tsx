@@ -18,11 +18,9 @@ export function AnomaliesWidget() {
   // Keep local state for immediate optimistic UI update
   const [dismissedIds, setDismissedIds] = useState<Set<string>>(new Set());
 
-  if (isLoading) return null;
-
   const activeAnomalies = anomalies?.filter(a => !dismissedIds.has(a.id)) || [];
 
-  if (activeAnomalies.length === 0) return null;
+  if (isLoading || activeAnomalies.length === 0) return null;
 
   const dismiss = (anomaly: Anomaly) => {
     if (!activeAccountId) return;
@@ -64,14 +62,14 @@ export function AnomaliesWidget() {
   };
 
   return (
-    <Card className="border-2 border-orange-500/20 shadow-sm bg-orange-500/5 h-full">
-      <CardHeader className="pb-3 flex flex-row items-center gap-2 space-y-0 bg-orange-500/10">
+    <Card className="border-2 border-orange-500/50 shadow-md h-full overflow-hidden bg-transparent">
+      <CardHeader className="pb-3 flex flex-row items-center justify-start gap-2 space-y-0 bg-transparent border-b border-orange-500/20">
         <AlertCircle className="w-5 h-5 text-orange-500" />
-        <CardTitle className="text-[10px] font-bold text-orange-700 uppercase tracking-wider">
+        <CardTitle className="text-[10px] font-bold text-orange-600 dark:text-orange-400 uppercase tracking-wider">
           Anomalies détectées ({activeAnomalies.length})
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-3 pt-4">
+      <CardContent className="space-y-3 pt-6 bg-transparent">
         {activeAnomalies.map((anomaly) => (
           <div 
             key={anomaly.id} 

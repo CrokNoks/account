@@ -267,13 +267,8 @@ export default function Home() {
                     <AIInsightsCard accountId={activeAccountId} periodId={activePeriodId} />
                   )}
                   {widgetId === 'breakdown' && (
-                    <div data-tour="budget-breakdown">
-                      <BudgetBreakdown title={
-                        <div className="flex items-center gap-2">
-                          <PieChartIcon className="w-4 h-4 text-primary" />
-                          <h2 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">{t('breakdown')}</h2>
-                        </div>
-                      } />
+                    <div data-tour="budget-breakdown" className="h-full">
+                      <BudgetBreakdown />
                     </div>
                   )}
                   {widgetId === 'tags' && <TagStatsSummary />}

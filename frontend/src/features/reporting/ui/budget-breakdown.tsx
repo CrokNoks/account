@@ -6,6 +6,7 @@ import { useAccountStore } from "@/features/accounts/model/use-account-store";
 import { useBudgetBreakdown, BudgetCategoryBreakdown } from "../api/use-budget-breakdown";
 import { useTranslations } from "next-intl";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { PieChart } from "lucide-react";
 
 export function BudgetBreakdown({ title }: { title?: React.ReactNode }) {
   const t = useTranslations('Reporting');
@@ -22,7 +23,12 @@ export function BudgetBreakdown({ title }: { title?: React.ReactNode }) {
   return (
     <Card className="border-2 shadow-sm h-full overflow-hidden">
       <CardHeader className="bg-muted/10 pb-3">
-        {title}
+        {title || (
+          <div className="flex items-center gap-2">
+            <PieChart className="w-4 h-4 text-primary" />
+            <h2 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">{t('breakdown')}</h2>
+          </div>
+        )}
       </CardHeader>
       <CardContent className="pt-6 flex flex-col gap-4">
         <Tabs defaultValue="expenses" className="w-full">
