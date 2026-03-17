@@ -774,7 +774,9 @@ function EditTransactionDialog({ transaction, open, onOpenChange }: { transactio
             <label className="text-sm font-medium">{t('fields.category')}</label>
             <Select value={categoryId} onValueChange={(v) => setCategoryId(v || '')}>
               <SelectTrigger>
-                <SelectValue placeholder="Sélectionner une catégorie..." />
+                <SelectValue placeholder="Sélectionner une catégorie...">
+                  {categoryId ? categories?.find(c => c.id === categoryId)?.name : "Sélectionner une catégorie..."}
+                </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 {categories?.map((cat) => (

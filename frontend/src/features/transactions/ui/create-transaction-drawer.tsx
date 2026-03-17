@@ -400,7 +400,9 @@ export function CreateTransactionDrawer() {
               <label className="text-sm font-medium">Compte de destination</label>
               <Select value={destinationAccountId} onValueChange={(v) => setDestinationAccountId(v || '')}>
                 <SelectTrigger className="h-11">
-                  <SelectValue placeholder="Sélectionner le compte de destination..." />
+                  <SelectValue placeholder="Sélectionner le compte de destination...">
+                    {destinationAccountId ? availableDestinations.find(a => a.id === destinationAccountId)?.name : "Sélectionner le compte de destination..."}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   {availableDestinations.length === 0 ? (

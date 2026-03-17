@@ -77,7 +77,9 @@ export function ShareAccountDialog({ accountId, accountName, open, onOpenChange 
             />
             <Select value={permission} onValueChange={(v: 'read' | 'write' | null) => v && setPermission(v)}>
               <SelectTrigger className="w-[140px]">
-                <SelectValue />
+                <SelectValue>
+                  {permission === 'read' ? t('share_permission_read') : t('share_permission_write')}
+                </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="read">{t('share_permission_read')}</SelectItem>

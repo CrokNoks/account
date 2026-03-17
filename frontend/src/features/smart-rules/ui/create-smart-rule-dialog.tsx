@@ -105,7 +105,14 @@ export function CreateSmartRuleDialog() {
                 <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">{t('fields.category')}</label>
                 <Select value={categoryId || 'none'} onValueChange={setCategoryId}>
                   <SelectTrigger className="h-11">
-                    <SelectValue placeholder={t('no_category')} />
+                    <SelectValue placeholder={t('no_category')}>
+                      {categoryId && categoryId !== 'none' ? (
+                        <div className="flex items-center gap-2">
+                          <div className="w-2 h-2 rounded-full" style={{ backgroundColor: categories?.find(c => c.id === categoryId)?.color }} />
+                          {categories?.find(c => c.id === categoryId)?.name}
+                        </div>
+                      ) : t('no_category')}
+                    </SelectValue>
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="none">{t('no_category')}</SelectItem>
