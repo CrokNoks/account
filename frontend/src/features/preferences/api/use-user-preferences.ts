@@ -4,6 +4,8 @@ import { apiClient } from '@/shared/api/api-client';
 export interface DashboardWidgetConfig {
   id: string;
   width: number;
+  desktopVisible: boolean;
+  mobileVisible: boolean;
 }
 
 export interface DashboardLayout {

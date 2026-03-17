@@ -17,7 +17,9 @@ import {
   IsArray,
   IsNumber,
   IsString,
+  IsBoolean,
   ValidateNested,
+  IsObject,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { SupabaseAuthGuard } from '../../auth/supabase-auth.guard';
@@ -33,6 +35,14 @@ class DashboardWidgetConfigDto implements DashboardWidgetConfig {
   @IsNumber()
   @ApiProperty()
   width: number;
+
+  @IsBoolean()
+  @ApiProperty()
+  desktopVisible: boolean;
+
+  @IsBoolean()
+  @ApiProperty()
+  mobileVisible: boolean;
 }
 
 class DashboardLayoutDto implements DashboardLayout {

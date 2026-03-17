@@ -1,6 +1,8 @@
 export interface DashboardWidgetConfig {
   id: string;
-  width: number; // 4, 6, or 12
+  width: number;
+  desktopVisible: boolean;
+  mobileVisible: boolean;
 }
 
 export interface DashboardLayout {
@@ -29,12 +31,18 @@ export class UserPreferences {
       userId,
       dashboardLayout: layout || {
         widgets: [
-          { id: 'anomalies', width: 12 },
-          { id: 'stats', width: 12 },
-          { id: 'insights', width: 12 },
-          { id: 'breakdown', width: 6 },
-          { id: 'tags', width: 6 },
-          { id: 'transactions', width: 12 },
+          { id: 'stat-start', width: 2, desktopVisible: true, mobileVisible: true },
+          { id: 'stat-income', width: 2, desktopVisible: true, mobileVisible: true },
+          { id: 'stat-expenses', width: 2, desktopVisible: true, mobileVisible: true },
+          { id: 'stat-bank', width: 2, desktopVisible: true, mobileVisible: true },
+          { id: 'stat-upcoming', width: 2, desktopVisible: true, mobileVisible: true },
+          { id: 'stat-forecast', width: 2, desktopVisible: true, mobileVisible: true },
+          { id: 'net-worth', width: 6, desktopVisible: true, mobileVisible: true },
+          { id: 'pulse', width: 6, desktopVisible: true, mobileVisible: true },
+          { id: 'anomalies', width: 12, desktopVisible: true, mobileVisible: true },
+          { id: 'breakdown', width: 6, desktopVisible: true, mobileVisible: true },
+          { id: 'top-expenses', width: 6, desktopVisible: true, mobileVisible: true },
+          { id: 'transactions', width: 12, desktopVisible: true, mobileVisible: true },
         ],
       },
       updatedAt: new Date(),

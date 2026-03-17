@@ -37,7 +37,7 @@ import {
 import { HelpButton } from "@/shared/ui/tour/HelpButton";
 import { useEffect, useMemo } from 'react';
 import { Button } from "@/components/ui/button";
-import { Settings2, Check, X, GripVertical } from "lucide-react";
+import { Settings2, Check, X, GripVertical, Monitor, Smartphone } from "lucide-react";
 import { useUserPreferences, useUpdateUserPreferences } from "@/features/preferences/api/use-user-preferences";
 import { useDashboardStore } from "@/features/preferences/model/use-dashboard-store";
 import { cn } from "@/lib/utils";
@@ -69,7 +69,7 @@ export default function Home() {
 
   const { data: preferences } = useUserPreferences();
   const { mutate: updatePreferences } = useUpdateUserPreferences();
-  const { isEditing, setEditing, tempLayout, setTempLayout, toggleWidget, updateWidgetWidth } = useDashboardStore();
+  const { isEditing, setEditing, tempLayout, setTempLayout, toggleWidget, updateWidgetWidth, toggleDeviceVisibility } = useDashboardStore();
 
   const allAvailableWidgets = useMemo(() => [
     { id: 'stat-start', label: 'Solde initial' },
@@ -93,35 +93,35 @@ export default function Home() {
   const layout = useMemo(() => {
     if (isEditing && tempLayout) return tempLayout;
     return preferences?.dashboardLayout.widgets || [
-      { id: 'stat-start', width: 2 },
-      { id: 'stat-income', width: 2 },
-      { id: 'stat-expenses', width: 2 },
-      { id: 'stat-bank', width: 2 },
-      { id: 'stat-upcoming', width: 2 },
-      { id: 'stat-forecast', width: 2 },
-      { id: 'net-worth', width: 6 },
-      { id: 'pulse', width: 6 },
-      { id: 'anomalies', width: 12 },
-      { id: 'breakdown', width: 6 },
-      { id: 'top-expenses', width: 6 },
-      { id: 'transactions', width: 12 },
+      { id: 'stat-start', width: 2, desktopVisible: true, mobileVisible: true },
+      { id: 'stat-income', width: 2, desktopVisible: true, mobileVisible: true },
+      { id: 'stat-expenses', width: 2, desktopVisible: true, mobileVisible: true },
+      { id: 'stat-bank', width: 2, desktopVisible: true, mobileVisible: true },
+      { id: 'stat-upcoming', width: 2, desktopVisible: true, mobileVisible: true },
+      { id: 'stat-forecast', width: 2, desktopVisible: true, mobileVisible: true },
+      { id: 'net-worth', width: 6, desktopVisible: true, mobileVisible: true },
+      { id: 'pulse', width: 6, desktopVisible: true, mobileVisible: true },
+      { id: 'anomalies', width: 12, desktopVisible: true, mobileVisible: true },
+      { id: 'breakdown', width: 6, desktopVisible: true, mobileVisible: true },
+      { id: 'top-expenses', width: 6, desktopVisible: true, mobileVisible: true },
+      { id: 'transactions', width: 12, desktopVisible: true, mobileVisible: true },
     ];
   }, [isEditing, tempLayout, preferences]);
 
   const handleStartEditing = () => {
     setTempLayout(preferences?.dashboardLayout.widgets || [
-      { id: 'stat-start', width: 2 },
-      { id: 'stat-income', width: 2 },
-      { id: 'stat-expenses', width: 2 },
-      { id: 'stat-bank', width: 2 },
-      { id: 'stat-upcoming', width: 2 },
-      { id: 'stat-forecast', width: 2 },
-      { id: 'net-worth', width: 6 },
-      { id: 'pulse', width: 6 },
-      { id: 'anomalies', width: 12 },
-      { id: 'breakdown', width: 6 },
-      { id: 'top-expenses', width: 6 },
-      { id: 'transactions', width: 12 },
+      { id: 'stat-start', width: 2, desktopVisible: true, mobileVisible: true },
+      { id: 'stat-income', width: 2, desktopVisible: true, mobileVisible: true },
+      { id: 'stat-expenses', width: 2, desktopVisible: true, mobileVisible: true },
+      { id: 'stat-bank', width: 2, desktopVisible: true, mobileVisible: true },
+      { id: 'stat-upcoming', width: 2, desktopVisible: true, mobileVisible: true },
+      { id: 'stat-forecast', width: 2, desktopVisible: true, mobileVisible: true },
+      { id: 'net-worth', width: 6, desktopVisible: true, mobileVisible: true },
+      { id: 'pulse', width: 6, desktopVisible: true, mobileVisible: true },
+      { id: 'anomalies', width: 12, desktopVisible: true, mobileVisible: true },
+      { id: 'breakdown', width: 6, desktopVisible: true, mobileVisible: true },
+      { id: 'top-expenses', width: 6, desktopVisible: true, mobileVisible: true },
+      { id: 'transactions', width: 12, desktopVisible: true, mobileVisible: true },
     ]);
     setEditing(true);
   };
@@ -277,7 +277,10 @@ export default function Home() {
                   id={widgetId} 
                   isEditing={isEditing}
                   width={widget.width}
+                  desktopVisible={widget.desktopVisible}
+                  mobileVisible={widget.mobileVisible}
                   onWidthChange={(newWidth) => updateWidgetWidth(widgetId, newWidth)}
+                  onToggleDevice={(device) => toggleDeviceVisibility(widgetId, device)}
                 >
                   {widgetId === 'stat-start' && <StatStartBalance />}
                   {widgetId === 'stat-income' && <StatRealIncome />}
@@ -322,13 +325,19 @@ function SortableWidget({
   children, 
   isEditing, 
   width,
-  onWidthChange 
+  desktopVisible,
+  mobileVisible,
+  onWidthChange,
+  onToggleDevice
 }: { 
   id: string, 
   children: React.ReactNode, 
   isEditing: boolean,
   width: number,
-  onWidthChange: (width: number) => void
+  desktopVisible: boolean,
+  mobileVisible: boolean,
+  onWidthChange: (width: number) => void,
+  onToggleDevice: (device: 'mobile' | 'desktop') => void
 }) {
   const {
     attributes,
@@ -360,13 +369,17 @@ function SortableWidget({
       style={style} 
       className={cn(
         "relative transition-all duration-200 col-span-12 max-h-[80vh] flex flex-col",
+        !isEditing && !desktopVisible && "lg:hidden",
+        !isEditing && !mobileVisible && "hidden lg:flex",
         width === 2 && "lg:col-span-2",
         width === 3 && "lg:col-span-3",
         width === 4 && "lg:col-span-4",
         width === 6 && "lg:col-span-6",
         width === 12 && "lg:col-span-12",
         isDragging && "opacity-50 scale-105 shadow-2xl",
-        isEditing && "group p-2 border-2 border-dashed border-transparent hover:border-primary/20 rounded-3xl"
+        isEditing && "group p-2 border-2 border-dashed border-transparent hover:border-primary/20 rounded-3xl",
+        isEditing && !desktopVisible && "opacity-40 grayscale",
+        isEditing && !mobileVisible && "opacity-40"
       )}
     >
       {isEditing && (
@@ -378,15 +391,40 @@ function SortableWidget({
           >
             <GripVertical className="w-4 h-4" />
           </div>
-          <button
-            onClick={toggleWidth}
-            className="absolute -right-2 top-1/2 -translate-y-1/2 p-2 bg-background border border-border text-foreground rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-all z-50 hover:bg-muted"
-            title="Redimensionner"
-          >
-            <div className="flex gap-0.5 items-center justify-center w-4 h-4">
-              <div className={cn("bg-current rounded-full transition-all", width === 4 ? "w-1.5 h-1.5" : width === 6 ? "w-2.5 h-1.5" : "w-4 h-1.5")} />
-            </div>
-          </button>
+          
+          <div className="absolute -right-2 top-1/2 -translate-y-1/2 flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-all z-50">
+            <button
+              onClick={toggleWidth}
+              className="p-2 bg-background border border-border text-foreground rounded-full shadow-md hover:bg-muted"
+              title="Redimensionner"
+            >
+              <div className="flex gap-0.5 items-center justify-center w-4 h-4">
+                <div className={cn("bg-current rounded-full transition-all", width === 2 ? "w-1 h-1" : width === 3 ? "w-1.5 h-1.5" : width === 4 ? "w-2 h-1.5" : width === 6 ? "w-3 h-1.5" : "w-4 h-1.5")} />
+              </div>
+            </button>
+            
+            <button
+              onClick={() => onToggleDevice('desktop')}
+              className={cn(
+                "p-2 border shadow-md rounded-full hover:bg-muted",
+                desktopVisible ? "bg-primary text-primary-foreground border-primary" : "bg-background text-muted-foreground border-border"
+              )}
+              title={desktopVisible ? "Masquer sur Desktop" : "Afficher sur Desktop"}
+            >
+              <Monitor className="w-3.5 h-3.5" />
+            </button>
+
+            <button
+              onClick={() => onToggleDevice('mobile')}
+              className={cn(
+                "p-2 border shadow-md rounded-full hover:bg-muted",
+                mobileVisible ? "bg-primary text-primary-foreground border-primary" : "bg-background text-muted-foreground border-border"
+              )}
+              title={mobileVisible ? "Masquer sur Mobile" : "Afficher sur Mobile"}
+            >
+              <Smartphone className="w-3.5 h-3.5" />
+            </button>
+          </div>
         </>
       )}
       {children}
