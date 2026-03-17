@@ -13,7 +13,9 @@ import {
   isSameMonth, 
   isSameDay, 
   isToday,
-  parseISO
+  parseISO,
+  addWeeks,
+  subWeeks
 } from 'date-fns';
 import { fr, enUS } from 'date-fns/locale';
 import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Info } from 'lucide-react';
@@ -32,6 +34,7 @@ import {
 } from "@/components/ui/sheet";
 import { Badge } from '@/components/ui/badge';
 import { useCategories } from '@/features/categories/api/use-categories';
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export function FinancialCalendar() {
   const localeStr = useLocale();
@@ -40,6 +43,7 @@ export function FinancialCalendar() {
   
   const [currentDate, setCurrentDate] = React.useState(new Date());
   const [selectedDay, setSelectedDay] = React.useState<Date | null>(null);
+  const [view, setView] = React.useState<'month' | 'week'>('month');
   
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth() + 1;
@@ -49,16 +53,30 @@ export function FinancialCalendar() {
 
   const monthStart = startOfMonth(currentDate);
   const monthEnd = endOfMonth(monthStart);
-  const calendarStart = startOfWeek(monthStart, { weekStartsOn: 1 });
-  const calendarEnd = endOfWeek(monthEnd, { weekStartsOn: 1 });
+  
+  const calendarStart = view === 'month' 
+    ? startOfWeek(monthStart, { weekStartsOn: 1 })
+    : startOfWeek(currentDate, { weekStartsOn: 1 });
+    
+  const calendarEnd = view === 'month'
+    ? endOfWeek(monthEnd, { weekStartsOn: 1 })
+    : endOfWeek(currentDate, { weekStartsOn: 1 });
 
   const days = eachDayOfInterval({
     start: calendarStart,
     end: calendarEnd,
   });
 
-  const nextMonth = () => setCurrentDate(addMonths(currentDate, 1));
-  const prevMonth = () => setCurrentDate(subMonths(currentDate, 1));
+  const next = () => {
+    if (view === 'month') setCurrentDate(addMonths(currentDate, 1));
+    else setCurrentDate(addWeeks(currentDate, 1));
+  };
+
+  const prev = () => {
+    if (view === 'month') setCurrentDate(subMonths(currentDate, 1));
+    else setCurrentDate(subWeeks(currentDate, 1));
+  };
+
   const goToToday = () => setCurrentDate(new Date());
 
   const getDayEvents = (day: Date) => {
@@ -72,29 +90,42 @@ export function FinancialCalendar() {
   return (
     <div className="space-y-6">
       <Card className="shadow-sm overflow-hidden border-2">
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4 bg-muted/20">
+        <CardHeader className="flex flex-col md:flex-row items-start md:items-center justify-between space-y-4 md:space-y-0 pb-4 bg-muted/20">
           <div className="flex items-center gap-4">
             <div className="p-2 bg-primary/10 rounded-lg text-primary">
               <CalendarIcon className="w-5 h-5" />
             </div>
             <div>
               <CardTitle className="text-xl font-bold capitalize">
-                {format(currentDate, 'MMMM yyyy', { locale: dateLocale })}
+                {view === 'month' 
+                  ? format(currentDate, 'MMMM yyyy', { locale: dateLocale })
+                  : `Semaine du ${format(calendarStart, 'd MMMM', { locale: dateLocale })}`
+                }
               </CardTitle>
               <p className="text-xs text-muted-foreground">Calendrier financier prévisionnel</p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={goToToday} className="h-8">
-              Aujourd&apos;hui
-            </Button>
-            <div className="flex items-center border rounded-lg overflow-hidden">
-              <Button variant="ghost" size="icon" onClick={prevMonth} className="h-8 w-8 rounded-none border-r">
-                <ChevronLeft className="w-4 h-4" />
+          
+          <div className="flex flex-wrap items-center gap-3">
+            <Tabs value={view} onValueChange={(v) => setView(v as 'month' | 'week')} className="w-auto">
+              <TabsList className="grid w-[160px] grid-cols-2 h-8">
+                <TabsTrigger value="month" className="text-xs">Mois</TabsTrigger>
+                <TabsTrigger value="week" className="text-xs">Semaine</TabsTrigger>
+              </TabsList>
+            </Tabs>
+
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="sm" onClick={goToToday} className="h-8">
+                Aujourd&apos;hui
               </Button>
-              <Button variant="ghost" size="icon" onClick={nextMonth} className="h-8 w-8 rounded-none">
-                <ChevronRight className="w-4 h-4" />
-              </Button>
+              <div className="flex items-center border rounded-lg overflow-hidden bg-background">
+                <Button variant="ghost" size="icon" onClick={prev} className="h-8 w-8 rounded-none border-r">
+                  <ChevronLeft className="w-4 h-4" />
+                </Button>
+                <Button variant="ghost" size="icon" onClick={next} className="h-8 w-8 rounded-none">
+                  <ChevronRight className="w-4 h-4" />
+                </Button>
+              </div>
             </div>
           </div>
         </CardHeader>
@@ -109,7 +140,10 @@ export function FinancialCalendar() {
           </div>
 
           {/* Calendar grid */}
-          <div className="grid grid-cols-7 auto-rows-fr">
+          <div className={cn(
+            "grid grid-cols-7 auto-rows-fr",
+            view === 'week' && "divide-x"
+          )}>
             {days.map((day, i) => {
               const dayEvents = getDayEvents(day);
               const dayTotal = getDayTotal(dayEvents);
@@ -122,13 +156,14 @@ export function FinancialCalendar() {
                   key={day.toString()}
                   onClick={() => setSelectedDay(day)}
                   className={cn(
-                    "min-h-[100px] p-2 border-r border-b group cursor-pointer transition-all hover:bg-accent/30 flex flex-col gap-1",
-                    !isCurrentMonth && "bg-muted/10 opacity-40",
+                    "p-2 border-r border-b group cursor-pointer transition-all hover:bg-accent/30 flex flex-col gap-1",
+                    view === 'month' ? "min-h-[100px]" : "min-h-[400px] bg-background",
+                    view === 'month' && !isCurrentMonth && "bg-muted/10 opacity-40",
                     i % 7 === 6 && "border-r-0",
                     isSelected && "bg-primary/5 ring-2 ring-inset ring-primary/20"
                   )}
                 >
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between border-b pb-1 mb-1 border-muted/20">
                     <span className={cn(
                       "text-xs font-bold w-6 h-6 flex items-center justify-center rounded-full",
                       dayIsToday ? "bg-primary text-primary-foreground" : "text-muted-foreground"
@@ -146,24 +181,34 @@ export function FinancialCalendar() {
                   </div>
 
                   <div className="flex-1 space-y-1 mt-1">
-                    {dayEvents.slice(0, 3).map((event) => (
+                    {dayEvents.slice(0, view === 'week' ? 15 : 3).map((event) => (
                       <div 
                         key={event.id} 
                         className={cn(
-                          "text-[9px] px-1.5 py-0.5 rounded-sm truncate border flex items-center gap-1",
-                          event.type === 'recurring' ? "border-dashed bg-muted/30" : "bg-card shadow-sm"
+                          "text-[9px] px-1.5 py-1 rounded-md truncate border flex items-center gap-2",
+                          event.type === 'recurring' ? "border-dashed bg-muted/30" : "bg-card shadow-sm border-muted/50"
                         )}
                       >
                         <div 
-                          className="w-1 h-1 rounded-full shrink-0" 
+                          className="w-1.5 h-1.5 rounded-full shrink-0" 
                           style={{ backgroundColor: categories?.find(c => c.id === event.categoryId)?.color || '#94a3b8' }} 
                         />
-                        <span className="truncate flex-1">{event.description}</span>
+                        <div className="flex-1 truncate flex justify-between items-center gap-1">
+                          <span className="truncate">{event.description}</span>
+                          {view === 'week' && (
+                            <span className={cn(
+                              "font-bold shrink-0",
+                              BigInt(event.amount) < BigInt(0) ? "text-red-500" : "text-green-500"
+                            )}>
+                              {parseInt(event.amount) / 100}
+                            </span>
+                          )}
+                        </div>
                       </div>
                     ))}
-                    {dayEvents.length > 3 && (
-                      <div className="text-[8px] text-center text-muted-foreground font-bold italic">
-                        + {dayEvents.length - 3} autres
+                    {dayEvents.length > (view === 'week' ? 15 : 3) && (
+                      <div className="text-[8px] text-center text-muted-foreground font-bold italic py-1">
+                        + {dayEvents.length - (view === 'week' ? 15 : 3)} autres
                       </div>
                     )}
                   </div>
