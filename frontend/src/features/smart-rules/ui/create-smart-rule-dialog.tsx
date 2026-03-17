@@ -66,12 +66,14 @@ export function CreateSmartRuleDialog() {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger>
-        <Button className="gap-2 px-4 shadow-lg shadow-primary/20" type="button" onClick={() => setOpen(true)}>
-          <Plus className="w-4 h-4" />
-          <span>{t('add_rule')}</span>
-        </Button>
-      </DialogTrigger>
+      <DialogTrigger
+        render={
+          <Button className="gap-2 px-4 shadow-lg shadow-primary/20">
+            <Plus className="w-4 h-4" />
+            <span>{t('add_rule')}</span>
+          </Button>
+        }
+      />
       <DialogContent className="sm:max-w-[500px] p-0 overflow-hidden rounded-2xl!">
         <form onSubmit={handleSubmit}>
           <DialogHeader className="p-6 bg-primary/5 border-b">

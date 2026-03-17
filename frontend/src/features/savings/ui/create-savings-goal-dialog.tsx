@@ -54,12 +54,14 @@ export function CreateSavingsGoalDialog() {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger>
-        <Button className="gap-2 px-4 shadow-lg shadow-primary/20" type="button" onClick={() => setOpen(true)}>
-          <Plus className="w-4 h-4" />
-          <span>{t('add_goal')}</span>
-        </Button>
-      </DialogTrigger>
+      <DialogTrigger
+        render={
+          <Button className="gap-2 px-4 shadow-lg shadow-primary/20">
+            <Plus className="w-4 h-4" />
+            <span>{t('add_goal')}</span>
+          </Button>
+        }
+      />
       <DialogContent className="sm:max-w-[450px]">
         <form onSubmit={handleSubmit}>
           <DialogHeader>
