@@ -30,8 +30,8 @@ export function BudgetBreakdown({ title }: { title?: React.ReactNode }) {
           </div>
         )}
       </CardHeader>
-      <CardContent className="pt-2 flex-1 flex flex-col gap-4 min-h-0 pb-0">
-        <Tabs defaultValue="expenses" className="w-full h-full flex flex-col">
+      <CardContent className="pt-2 flex-1 min-h-0 flex flex-col gap-4 pb-0">
+        <Tabs defaultValue="expenses" className="flex-1 min-h-0 flex flex-col w-full">
       <TabsList className="grid w-full grid-cols-4 mb-4 shrink-0">
         <TabsTrigger value="expenses">{t('expenses')}</TabsTrigger>
         <TabsTrigger value="income">{t('income')}</TabsTrigger>

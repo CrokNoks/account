@@ -276,9 +276,7 @@ export default function Home() {
                   {widgetId === 'transactions' && (
                     <div data-tour="transaction-list" className="h-full min-h-0">
                       <Card className="border-2 shadow-sm h-full overflow-hidden flex flex-col">
-                        <CardContent className="p-6 flex-1 min-h-0 flex flex-col">
-                          <TransactionList periodId={activePeriodId || undefined} compact />
-                        </CardContent>
+                        <TransactionList periodId={activePeriodId || undefined} compact />
                       </Card>
                     </div>
                   )}
