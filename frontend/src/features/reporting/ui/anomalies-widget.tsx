@@ -63,7 +63,7 @@ export function AnomaliesWidget() {
 
   return (
     <Card className="border-2 border-orange-500/50 shadow-md h-full overflow-hidden bg-transparent">
-      <CardHeader className="pb-3 flex flex-row items-center justify-start gap-2 space-y-0 bg-transparent border-b border-orange-500/20">
+      <CardHeader className="pb-3 flex flex-row items-center justify-start gap-2 space-y-0 bg-transparent">
         <AlertCircle className="w-5 h-5 text-orange-500" />
         <CardTitle className="text-[10px] font-bold text-orange-600 dark:text-orange-400 uppercase tracking-wider">
           Anomalies détectées ({activeAnomalies.length})

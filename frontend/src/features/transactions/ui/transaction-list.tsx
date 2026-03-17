@@ -444,7 +444,7 @@ export function TransactionList({
   return (
     <div className={cn(!compact && "space-y-4")}>
       {/* Header with Title and Add Button */}
-      <div className={cn("flex items-center justify-between", compact && "bg-muted/10 px-6 py-3 -mx-6 -mt-6 mb-0 border-b")}>
+      <div className={cn("flex items-center justify-between", compact && "bg-muted/10 px-6 py-3 -mx-6 -mt-6")}>
         <div className="flex items-center gap-2">
           {compact && <Receipt className="w-4 h-4 text-primary" />}
           <h2 className={cn("font-bold tracking-tight", compact ? "text-[10px] uppercase tracking-wider text-muted-foreground" : "text-3xl")}>{t('title')}</h2>
