@@ -438,8 +438,8 @@ export function TransactionList({
   return (
     <div className="space-y-4">
       {/* Header with Title and Add Button */}
-      <div className={cn("flex items-center justify-between", compact && "bg-muted/10 p-4 -mx-6 -mt-6 mb-4 border-b")}>
-        <h2 className={cn("font-bold tracking-tight", compact ? "text-sm uppercase tracking-wider text-muted-foreground" : "text-3xl")}>{t('title')}</h2>
+      <div className={cn("flex items-center justify-between", compact && "bg-muted/10 px-6 py-3 -mx-6 -mt-6 mb-4 border-b")}>
+        <h2 className={cn("font-bold tracking-tight", compact ? "text-[10px] uppercase tracking-wider text-muted-foreground" : "text-3xl")}>{t('title')}</h2>
         <div className="flex items-center gap-2">
           {extraActions}
           <Button size={compact ? "icon-xs" : "sm"} variant={compact ? "ghost" : "default"} className="gap-2" onClick={() => setCreateTransactionDrawerOpen(true)}>

@@ -24,7 +24,7 @@ export function NetWorthWidget() {
 
   return (
     <Card className="h-full border-2 shadow-sm overflow-hidden">
-      <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0 bg-muted/10">
+      <CardHeader className="flex flex-row items-center justify-between pb-3 space-y-0 bg-muted/10">
         <CardTitle className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Patrimoine Net (Tous comptes)</CardTitle>
         <Landmark className="w-4 h-4 text-primary" />
       </CardHeader>

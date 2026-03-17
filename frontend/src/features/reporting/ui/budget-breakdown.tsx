@@ -21,7 +21,7 @@ export function BudgetBreakdown({ title }: { title?: React.ReactNode }) {
 
   return (
     <Card className="border-2 shadow-sm h-full overflow-hidden">
-      <CardHeader className="bg-muted/10 pb-4">
+      <CardHeader className="bg-muted/10 pb-3">
         {title}
       </CardHeader>
       <CardContent className="pt-6 flex flex-col gap-4">

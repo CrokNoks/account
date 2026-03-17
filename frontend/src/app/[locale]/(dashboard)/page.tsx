@@ -267,7 +267,7 @@ export default function Home() {
                   )}
                   {widgetId === 'breakdown' && (
                     <div data-tour="budget-breakdown">
-                      <BudgetBreakdown title={<h2 className="text-2xl font-bold tracking-tight">{t('breakdown')}</h2>} />
+                      <BudgetBreakdown title={<h2 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">{t('breakdown')}</h2>} />
                     </div>
                   )}
                   {widgetId === 'tags' && <TagStatsSummary />}

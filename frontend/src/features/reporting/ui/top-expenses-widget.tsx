@@ -28,7 +28,7 @@ export function TopExpensesWidget() {
 
   return (
     <Card className="h-full border-2 shadow-sm overflow-hidden">
-      <CardHeader className="pb-2 bg-muted/10">
+      <CardHeader className="pb-3 bg-muted/10">
         <CardTitle className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
           <PieChartIcon className="w-4 h-4 text-primary" />
           Top Dépenses

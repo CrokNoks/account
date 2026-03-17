@@ -20,8 +20,8 @@ export function AIInsightsCard({ accountId, periodId }: AIInsightsCardProps) {
 
   return (
     <Card className="border-2 border-primary/20 bg-primary/5 relative group h-full overflow-hidden">
-      <CardHeader className="pb-2 flex flex-row items-center justify-between space-y-0 bg-primary/10">
-        <CardTitle className="text-sm font-semibold flex items-center gap-2">
+      <CardHeader className="pb-3 flex flex-row items-center justify-between space-y-0 bg-muted/10">
+        <CardTitle className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
           <Sparkles className="w-4 h-4 text-primary" />
           Analyse IA
         </CardTitle>
@@ -37,7 +37,7 @@ export function AIInsightsCard({ accountId, periodId }: AIInsightsCardProps) {
           </Button>
         )}
       </CardHeader>
-      <CardContent>
+      <CardContent className="pt-4">
         {isLoading ? (
           <div className="flex items-center gap-2 text-sm text-muted-foreground py-4">
             <Loader2 className="w-4 h-4 animate-spin" />
