@@ -5,13 +5,13 @@ import { useAccountStore } from '@/features/accounts/model/use-account-store';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
-import { formatCurrency, toCents, fromCents } from '@/shared/lib/format';
+import { formatCurrency, toCents } from '@/shared/lib/format';
 import { Trash2, Pencil, Calendar, ArrowUpRight } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetFooter } from '@/components/ui/sheet';
 import { Input } from '@/components/ui/input';
 
 export function SavingsGoalsList() {
@@ -119,32 +119,37 @@ export function SavingsGoalsList() {
         )}
       </div>
 
-      <Dialog open={!!editingGoal} onOpenChange={(o) => !o && setEditingGoal(null)}>
-        <DialogContent className="sm:max-w-[400px]">
-          <DialogHeader>
-            <DialogTitle>Contribuer à : {editingGoal?.name}</DialogTitle>
-          </DialogHeader>
-          <div className="py-6 space-y-4">
+      <Sheet open={!!editingGoal} onOpenChange={(o) => !o && setEditingGoal(null)}>
+        <SheetContent side="right" className="flex flex-col gap-0 p-0">
+          <SheetHeader className="p-6 border-b">
+            <SheetTitle>Contribuer à : {editingGoal?.name}</SheetTitle>
+          </SheetHeader>
+          <div className="flex-1 overflow-y-auto p-6 space-y-6">
             <div className="space-y-2">
-              <label className="text-xs font-bold uppercase text-muted-foreground">Montant à ajouter</label>
-              <Input 
-                type="number" 
-                placeholder="0.00" 
-                value={contributionAmount}
-                onChange={(e) => setContributionAmount(e.target.value)}
-                className="h-12 text-lg font-bold"
-                autoFocus
-              />
+              <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Montant à ajouter</label>
+              <div className="relative">
+                <Input 
+                  type="number" 
+                  placeholder="0.00" 
+                  value={contributionAmount}
+                  onChange={(e) => setContributionAmount(e.target.value)}
+                  className="h-12 text-lg font-bold pr-12"
+                  autoFocus
+                />
+                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground font-bold text-lg">€</span>
+              </div>
+              <p className="text-[10px] text-muted-foreground italic">
+                Ce montant sera ajouté au solde actuel de l&apos;objectif.
+              </p>
             </div>
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setEditingGoal(null)}>{tc('cancel')}</Button>
-            <Button onClick={() => editingGoal && handleContribute(editingGoal)} disabled={!contributionAmount}>
-              Confirmer
+          <SheetFooter className="p-6 border-t bg-muted/20">
+            <Button className="w-full h-11 text-base font-bold" onClick={() => editingGoal && handleContribute(editingGoal)} disabled={!contributionAmount}>
+              Enregistrer la contribution
             </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          </SheetFooter>
+        </SheetContent>
+      </Sheet>
     </>
   );
 }

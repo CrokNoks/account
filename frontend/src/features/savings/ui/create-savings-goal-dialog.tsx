@@ -2,13 +2,13 @@
 
 import { useState } from 'react';
 import { 
-  Dialog, 
-  DialogContent, 
-  DialogHeader, 
-  DialogTitle, 
-  DialogTrigger,
-  DialogFooter
-} from "@/components/ui/dialog";
+  Sheet, 
+  SheetContent, 
+  SheetHeader, 
+  SheetTitle, 
+  SheetTrigger,
+  SheetFooter
+} from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAccountStore } from '@/features/accounts/model/use-account-store';
@@ -53,8 +53,8 @@ export function CreateSavingsGoalDialog() {
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger
+    <Sheet open={open} onOpenChange={setOpen}>
+      <SheetTrigger
         render={
           <Button className="gap-2 px-4 shadow-lg shadow-primary/20">
             <Plus className="w-4 h-4" />
@@ -62,18 +62,18 @@ export function CreateSavingsGoalDialog() {
           </Button>
         }
       />
-      <DialogContent className="sm:max-w-[450px]">
-        <form onSubmit={handleSubmit}>
-          <DialogHeader>
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-primary/10 rounded-lg text-primary">
-                <Target className="w-5 h-5" />
-              </div>
-              <DialogTitle className="text-xl font-bold">{t('new_goal_title')}</DialogTitle>
+      <SheetContent side="right" className="flex flex-col gap-0 p-0">
+        <SheetHeader className="p-6 border-b">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-primary/10 rounded-lg text-primary">
+              <Target className="w-5 h-5" />
             </div>
-          </DialogHeader>
-          
-          <div className="py-6 space-y-4">
+            <SheetTitle className="text-xl font-bold">{t('new_goal_title')}</SheetTitle>
+          </div>
+        </SheetHeader>
+        
+        <form onSubmit={handleSubmit} className="flex-1 flex flex-col min-h-0">
+          <div className="flex-1 overflow-y-auto p-6 space-y-6">
             <div className="space-y-2">
               <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">{t('fields.name')}</label>
               <Input 
@@ -126,14 +126,13 @@ export function CreateSavingsGoalDialog() {
             </div>
           </div>
 
-          <DialogFooter>
-            <Button variant="outline" type="button" onClick={() => setOpen(false)}>{tc('cancel')}</Button>
-            <Button type="submit" disabled={isPending || !name || !targetAmount}>
+          <SheetFooter className="p-6 border-t bg-muted/20">
+            <Button type="submit" disabled={isPending || !name || !targetAmount} className="w-full h-11 text-base font-bold">
               {isPending ? tc('loading') : tc('add')}
             </Button>
-          </DialogFooter>
+          </SheetFooter>
         </form>
-      </DialogContent>
-    </Dialog>
+      </SheetContent>
+    </Sheet>
   );
 }

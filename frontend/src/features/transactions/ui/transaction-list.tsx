@@ -27,12 +27,12 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { useBulkUpdateTransactions, useBulkDeleteTransactions } from '../api/use-bulk-transactions';
 import { 
-  Dialog, 
-  DialogContent, 
-  DialogHeader, 
-  DialogTitle, 
-  DialogFooter 
-} from "@/components/ui/dialog";
+  Sheet, 
+  SheetContent, 
+  SheetHeader, 
+  SheetTitle, 
+  SheetFooter 
+} from "@/components/ui/sheet";
 import { Input } from "@/components/ui/input";
 import { useUiStore } from '@/shared/model/use-ui-store';
 import { useDebounce } from '@/shared/lib/use-debounce';
@@ -748,26 +748,28 @@ function EditTransactionDialog({ transaction, open, onOpenChange }: { transactio
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>{tc('edit')} Transaction</DialogTitle>
-        </DialogHeader>
-        <TransactionForm 
-          accountId={activeAccountId}
-          initialValues={{
-            date: transaction.date.split('T')[0],
-            description: transaction.description,
-            categoryId: transaction.categoryId || '',
-            tagIds: transaction.tagIds || [],
-            amount: fromCents(transaction.amount),
-            pending: transaction.pending,
-          }}
-          onSubmit={handleSubmit}
-          isPending={isPending}
-          submitLabel={tc('save')}
-        />
-      </DialogContent>
-    </Dialog>
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent side="right" className="flex flex-col gap-0 p-0">
+        <SheetHeader className="p-6 border-b">
+          <SheetTitle>{tc('edit')} Transaction</SheetTitle>
+        </SheetHeader>
+        <div className="flex-1 overflow-y-auto p-6">
+          <TransactionForm 
+            accountId={activeAccountId}
+            initialValues={{
+              date: transaction.date.split('T')[0],
+              description: transaction.description,
+              categoryId: transaction.categoryId || '',
+              tagIds: transaction.tagIds || [],
+              amount: fromCents(transaction.amount),
+              pending: transaction.pending,
+            }}
+            onSubmit={handleSubmit}
+            isPending={isPending}
+            submitLabel={tc('save')}
+          />
+        </div>
+      </SheetContent>
+    </Sheet>
   );
 }

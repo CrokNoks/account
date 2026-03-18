@@ -11,12 +11,12 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Pencil, Lock, Trash2, PieChart } from 'lucide-react';
 import { 
-  Dialog, 
-  DialogContent, 
-  DialogHeader, 
-  DialogTitle, 
-  DialogFooter 
-} from "@/components/ui/dialog";
+  Sheet, 
+  SheetContent, 
+  SheetHeader, 
+  SheetTitle, 
+  SheetFooter 
+} from "@/components/ui/sheet";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from 'sonner';
@@ -152,43 +152,45 @@ function EditPeriodDialog({ period, open, onOpenChange }: { period: Period, open
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>{t('edit_period')}</DialogTitle>
-        </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4 py-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <label className="text-sm font-medium">{t('fields.start_date')}</label>
-              <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} required />
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent side="right" className="flex flex-col gap-0 p-0">
+        <SheetHeader className="p-6 border-b">
+          <SheetTitle>{t('edit_period')}</SheetTitle>
+        </SheetHeader>
+        <form onSubmit={handleSubmit} className="flex-1 flex flex-col min-h-0">
+          <div className="flex-1 overflow-y-auto p-6 space-y-6">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">{t('fields.start_date')}</label>
+                <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} required className="h-11" />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">{t('fields.end_date')}</label>
+                <Input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} required className="h-11" />
+              </div>
             </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium">{t('fields.end_date')}</label>
-              <Input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} required />
+            <div className="flex items-center space-x-2 bg-primary/5 p-4 rounded-xl border border-primary/10">
+              <Checkbox id="active" checked={isActive} onCheckedChange={(checked) => setIsActive(!!checked)} />
+              <label htmlFor="active" className="text-sm font-medium cursor-pointer">{t('fields.is_active')}</label>
             </div>
           </div>
-          <div className="flex items-center space-x-2">
-            <Checkbox id="active" checked={isActive} onCheckedChange={(checked) => setIsActive(!!checked)} />
-            <label htmlFor="active" className="text-sm font-medium">{t('fields.is_active')}</label>
-          </div>
-          <DialogFooter className="flex justify-between items-center sm:justify-between">
+          <SheetFooter className="p-6 border-t bg-muted/20 flex flex-row gap-2">
             <Button 
               type="button" 
-              variant="destructive" 
-              className="gap-2" 
+              variant="outline" 
+              className="flex-1 h-11 text-destructive hover:text-destructive border-destructive/20 hover:border-destructive/50" 
               onClick={handleDelete}
               disabled={isDeleting || isPending}
             >
-              <Trash2 className="w-4 h-4" />
+              <Trash2 className="w-4 h-4 mr-2" />
               {tc('delete')}
             </Button>
-            <Button type="submit" disabled={isPending || isDeleting}>
+            <Button type="submit" className="flex-[2] h-11 text-base font-semibold" disabled={isPending || isDeleting}>
               {isPending ? tc('loading') : tc('save')}
             </Button>
-          </DialogFooter>
+          </SheetFooter>
         </form>
-      </DialogContent>
-    </Dialog>
+      </SheetContent>
+    </Sheet>
   );
 }

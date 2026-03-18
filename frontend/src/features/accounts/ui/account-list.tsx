@@ -8,12 +8,12 @@ import { formatCurrency, toCents, fromCents } from '@/shared/lib/format';
 import { LucideIcon, CreditCard, Landmark, Wallet, Pencil, Share2 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { 
-  Dialog, 
-  DialogContent, 
-  DialogHeader, 
-  DialogTitle, 
-  DialogFooter 
-} from "@/components/ui/dialog";
+  Sheet, 
+  SheetContent, 
+  SheetHeader, 
+  SheetTitle, 
+  SheetFooter 
+} from "@/components/ui/sheet";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from 'sonner';
@@ -126,25 +126,27 @@ function EditAccountDialog({ account, open, onOpenChange }: { account: Account, 
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>{tc('edit')} {t('title').toLowerCase()}</DialogTitle>
-        </DialogHeader>
-        <AccountForm 
-          initialValues={{
-            name: account.name,
-            description: account.description || '',
-            balance: fromCents(account.initialBalance),
-            type: account.type,
-            currency: account.currency
-          }}
-          onSubmit={handleSubmit}
-          isPending={isPending}
-          submitLabel={tc('save')}
-          showTypeAndCurrency={false}
-        />
-      </DialogContent>
-    </Dialog>
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent side="right" className="flex flex-col gap-0 p-0">
+        <SheetHeader className="p-6 border-b">
+          <SheetTitle>{tc('edit')} {t('title').toLowerCase()}</SheetTitle>
+        </SheetHeader>
+        <div className="flex-1 overflow-y-auto p-6">
+          <AccountForm 
+            initialValues={{
+              name: account.name,
+              description: account.description || '',
+              balance: fromCents(account.initialBalance),
+              type: account.type,
+              currency: account.currency
+            }}
+            onSubmit={handleSubmit}
+            isPending={isPending}
+            submitLabel={tc('save')}
+            showTypeAndCurrency={false}
+          />
+        </div>
+      </SheetContent>
+    </Sheet>
   );
 }

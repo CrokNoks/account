@@ -1,13 +1,13 @@
 'use client';
 
 import { 
-  Dialog, 
-  DialogContent, 
-  DialogDescription, 
-  DialogHeader, 
-  DialogTitle, 
-  DialogTrigger
-} from "@/components/ui/dialog";
+  Sheet, 
+  SheetContent, 
+  SheetDescription, 
+  SheetHeader, 
+  SheetTitle, 
+  SheetTrigger
+} from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { useCreateAccount } from '../api/use-create-account';
 import { Plus } from 'lucide-react';
@@ -38,8 +38,8 @@ export function CreateAccountDialog() {
   };
 
   return (
-    <Dialog open={isCreateAccountDialogOpen} onOpenChange={setCreateAccountDialogOpen}>
-      <DialogTrigger 
+    <Sheet open={isCreateAccountDialogOpen} onOpenChange={setCreateAccountDialogOpen}>
+      <SheetTrigger 
         render={
           <Button className="gap-2" onClick={() => setCreateAccountDialogOpen(true)} data-tour="add-account-btn">
             <Plus className="w-4 h-4" />
@@ -47,19 +47,21 @@ export function CreateAccountDialog() {
           </Button>
         }
       />
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>{t('new_account_title')}</DialogTitle>
-          <DialogDescription>
+      <SheetContent side="right" className="flex flex-col gap-0 p-0">
+        <SheetHeader className="p-6 border-b">
+          <SheetTitle>{t('new_account_title')}</SheetTitle>
+          <SheetDescription>
             {t('new_account_desc')}
-          </DialogDescription>
-        </DialogHeader>
-        <AccountForm 
-          onSubmit={handleSubmit}
-          isPending={isPending}
-          submitLabel={tc('add')}
-        />
-      </DialogContent>
-    </Dialog>
+          </SheetDescription>
+        </SheetHeader>
+        <div className="flex-1 overflow-y-auto p-6">
+          <AccountForm 
+            onSubmit={handleSubmit}
+            isPending={isPending}
+            submitLabel={tc('add')}
+          />
+        </div>
+      </SheetContent>
+    </Sheet>
   );
 }

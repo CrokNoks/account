@@ -10,12 +10,12 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Pencil } from 'lucide-react';
 import { 
-  Dialog, 
-  DialogContent, 
-  DialogHeader, 
-  DialogTitle, 
-  DialogFooter 
-} from "@/components/ui/dialog";
+  Sheet, 
+  SheetContent, 
+  SheetHeader, 
+  SheetTitle, 
+  SheetFooter 
+} from "@/components/ui/sheet";
 import { Input } from "@/components/ui/input";
 import { 
   Select, 
@@ -156,55 +156,57 @@ function EditCategoryDialog({ category, open, onOpenChange }: { category: Catego
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>{tc('edit')} {t('title').toLowerCase()}</DialogTitle>
-        </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4 py-4">
-          <div className="space-y-2">
-            <label className="text-sm font-medium">{t('fields.name')}</label>
-            <Input value={name} onChange={(e) => setName(e.target.value)} required />
-          </div>
-          <div className="grid grid-cols-2 gap-4">
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent side="right" className="flex flex-col gap-0 p-0">
+        <SheetHeader className="p-6 border-b">
+          <SheetTitle>{tc('edit')} {t('title').toLowerCase()}</SheetTitle>
+        </SheetHeader>
+        <div className="flex-1 overflow-y-auto p-6">
+          <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <label className="text-sm font-medium">{t('fields.type')}</label>
-              <Select value={type} onValueChange={(v) => setType(v as CategoryType || CategoryType.EXPENSE)}>
-                <SelectTrigger>
-                  <SelectValue>
-                    {type === CategoryType.EXPENSE && t('types.expense')}
-                    {type === CategoryType.INCOME && t('types.income')}
-                    {type === CategoryType.SAVINGS && t('types.savings')}
-                    {type === CategoryType.TRANSFER && t('types.transfer')}
-                  </SelectValue>
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value={CategoryType.EXPENSE}>{t('types.expense')}</SelectItem>
-                  <SelectItem value={CategoryType.INCOME}>{t('types.income')}</SelectItem>
-                  <SelectItem value={CategoryType.SAVINGS}>{t('types.savings')}</SelectItem>
-                  <SelectItem value={CategoryType.TRANSFER}>{t('types.transfer')}</SelectItem>
-                </SelectContent>
-              </Select>
+              <label className="text-sm font-medium">{t('fields.name')}</label>
+              <Input value={name} onChange={(e) => setName(e.target.value)} required />
             </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium">{t('fields.color')}</label>
-              <div className="flex gap-2">
-                <Input type="color" value={color} onChange={(e) => setColor(e.target.value)} className="w-12 p-1 h-10" />
-                <Input value={color} onChange={(e) => setColor(e.target.value)} />
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">{t('fields.type')}</label>
+                <Select value={type} onValueChange={(v) => setType(v as CategoryType || CategoryType.EXPENSE)}>
+                  <SelectTrigger>
+                    <SelectValue>
+                      {type === CategoryType.EXPENSE && t('types.expense')}
+                      {type === CategoryType.INCOME && t('types.income')}
+                      {type === CategoryType.SAVINGS && t('types.savings')}
+                      {type === CategoryType.TRANSFER && t('types.transfer')}
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={CategoryType.EXPENSE}>{t('types.expense')}</SelectItem>
+                    <SelectItem value={CategoryType.INCOME}>{t('types.income')}</SelectItem>
+                    <SelectItem value={CategoryType.SAVINGS}>{t('types.savings')}</SelectItem>
+                    <SelectItem value={CategoryType.TRANSFER}>{t('types.transfer')}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">{t('fields.color')}</label>
+                <div className="flex gap-2">
+                  <Input type="color" value={color} onChange={(e) => setColor(e.target.value)} className="w-12 p-1 h-10" />
+                  <Input value={color} onChange={(e) => setColor(e.target.value)} />
+                </div>
               </div>
             </div>
-          </div>
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Budget</label>
-            <Input type="number" step="0.01" value={budget} onChange={(e) => setBudget(e.target.value)} />
-          </div>
-          <DialogFooter>
-            <Button type="submit" disabled={isPending}>
-              {isPending ? tc('loading') : tc('save')}
-            </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Budget</label>
+              <Input type="number" step="0.01" value={budget} onChange={(e) => setBudget(e.target.value)} />
+            </div>
+            <div className="pt-4">
+              <Button type="submit" className="w-full" disabled={isPending}>
+                {isPending ? tc('loading') : tc('save')}
+              </Button>
+            </div>
+          </form>
+        </div>
+      </SheetContent>
+    </Sheet>
   );
 }

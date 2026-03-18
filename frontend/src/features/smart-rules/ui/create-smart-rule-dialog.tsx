@@ -2,24 +2,22 @@
 
 import { useState } from 'react';
 import { 
-  Dialog, 
-  DialogContent, 
-  DialogHeader, 
-  DialogTitle, 
-  DialogTrigger,
-  DialogFooter
-} from "@/components/ui/dialog";
+  Sheet, 
+  SheetContent, 
+  SheetHeader, 
+  SheetTitle, 
+  SheetTrigger,
+  SheetFooter
+} from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAccountStore } from '@/features/accounts/model/use-account-store';
-import { useCategories } from '@/features/categories/api/use-categories';
 import { useTags } from '@/features/tags/api/use-tags';
 import { useCreateSmartRule } from '../api/use-smart-rules';
-import { Plus, Sparkles, Tag } from 'lucide-react';
+import { Plus, Sparkles } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { Badge } from '@/components/ui/badge';
-import { Checkbox } from "@/components/ui/checkbox";
+import { CategorySelector } from '@/features/categories/ui/category-selector';
 
 export function CreateSmartRuleDialog() {
   const t = useTranslations('SmartRules');
@@ -27,11 +25,10 @@ export function CreateSmartRuleDialog() {
   const { activeAccountId } = useAccountStore();
   const [open, setOpen] = useState(false);
   const [pattern, setPattern] = useState('');
-  const [categoryId, setCategoryId] = useState<string | null>(null);
+  const [categoryId, setCategoryId] = useState<string>('');
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
   const [priority, setPriority] = useState('0');
 
-  const { data: categories } = useCategories(activeAccountId);
   const { data: tags } = useTags(activeAccountId);
   const { mutate: createRule, isPending } = useCreateSmartRule();
 
@@ -43,7 +40,7 @@ export function CreateSmartRuleDialog() {
       accountId: activeAccountId,
       data: {
         pattern,
-        categoryId: categoryId === 'none' ? null : categoryId,
+        categoryId: categoryId || null,
         tagIds: selectedTagIds,
         priority: parseInt(priority, 10),
       }
@@ -51,7 +48,7 @@ export function CreateSmartRuleDialog() {
       onSuccess: () => {
         setOpen(false);
         setPattern('');
-        setCategoryId(null);
+        setCategoryId('');
         setSelectedTagIds([]);
         setPriority('0');
       }
@@ -65,8 +62,8 @@ export function CreateSmartRuleDialog() {
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger
+    <Sheet open={open} onOpenChange={setOpen}>
+      <SheetTrigger
         render={
           <Button className="gap-2 px-4 shadow-lg shadow-primary/20">
             <Plus className="w-4 h-4" />
@@ -74,18 +71,18 @@ export function CreateSmartRuleDialog() {
           </Button>
         }
       />
-      <DialogContent className="sm:max-w-[500px] p-0 overflow-hidden rounded-2xl!">
-        <form onSubmit={handleSubmit}>
-          <DialogHeader className="p-6 bg-primary/5 border-b">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-primary/10 rounded-lg text-primary">
-                <Sparkles className="w-5 h-5" />
-              </div>
-              <DialogTitle className="text-xl font-bold">{t('new_rule_title')}</DialogTitle>
+      <SheetContent side="right" className="flex flex-col gap-0 p-0">
+        <SheetHeader className="p-6 border-b bg-primary/5">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-primary/10 rounded-lg text-primary">
+              <Sparkles className="w-5 h-5" />
             </div>
-          </DialogHeader>
-          
-          <div className="p-6 space-y-6">
+            <SheetTitle className="text-xl font-bold">{t('new_rule_title')}</SheetTitle>
+          </div>
+        </SheetHeader>
+        
+        <form onSubmit={handleSubmit} className="flex-1 flex flex-col min-h-0">
+          <div className="flex-1 overflow-y-auto p-6 space-y-6">
             <div className="space-y-2">
               <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">{t('fields.pattern')}</label>
               <Input 
@@ -103,29 +100,11 @@ export function CreateSmartRuleDialog() {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">{t('fields.category')}</label>
-                <Select value={categoryId || 'none'} onValueChange={setCategoryId}>
-                  <SelectTrigger className="h-11">
-                    <SelectValue placeholder={t('no_category')}>
-                      {categoryId && categoryId !== 'none' ? (
-                        <div className="flex items-center gap-2">
-                          <div className="w-2 h-2 rounded-full" style={{ backgroundColor: categories?.find(c => c.id === categoryId)?.color }} />
-                          {categories?.find(c => c.id === categoryId)?.name}
-                        </div>
-                      ) : t('no_category')}
-                    </SelectValue>
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">{t('no_category')}</SelectItem>
-                    {categories?.map((cat) => (
-                      <SelectItem key={cat.id} value={cat.id}>
-                        <div className="flex items-center gap-2">
-                          <div className="w-2 h-2 rounded-full" style={{ backgroundColor: cat.color }} />
-                          {cat.name}
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <CategorySelector 
+                  accountId={activeAccountId}
+                  value={categoryId}
+                  onChange={setCategoryId}
+                />
               </div>
 
               <div className="space-y-2">
@@ -166,7 +145,7 @@ export function CreateSmartRuleDialog() {
             </div>
           </div>
 
-          <DialogFooter className="p-6 pt-0">
+          <SheetFooter className="p-6 border-t bg-muted/20">
             <Button 
               type="submit" 
               className="w-full h-11 text-base font-bold shadow-lg shadow-primary/20" 
@@ -174,9 +153,9 @@ export function CreateSmartRuleDialog() {
             >
               {isPending ? tc('loading') : t('create_confirm')}
             </Button>
-          </DialogFooter>
+          </SheetFooter>
         </form>
-      </DialogContent>
-    </Dialog>
+      </SheetContent>
+    </Sheet>
   );
 }

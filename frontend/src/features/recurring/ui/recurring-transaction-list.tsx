@@ -19,20 +19,14 @@ import { Badge } from '@/components/ui/badge';
 import { Trash2, CalendarDays, Pencil } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { 
-  Dialog, 
-  DialogContent, 
-  DialogHeader, 
-  DialogTitle, 
-  DialogFooter 
-} from "@/components/ui/dialog";
+  Sheet, 
+  SheetContent, 
+  SheetHeader, 
+  SheetTitle, 
+  SheetFooter 
+} from "@/components/ui/sheet";
 import { Input } from "@/components/ui/input";
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
-} from "@/components/ui/select";
+import { CategorySelector } from '@/features/categories/ui/category-selector';
 import { toast } from 'sonner';
 import { useTranslations } from 'next-intl';
 
@@ -124,7 +118,6 @@ function EditRecurringDialog({ transaction, open, onOpenChange }: { transaction:
   const t = useTranslations('Recurring');
   const tc = useTranslations('Common');
   const { activeAccountId } = useAccountStore();
-  const { data: categories } = useCategories(activeAccountId);
   
   const [description, setDescription] = useState(transaction.description);
   const [categoryId, setCategoryId] = useState(transaction.categoryId || '');
@@ -154,56 +147,46 @@ function EditRecurringDialog({ transaction, open, onOpenChange }: { transaction:
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>{tc('edit')} {t('title').toLowerCase()}</DialogTitle>
-        </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4 py-4">
-          <div className="space-y-2">
-            <label className="text-sm font-medium">{t('fields.description')}</label>
-            <Input value={description} onChange={(e) => setDescription(e.target.value)} required />
-          </div>
-          <div className="space-y-4">
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent side="right" className="flex flex-col gap-0 p-0">
+        <SheetHeader className="p-6 border-b">
+          <SheetTitle>{tc('edit')} {t('title').toLowerCase()}</SheetTitle>
+        </SheetHeader>
+        <form onSubmit={handleSubmit} className="flex-1 flex flex-col min-h-0">
+          <div className="flex-1 overflow-y-auto p-6 space-y-6">
             <div className="space-y-2">
-              <label className="text-sm font-medium">{t('fields.category')}</label>
-              <Select value={categoryId} onValueChange={(v) => setCategoryId(v || '')}>
-                <SelectTrigger>
-                  <SelectValue>
-                    {categoryId ? (
-                      <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: categories?.find(c => c.id === categoryId)?.color }} />
-                        {categories?.find(c => c.id === categoryId)?.name}
-                      </div>
-                    ) : "Select category"}
-                  </SelectValue>
-                </SelectTrigger>
-                <SelectContent>
-                  {categories?.map((cat) => (
-                    <SelectItem key={cat.id} value={cat.id}>
-                      <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: cat.color }} />
-                        {cat.name}
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <label className="text-sm font-medium">{t('fields.description')}</label>
+              <Input value={description} onChange={(e) => setDescription(e.target.value)} required className="h-11" />
+            </div>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">{t('fields.category')}</label>
+                <CategorySelector 
+                  accountId={activeAccountId}
+                  value={categoryId}
+                  onChange={setCategoryId}
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">{t('fields.day_of_month')}</label>
+                <Input type="number" min="1" max="31" value={dayOfMonth} onChange={(e) => setDayOfMonth(e.target.value)} required className="h-11" />
+              </div>
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium">{t('fields.day_of_month')}</label>
-              <Input type="number" min="1" max="31" value={dayOfMonth} onChange={(e) => setDayOfMonth(e.target.value)} required />
+              <label className="text-sm font-medium">{t('fields.amount')}</label>
+              <div className="relative">
+                <Input type="number" step="0.01" value={amount} onChange={(e) => setAmount(e.target.value)} required className="h-11" />
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">€</span>
+              </div>
             </div>
           </div>
-          <div className="space-y-2">
-            <label className="text-sm font-medium">{t('fields.amount')}</label>
-            <Input type="number" step="0.01" value={amount} onChange={(e) => setAmount(e.target.value)} required />
-          </div>
-          <DialogFooter>
-            <Button type="submit" disabled={isPending}>{tc('save')}</Button>
-          </DialogFooter>
+          <SheetFooter className="p-6 border-t bg-muted/20">
+            <Button type="submit" disabled={isPending} className="w-full h-11 text-base font-semibold">
+              {isPending ? tc('loading') : tc('save')}
+            </Button>
+          </SheetFooter>
         </form>
-      </DialogContent>
-    </Dialog>
+      </SheetContent>
+    </Sheet>
   );
 }

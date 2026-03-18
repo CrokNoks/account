@@ -2,13 +2,13 @@
 
 import { useState } from 'react';
 import { 
-  Dialog, 
-  DialogContent, 
-  DialogHeader, 
-  DialogTitle, 
-  DialogTrigger,
-  DialogFooter
-} from "@/components/ui/dialog";
+  Sheet, 
+  SheetContent, 
+  SheetHeader, 
+  SheetTitle, 
+  SheetTrigger,
+  SheetFooter
+} from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { 
@@ -54,8 +54,8 @@ export function CreateCategoryDialog() {
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger 
+    <Sheet open={open} onOpenChange={setOpen}>
+      <SheetTrigger 
         render={
           <Button className="gap-2">
             <Plus className="w-4 h-4" />
@@ -63,62 +63,64 @@ export function CreateCategoryDialog() {
           </Button>
         }
       />
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>{t('add_category')}</DialogTitle>
-        </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4 py-4">
-          <div className="space-y-2">
-            <label className="text-sm font-medium">{t('fields.name')}</label>
-            <Input 
-              placeholder="Rent, Groceries..." 
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              required
-            />
-          </div>
-          <div className="space-y-2">
-            <label className="text-sm font-medium">{t('fields.type')}</label>
-            <Select value={type} onValueChange={(v) => setType(v as CategoryType)}>
-              <SelectTrigger>
-                <SelectValue>
-                  {type === CategoryType.EXPENSE && t('types.expense')}
-                  {type === CategoryType.INCOME && t('types.income')}
-                  {type === CategoryType.TRANSFER && t('types.transfer')}
-                  {type === CategoryType.SAVINGS && t('types.savings')}
-                </SelectValue>
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value={CategoryType.EXPENSE}>{t('types.expense')}</SelectItem>
-                <SelectItem value={CategoryType.INCOME}>{t('types.income')}</SelectItem>
-                <SelectItem value={CategoryType.TRANSFER}>{t('types.transfer')}</SelectItem>
-                <SelectItem value={CategoryType.SAVINGS}>{t('types.savings')}</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-2">
-            <label className="text-sm font-medium">{t('fields.color')}</label>
-            <div className="flex gap-2">
+      <SheetContent side="right" className="flex flex-col gap-0 p-0">
+        <SheetHeader className="p-6 border-b">
+          <SheetTitle>{t('add_category')}</SheetTitle>
+        </SheetHeader>
+        <div className="flex-1 overflow-y-auto p-6">
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">{t('fields.name')}</label>
               <Input 
-                type="color" 
-                value={color}
-                onChange={(e) => setColor(e.target.value)}
-                className="w-12 h-10 p-1 cursor-pointer"
-              />
-              <Input 
-                value={color}
-                onChange={(e) => setColor(e.target.value)}
-                className="flex-1"
+                placeholder="Rent, Groceries..." 
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                required
               />
             </div>
-          </div>
-          <DialogFooter>
-            <Button type="submit" disabled={isPending}>
-              {isPending ? tc('loading') : tc('add')}
-            </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">{t('fields.type')}</label>
+              <Select value={type} onValueChange={(v) => setType(v as CategoryType)}>
+                <SelectTrigger>
+                  <SelectValue>
+                    {type === CategoryType.EXPENSE && t('types.expense')}
+                    {type === CategoryType.INCOME && t('types.income')}
+                    {type === CategoryType.TRANSFER && t('types.transfer')}
+                    {type === CategoryType.SAVINGS && t('types.savings')}
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={CategoryType.EXPENSE}>{t('types.expense')}</SelectItem>
+                  <SelectItem value={CategoryType.INCOME}>{t('types.income')}</SelectItem>
+                  <SelectItem value={CategoryType.TRANSFER}>{t('types.transfer')}</SelectItem>
+                  <SelectItem value={CategoryType.SAVINGS}>{t('types.savings')}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">{t('fields.color')}</label>
+              <div className="flex gap-2">
+                <Input 
+                  type="color" 
+                  value={color}
+                  onChange={(e) => setColor(e.target.value)}
+                  className="w-12 h-10 p-1 cursor-pointer"
+                />
+                <Input 
+                  value={color}
+                  onChange={(e) => setColor(e.target.value)}
+                  className="flex-1"
+                />
+              </div>
+            </div>
+            <div className="pt-4">
+              <Button type="submit" className="w-full" disabled={isPending}>
+                {isPending ? tc('loading') : tc('add')}
+              </Button>
+            </div>
+          </form>
+        </div>
+      </SheetContent>
+    </Sheet>
   );
 }

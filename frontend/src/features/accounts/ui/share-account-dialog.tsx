@@ -2,12 +2,12 @@
 
 import { useState } from 'react';
 import { 
-  Dialog, 
-  DialogContent, 
-  DialogDescription, 
-  DialogHeader, 
-  DialogTitle 
-} from "@/components/ui/dialog";
+  Sheet, 
+  SheetContent, 
+  SheetDescription, 
+  SheetHeader, 
+  SheetTitle 
+} from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -56,74 +56,76 @@ export function ShareAccountDialog({ accountId, accountName, open, onOpenChange 
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>{t('share_title')}: {accountName}</DialogTitle>
-          <DialogDescription>
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent side="right" className="flex flex-col gap-0 p-0">
+        <SheetHeader className="p-6 border-b">
+          <SheetTitle>{t('share_title')}: {accountName}</SheetTitle>
+          <SheetDescription>
             {t('share_desc')}
-          </DialogDescription>
-        </DialogHeader>
+          </SheetDescription>
+        </SheetHeader>
 
-        <form onSubmit={handleShare} className="flex flex-col gap-4 py-4">
-          <div className="flex gap-2">
-            <Input 
-              placeholder={t('share_email_placeholder')} 
-              type="email" 
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              className="flex-1"
-            />
-            <Select value={permission} onValueChange={(v: 'read' | 'write' | null) => v && setPermission(v)}>
-              <SelectTrigger className="w-[140px]">
-                <SelectValue>
-                  {permission === 'read' ? t('share_permission_read') : t('share_permission_write')}
-                </SelectValue>
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="read">{t('share_permission_read')}</SelectItem>
-                <SelectItem value="write">{t('share_permission_write')}</SelectItem>
-              </SelectContent>
-            </Select>
-            <Button type="submit" size="icon" disabled={isSharing}>
-              <UserPlus className="w-4 h-4" />
-            </Button>
-          </div>
-        </form>
+        <div className="flex-1 overflow-y-auto p-6 space-y-6">
+          <form onSubmit={handleShare} className="flex flex-col gap-4">
+            <div className="flex gap-2">
+              <Input 
+                placeholder={t('share_email_placeholder')} 
+                type="email" 
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                className="flex-1"
+              />
+              <Select value={permission} onValueChange={(v: 'read' | 'write' | null) => v && setPermission(v)}>
+                <SelectTrigger className="w-[140px]">
+                  <SelectValue>
+                    {permission === 'read' ? t('share_permission_read') : t('share_permission_write')}
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="read">{t('share_permission_read')}</SelectItem>
+                  <SelectItem value="write">{t('share_permission_write')}</SelectItem>
+                </SelectContent>
+              </Select>
+              <Button type="submit" size="icon" disabled={isSharing}>
+                <UserPlus className="w-4 h-4" />
+              </Button>
+            </div>
+          </form>
 
-        <div className="space-y-4">
-          <h4 className="text-sm font-medium">{t('share_list_title')}</h4>
-          <div className="border rounded-md divide-y max-h-[200px] overflow-y-auto">
-            {isLoading ? (
-              <div className="p-4 text-center text-sm text-muted-foreground">{tc('loading')}</div>
-            ) : shares?.length === 0 ? (
-              <div className="p-4 text-center text-sm text-muted-foreground">{t('share_empty')}</div>
-            ) : (
-              shares?.map((s) => (
-                <div key={s.userId} className="p-3 flex items-center justify-between gap-4">
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate">{s.userEmail}</p>
-                    <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
-                      {s.permission === 'write' ? <ShieldCheck className="w-3 h-3 text-green-600" /> : <Shield className="w-3 h-3" />}
-                      {s.permission === 'write' ? t('share_permission_write') : t('share_permission_read')}
+          <div className="space-y-4">
+            <h4 className="text-sm font-medium">{t('share_list_title')}</h4>
+            <div className="border rounded-md divide-y max-h-[400px] overflow-y-auto">
+              {isLoading ? (
+                <div className="p-4 text-center text-sm text-muted-foreground">{tc('loading')}</div>
+              ) : shares?.length === 0 ? (
+                <div className="p-4 text-center text-sm text-muted-foreground">{t('share_empty')}</div>
+              ) : (
+                shares?.map((s) => (
+                  <div key={s.userId} className="p-3 flex items-center justify-between gap-4">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">{s.userEmail}</p>
+                      <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                        {s.permission === 'write' ? <ShieldCheck className="w-3 h-3 text-green-600" /> : <Shield className="w-3 h-3" />}
+                        {s.permission === 'write' ? t('share_permission_write') : t('share_permission_read')}
+                      </div>
                     </div>
+                    <Button 
+                      variant="ghost" 
+                      size="icon-sm" 
+                      className="text-muted-foreground hover:text-destructive"
+                      onClick={() => handleRemove(s.userId)}
+                      disabled={isRemoving}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
                   </div>
-                  <Button 
-                    variant="ghost" 
-                    size="icon-sm" 
-                    className="text-muted-foreground hover:text-destructive"
-                    onClick={() => handleRemove(s.userId)}
-                    disabled={isRemoving}
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
-                </div>
-              ))
-            )}
+                ))
+              )}
+            </div>
           </div>
         </div>
-      </DialogContent>
-    </Dialog>
+      </SheetContent>
+    </Sheet>
   );
 }
