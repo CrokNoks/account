@@ -103,6 +103,15 @@ export class CreateTransactionDto {
     type: [String],
   })
   tagIds?: string[];
+
+  @IsOptional()
+  @IsString()
+  @ApiProperty({
+    description:
+      'Savings Goal ID if the transaction is linked to a savings goal',
+    required: false,
+  })
+  savingsGoalId?: string;
 }
 
 export class CreateTransferDto {
@@ -193,6 +202,9 @@ export class TransactionResponseDto {
 
   @ApiProperty({ type: [String] })
   tagIds: string[];
+
+  @ApiProperty({ nullable: true })
+  savingsGoalId: string | null;
 
   @ApiProperty()
   createdAt: string;
@@ -374,6 +386,10 @@ export class TransactionsController {
       ...dto,
       pending,
       tagIds: dto.tagIds !== undefined ? dto.tagIds : existing.tagIds,
+      savingsGoalId:
+        dto.savingsGoalId !== undefined
+          ? dto.savingsGoalId
+          : existing.savingsGoalId,
       date: dto.date ? new Date(dto.date) : existing.date,
       amount: dto.amount
         ? BigInt(Math.round(Number(dto.amount)))
@@ -485,6 +501,7 @@ export class TransactionsController {
       notes: t.notes || null,
       metadata: t.metadata || {},
       tagIds: t.tagIds || [],
+      savingsGoalId: t.savingsGoalId || null,
       createdAt: t.createdAt.toISOString(),
       updatedAt: t.updatedAt.toISOString(),
     };

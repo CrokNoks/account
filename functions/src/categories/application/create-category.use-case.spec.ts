@@ -33,7 +33,6 @@ describe('CreateCategoryUseCase', () => {
       color: '#3498db',
       type: CategoryType.EXPENSE,
       accountId: 'acc-1',
-      userId: 'user-1',
       budget: BigInt(5000),
     };
 

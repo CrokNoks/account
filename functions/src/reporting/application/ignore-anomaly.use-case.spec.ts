@@ -43,6 +43,8 @@ describe('IgnoreAnomalyUseCase', () => {
       date: new Date(),
       description: 'Big expense',
       amount: BigInt(-100000),
+      reconciled: false,
+      pending: false,
       metadata: { original: 'data' },
     });
 
@@ -73,6 +75,8 @@ describe('IgnoreAnomalyUseCase', () => {
       date: new Date(),
       description: 'Big expense',
       amount: BigInt(-100000),
+      reconciled: false,
+      pending: false,
     });
 
     transactionRepository.findById.mockResolvedValue(existingTx);
@@ -95,6 +99,8 @@ describe('IgnoreAnomalyUseCase', () => {
           date: new Date(),
           description: 'Desc',
           amount: BigInt(-1000),
+          reconciled: false,
+          pending: false,
         }),
       ),
     );

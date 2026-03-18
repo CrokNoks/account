@@ -97,6 +97,8 @@ describe('GetCalendarDataUseCase', () => {
       date: paidRecurringDate,
       description: 'Internet', // Same description as recurring
       amount: BigInt(-3000), // Same amount as recurring
+      reconciled: false,
+      pending: false,
       metadata: {},
     });
 

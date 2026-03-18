@@ -100,6 +100,8 @@ describe('GetAnomaliesUseCase', () => {
       date: new Date(2026, 5, 10),
       description: 'Baguette',
       amount: BigInt(-120),
+      reconciled: false,
+      pending: false,
       metadata: {},
     });
     const txSmall2 = Transaction.create({
@@ -109,6 +111,8 @@ describe('GetAnomaliesUseCase', () => {
       date: new Date(2026, 5, 10),
       description: 'Baguette',
       amount: BigInt(-120),
+      reconciled: false,
+      pending: false,
       metadata: {},
     });
 
@@ -119,6 +123,8 @@ describe('GetAnomaliesUseCase', () => {
       date: new Date(2026, 5, 10),
       description: 'Virement',
       amount: BigInt(5000),
+      reconciled: false,
+      pending: false,
       metadata: {},
     });
     const txIncome2 = Transaction.create({
@@ -128,6 +134,8 @@ describe('GetAnomaliesUseCase', () => {
       date: new Date(2026, 5, 10),
       description: 'Virement',
       amount: BigInt(5000),
+      reconciled: false,
+      pending: false,
       metadata: {},
     });
 
@@ -153,6 +161,8 @@ describe('GetAnomaliesUseCase', () => {
         date: new Date(2026, 2, 1),
         description: 'Test',
         amount: BigInt(-1000),
+        reconciled: false,
+        pending: false,
         metadata: {},
       }),
       Transaction.create({
@@ -162,6 +172,8 @@ describe('GetAnomaliesUseCase', () => {
         date: new Date(2026, 3, 1),
         description: 'Test',
         amount: BigInt(-1000),
+        reconciled: false,
+        pending: false,
         metadata: {},
       }),
       Transaction.create({
@@ -171,6 +183,8 @@ describe('GetAnomaliesUseCase', () => {
         date: new Date(2026, 4, 1),
         description: 'Test',
         amount: BigInt(-1000),
+        reconciled: false,
+        pending: false,
         metadata: {},
       }),
     ];
@@ -183,6 +197,8 @@ describe('GetAnomaliesUseCase', () => {
       date: new Date(2026, 5, 10),
       description: 'Big Expense',
       amount: BigInt(-4000),
+      reconciled: false,
+      pending: false,
       metadata: {},
     });
 
@@ -210,6 +226,8 @@ describe('GetAnomaliesUseCase', () => {
         date: now,
         description: 'Outlier',
         amount: BigInt(-100000), // 1000€
+        reconciled: false,
+        pending: false,
         metadata: { ignoredAnomalies: ['outlier'] },
       }),
       Transaction.create({
@@ -219,6 +237,8 @@ describe('GetAnomaliesUseCase', () => {
         date: subMonths(now, 1),
         description: 'H1',
         amount: BigInt(-1000),
+        reconciled: false,
+        pending: false,
       }),
       Transaction.create({
         id: 'h2',
@@ -227,6 +247,8 @@ describe('GetAnomaliesUseCase', () => {
         date: subMonths(now, 2),
         description: 'H2',
         amount: BigInt(-1100),
+        reconciled: false,
+        pending: false,
       }),
       Transaction.create({
         id: 'h3',
@@ -235,6 +257,8 @@ describe('GetAnomaliesUseCase', () => {
         date: subMonths(now, 3),
         description: 'H3',
         amount: BigInt(-900),
+        reconciled: false,
+        pending: false,
       }),
     ];
 

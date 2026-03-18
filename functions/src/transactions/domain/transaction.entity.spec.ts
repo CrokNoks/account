@@ -10,6 +10,7 @@ describe('Transaction Entity', () => {
       amount: BigInt(-4550), // -45.50€
       reconciled: false,
       pending: false,
+      tagIds: [],
       metadata: {},
     });
 
@@ -62,6 +63,7 @@ describe('Transaction Entity', () => {
       amount: BigInt(-1000),
       reconciled: false,
       pending: false,
+      tagIds: [],
       metadata: {},
       createdAt: new Date(),
       updatedAt: new Date(),

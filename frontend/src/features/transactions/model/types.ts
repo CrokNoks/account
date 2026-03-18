@@ -12,6 +12,7 @@ export interface Transaction {
   notes: string | null;
   metadata: Record<string, unknown> | null;
   tagIds: string[];
+  savingsGoalId?: string | null;
   createdAt: string;
   updatedAt: string;
 }
