@@ -43,7 +43,7 @@ export class GetBudgetBreakdownUseCase {
 
     // Only fetch transactions for this period
     const periodTransactions =
-      await this.transactionRepository.findAllByAccount(accountId, {
+      await this.transactionRepository.findAllByAccountUnpaginated(accountId, {
         startDate: period.startDate,
         endDate: period.endDate || undefined,
       });

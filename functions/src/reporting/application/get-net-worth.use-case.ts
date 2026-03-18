@@ -39,7 +39,7 @@ export class GetNetWorthUseCase {
     for (const account of accounts) {
       // Calculate current balance for this account
       // We fetch all transactions before today to find the balance history
-      const transactions = await this.transactionRepository.findAllByAccount(account.id);
+      const transactions = await this.transactionRepository.findAllByAccountUnpaginated(account.id);
       
       const balanceNow = transactions.reduce((sum, t) => sum + t.amount, account.initialBalance);
       currentTotal += balanceNow;

@@ -29,13 +29,25 @@ export interface FindTransactionsOptions {
   reconciled?: boolean;
   startDate?: string;
   endDate?: string;
+  page?: number;
+  limit?: number;
+}
+
+export interface PaginatedTransactions {
+  data: Transaction[];
+  meta: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
 }
 
 export function useTransactions(accountId: string | null, options: FindTransactionsOptions = {}) {
-  return useQuery<Transaction[]>({
+  return useQuery<PaginatedTransactions>({
     queryKey: ['transactions', accountId, options],
     queryFn: async () => {
-      if (!accountId) return [];
+      if (!accountId) return { data: [], meta: { total: 0, page: 1, limit: 1000, totalPages: 0 } };
       const { data } = await apiClient.get(`/${accountId}/transactions`, { params: options });
       return data;
     },

@@ -37,7 +37,7 @@ export class GetCalendarDataUseCase {
 
     // 1. Fetch actual transactions for the interval
     const actualTransactions =
-      await this.transactionRepository.findAllByAccount(accountId, {
+      await this.transactionRepository.findAllByAccountUnpaginated(accountId, {
         startDate,
         endDate,
       });

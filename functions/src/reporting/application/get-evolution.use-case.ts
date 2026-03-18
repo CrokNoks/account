@@ -48,7 +48,7 @@ export class GetEvolutionUseCase {
 
     // Pre-fetch all transactions to avoid N+1 queries if there are many periods
     const allTransactions =
-      await this.transactionRepository.findAllByAccount(accountId);
+      await this.transactionRepository.findAllByAccountUnpaginated(accountId);
 
     for (const period of periods) {
       // 1. Start Balance calculation (Initial + transactions before start date)

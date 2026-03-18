@@ -206,6 +206,19 @@ export class PredictionResponseDto {
   categoryId: string | null;
 }
 
+export class PaginatedTransactionsResponseDto {
+  @ApiProperty({ type: [TransactionResponseDto] })
+  data: TransactionResponseDto[];
+
+  @ApiProperty()
+  meta: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
+}
+
 export class FindTransactionsQueryDto {
   @IsOptional()
   @IsString()
@@ -246,6 +259,14 @@ export class FindTransactionsQueryDto {
   @IsOptional()
   @IsDateString()
   endDate?: string;
+
+  @IsOptional()
+  @IsNumberString()
+  page?: string;
+
+  @IsOptional()
+  @IsNumberString()
+  limit?: string;
 }
 
 @ApiTags('transactions')
@@ -283,11 +304,11 @@ export class TransactionsController {
     summary:
       'Get all transactions for this account, optionally filtered by period',
   })
-  @ApiResponse({ status: 200, type: [TransactionResponseDto] })
+  @ApiResponse({ status: 200, type: PaginatedTransactionsResponseDto })
   async findAll(
     @Param('accountId') accountId: string,
     @Query() query: FindTransactionsQueryDto,
-  ): Promise<TransactionResponseDto[]> {
+  ): Promise<PaginatedTransactionsResponseDto> {
     let startDate = query.startDate ? new Date(query.startDate) : undefined;
     let endDate = query.endDate ? new Date(query.endDate) : undefined;
 
@@ -298,7 +319,7 @@ export class TransactionsController {
       endDate = period.endDate || undefined;
     }
 
-    const transactions = await this.getTransactionsByAccountUseCase.execute(
+    const result = await this.getTransactionsByAccountUseCase.execute(
       accountId,
       {
         startDate,
@@ -309,9 +330,14 @@ export class TransactionsController {
         minAmount: query.minAmount ? BigInt(query.minAmount) : undefined,
         maxAmount: query.maxAmount ? BigInt(query.maxAmount) : undefined,
         reconciled: query.reconciled,
+        page: query.page ? parseInt(query.page, 10) : undefined,
+        limit: query.limit ? parseInt(query.limit, 10) : undefined,
       },
     );
-    return transactions.map((t) => this.mapToResponse(t));
+    return {
+      data: result.data.map((t) => this.mapToResponse(t)),
+      meta: result.meta,
+    };
   }
 
   @Patch(':id')

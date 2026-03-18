@@ -49,7 +49,7 @@ export class GetPeriodStatsUseCase {
 
     // 2. Period Transactions (Only fetch what's needed)
     const periodTransactions =
-      await this.transactionRepository.findAllByAccount(accountId, {
+      await this.transactionRepository.findAllByAccountUnpaginated(accountId, {
         startDate: period.startDate,
         endDate: period.endDate || undefined,
       });

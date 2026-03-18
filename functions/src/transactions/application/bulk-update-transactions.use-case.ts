@@ -21,7 +21,7 @@ export class BulkUpdateTransactionsUseCase {
     
     // We fetch them all to ensure they belong to the account (security)
     // In a real high-perf system, we might use a direct update with a where clause on account_id
-    const transactions = await this.transactionRepository.findAllByAccount(accountId);
+    const transactions = await this.transactionRepository.findAllByAccountUnpaginated(accountId);
     const validIds = transactions.filter(t => ids.includes(t.id)).map(t => t.id);
 
     if (validIds.length === 0) return;

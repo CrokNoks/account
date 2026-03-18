@@ -65,6 +65,7 @@ export function TransactionList({
   const [transactionToMakeRecurring, setTransactionToMakeRecurring] = useState<Transaction | null>(null);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   
+  const [page, setPage] = useState(1);
   const [selectedPeriodId, setSelectedPeriodId] = useState<string | 'all'>('all');
   const [statusFilter, setStatusFilter] = useState<'all' | 'reconciled' | 'not_reconciled'>('all');
   
@@ -96,6 +97,8 @@ export function TransactionList({
     startDate: debouncedStartDate || undefined,
     endDate: debouncedEndDate || undefined,
     reconciled: statusFilter === 'all' ? undefined : statusFilter === 'reconciled',
+    page,
+    limit: 25,
   }), [
     effectivePeriodId, 
     debouncedSearch, 
@@ -105,16 +108,32 @@ export function TransactionList({
     debouncedMaxAmount, 
     debouncedStartDate, 
     debouncedEndDate, 
+    statusFilter,
+    page
+  ]);
+
+  // Reset page when filters change
+  useEffect(() => {
+    setPage(1);
+  }, [
+    effectivePeriodId,
+    debouncedSearch,
+    selectedCategoryId,
+    selectedTagIds,
+    debouncedMinAmount,
+    debouncedMaxAmount,
+    debouncedStartDate,
+    debouncedEndDate,
     statusFilter
   ]);
 
   const { data: transactions, isLoading } = useTransactions(activeAccountId, filterOptions);
 
   const toggleSelectAll = () => {
-    if (transactions && selectedIds.length === transactions.length) {
+    if (transactions?.data && selectedIds.length === transactions.data.length) {
       setSelectedIds([]);
     } else {
-      setSelectedIds(transactions?.map(t => t.id) || []);
+      setSelectedIds(transactions?.data.map(t => t.id) || []);
     }
   };
 
@@ -196,12 +215,12 @@ export function TransactionList({
       <>
         {/* Mobile View: Cards */}
         <div className="lg:hidden space-y-3">
-          {transactions.length === 0 ? (
+          {transactions.data.length === 0 ? (
             <div className="p-8 text-center text-sm text-muted-foreground bg-muted/20 rounded-lg border border-dashed">
               {t('empty')}
             </div>
           ) : (
-            transactions.map((transaction) => (
+            transactions.data.map((transaction) => (
               <div 
                 key={transaction.id} 
                 className={cn(
@@ -305,7 +324,7 @@ export function TransactionList({
                 {!compact && (
                   <TableHead className="w-[40px]">
                     <Checkbox 
-                      checked={transactions.length > 0 && selectedIds.length === transactions.length}
+                      checked={transactions.data.length > 0 && selectedIds.length === transactions.data.length}
                       onCheckedChange={toggleSelectAll}
                     />
                   </TableHead>
@@ -319,14 +338,14 @@ export function TransactionList({
               </TableRow>
             </TableHeader>
             <TableBody>
-              {transactions.length === 0 ? (
+              {transactions.data.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={6} className="h-32 text-center text-muted-foreground">
                     {t('empty')}
                   </TableCell>
                 </TableRow>
               ) : (
-                transactions.map((transaction) => (
+                transactions.data.map((transaction) => (
                   <TableRow 
                     key={transaction.id} 
                     className={cn(
@@ -437,9 +456,38 @@ export function TransactionList({
             </TableBody>
           </Table>
         </div>
+
+        {/* Pagination Controls */}
+        {!compact && transactions.meta.totalPages > 1 && (
+          <div className="flex items-center justify-between px-2 py-4 border-t bg-card/50 rounded-b-xl mt-4">
+            <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+              Page {transactions.meta.page} sur {transactions.meta.totalPages}
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8 text-[10px] font-bold uppercase tracking-widest"
+                onClick={() => setPage(p => Math.max(1, p - 1))}
+                disabled={transactions.meta.page === 1}
+              >
+                Précédent
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8 text-[10px] font-bold uppercase tracking-widest"
+                onClick={() => setPage(p => Math.min(transactions.meta.totalPages, p + 1))}
+                disabled={transactions.meta.page === transactions.meta.totalPages}
+              >
+                Suivant
+              </Button>
+            </div>
+          </div>
+        )}
       </>
     );
-  }, [transactions, categories, tags, t, isUpdating, handleDelete, setTagDetailId, toggleReconciliation]);
+  }, [transactions, categories, tags, t, isUpdating, handleDelete, setTagDetailId, toggleReconciliation, compact, selectedIds, toggleSelectAll, setPage]);
 
   if (isLoading) return <div className="h-64 bg-muted animate-pulse rounded-xl" />;
 

@@ -29,7 +29,7 @@ export class PredictCategoryUseCase {
 
     // 2. Fallback to ML classifier (Historical data)
     const transactions =
-      await this.transactionRepository.findAllByAccount(accountId);
+      await this.transactionRepository.findAllByAccountUnpaginated(accountId);
 
     // Filtrer uniquement celles qui ont une catégorie
     const trainingData = transactions.filter(

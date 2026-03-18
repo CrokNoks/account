@@ -31,7 +31,7 @@ export class GetTagsSummaryUseCase {
       }
     }
 
-    const transactions = await this.transactionRepository.findAllByAccount(
+    const transactions = await this.transactionRepository.findAllByAccountUnpaginated(
       accountId,
       { startDate, endDate },
     );

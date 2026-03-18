@@ -9,10 +9,26 @@ export interface FindAllTransactionsOptions {
   minAmount?: bigint;
   maxAmount?: bigint;
   reconciled?: boolean;
+  page?: number;
+  limit?: number;
+}
+
+export interface PaginatedResult<T> {
+  data: T[];
+  meta: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
 }
 
 export abstract class TransactionRepository {
   abstract findAllByAccount(
+    accountId: string,
+    options?: FindAllTransactionsOptions,
+  ): Promise<PaginatedResult<Transaction>>;
+  abstract findAllByAccountUnpaginated(
     accountId: string,
     options?: FindAllTransactionsOptions,
   ): Promise<Transaction[]>;

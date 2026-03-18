@@ -4,6 +4,7 @@ import { Transaction } from '../domain/transaction.entity';
 import {
   TransactionRepository,
   FindAllTransactionsOptions,
+  PaginatedResult,
 } from '../domain/transaction.repository.interface';
 
 interface TransactionTagRow {
@@ -36,6 +37,73 @@ export class SupabaseTransactionRepository implements TransactionRepository {
   ) {}
 
   async findAllByAccount(
+    accountId: string,
+    options?: FindAllTransactionsOptions,
+  ): Promise<PaginatedResult<Transaction>> {
+    const select =
+      options?.tagIds && options.tagIds.length > 0
+        ? '*, transaction_tags!inner(tag_id)'
+        : '*, transaction_tags(tag_id)';
+
+    let query = this.supabase
+      .from('transactions')
+      .select(select, { count: 'exact' })
+      .eq('account_id', accountId);
+
+    if (options?.startDate) {
+      query = query.gte('date', options.startDate.toISOString().split('T')[0]);
+    }
+    if (options?.endDate) {
+      query = query.lte('date', options.endDate.toISOString().split('T')[0]);
+    }
+    if (options?.search) {
+      query = query.or(
+        `description.ilike.%${options.search}%,notes.ilike.%${options.search}%`,
+      );
+    }
+    if (options?.categoryId) {
+      query = query.eq('category_id', options.categoryId);
+    }
+    if (options?.tagIds && options.tagIds.length > 0) {
+      query = query.in('transaction_tags.tag_id', options.tagIds);
+    }
+    if (options?.minAmount !== undefined) {
+      query = query.gte('amount', options.minAmount.toString());
+    }
+    if (options?.maxAmount !== undefined) {
+      query = query.lte('amount', options.maxAmount.toString());
+    }
+    if (options?.reconciled !== undefined) {
+      query = query.eq('reconciled', options.reconciled);
+    }
+
+    const page = options?.page && options.page > 0 ? options.page : 1;
+    const limit = options?.limit && options.limit > 0 ? options.limit : 1000;
+    const from = (page - 1) * limit;
+    const to = from + limit - 1;
+
+    const { data, count, error } = await query
+      .order('date', { ascending: false })
+      .range(from, to)
+      .returns<TransactionRow[]>();
+
+    if (error) throw new Error(error.message);
+
+    const total = count || 0;
+    const totalPages = Math.ceil(total / limit);
+
+    return {
+      data: (data || []).map((row) => this.mapToDomain(row)),
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages,
+      }
+    };
+  }
+
+  async findAllByAccountUnpaginated(
     accountId: string,
     options?: FindAllTransactionsOptions,
   ): Promise<Transaction[]> {
