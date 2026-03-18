@@ -8,6 +8,8 @@ import { useTranslations } from "next-intl";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PieChart } from "lucide-react";
 
+import { NoDataState } from "@/shared/ui/no-data-state";
+
 export function BudgetBreakdown({ title }: { title?: React.ReactNode }) {
   const t = useTranslations('Reporting');
   const { activeAccountId, activePeriodId } = useAccountStore();
@@ -18,18 +20,32 @@ export function BudgetBreakdown({ title }: { title?: React.ReactNode }) {
   );
 
   if (isLoading) return <div className="h-64 bg-muted animate-pulse rounded-xl" />;
-  if (!breakdown) return null;
+
+  const header = (
+    <CardHeader className="bg-muted/10 pb-3 shrink-0">
+      {title || (
+        <div className="flex items-center gap-2">
+          <PieChart className="w-4 h-4 text-primary" />
+          <h2 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">{t('breakdown')}</h2>
+        </div>
+      )}
+    </CardHeader>
+  );
+
+  if (!breakdown) {
+    return (
+      <Card className="border-2 shadow-sm h-full overflow-hidden flex flex-col">
+        {header}
+        <CardContent className="flex-1 flex items-center justify-center">
+          <NoDataState title="Aucune donnée" description="Aucune donnée budgétaire pour cette période" />
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card className="border-2 shadow-sm h-full overflow-hidden flex flex-col">
-      <CardHeader className="bg-muted/10 pb-3 shrink-0">
-        {title || (
-          <div className="flex items-center gap-2">
-            <PieChart className="w-4 h-4 text-primary" />
-            <h2 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">{t('breakdown')}</h2>
-          </div>
-        )}
-      </CardHeader>
+      {header}
       <CardContent className="pt-2 flex-1 min-h-0 flex flex-col gap-4 pb-0">
         <Tabs defaultValue="expenses" className="flex-1 min-h-0 flex flex-col w-full">
       <TabsList className="grid w-full grid-cols-4 mb-4 shrink-0">

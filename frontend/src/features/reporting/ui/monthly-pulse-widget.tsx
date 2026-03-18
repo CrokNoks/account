@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Activity, ArrowUpRight, ArrowDownRight, Minus } from 'lucide-react';
 import { formatCurrency } from '@/shared/lib/format';
 import { cn } from '@/lib/utils';
+import { NoDataState } from '@/shared/ui/no-data-state';
 
 export function MonthlyPulseWidget() {
   const { activeAccountId, activePeriodId } = useAccountStore();
@@ -24,7 +25,26 @@ export function MonthlyPulseWidget() {
   );
 
   if (isLoading) return <div className="h-32 bg-muted animate-pulse rounded-xl" />;
-  if (!comparison) return null;
+
+  const header = (
+    <CardHeader className="pb-3 bg-muted/10">
+      <CardTitle className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+        <Activity className="w-4 h-4 text-primary" />
+        Le Pulse (vs mois dernier)
+      </CardTitle>
+    </CardHeader>
+  );
+
+  if (!comparison) {
+    return (
+      <Card className="h-full border-2 shadow-sm overflow-hidden">
+        {header}
+        <CardContent className="pt-2 flex items-center justify-center min-h-[80px]">
+          <NoDataState title="Indisponible" description="Besoin de deux périodes pour comparer" className="p-4" />
+        </CardContent>
+      </Card>
+    );
+  }
 
   // Calculate global pulse (Expense comparison)
   const totalExpenseA = comparison.expenses.reduce((sum, item) => sum + BigInt(item.period1Real), BigInt(0));

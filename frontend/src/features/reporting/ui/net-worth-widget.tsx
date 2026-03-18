@@ -6,13 +6,33 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { formatCurrency } from '@/shared/lib/format';
 import { Landmark } from 'lucide-react';
 import { LineChart, Line, ResponsiveContainer, YAxis, Tooltip } from 'recharts';
+import { NoDataState } from '@/shared/ui/no-data-state';
 
 export function NetWorthWidget() {
   const { activeAccountId } = useAccountStore();
   const { data, isLoading } = useNetWorth(activeAccountId);
 
   if (isLoading) return <div className="h-32 bg-muted animate-pulse rounded-xl" />;
-  if (!data) return null;
+
+  const header = (
+    <CardHeader className="pb-3 bg-muted/10">
+      <CardTitle className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+        <Landmark className="w-4 h-4 text-primary" />
+        Patrimoine Net (Tous comptes)
+      </CardTitle>
+    </CardHeader>
+  );
+
+  if (!data) {
+    return (
+      <Card className="h-full border-2 shadow-sm overflow-hidden">
+        {header}
+        <CardContent className="pt-2 flex items-center justify-center min-h-[80px]">
+          <NoDataState title="Aucune donnée" description="Historique de solde indisponible" className="p-4" />
+        </CardContent>
+      </Card>
+    );
+  }
 
   const amount = parseInt(data.currentTotal, 10);
   const colorClass = amount < 0 ? "text-red-500" : "text-green-500";

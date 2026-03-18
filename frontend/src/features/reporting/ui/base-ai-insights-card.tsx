@@ -62,9 +62,13 @@ export function BaseAIInsightsCard({
           <p className="text-sm text-muted-foreground italic">
             {errorMessage}
           </p>
+        ) : !insights ? (
+          <p className="text-sm text-muted-foreground italic py-4 text-center">
+            Aucune analyse disponible pour le moment.
+          </p>
         ) : (
           <div className="prose prose-sm dark:prose-invert max-w-none prose-headings:font-semibold prose-p:leading-relaxed prose-li:my-0">
-            <ReactMarkdown>{insights || ''}</ReactMarkdown>
+            <ReactMarkdown>{insights}</ReactMarkdown>
           </div>
         )}
       </CardContent>

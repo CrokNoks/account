@@ -8,6 +8,7 @@ import { formatCurrency } from '@/shared/lib/format';
 import { Badge } from '@/components/ui/badge';
 import { BarChart3, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { NoDataState } from '@/shared/ui/no-data-state';
 
 export function TagStatsSummary() {
   const { activeAccountId, activePeriodId } = useAccountStore();
@@ -17,19 +18,32 @@ export function TagStatsSummary() {
 
   if (isLoading) return <div className="h-48 bg-muted animate-pulse rounded-xl" />;
   
+  const header = (
+    <CardHeader className="pb-3 bg-muted/10 shrink-0">
+      <CardTitle className="text-[10px] font-bold flex items-center gap-2 uppercase tracking-wider text-muted-foreground">
+        <BarChart3 className="w-4 h-4 text-primary" />
+        Top Tags de la période
+      </CardTitle>
+    </CardHeader>
+  );
+
   // Only show tags with activity
   const activeTags = summary?.filter(s => s.transactionCount > 0).slice(0, 5) || [];
 
-  if (activeTags.length === 0) return null;
+  if (activeTags.length === 0) {
+    return (
+      <Card className="border-2 shadow-sm h-full overflow-hidden flex flex-col">
+        {header}
+        <CardContent className="pt-2 flex-1 flex items-center justify-center min-h-[150px]">
+          <NoDataState title="Aucun tag" description="Pas d'activité de tag ce mois-ci" />
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card className="border-2 shadow-sm h-full overflow-hidden flex flex-col">
-      <CardHeader className="pb-3 bg-muted/10 shrink-0">
-        <CardTitle className="text-[10px] font-bold flex items-center gap-2 uppercase tracking-wider text-muted-foreground">
-          <BarChart3 className="w-4 h-4 text-primary" />
-          Top Tags de la période
-        </CardTitle>
-      </CardHeader>
+      {header}
       <CardContent className="space-y-1 px-2 pt-2 flex-1 overflow-y-auto min-h-0">
         {activeTags.map((tag) => (
           <button

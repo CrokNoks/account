@@ -6,13 +6,33 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
 import { formatCurrency } from '@/shared/lib/format';
 import { PieChart as PieChartIcon } from 'lucide-react';
+import { NoDataState } from '@/shared/ui/no-data-state';
 
 export function TopExpensesWidget() {
   const { activeAccountId, activePeriodId } = useAccountStore();
   const { data: breakdown, isLoading } = useBudgetBreakdown(activeAccountId, activePeriodId);
 
   if (isLoading) return <div className="h-64 bg-muted animate-pulse rounded-xl" />;
-  if (!breakdown || !breakdown.expenses || breakdown.expenses.length === 0) return null;
+
+  const header = (
+    <CardHeader className="pb-3 bg-muted/10 shrink-0">
+      <CardTitle className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+        <PieChartIcon className="w-4 h-4 text-primary" />
+        Top Dépenses
+      </CardTitle>
+    </CardHeader>
+  );
+
+  if (!breakdown || !breakdown.expenses || breakdown.expenses.length === 0) {
+    return (
+      <Card className="h-full border-2 shadow-sm overflow-hidden flex flex-col">
+        {header}
+        <CardContent className="pt-2 flex-1 flex items-center justify-center min-h-[200px]">
+          <NoDataState title="Aucune dépense" description="Pas de dépenses pour cette période" />
+        </CardContent>
+      </Card>
+    );
+  }
 
   // Transform and sort data for Donut Chart
   const chartData = breakdown.expenses
