@@ -35,7 +35,6 @@ import {
 } from "@/components/ui/sheet";
 import { Input } from "@/components/ui/input";
 import { useUiStore } from '@/shared/model/use-ui-store';
-import { useDebounce } from '@/shared/lib/use-debounce';
 import { toast } from 'sonner';
 import { useTranslations } from 'next-intl';
 import { CreateRecurringDialog } from '@/features/recurring/ui/create-recurring-dialog';
@@ -85,59 +84,52 @@ export function TransactionList({
   // Advanced filters state
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [search, setSearch] = useState('');
-  const debouncedSearch = useDebounce(search, 500);
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | 'all'>('all');
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
   const [minAmount, setMinAmount] = useState('');
-  const debouncedMinAmount = useDebounce(minAmount, 500);
   const [maxAmount, setMaxAmount] = useState('');
-  const debouncedMaxAmount = useDebounce(maxAmount, 500);
   const [startDate, setStartDate] = useState('');
-  const debouncedStartDate = useDebounce(startDate, 500);
   const [endDate, setEndDate] = useState('');
-  const debouncedEndDate = useDebounce(endDate, 500);
+
+  const [filterTrigger, setFilterTrigger] = useState(0);
 
   const filterOptions = useMemo(() => ({
     periodId: effectivePeriodId === 'all' ? undefined : effectivePeriodId,
-    search: debouncedSearch || undefined,
+    search: search || undefined,
     categoryId: selectedCategoryId === 'all' ? undefined : selectedCategoryId,
     tagIds: selectedTagIds.length > 0 ? selectedTagIds.join(',') : undefined,
-    minAmount: debouncedMinAmount ? toCents(debouncedMinAmount) : undefined,
-    maxAmount: debouncedMaxAmount ? toCents(debouncedMaxAmount) : undefined,
-    startDate: debouncedStartDate || undefined,
-    endDate: debouncedEndDate || undefined,
+    minAmount: minAmount ? toCents(minAmount) : undefined,
+    maxAmount: maxAmount ? toCents(maxAmount) : undefined,
+    startDate: startDate || undefined,
+    endDate: endDate || undefined,
     reconciled: statusFilter === 'all' ? undefined : statusFilter === 'reconciled',
     page,
     limit,
   }), [
-    effectivePeriodId, 
-    debouncedSearch, 
-    selectedCategoryId, 
-    selectedTagIds, 
-    debouncedMinAmount, 
-    debouncedMaxAmount, 
-    debouncedStartDate, 
-    debouncedEndDate, 
-    statusFilter,
+    filterTrigger,
     page,
-    limit
+    limit,
+    effectivePeriodId, // Keep global period selector automatic
+    activeAccountId   // Keep global account selector automatic
   ]);
 
-  // Reset page when filters change
-  useEffect(() => {
+  const handleApplyFilters = () => {
     setPage(1);
-  }, [
-    effectivePeriodId,
-    debouncedSearch,
-    selectedCategoryId,
-    selectedTagIds,
-    debouncedMinAmount,
-    debouncedMaxAmount,
-    debouncedStartDate,
-    debouncedEndDate,
-    statusFilter,
-    limit
-  ]);
+    setFilterTrigger(prev => prev + 1);
+  };
+
+  const handleResetFilters = () => {
+    setSearch('');
+    setSelectedCategoryId('all');
+    setSelectedTagIds([]);
+    setMinAmount('');
+    setMaxAmount('');
+    setStartDate('');
+    setEndDate('');
+    setStatusFilter('all');
+    setPage(1);
+    setFilterTrigger(prev => prev + 1);
+  };
 
   const { data: transactions, isLoading } = useTransactions(activeAccountId, filterOptions);
 
@@ -179,27 +171,18 @@ export function TransactionList({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isCreateTransactionDrawerOpen, setCreateTransactionDrawerOpen]);
 
-  const resetFilters = () => {
-    setSearch('');
-    setSelectedCategoryId('all');
-    setSelectedTagIds([]);
-    setMinAmount('');
-    setMaxAmount('');
-    setStartDate('');
-    setEndDate('');
-    setStatusFilter('all');
-  };
-
-  const activeFiltersCount = [
-    search, 
-    selectedCategoryId !== 'all', 
-    selectedTagIds.length > 0, 
-    minAmount, 
-    maxAmount, 
-    startDate, 
-    endDate, 
-    statusFilter !== 'all'
-  ].filter(Boolean).length;
+  const activeFiltersCount = useMemo(() => {
+    return [
+      filterOptions.search,
+      filterOptions.categoryId,
+      filterOptions.tagIds,
+      filterOptions.minAmount,
+      filterOptions.maxAmount,
+      filterOptions.startDate,
+      filterOptions.endDate,
+      filterOptions.reconciled !== undefined
+    ].filter(v => v !== undefined && v !== 'all' && v !== '').length;
+  }, [filterOptions]);
 
   const toggleReconciliation = useCallback((transactionId: string, currentStatus: boolean) => {
     if (!activeAccountId) return;
@@ -590,6 +573,9 @@ export function TransactionList({
                 className="pl-10 h-11" 
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') handleApplyFilters();
+                }}
               />
               {search && (
                 <Button 
@@ -734,10 +720,23 @@ export function TransactionList({
                 )}
               </div>
               
-              <div className="flex justify-end">
-                <Button variant="ghost" size="sm" className="h-8 text-[10px] font-bold uppercase tracking-wider gap-2 hover:bg-destructive/10 hover:text-destructive" onClick={resetFilters}>
+              <div className="flex justify-end items-center gap-2 pt-2 border-t border-border/50">
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="h-9 text-[10px] font-bold uppercase tracking-wider gap-2 hover:bg-destructive/10 hover:text-destructive" 
+                  onClick={handleResetFilters}
+                >
                   <X className="w-3 h-3" />
                   {t('reset_filters')}
+                </Button>
+                <Button 
+                  size="sm" 
+                  className="h-9 text-[10px] font-bold uppercase tracking-wider gap-2 px-6" 
+                  onClick={handleApplyFilters}
+                >
+                  <Filter className="w-3 h-3" />
+                  Appliquer les filtres
                 </Button>
               </div>
             </div>
