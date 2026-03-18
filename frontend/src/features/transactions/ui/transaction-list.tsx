@@ -39,6 +39,8 @@ import { useDebounce } from '@/shared/lib/use-debounce';
 import { toast } from 'sonner';
 import { useTranslations } from 'next-intl';
 import { CreateRecurringDialog } from '@/features/recurring/ui/create-recurring-dialog';
+import { TransactionForm, TransactionFormValues } from './transaction-form';
+import { CategorySelector } from '@/features/categories/ui/category-selector';
 
 export function TransactionList({ 
   periodId, 
@@ -502,22 +504,13 @@ export function TransactionList({
                 {/* Category */}
                 <div className="space-y-1.5">
                   <label className="text-[10px] font-bold uppercase text-muted-foreground px-1">{t('fields.category')}</label>
-                  <Select value={selectedCategoryId} onValueChange={(v) => setSelectedCategoryId(v || 'all')}>
-                    <SelectTrigger className="h-10 bg-background">
-                      <SelectValue placeholder={t('all_categories')}>
-                        {selectedCategoryId === 'all' 
-                          ? t('all_categories') 
-                          : categories?.find(c => c.id === selectedCategoryId)?.name
-                        }
-                      </SelectValue>
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">{t('all_categories')}</SelectItem>
-                      {categories?.map(c => (
-                        <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <CategorySelector 
+                    accountId={activeAccountId}
+                    value={selectedCategoryId === 'all' ? '' : selectedCategoryId}
+                    onChange={(v) => setSelectedCategoryId(v || 'all')}
+                    placeholder={t('all_categories')}
+                    className="h-10 bg-background"
+                  />
                 </div>
 
                 {/* Tags */}
@@ -728,33 +721,23 @@ export function TransactionList({
 }
 
 function EditTransactionDialog({ transaction, open, onOpenChange }: { transaction: Transaction, open: boolean, onOpenChange: (o: boolean) => void }) {
-  const t = useTranslations('Transactions');
   const tc = useTranslations('Common');
   const { activeAccountId } = useAccountStore();
-  const { data: categories } = useCategories(activeAccountId);
-  const [date, setDate] = useState(transaction.date.split('T')[0]);
-  const [description, setDescription] = useState(transaction.description);
-  const [categoryId, setCategoryId] = useState(transaction.categoryId || '');
-  const [tagIds, setTagIds] = useState<string[]>(transaction.tagIds || []);
-  const [amount, setAmount] = useState(fromCents(transaction.amount));
-  const [pending, setPending] = useState(transaction.pending);
-  
   const { mutate: updateTransaction, isPending } = useUpdateTransaction();
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = (values: TransactionFormValues) => {
     if (!activeAccountId) return;
 
     updateTransaction({
       accountId: activeAccountId,
       id: transaction.id,
       data: {
-        date,
-        description,
-        categoryId: categoryId || null,
-        tagIds,
-        amount: toCents(amount),
-        pending,
+        date: values.date,
+        description: values.description,
+        categoryId: values.categoryId || null,
+        tagIds: values.tagIds,
+        amount: toCents(values.amount),
+        pending: values.pending,
       }
     }, {
       onSuccess: () => {
@@ -770,58 +753,20 @@ function EditTransactionDialog({ transaction, open, onOpenChange }: { transactio
         <DialogHeader>
           <DialogTitle>{tc('edit')} Transaction</DialogTitle>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4 py-4">
-          <div className="space-y-2">
-            <label className="text-sm font-medium">{t('fields.date')}</label>
-            <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} required />
-          </div>
-          <div className="space-y-2">
-            <label className="text-sm font-medium">{t('fields.description')}</label>
-            <Input value={description} onChange={(e) => setDescription(e.target.value)} required />
-          </div>
-          <div className="space-y-2">
-            <label className="text-sm font-medium">{t('fields.category')}</label>
-            <Select value={categoryId} onValueChange={(v) => setCategoryId(v || '')}>
-              <SelectTrigger>
-                <SelectValue placeholder="Sélectionner une catégorie...">
-                  {categoryId ? categories?.find(c => c.id === categoryId)?.name : "Sélectionner une catégorie..."}
-                </SelectValue>
-              </SelectTrigger>
-              <SelectContent>
-                {categories?.map((cat) => (
-                  <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Tags</label>
-            {activeAccountId && (
-              <TagSelector 
-                accountId={activeAccountId} 
-                selectedTagIds={tagIds} 
-                onChange={setTagIds} 
-              />
-            )}
-          </div>
-          <div className="space-y-2">
-            <label className="text-sm font-medium">{t('fields.amount')}</label>
-            <Input type="number" step="0.01" value={amount} onChange={(e) => setAmount(e.target.value)} required />
-          </div>
-          <div className="flex items-center gap-2 p-3 rounded-lg border bg-muted/30">
-            <Checkbox 
-              id="edit-pending" 
-              checked={pending} 
-              onCheckedChange={(checked) => setPending(!!checked)} 
-            />
-            <label htmlFor="edit-pending" className="text-sm font-medium leading-none cursor-pointer">
-              {t('fields.pending')}
-            </label>
-          </div>
-          <DialogFooter>
-            <Button type="submit" disabled={isPending}>{tc('save')}</Button>
-          </DialogFooter>
-        </form>
+        <TransactionForm 
+          accountId={activeAccountId}
+          initialValues={{
+            date: transaction.date.split('T')[0],
+            description: transaction.description,
+            categoryId: transaction.categoryId || '',
+            tagIds: transaction.tagIds || [],
+            amount: fromCents(transaction.amount),
+            pending: transaction.pending,
+          }}
+          onSubmit={handleSubmit}
+          isPending={isPending}
+          submitLabel={tc('save')}
+        />
       </DialogContent>
     </Dialog>
   );

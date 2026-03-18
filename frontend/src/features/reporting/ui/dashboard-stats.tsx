@@ -17,122 +17,90 @@ export function DashboardStats() {
 
   return (
     <div className="grid gap-4 grid-cols-2 lg:grid-cols-3 xl:grid-cols-6" data-tour="stats">
-      <StatStartBalance />
-      <StatRealIncome />
-      <StatRealExpenses />
-      <StatBankBalance />
+      <ReportingStat type="start" />
+      <ReportingStat type="income" />
+      <ReportingStat type="expenses" />
+      <ReportingStat type="bank" />
       {isPeriodActive && (
         <>
-          <StatUpcomingBalance />
-          <StatForecastBalance />
+          <ReportingStat type="upcoming" />
+          <ReportingStat type="forecast" />
         </>
       )}
     </div>
   );
 }
 
-export function StatStartBalance() {
+export function ReportingStat({ type }: { type: 'start' | 'income' | 'expenses' | 'bank' | 'upcoming' | 'forecast' }) {
   const t = useTranslations('Reporting');
   const { activeAccountId, activePeriodId } = useAccountStore();
   const { data: stats, isLoading } = useReportingStats(activeAccountId, activePeriodId);
 
   if (isLoading || !stats) return <div className="h-32 bg-muted animate-pulse rounded-xl border-2" />;
 
+  const config = {
+    start: {
+      title: t('start_balance'),
+      value: stats.startBalance,
+      icon: <Wallet className="w-4 h-4 text-muted-foreground" />,
+      description: t('start_balance'),
+      highlight: false,
+    },
+    income: {
+      title: t('real_income'),
+      value: stats.realIncome,
+      icon: <ArrowUpCircle className="w-4 h-4 text-green-500" />,
+      description: `${t('planned_income')}: ${formatCurrency(stats.plannedIncome)}`,
+      highlight: false,
+    },
+    expenses: {
+      title: t('real_expenses'),
+      value: stats.realExpenses,
+      icon: <ArrowDownCircle className="w-4 h-4 text-red-500" />,
+      description: `${t('planned_expenses')}: ${formatCurrency(stats.plannedExpenses)}`,
+      highlight: false,
+    },
+    bank: {
+      title: t('real_bank_balance'),
+      value: stats.realBankBalance,
+      icon: <Wallet className="w-4 h-4 text-muted-foreground" />,
+      description: t('real_bank_balance'),
+      highlight: false,
+    },
+    upcoming: {
+      title: t('upcoming_balance'),
+      value: stats.upcomingBalance,
+      icon: <History className="w-4 h-4 text-muted-foreground" />,
+      description: t('upcoming_balance'),
+      highlight: false,
+    },
+    forecast: {
+      title: t('forecast_balance'),
+      value: stats.forecastBalance,
+      icon: <TrendingUp className="w-4 h-4 text-primary" />,
+      description: t('forecast_balance'),
+      highlight: true,
+    },
+  }[type];
+
   return (
     <StatCard 
-      title={t('start_balance')} 
-      value={stats.startBalance} 
-      icon={<Wallet className="w-4 h-4 text-muted-foreground" />}
-      description={t('start_balance')}
+      title={config.title} 
+      value={config.value} 
+      icon={config.icon}
+      description={config.description}
+      highlight={config.highlight}
     />
   );
 }
 
-export function StatRealIncome() {
-  const t = useTranslations('Reporting');
-  const { activeAccountId, activePeriodId } = useAccountStore();
-  const { data: stats, isLoading } = useReportingStats(activeAccountId, activePeriodId);
-
-  if (isLoading || !stats) return <div className="h-32 bg-muted animate-pulse rounded-xl border-2" />;
-
-  return (
-    <StatCard 
-      title={t('real_income')} 
-      value={stats.realIncome} 
-      icon={<ArrowUpCircle className="w-4 h-4 text-green-500" />}
-      description={`${t('planned_income')}: ${formatCurrency(stats.plannedIncome)}`}
-    />
-  );
-}
-
-export function StatRealExpenses() {
-  const t = useTranslations('Reporting');
-  const { activeAccountId, activePeriodId } = useAccountStore();
-  const { data: stats, isLoading } = useReportingStats(activeAccountId, activePeriodId);
-
-  if (isLoading || !stats) return <div className="h-32 bg-muted animate-pulse rounded-xl border-2" />;
-
-  return (
-    <StatCard 
-      title={t('real_expenses')} 
-      value={stats.realExpenses} 
-      icon={<ArrowDownCircle className="w-4 h-4 text-red-500" />}
-      description={`${t('planned_expenses')}: ${formatCurrency(stats.plannedExpenses)}`}
-    />
-  );
-}
-
-export function StatBankBalance() {
-  const t = useTranslations('Reporting');
-  const { activeAccountId, activePeriodId } = useAccountStore();
-  const { data: stats, isLoading } = useReportingStats(activeAccountId, activePeriodId);
-
-  if (isLoading || !stats) return <div className="h-32 bg-muted animate-pulse rounded-xl border-2" />;
-
-  return (
-    <StatCard 
-      title={t('real_bank_balance')} 
-      value={stats.realBankBalance} 
-      icon={<Wallet className="w-4 h-4 text-muted-foreground" />}
-      description={t('real_bank_balance')}
-    />
-  );
-}
-
-export function StatUpcomingBalance() {
-  const t = useTranslations('Reporting');
-  const { activeAccountId, activePeriodId } = useAccountStore();
-  const { data: stats, isLoading } = useReportingStats(activeAccountId, activePeriodId);
-
-  if (isLoading || !stats) return <div className="h-32 bg-muted animate-pulse rounded-xl border-2" />;
-
-  return (
-    <StatCard 
-      title={t('upcoming_balance')} 
-      value={stats.upcomingBalance} 
-      icon={<History className="w-4 h-4 text-muted-foreground" />}
-      description={t('upcoming_balance')}
-    />
-  );
-}
-
-export function StatForecastBalance() {
-  const t = useTranslations('Reporting');
-  const { activeAccountId, activePeriodId } = useAccountStore();
-  const { data: stats, isLoading } = useReportingStats(activeAccountId, activePeriodId);
-
-  if (isLoading || !stats) return <div className="h-32 bg-muted animate-pulse rounded-xl border-2" />;
-
-  return (
-    <StatCard 
-      title={t('forecast_balance')} 
-      value={stats.forecastBalance} 
-      icon={<TrendingUp className="w-4 h-4 text-primary" />}
-      description={t('forecast_balance')}
-      highlight
-    />
-  );
-}
+// Kept for backward compatibility with Dashboard layout
+export const StatStartBalance = () => <ReportingStat type="start" />;
+export const StatRealIncome = () => <ReportingStat type="income" />;
+export const StatRealExpenses = () => <ReportingStat type="expenses" />;
+export const StatBankBalance = () => <ReportingStat type="bank" />;
+export const StatUpcomingBalance = () => <ReportingStat type="upcoming" />;
+export const StatForecastBalance = () => <ReportingStat type="forecast" />;
 
 interface StatCardProps {
   title: string;

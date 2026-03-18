@@ -19,6 +19,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from 'sonner';
 import { useTranslations } from 'next-intl';
 import { ShareAccountDialog } from './share-account-dialog';
+import { AccountForm, AccountFormValues } from './account-form';
 
 const typeIcons: Record<string, LucideIcon> = {
   checking: CreditCard,
@@ -106,19 +107,15 @@ export function AccountList() {
 function EditAccountDialog({ account, open, onOpenChange }: { account: Account, open: boolean, onOpenChange: (o: boolean) => void }) {
   const t = useTranslations('Accounts');
   const tc = useTranslations('Common');
-  const [name, setName] = useState(account.name);
-  const [description, setDescription] = useState(account.description || '');
-  const [balance, setBalance] = useState(fromCents(account.initialBalance));
   const { mutate: updateAccount, isPending } = useUpdateAccount();
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = (values: AccountFormValues) => {
     updateAccount({
       id: account.id,
       data: {
-        name,
-        description,
-        initialBalance: toCents(balance),
+        name: values.name,
+        description: values.description,
+        initialBalance: toCents(values.balance),
       }
     }, {
       onSuccess: () => {
@@ -134,33 +131,19 @@ function EditAccountDialog({ account, open, onOpenChange }: { account: Account, 
         <DialogHeader>
           <DialogTitle>{tc('edit')} {t('title').toLowerCase()}</DialogTitle>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4 py-4">
-          <div className="space-y-2">
-            <label className="text-sm font-medium">{t('fields.name')}</label>
-            <Input value={name} onChange={(e) => setName(e.target.value)} required />
-          </div>
-          <div className="space-y-2">
-            <label className="text-sm font-medium">{t('fields.balance')}</label>
-            <Input type="number" step="0.01" value={balance} onChange={(e) => setBalance(e.target.value)} required />
-          </div>
-          <div className="space-y-2">
-            <label className="text-sm font-medium">{t('fields.description')}</label>
-            <Textarea 
-              placeholder="Ex: Compte pour les dépenses du quotidien, loyer et abonnements..." 
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              className="resize-none h-20"
-            />
-            <p className="text-[10px] text-muted-foreground italic">
-              {t('fields.description_hint')}
-            </p>
-          </div>
-          <DialogFooter>
-            <Button type="submit" disabled={isPending}>
-              {isPending ? tc('loading') : tc('save')}
-            </Button>
-          </DialogFooter>
-        </form>
+        <AccountForm 
+          initialValues={{
+            name: account.name,
+            description: account.description || '',
+            balance: fromCents(account.initialBalance),
+            type: account.type,
+            currency: account.currency
+          }}
+          onSubmit={handleSubmit}
+          isPending={isPending}
+          submitLabel={tc('save')}
+          showTypeAndCurrency={false}
+        />
       </DialogContent>
     </Dialog>
   );

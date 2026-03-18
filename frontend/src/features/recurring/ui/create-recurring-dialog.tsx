@@ -12,19 +12,12 @@ import {
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
-} from "@/components/ui/select";
 import { useAccountStore } from '@/features/accounts/model/use-account-store';
-import { useCategories } from '@/features/categories/api/use-categories';
 import { useCreateRecurringTransaction } from '../api/use-create-recurring-transaction';
 import { Plus, Repeat } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { toCents } from '@/shared/lib/format';
+import { CategorySelector } from '@/features/categories/ui/category-selector';
 
 export interface CreateRecurringDialogProps {
   trigger?: React.ReactNode;
@@ -48,7 +41,6 @@ export function CreateRecurringDialog({
   const tc = useTranslations('Common');
   const tt = useTranslations('Transactions');
   const { activeAccountId } = useAccountStore();
-  const { data: categories } = useCategories(activeAccountId);
   const { mutate: createRecurring, isPending } = useCreateRecurringTransaction();
 
   const [internalOpen, setInternalOpen] = useState(false);
@@ -152,28 +144,11 @@ export function CreateRecurringDialog({
           <div className="space-y-4">
             <div className="space-y-2">
               <label className="text-sm font-medium">{t('fields.category')}</label>
-              <Select value={categoryId} onValueChange={(v) => setCategoryId(v || '')}>
-                <SelectTrigger className="h-11">
-                  <SelectValue>
-                    {categoryId ? (
-                      <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: categories?.find(c => c.id === categoryId)?.color }} />
-                        {categories?.find(c => c.id === categoryId)?.name}
-                      </div>
-                    ) : "Select category"}
-                  </SelectValue>
-                </SelectTrigger>
-                <SelectContent>
-                  {categories?.map((cat) => (
-                    <SelectItem key={cat.id} value={cat.id}>
-                      <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: cat.color }} />
-                        {cat.name}
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <CategorySelector 
+                accountId={activeAccountId}
+                value={categoryId}
+                onChange={setCategoryId}
+              />
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium">{t('fields.day_of_month')}</label>
