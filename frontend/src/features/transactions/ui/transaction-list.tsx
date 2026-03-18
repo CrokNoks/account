@@ -39,6 +39,15 @@ import { useDebounce } from '@/shared/lib/use-debounce';
 import { toast } from 'sonner';
 import { useTranslations } from 'next-intl';
 import { CreateRecurringDialog } from '@/features/recurring/ui/create-recurring-dialog';
+import { 
+  Pagination, 
+  PaginationContent, 
+  PaginationEllipsis, 
+  PaginationItem, 
+  PaginationLink, 
+  PaginationNext, 
+  PaginationPrevious 
+} from "@/components/ui/pagination";
 import { TransactionForm, TransactionFormValues } from './transaction-form';
 import { CategorySelector } from '@/features/categories/ui/category-selector';
 
@@ -213,6 +222,30 @@ export function TransactionList({
   // Memoize the heavy list rendering to prevent latency when toggling filters
   const memoizedList = useMemo(() => {
     if (!transactions) return null;
+
+    const generatePageNumbers = () => {
+      const totalPages = transactions.meta.totalPages;
+      const currentPage = transactions.meta.page;
+      const pages = [];
+      
+      if (totalPages <= 5) {
+        for (let i = 1; i <= totalPages; i++) pages.push(i);
+      } else {
+        pages.push(1);
+        if (currentPage > 3) pages.push('ellipsis');
+        
+        const start = Math.max(2, currentPage - 1);
+        const end = Math.min(totalPages - 1, currentPage + 1);
+        
+        for (let i = start; i <= end; i++) {
+          if (!pages.includes(i)) pages.push(i);
+        }
+        
+        if (currentPage < totalPages - 2) pages.push('ellipsis');
+        if (!pages.includes(totalPages)) pages.push(totalPages);
+      }
+      return pages;
+    };
 
     return (
       <>
@@ -462,15 +495,15 @@ export function TransactionList({
 
         {/* Pagination Controls */}
         {!compact && transactions.meta.totalPages >= 1 && (
-          <div className="flex items-center justify-between px-2 py-4 border-t bg-card/50 rounded-b-xl mt-4">
+          <div className="flex flex-col sm:flex-row items-center justify-between px-4 py-4 border-t bg-muted/5 rounded-b-xl mt-4 gap-4">
             <div className="flex items-center gap-6">
-              <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                Page {transactions.meta.page} sur {transactions.meta.totalPages || 1}
+              <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest whitespace-nowrap">
+                {transactions.meta.total} transactions
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-[10px] font-bold uppercase text-muted-foreground">Afficher</span>
+                <span className="text-[10px] font-bold uppercase text-muted-foreground whitespace-nowrap">Afficher</span>
                 <Select value={limit.toString()} onValueChange={(v) => setLimit(parseInt(v || '25', 10))}>
-                  <SelectTrigger className="h-8 w-[70px] text-xs">
+                  <SelectTrigger className="h-8 w-[70px] text-xs bg-background">
                     <SelectValue>{limit}</SelectValue>
                   </SelectTrigger>
                   <SelectContent>
@@ -481,26 +514,46 @@ export function TransactionList({
                 </Select>
               </div>
             </div>
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-8 text-[10px] font-bold uppercase tracking-widest"
-                onClick={() => setPage(p => Math.max(1, p - 1))}
-                disabled={transactions.meta.page === 1}
-              >
-                Précédent
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-8 text-[10px] font-bold uppercase tracking-widest"
-                onClick={() => setPage(p => Math.min(transactions.meta.totalPages, p + 1))}
-                disabled={transactions.meta.page === transactions.meta.totalPages || transactions.meta.totalPages === 0}
-              >
-                Suivant
-              </Button>
-            </div>
+
+            <Pagination className="mx-0 w-auto">
+              <PaginationContent>
+                <PaginationItem>
+                  <PaginationPrevious 
+                    className={cn(
+                      "h-8 text-[10px] font-bold uppercase tracking-widest cursor-pointer",
+                      transactions.meta.page === 1 && "pointer-events-none opacity-50"
+                    )}
+                    onClick={(e) => { e.preventDefault(); setPage(p => Math.max(1, p - 1)); }}
+                  />
+                </PaginationItem>
+                
+                {generatePageNumbers().map((p, i) => (
+                  <PaginationItem key={i}>
+                    {p === 'ellipsis' ? (
+                      <PaginationEllipsis />
+                    ) : (
+                      <PaginationLink 
+                        className="h-8 w-8 text-xs font-bold cursor-pointer"
+                        isActive={p === transactions.meta.page}
+                        onClick={(e) => { e.preventDefault(); setPage(p as number); }}
+                      >
+                        {p}
+                      </PaginationLink>
+                    )}
+                  </PaginationItem>
+                ))}
+
+                <PaginationItem>
+                  <PaginationNext 
+                    className={cn(
+                      "h-8 text-[10px] font-bold uppercase tracking-widest cursor-pointer",
+                      (transactions.meta.page === transactions.meta.totalPages || transactions.meta.totalPages === 0) && "pointer-events-none opacity-50"
+                    )}
+                    onClick={(e) => { e.preventDefault(); setPage(p => Math.min(transactions.meta.totalPages, p + 1)); }}
+                  />
+                </PaginationItem>
+              </PaginationContent>
+            </Pagination>
           </div>
         )}
       </>
