@@ -474,7 +474,7 @@ export function TransactionList({
                     <SelectValue>{limit}</SelectValue>
                   </SelectTrigger>
                   <SelectContent>
-                    {[20, 50, 100, 250].map(val => (
+                    {[25, 50, 100, 250].map(val => (
                       <SelectItem key={val} value={val.toString()}>{val}</SelectItem>
                     ))}
                   </SelectContent>
