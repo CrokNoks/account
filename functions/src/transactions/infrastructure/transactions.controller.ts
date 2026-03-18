@@ -255,8 +255,12 @@ export class FindTransactionsQueryDto {
   maxAmount?: string;
 
   @IsOptional()
+  @Transform(({ value }) => {
+    if (value === 'true') return true;
+    if (value === 'false') return false;
+    return value;
+  })
   @IsBoolean()
-  @Type(() => Boolean)
   reconciled?: boolean;
 
   @IsOptional()
