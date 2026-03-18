@@ -1,7 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { ComparisonPoint, usePeriodComparison } from '../api/use-period-comparison';
+import { usePeriodComparison } from '../api/use-period-comparison';
+import { ComparisonPoint } from '../model/types';
 import { usePeriods } from '@/features/budgets/api/use-periods';
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";

@@ -2,7 +2,8 @@
 
 import { useState } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { useCategories, Category, CategoryType } from '../api/use-categories';
+import { Category, CategoryType } from '../model/types';
+import { useCategories } from '../api/use-categories';
 import { useUpdateCategory } from '../api/use-update-category';
 import { useAccountStore } from '@/features/accounts/model/use-account-store';
 import { formatCurrency } from '@/shared/lib/format';

@@ -2,7 +2,8 @@
 
 import { useState } from 'react';
 import { useAccountStore } from '@/features/accounts/model/use-account-store';
-import { useRecurringTransactions, RecurringTransaction } from '../api/use-recurring-transactions';
+import { RecurringTransaction } from '../model/types';
+import { useRecurringTransactions } from '../api/use-recurring-transactions';
 import { useDeleteRecurringTransaction } from '../api/use-delete-recurring-transaction';
 import { useUpdateRecurringTransaction } from '../api/use-update-recurring-transaction';
 import { useCategories } from '@/features/categories/api/use-categories';

@@ -1,16 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@/shared/api/api-client';
-
-export interface CreatePeriodCommand {
-  accountId: string;
-  startDate: string;
-  endDate: string;
-  budgets: Array<{
-    categoryId: string;
-    amountAllocated: string;
-  }>;
-  injectRecurring?: boolean;
-}
+import { CreatePeriodCommand } from '../model/types';
 
 export function useCreatePeriod() {
   const queryClient = useQueryClient();

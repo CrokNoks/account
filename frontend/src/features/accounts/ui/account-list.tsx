@@ -2,7 +2,8 @@
 
 import { useState } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { useAccounts, Account } from '../api/use-accounts';
+import { Account } from '../model/types';
+import { useAccounts } from '../api/use-accounts';
 import { useUpdateAccount } from '../api/use-update-account';
 import { formatCurrency, toCents, fromCents } from '@/shared/lib/format';
 import { LucideIcon, CreditCard, Landmark, Wallet, Pencil, Share2 } from 'lucide-react';

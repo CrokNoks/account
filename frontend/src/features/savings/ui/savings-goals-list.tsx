@@ -1,6 +1,7 @@
 'use client';
 
-import { useSavingsGoals, useDeleteSavingsGoal, useUpdateSavingsGoal, SavingsGoal } from '../api/use-savings-goals';
+import { useSavingsGoals, useDeleteSavingsGoal, useUpdateSavingsGoal } from '../api/use-savings-goals';
+import { SavingsGoal } from '../model/types';
 import { useAccountStore } from '@/features/accounts/model/use-account-store';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';

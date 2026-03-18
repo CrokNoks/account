@@ -1,19 +1,9 @@
 import { useQuery } from '@tanstack/react-query';
 import { apiClient } from '@/shared/api/api-client';
-
-export interface PeriodStats {
-  startBalance: string;
-  realIncome: string;
-  plannedIncome: string;
-  realExpenses: string;
-  plannedExpenses: string;
-  realBankBalance: string;
-  upcomingBalance: string;
-  forecastBalance: string;
-}
+import { ReportingStats } from '../model/types';
 
 export function useReportingStats(accountId: string | null, periodId: string | null) {
-  return useQuery<PeriodStats>({
+  return useQuery<ReportingStats>({
     queryKey: ['reporting', 'stats', accountId, periodId],
     queryFn: async () => {
       if (!accountId || !periodId) throw new Error('Missing accountId or periodId');

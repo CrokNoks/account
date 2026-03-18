@@ -1,6 +1,7 @@
 'use client';
 
-import { useSmartRules, useDeleteSmartRule, useUpdateSmartRule, SmartRule } from '../api/use-smart-rules';
+import { useSmartRules, useDeleteSmartRule, useUpdateSmartRule } from '../api/use-smart-rules';
+import { SmartRule } from '../model/types';
 import { useAccountStore } from '@/features/accounts/model/use-account-store';
 import { useCategories } from '@/features/categories/api/use-categories';
 import { useTags } from '@/features/tags/api/use-tags';

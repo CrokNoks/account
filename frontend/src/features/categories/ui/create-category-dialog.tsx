@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/select";
 import { useAccountStore } from '@/features/accounts/model/use-account-store';
 import { useCreateCategory } from '../api/use-create-category';
-import { CategoryType } from '@/features/categories/api/use-categories';
+import { CategoryType } from '@/features/categories/model/types';
 import { Plus } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 

@@ -1,11 +1,6 @@
 import { useMutation } from '@tanstack/react-query';
 import { apiClient } from '@/shared/api/api-client';
-
-export interface ScanReceiptResponse {
-  date: string | null;
-  amount: number | null;
-  description: string | null;
-}
+import { ScanReceiptResponse } from '../model/types';
 
 export function useScanReceipt() {
   return useMutation({

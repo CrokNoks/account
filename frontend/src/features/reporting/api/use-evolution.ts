@@ -1,17 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { apiClient } from '@/shared/api/api-client';
-
-export interface EvolutionDataPoint {
-  periodId: string;
-  startDate: string;
-  endDate: string;
-  isActive: boolean;
-  realIncome: string;
-  realExpenses: string;
-  forecastBalance: string;
-  realBankBalance: string;
-  categories?: Record<string, string>;
-}
+import { EvolutionDataPoint } from '../model/types';
 
 export function useEvolution(accountId: string | null) {
   return useQuery<EvolutionDataPoint[]>({

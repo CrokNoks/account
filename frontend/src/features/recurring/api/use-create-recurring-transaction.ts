@@ -1,14 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@/shared/api/api-client';
 import { toast } from 'sonner';
-
-export interface CreateRecurringTransactionData {
-  accountId: string;
-  categoryId: string | null;
-  description: string;
-  amount: string;
-  dayOfMonth: number;
-}
+import { CreateRecurringTransactionData } from '../model/types';
 
 export function useCreateRecurringTransaction() {
   const queryClient = useQueryClient();

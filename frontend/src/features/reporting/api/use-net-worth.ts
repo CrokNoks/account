@@ -1,15 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { apiClient } from '@/shared/api/api-client';
-
-export interface NetWorthDataPoint {
-  date: string;
-  amount: string;
-}
-
-export interface NetWorthResponse {
-  currentTotal: string;
-  history: NetWorthDataPoint[];
-}
+import { NetWorthResponse } from '../model/types';
 
 export function useNetWorth(accountId: string | null) {
   return useQuery<NetWorthResponse>({

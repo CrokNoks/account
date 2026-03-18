@@ -2,7 +2,8 @@
 
 import { useState } from 'react';
 import { useAccountStore } from '@/features/accounts/model/use-account-store';
-import { usePeriods, Period } from '@/features/budgets/api/use-periods';
+import { Period } from '../model/types';
+import { usePeriods } from '@/features/budgets/api/use-periods';
 import { useUpdatePeriod } from '../api/use-update-period';
 import { useDeletePeriod } from '../api/use-delete-period';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";

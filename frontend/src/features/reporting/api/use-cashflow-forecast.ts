@@ -1,18 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { apiClient } from '@/shared/api/api-client';
-
-export interface CashflowEvent {
-  date: string;
-  description: string;
-  amount: string;
-  projectedBalance: string;
-  type: 'current_balance' | 'recurring';
-}
-
-export interface CashflowForecastResponse {
-  currentBalance: string;
-  events: CashflowEvent[];
-}
+import { CashflowForecastResponse } from '../model/types';
 
 export function useCashflowForecast(accountId: string | null, days: number = 90) {
   return useQuery({

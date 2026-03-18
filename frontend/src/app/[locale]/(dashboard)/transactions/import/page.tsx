@@ -3,37 +3,20 @@
 import React, { useState, useRef } from 'react';
 import Papa from 'papaparse';
 import { Button } from "@/components/ui/button";
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
-} from "@/components/ui/table";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { useAccountStore } from '@/features/accounts/model/use-account-store';
 import { useCategories } from '@/features/categories/api/use-categories';
 import { usePeriods } from '@/features/budgets/api/use-periods';
 import { useBulkCreateTransactions } from '@/features/transactions/api/use-bulk-create-transactions';
-import { Upload, FileUp, Loader2, X, ArrowRight, Columns, ArrowLeft, CheckCircle2 } from 'lucide-react';
+import { Loader2, ArrowRight, ArrowLeft, CheckCircle2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { apiClient } from '@/shared/api/api-client';
 import { useRouter } from '@/i18n/routing';
-import { formatCurrency, toCents } from '@/shared/lib/format';
-
-interface ParsedTransaction {
-  id: string;
-  date: string;
-  description: string;
-  amount: string;
-  categoryId: string | null;
-  predicted?: boolean;
-}
-
-type Step = 'upload' | 'mapping' | 'validation';
+import { toCents } from '@/shared/lib/format';
+import { ParsedTransaction, ImportStep, ImportMapping } from '@/features/transactions/model/import-types';
+import { ImportUploadStep } from '@/features/transactions/ui/import/import-upload-step';
+import { ImportMappingStep } from '@/features/transactions/ui/import/import-mapping-step';
+import { ImportValidationStep } from '@/features/transactions/ui/import/import-validation-step';
 
 export default function ImportTransactionsPage() {
   const router = useRouter();
@@ -42,7 +25,7 @@ export default function ImportTransactionsPage() {
   const { data: periods } = usePeriods(activeAccountId);
   const { mutate: bulkCreate, isPending } = useBulkCreateTransactions();
   
-  const [step, setStep] = useState<Step>('upload');
+  const [step, setStep] = useState<ImportStep>('upload');
   
   // Data states
   const [delimiter, setDelimiter] = useState<',' | ';'>(';');
@@ -53,7 +36,7 @@ export default function ImportTransactionsPage() {
   // Mapping state
   const [headerRowIndex, setHeaderRowIndex] = useState(0);
   const [amountMode, setAmountMode] = useState<'single' | 'separate'>('single');
-  const [mapping, setMapping] = useState({
+  const [mapping, setMapping] = useState<ImportMapping>({
     date: '',
     description: '',
     amount: '',
@@ -262,219 +245,34 @@ export default function ImportTransactionsPage() {
         </CardHeader>
         <CardContent className="p-0 flex-1">
           {step === 'upload' && (
-            <div className="p-12 flex flex-col items-center justify-center text-center space-y-6 h-full min-h-[400px]">
-              <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mb-4">
-                <Upload className="w-10 h-10 text-primary" />
-              </div>
-              <input type="file" accept=".csv" className="hidden" ref={fileInputRef} onChange={handleFileUpload} />
-              
-              <div className="flex flex-col items-center gap-6 bg-muted/20 p-8 rounded-xl border max-w-md w-full shadow-sm">
-                <div className="space-y-3 w-full text-left">
-                  <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
-                    <Columns className="w-3 h-3" /> Séparateur CSV
-                  </label>
-                  <Select value={delimiter} onValueChange={(v) => setDelimiter(v as ',' | ';')}>
-                    <SelectTrigger className="w-full h-11"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value=",">Virgule ( , )</SelectItem>
-                      <SelectItem value=";">Point-virgule ( ; )</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                <div className="space-y-2">
-                  <h3 className="text-xl font-semibold">Sélectionnez votre fichier</h3>
-                  <p className="text-muted-foreground text-sm">Le fichier CSV exporté par votre banque.</p>
-                </div>
-                
-                <Button size="lg" onClick={() => fileInputRef.current?.click()} disabled={isProcessing} className="w-full h-12 text-base font-semibold shadow-lg shadow-primary/20">
-                  {isProcessing ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <FileUp className="w-4 h-4 mr-2" />}
-                  Choisir le fichier
-                </Button>
-              </div>
-            </div>
+            <ImportUploadStep 
+              delimiter={delimiter}
+              setDelimiter={setDelimiter}
+              onFileUpload={handleFileUpload}
+              fileInputRef={fileInputRef}
+              isProcessing={isProcessing}
+            />
           )}
 
           {step === 'mapping' && (
-            <div className="p-8 space-y-8">
-              <div className="flex flex-col gap-6">
-                <div className="flex items-center gap-2 bg-muted/30 p-1 rounded-lg border w-fit">
-                  <Button 
-                    variant={amountMode === 'single' ? 'secondary' : 'ghost'} 
-                    size="sm" 
-                    onClick={() => setAmountMode('single')}
-                    className="h-8 text-xs px-4"
-                  >
-                    Colonne Montant unique
-                  </Button>
-                  <Button 
-                    variant={amountMode === 'separate' ? 'secondary' : 'ghost'} 
-                    size="sm" 
-                    onClick={() => setAmountMode('separate')}
-                    className="h-8 text-xs px-4"
-                  >
-                    Débit / Crédit séparés
-                  </Button>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-5 gap-4 bg-muted/20 p-6 rounded-xl border">
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Ligne d&apos;en-tête</label>
-                    <Input type="number" min="0" value={headerRowIndex} onChange={(e) => handleHeaderRowChange(parseInt(e.target.value, 10) || 0)} className="h-10" />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Colonne Date</label>
-                    <Select value={mapping.date || ''} onValueChange={(v) => setMapping({...mapping, date: v || ''})}>
-                      <SelectTrigger className="h-10">
-                        <SelectValue placeholder="Date">
-                          {mapping.date || "Date"}
-                        </SelectValue>
-                      </SelectTrigger>
-                      <SelectContent>{csvHeaders.map((h, i) => <SelectItem key={i} value={h}>{h || `Col ${i}`}</SelectItem>)}</SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2 md:col-span-1">
-                    <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Colonne Description</label>
-                    <Select value={mapping.description || ''} onValueChange={(v) => setMapping({...mapping, description: v || ''})}>
-                      <SelectTrigger className="h-10">
-                        <SelectValue placeholder="Description">
-                          {mapping.description || "Description"}
-                        </SelectValue>
-                      </SelectTrigger>
-                      <SelectContent>{csvHeaders.map((h, i) => <SelectItem key={i} value={h}>{h || `Col ${i}`}</SelectItem>)}</SelectContent>
-                    </Select>
-                  </div>
-                  
-                  {amountMode === 'single' ? (
-                    <div className="space-y-2 md:col-span-2 text-primary">
-                      <label className="text-[10px] font-bold uppercase tracking-wider">Colonne Montant</label>
-                      <Select value={mapping.amount || ''} onValueChange={(v) => setMapping({...mapping, amount: v || ''})}>
-                        <SelectTrigger className="h-10 border-primary/30">
-                          <SelectValue placeholder="Montant">
-                            {mapping.amount || "Montant"}
-                          </SelectValue>
-                        </SelectTrigger>
-                        <SelectContent>{csvHeaders.map((h, i) => <SelectItem key={i} value={h}>{h || `Col ${i}`}</SelectItem>)}</SelectContent>
-                      </Select>
-                    </div>
-                  ) : (
-                    <>
-                      <div className="space-y-2 text-red-500">
-                        <label className="text-[10px] font-bold uppercase tracking-wider">Colonne Débit</label>
-                        <Select value={mapping.debit || ''} onValueChange={(v) => setMapping({...mapping, debit: v || ''})}>
-                          <SelectTrigger className="h-10 border-red-200">
-                            <SelectValue placeholder="Débit">
-                              {mapping.debit || "Débit"}
-                            </SelectValue>
-                          </SelectTrigger>
-                          <SelectContent>{csvHeaders.map((h, i) => <SelectItem key={i} value={h}>{h || `Col ${i}`}</SelectItem>)}</SelectContent>
-                        </Select>
-                      </div>
-                      <div className="space-y-2 text-green-500">
-                        <label className="text-[10px] font-bold uppercase tracking-wider">Colonne Crédit</label>
-                        <Select value={mapping.credit || ''} onValueChange={(v) => setMapping({...mapping, credit: v || ''})}>
-                          <SelectTrigger className="h-10 border-green-200">
-                            <SelectValue placeholder="Crédit">
-                              {mapping.credit || "Crédit"}
-                            </SelectValue>
-                          </SelectTrigger>
-                          <SelectContent>{csvHeaders.map((h, i) => <SelectItem key={i} value={h}>{h || `Col ${i}`}</SelectItem>)}</SelectContent>
-                        </Select>
-                      </div>
-                    </>
-                  )}
-                </div>
-              </div>
-
-              <div className="border rounded-lg overflow-hidden shadow-sm">
-                <div className="bg-muted/50 px-4 py-2 text-[10px] font-bold uppercase tracking-widest border-b flex justify-between items-center">
-                  <span>Aperçu du CSV</span>
-                  <span className="text-[9px] font-normal text-muted-foreground">Colonnes actives surlignées</span>
-                </div>
-                <Table>
-                  <TableBody>
-                    {rawRows.slice(Math.max(0, headerRowIndex - 1), headerRowIndex + 6).map((rowArr, i) => {
-                      const actualIndex = Math.max(0, headerRowIndex - 1) + i;
-                      const isHeader = actualIndex === headerRowIndex;
-                      const activeCols = [mapping.date, mapping.description, amountMode === 'single' ? mapping.amount : null, mapping.debit, mapping.credit].filter(Boolean);
-                      return (
-                        <TableRow key={actualIndex} className={isHeader ? "bg-primary/5" : ""}>
-                          <TableCell className="w-12 text-[9px] font-mono text-muted-foreground border-r bg-muted/5 text-center">{actualIndex}</TableCell>
-                          {rowArr.map((cell, j) => {
-                            const headerName = csvHeaders[j];
-                            const isActive = activeCols.includes(headerName);
-                            return (
-                              <TableCell key={j} className={`text-[11px] truncate max-w-[200px] ${isActive && isHeader ? 'font-bold text-primary underline decoration-2' : isActive ? 'bg-primary/5 font-medium' : 'opacity-40'}`}>
-                                {cell}
-                              </TableCell>
-                            );
-                          })}
-                        </TableRow>
-                      );
-                    })}
-                  </TableBody>
-                </Table>
-              </div>
-            </div>
+            <ImportMappingStep 
+              amountMode={amountMode}
+              setAmountMode={setAmountMode}
+              headerRowIndex={headerRowIndex}
+              handleHeaderRowChange={handleHeaderRowChange}
+              mapping={mapping}
+              setMapping={setMapping}
+              csvHeaders={csvHeaders}
+              rawRows={rawRows}
+            />
           )}
 
           {step === 'validation' && (
-            <div className="p-0">
-              <Table className="table-fixed w-full">
-                <TableHeader>
-                  <TableRow className="bg-muted/30">
-                    <TableHead className="w-[120px] pl-8 text-xs">Date</TableHead>
-                    <TableHead className="min-w-[250px] text-xs">Description</TableHead>
-                    <TableHead className="w-[150px] text-right text-xs">Montant</TableHead>
-                    <TableHead className="w-[300px] text-xs">Catégorie</TableHead>
-                    <TableHead className="w-[60px]"></TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {parsedData.map((row) => (
-                    <TableRow key={row.id}>
-                      <TableCell className="pl-8 font-medium text-xs">{row.date}</TableCell>
-                      <TableCell className="truncate text-xs" title={row.description}>{row.description}</TableCell>
-                      <TableCell className={`text-right font-bold text-xs ${parseFloat(row.amount) < 0 ? 'text-red-500' : 'text-green-500'}`}>
-                        {formatCurrency(toCents(row.amount))}
-                      </TableCell>
-                      <TableCell>
-                        <Select value={row.categoryId || 'none'} onValueChange={(v) => {
-                          setParsedData(prev => prev.map(item => item.id === row.id ? { ...item, categoryId: v === 'none' ? null : v, predicted: false } : item));
-                        }}>
-                          <SelectTrigger className="h-9 text-xs">
-                            <SelectValue>
-                              {row.categoryId ? (
-                                <div className="flex items-center gap-2 truncate">
-                                  <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: categories?.find(c => c.id === row.categoryId)?.color }} />
-                                  <span className="truncate">{categories?.find(c => c.id === row.categoryId)?.name}</span>
-                                </div>
-                              ) : <span className="text-muted-foreground italic">Pas de catégorie</span>}
-                            </SelectValue>
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="none">Non catégorisé</SelectItem>
-                            {categories?.map((cat) => (
-                              <SelectItem key={cat.id} value={cat.id}>
-                                <div className="flex items-center gap-2 text-xs">
-                                  <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: cat.color }} />
-                                  {cat.name}
-                                </div>
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </TableCell>
-                      <TableCell className="pr-8">
-                        <Button variant="ghost" size="icon-sm" onClick={() => setParsedData(prev => prev.filter(p => p.id !== row.id))} className="h-8 w-8 text-muted-foreground hover:text-destructive">
-                          <X className="w-4 h-4" />
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
+            <ImportValidationStep 
+              parsedData={parsedData}
+              setParsedData={setParsedData}
+              categories={categories}
+            />
           )}
         </CardContent>
       </Card>

@@ -1,17 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@/shared/api/api-client';
-
-export interface SavingsGoal {
-  id: string;
-  accountId: string;
-  name: string;
-  targetAmount: string;
-  currentAmount: string;
-  deadline: string | null;
-  color: string;
-  createdAt: string;
-  updatedAt: string;
-}
+import { SavingsGoal, CreateSavingsGoalData, UpdateSavingsGoalData, DeleteSavingsGoalData } from '../model/types';
 
 export function useSavingsGoals(accountId: string | null) {
   return useQuery<SavingsGoal[]>({
@@ -29,7 +18,7 @@ export function useCreateSavingsGoal() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ accountId, data }: { accountId: string, data: Partial<SavingsGoal> }) => {
+    mutationFn: async ({ accountId, data }: CreateSavingsGoalData) => {
       const { data: result } = await apiClient.post(`/${accountId}/savings-goals`, data);
       return result;
     },
@@ -43,7 +32,7 @@ export function useUpdateSavingsGoal() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ accountId, id, data }: { accountId: string, id: string, data: Partial<SavingsGoal> }) => {
+    mutationFn: async ({ accountId, id, data }: UpdateSavingsGoalData) => {
       const { data: result } = await apiClient.patch(`/${accountId}/savings-goals/${id}`, data);
       return result;
     },
@@ -57,7 +46,7 @@ export function useDeleteSavingsGoal() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ accountId, id }: { accountId: string, id: string }) => {
+    mutationFn: async ({ accountId, id }: DeleteSavingsGoalData) => {
       await apiClient.delete(`/${accountId}/savings-goals/${id}`);
     },
     onSuccess: (_, { accountId }) => {

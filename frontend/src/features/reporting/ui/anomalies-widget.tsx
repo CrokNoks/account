@@ -1,7 +1,8 @@
 'use client';
 
 import { useAccountStore } from '@/features/accounts/model/use-account-store';
-import { useAnomalies, Anomaly } from '../api/use-anomalies';
+import { useAnomalies } from '../api/use-anomalies';
+import { Anomaly } from '../model/types';
 import { useIgnoreAnomaly } from '../api/use-ignore-anomaly';
 import { AlertCircle, Copy, ArrowUpRight, TrendingUp, X, CheckCircle2 } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';

@@ -1,11 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@/shared/api/api-client';
 import { toast } from 'sonner';
-
-export interface DeleteRecurringTransactionData {
-  accountId: string;
-  id: string;
-}
+import { DeleteRecurringTransactionData } from '../model/types';
 
 export function useDeleteRecurringTransaction() {
   const queryClient = useQueryClient();

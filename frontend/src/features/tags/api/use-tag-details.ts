@@ -1,26 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { apiClient } from '@/shared/api/api-client';
-import { TagSummary } from './use-tags-summary';
-
-export interface TagCategoryBreakdown {
-  categoryId: string | null;
-  name: string;
-  amount: string;
-  percentage: number;
-}
-
-export interface TagRecentTransaction {
-  id: string;
-  description: string;
-  date: string;
-  amount: string;
-}
-
-export interface TagDetails {
-  summary: TagSummary;
-  categoryBreakdown: TagCategoryBreakdown[];
-  recentTransactions: TagRecentTransaction[];
-}
+import { TagDetails } from '../model/types';
 
 export function useTagDetails(accountId: string | null, tagId: string | null, periodId?: string | null) {
   return useQuery<TagDetails | null>({

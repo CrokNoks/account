@@ -7,7 +7,8 @@ import {
   SelectTrigger, 
   SelectValue 
 } from "@/components/ui/select";
-import { useCategories, CategoryType } from '@/features/categories/api/use-categories';
+import { CategoryType } from '@/features/categories/model/types';
+import { useCategories } from '@/features/categories/api/use-categories';
 import { cn } from "@/lib/utils";
 import { useTranslations } from 'next-intl';
 

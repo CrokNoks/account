@@ -1,13 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { apiClient } from '@/shared/api/api-client';
-
-export interface TagSummary {
-  tagId: string;
-  name: string;
-  color: string;
-  totalAmount: string;
-  transactionCount: number;
-}
+import { TagSummary } from '../model/types';
 
 export function useTagsSummary(accountId: string | null, periodId?: string | null) {
   return useQuery<TagSummary[]>({

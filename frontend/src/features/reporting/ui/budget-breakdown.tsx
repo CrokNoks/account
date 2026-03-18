@@ -3,7 +3,8 @@
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { formatCurrency } from "@/shared/lib/format";
 import { useAccountStore } from "@/features/accounts/model/use-account-store";
-import { useBudgetBreakdown, BudgetCategoryBreakdown } from "../api/use-budget-breakdown";
+import { useBudgetBreakdown } from "../api/use-budget-breakdown";
+import { BudgetCategoryBreakdown } from "../model/types";
 import { useTranslations } from "next-intl";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PieChart } from "lucide-react";

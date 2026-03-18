@@ -2,7 +2,6 @@
 
 import { useState, useMemo } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { formatCurrency } from "@/shared/lib/format";
 import { useAccountStore } from "@/features/accounts/model/use-account-store";
 import { useEvolution } from "../api/use-evolution";
 import { useCategories } from "@/features/categories/api/use-categories";
@@ -10,7 +9,6 @@ import { useTranslations } from "next-intl";
 import { format } from "date-fns";
 import { fr, enUS } from "date-fns/locale";
 import { useLocale } from "next-intl";
-import { Checkbox } from "@/components/ui/checkbox";
 import { 
   LineChart, 
   Line, 
@@ -25,39 +23,8 @@ import {
   BarChart,
   Bar
 } from 'recharts';
-
-type CustomTooltipProps = {
-  active?: boolean;
-  payload?: Array<{
-    value: number;
-    name: string;
-    color?: string;
-    fill?: string;
-  }>;
-  label?: string;
-};
-
-function CustomTooltip({ active, payload, label }: CustomTooltipProps) {
-  if (active && payload && payload.length) {
-    return (
-      <div className="bg-card border border-border p-3 rounded-lg shadow-md min-w-[150px]">
-        <p className="text-xs font-bold mb-2 border-b pb-1">{label}</p>
-        <div className="space-y-1">
-          {payload.map((entry, index: number) => (
-            <div key={index} className="flex items-center justify-between gap-4 text-[11px]">
-              <div className="flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full" style={{ backgroundColor: entry.color || entry.fill }} />
-                <span className="text-muted-foreground">{entry.name}:</span>
-              </div>
-              <span className="font-bold">{formatCurrency((Math.round(entry.value * 100)).toString())}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-    );
-  }
-  return null;
-}
+import { EvolutionTooltip } from './evolution/evolution-tooltip';
+import { CategoryFilterSidebar } from './evolution/category-filter-sidebar';
 
 export function EvolutionChart() {
   const t = useTranslations('Reporting');
@@ -197,7 +164,7 @@ export function EvolutionChart() {
                     tickFormatter={(value) => `${value}€`}
                     dx={-10}
                   />
-                  <Tooltip content={<CustomTooltip />} />
+                  <Tooltip content={<EvolutionTooltip />} />
                   <Area 
                     type="monotone" 
                     dataKey="balance" 
@@ -238,7 +205,7 @@ export function EvolutionChart() {
                     tickFormatter={(value) => `${value}€`}
                     dx={-10}
                   />
-                  <Tooltip content={<CustomTooltip />} />
+                  <Tooltip content={<EvolutionTooltip />} />
                   <Legend iconType="circle" verticalAlign="top" height={36}/>
                   <Line type="monotone" dataKey="income" name={t('income')} stroke="#22c55e" strokeWidth={4} dot={{ r: 4, fill: "#22c55e", strokeWidth: 2, stroke: "#fff" }} activeDot={{ r: 8 }} />
                   <Line type="monotone" dataKey="expenses" name={t('expenses')} stroke="#f43f5e" strokeWidth={4} dot={{ r: 4, fill: "#f43f5e", strokeWidth: 2, stroke: "#fff" }} activeDot={{ r: 8 }} />
@@ -257,41 +224,13 @@ export function EvolutionChart() {
           </CardHeader>
           <CardContent>
             <div className="flex flex-col md:flex-row gap-8">
-              {/* Category Selector Sidebar */}
-              <div className="w-full md:w-64 space-y-4">
-                <div className="flex items-center justify-between border-b pb-2">
-                  <span className="text-sm font-semibold">Filtres</span>
-                  <button 
-                    onClick={toggleAll}
-                    className="text-[10px] text-primary hover:underline font-medium"
-                  >
-                    {currentSelection.size === expenseCategories.length ? 'Tout désélectionner' : 'Tout sélectionner'}
-                  </button>
-                </div>
-                <div className="space-y-2 max-h-[400px] overflow-y-auto pr-2">
-                  {sortedCategories.map((cat) => (
-                    <div key={cat.id} className="flex items-center space-x-2">
-                      <Checkbox 
-                        id={`cat-${cat.id}`} 
-                        checked={currentSelection.has(cat.id)}
-                        onCheckedChange={() => toggleCategory(cat.id)}
-                      />
-                      <label 
-                        htmlFor={`cat-${cat.id}`}
-                        className="text-xs font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 flex items-center justify-between gap-2 cursor-pointer truncate flex-1"
-                      >
-                        <div className="flex items-center gap-2 truncate">
-                          <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: cat.color }} />
-                          <span className="truncate">{cat.name}</span>
-                        </div>
-                        <span className="text-[9px] text-muted-foreground shrink-0 font-mono">
-                          ±{formatCurrency(('variance' in cat ? (cat.variance as number) : 0).toString())}
-                        </span>
-                      </label>
-                    </div>
-                  ))}
-                </div>
-              </div>
+              <CategoryFilterSidebar 
+                categories={sortedCategories}
+                selectedIds={currentSelection}
+                onToggle={toggleCategory}
+                onToggleAll={toggleAll}
+                isAllSelected={currentSelection.size === expenseCategories.length}
+              />
 
               {/* Chart */}
               <div className="flex-1 h-[500px] min-h-[500px]">
@@ -316,7 +255,7 @@ export function EvolutionChart() {
                       tickFormatter={(value) => `${value}€`}
                       dx={-10}
                     />
-                    <Tooltip content={<CustomTooltip />} />
+                    <Tooltip content={<EvolutionTooltip />} />
                     <Legend layout="horizontal" verticalAlign="bottom" align="center" iconType="circle" wrapperStyle={{ paddingTop: '20px' }} />
                     {expenseCategories
                       .filter(cat => currentSelection.has(cat.id))

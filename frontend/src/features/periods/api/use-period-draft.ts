@@ -1,18 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { apiClient } from '@/shared/api/api-client';
-
-export interface PeriodDraft {
-  suggestedStartDate: string;
-  suggestedEndDate: string;
-  categoriesWithStats: Array<{
-    categoryId: string;
-    name: string;
-    minReal: string;
-    maxReal: string;
-    avgReal: string;
-    defaultAllocated: string;
-  }>;
-}
+import { PeriodDraft } from '../model/types';
 
 export function usePeriodDraft(accountId: string | null) {
   return useQuery<PeriodDraft>({

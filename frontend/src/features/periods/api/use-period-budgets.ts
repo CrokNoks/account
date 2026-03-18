@@ -1,11 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { apiClient } from '@/shared/api/api-client';
-
-export interface BudgetInstance {
-  id: string;
-  categoryId: string;
-  amountAllocated: string;
-}
+import { BudgetInstance } from '../model/types';
 
 export function usePeriodBudgets(accountId: string | null, periodId: string | null) {
   return useQuery<BudgetInstance[]>({

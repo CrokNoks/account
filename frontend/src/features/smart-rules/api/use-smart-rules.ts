@@ -1,16 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@/shared/api/api-client';
-
-export interface SmartRule {
-  id: string;
-  accountId: string;
-  pattern: string;
-  categoryId: string | null;
-  tagIds: string[];
-  priority: number;
-  createdAt: string;
-  updatedAt: string;
-}
+import { SmartRule, CreateSmartRuleData, UpdateSmartRuleData, DeleteSmartRuleData } from '../model/types';
 
 export function useSmartRules(accountId: string | null) {
   return useQuery<SmartRule[]>({
@@ -28,7 +18,7 @@ export function useCreateSmartRule() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ accountId, data }: { accountId: string, data: Partial<SmartRule> }) => {
+    mutationFn: async ({ accountId, data }: CreateSmartRuleData) => {
       const { data: result } = await apiClient.post(`/${accountId}/smart-rules`, data);
       return result;
     },
@@ -42,7 +32,7 @@ export function useUpdateSmartRule() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ accountId, id, data }: { accountId: string, id: string, data: Partial<SmartRule> }) => {
+    mutationFn: async ({ accountId, id, data }: UpdateSmartRuleData) => {
       const { data: result } = await apiClient.patch(`/${accountId}/smart-rules/${id}`, data);
       return result;
     },
@@ -56,7 +46,7 @@ export function useDeleteSmartRule() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ accountId, id }: { accountId: string, id: string }) => {
+    mutationFn: async ({ accountId, id }: DeleteSmartRuleData) => {
       await apiClient.delete(`/${accountId}/smart-rules/${id}`);
     },
     onSuccess: (_, { accountId }) => {

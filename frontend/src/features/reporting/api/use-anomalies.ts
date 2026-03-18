@@ -1,14 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { apiClient } from '@/shared/api/api-client';
-
-export interface Anomaly {
-  id: string;
-  type: 'duplicate' | 'spike' | 'outlier';
-  title: string;
-  description: string;
-  severity: 'medium' | 'high';
-  transactionIds: string[];
-}
+import { Anomaly } from '../model/types';
 
 export function useAnomalies(accountId: string | null, periodId?: string | null) {
   return useQuery<Anomaly[]>({

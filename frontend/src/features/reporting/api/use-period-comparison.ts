@@ -1,21 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { apiClient } from '@/shared/api/api-client';
-
-export interface ComparisonPoint {
-  categoryId: string;
-  name: string;
-  period1Real: string;
-  period2Real: string;
-  diff: string;
-  percentageDiff: number;
-}
-
-export interface PeriodComparisonResponse {
-  income: ComparisonPoint[];
-  expenses: ComparisonPoint[];
-  savings: ComparisonPoint[];
-  transfers: ComparisonPoint[];
-}
+import { PeriodComparisonResponse } from '../model/types';
 
 export function usePeriodComparison(accountId: string | null, periodId: string | null, compareWithId: string | null) {
   return useQuery({

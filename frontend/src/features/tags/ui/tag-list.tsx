@@ -2,7 +2,8 @@
 
 import { useState } from 'react';
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
-import { useTags, Tag } from '../api/use-tags';
+import { useTags } from '../api/use-tags';
+import { Tag } from '../model/types';
 import { useUpdateTag } from '../api/use-update-tag';
 import { useDeleteTag } from '../api/use-delete-tag';
 import { useAccountStore } from '@/features/accounts/model/use-account-store';

@@ -5,6 +5,7 @@ import { formatCurrency } from "@/shared/lib/format";
 import { useAccountStore } from "@/features/accounts/model/use-account-store";
 import { usePeriods } from "@/features/budgets/api/use-periods";
 import { useReportingStats } from "../api/use-reporting-stats";
+import { ReportingStats } from "../model/types";
 import { ArrowUpCircle, ArrowDownCircle, Wallet, History, TrendingUp } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
