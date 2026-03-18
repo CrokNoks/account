@@ -66,6 +66,7 @@ export function TransactionList({
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   
   const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(25);
   const [selectedPeriodId, setSelectedPeriodId] = useState<string | 'all'>('all');
   const [statusFilter, setStatusFilter] = useState<'all' | 'reconciled' | 'not_reconciled'>('all');
   
@@ -98,7 +99,7 @@ export function TransactionList({
     endDate: debouncedEndDate || undefined,
     reconciled: statusFilter === 'all' ? undefined : statusFilter === 'reconciled',
     page,
-    limit: 25,
+    limit,
   }), [
     effectivePeriodId, 
     debouncedSearch, 
@@ -109,7 +110,8 @@ export function TransactionList({
     debouncedStartDate, 
     debouncedEndDate, 
     statusFilter,
-    page
+    page,
+    limit
   ]);
 
   // Reset page when filters change
@@ -124,7 +126,8 @@ export function TransactionList({
     debouncedMaxAmount,
     debouncedStartDate,
     debouncedEndDate,
-    statusFilter
+    statusFilter,
+    limit
   ]);
 
   const { data: transactions, isLoading } = useTransactions(activeAccountId, filterOptions);
@@ -458,10 +461,25 @@ export function TransactionList({
         </div>
 
         {/* Pagination Controls */}
-        {!compact && transactions.meta.totalPages > 1 && (
+        {!compact && transactions.meta.totalPages >= 1 && (
           <div className="flex items-center justify-between px-2 py-4 border-t bg-card/50 rounded-b-xl mt-4">
-            <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-              Page {transactions.meta.page} sur {transactions.meta.totalPages}
+            <div className="flex items-center gap-6">
+              <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                Page {transactions.meta.page} sur {transactions.meta.totalPages || 1}
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-bold uppercase text-muted-foreground">Afficher</span>
+                <Select value={limit.toString()} onValueChange={(v) => setLimit(parseInt(v || '25', 10))}>
+                  <SelectTrigger className="h-8 w-[70px] text-xs">
+                    <SelectValue>{limit}</SelectValue>
+                  </SelectTrigger>
+                  <SelectContent>
+                    {[20, 50, 100, 250].map(val => (
+                      <SelectItem key={val} value={val.toString()}>{val}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
             <div className="flex items-center gap-2">
               <Button
@@ -478,7 +496,7 @@ export function TransactionList({
                 size="sm"
                 className="h-8 text-[10px] font-bold uppercase tracking-widest"
                 onClick={() => setPage(p => Math.min(transactions.meta.totalPages, p + 1))}
-                disabled={transactions.meta.page === transactions.meta.totalPages}
+                disabled={transactions.meta.page === transactions.meta.totalPages || transactions.meta.totalPages === 0}
               >
                 Suivant
               </Button>
@@ -487,7 +505,7 @@ export function TransactionList({
         )}
       </>
     );
-  }, [transactions, categories, tags, t, isUpdating, handleDelete, setTagDetailId, toggleReconciliation, compact, selectedIds, toggleSelectAll, setPage]);
+  }, [transactions, categories, tags, t, isUpdating, handleDelete, setTagDetailId, toggleReconciliation, compact, selectedIds, toggleSelectAll, setPage, limit, setLimit]);
 
   if (isLoading) return <div className="h-64 bg-muted animate-pulse rounded-xl" />;
 
