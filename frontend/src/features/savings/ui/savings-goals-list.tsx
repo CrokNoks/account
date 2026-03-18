@@ -5,7 +5,7 @@ import { useAccountStore } from '@/features/accounts/model/use-account-store';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
-import { formatCurrency, toCents } from '@/shared/lib/format';
+import { formatCurrency, toCents, fromCents } from '@/shared/lib/format';
 import { Trash2, Pencil, Calendar, ArrowUpRight } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
@@ -23,6 +23,7 @@ export function SavingsGoalsList() {
   const { mutate: updateGoal } = useUpdateSavingsGoal();
   
   const [editingGoal, setEditingGoal] = useState<SavingsGoal | null>(null);
+  const [contributingGoal, setContributingGoal] = useState<SavingsGoal | null>(null);
   const [contributionAmount, setContributionAmount] = useState('');
 
   if (isLoading) return <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-pulse">
@@ -49,7 +50,7 @@ export function SavingsGoalsList() {
     }, {
       onSuccess: () => {
         toast.success('Contribution enregistrée');
-        setEditingGoal(null);
+        setContributingGoal(null);
         setContributionAmount('');
       }
     });
@@ -76,10 +77,10 @@ export function SavingsGoalsList() {
                     <CardTitle className="text-lg font-bold">{goal.name}</CardTitle>
                   </div>
                   <div className="flex items-center gap-1">
-                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setEditingGoal(goal)}>
+                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setEditingGoal(goal)} title="Modifier l'objectif">
                       <Pencil className="w-4 h-4" />
                     </Button>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => handleDelete(goal.id)}>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => handleDelete(goal.id)} title="Supprimer">
                       <Trash2 className="w-4 h-4" />
                     </Button>
                   </div>
@@ -107,7 +108,7 @@ export function SavingsGoalsList() {
                         {goal.deadline ? format(new Date(goal.deadline), 'dd MMM yyyy') : 'Pas d\'échéance'}
                       </span>
                     </div>
-                    <Button size="sm" variant="outline" className="h-8 gap-2 font-bold" onClick={() => setEditingGoal(goal)}>
+                    <Button size="sm" variant="outline" className="h-8 gap-2 font-bold" onClick={() => setContributingGoal(goal)}>
                       <ArrowUpRight className="w-3.5 h-3.5" />
                       Épargner
                     </Button>
@@ -119,10 +120,10 @@ export function SavingsGoalsList() {
         )}
       </div>
 
-      <Sheet open={!!editingGoal} onOpenChange={(o) => !o && setEditingGoal(null)}>
+      <Sheet open={!!contributingGoal} onOpenChange={(o) => !o && setContributingGoal(null)}>
         <SheetContent side="right" className="flex flex-col gap-0 p-0">
           <SheetHeader className="p-6 border-b">
-            <SheetTitle>Contribuer à : {editingGoal?.name}</SheetTitle>
+            <SheetTitle>Contribuer à : {contributingGoal?.name}</SheetTitle>
           </SheetHeader>
           <div className="flex-1 overflow-y-auto p-6 space-y-6">
             <div className="space-y-2">
@@ -144,12 +145,138 @@ export function SavingsGoalsList() {
             </div>
           </div>
           <SheetFooter className="p-6 border-t bg-muted/20">
-            <Button className="w-full h-11 text-base font-bold" onClick={() => editingGoal && handleContribute(editingGoal)} disabled={!contributionAmount}>
+            <Button className="w-full h-11 text-base font-bold" onClick={() => contributingGoal && handleContribute(contributingGoal)} disabled={!contributionAmount}>
               Enregistrer la contribution
             </Button>
           </SheetFooter>
         </SheetContent>
       </Sheet>
+
+      {editingGoal && (
+        <EditSavingsGoalSheet 
+          goal={editingGoal} 
+          open={!!editingGoal} 
+          onOpenChange={(o) => !o && setEditingGoal(null)} 
+        />
+      )}
     </>
+  );
+}
+
+function EditSavingsGoalSheet({ goal, open, onOpenChange }: { goal: SavingsGoal, open: boolean, onOpenChange: (o: boolean) => void }) {
+  const t = useTranslations('Savings');
+  const tc = useTranslations('Common');
+  const { activeAccountId } = useAccountStore();
+  const [name, setName] = useState(goal.name);
+  const [targetAmount, setTargetAmount] = useState(fromCents(goal.targetAmount));
+  const [currentAmount, setCurrentAmount] = useState(fromCents(goal.currentAmount));
+  const [deadline, setDeadline] = useState(goal.deadline?.split('T')[0] || '');
+  const [color, setColor] = useState(goal.color || '#3b82f6');
+
+  const { mutate: updateGoal, isPending } = useUpdateSavingsGoal();
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!activeAccountId || !name || !targetAmount) return;
+
+    updateGoal({
+      accountId: activeAccountId,
+      id: goal.id,
+      data: {
+        name,
+        targetAmount: toCents(targetAmount),
+        currentAmount: toCents(currentAmount),
+        deadline: deadline || null,
+        color,
+      }
+    }, {
+      onSuccess: () => {
+        toast.success(tc('success'));
+        onOpenChange(false);
+      }
+    });
+  };
+
+  return (
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent side="right" className="flex flex-col gap-0 p-0">
+        <SheetHeader className="p-6 border-b">
+          <SheetTitle>{tc('edit')} Objectif d&apos;épargne</SheetTitle>
+        </SheetHeader>
+        
+        <form onSubmit={handleSubmit} className="flex-1 flex flex-col min-h-0">
+          <div className="flex-1 overflow-y-auto p-6 space-y-6">
+            <div className="space-y-2">
+              <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">{t('fields.name')}</label>
+              <Input 
+                placeholder="Ex: Vacances d'été, Apport maison..." 
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="h-11 font-medium"
+                required
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">{t('fields.target_amount')}</label>
+                <Input 
+                  type="number" 
+                  placeholder="0.00" 
+                  value={targetAmount}
+                  onChange={(e) => setTargetAmount(e.target.value)}
+                  className="h-11 font-bold"
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">{t('fields.current_amount')}</label>
+                <Input 
+                  type="number" 
+                  placeholder="0.00" 
+                  value={currentAmount}
+                  onChange={(e) => setCurrentAmount(e.target.value)}
+                  className="h-11"
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">{t('fields.deadline')}</label>
+              <Input 
+                type="date" 
+                value={deadline}
+                onChange={(e) => setDeadline(e.target.value)}
+                className="h-11"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">{t('fields.color')}</label>
+              <div className="flex gap-2">
+                <Input 
+                  type="color" 
+                  value={color}
+                  onChange={(e) => setColor(e.target.value)}
+                  className="h-11 w-12 p-1 cursor-pointer"
+                />
+                <Input 
+                  value={color}
+                  onChange={(e) => setColor(e.target.value)}
+                  className="h-11 font-mono text-xs"
+                />
+              </div>
+            </div>
+          </div>
+
+          <SheetFooter className="p-6 border-t bg-muted/20">
+            <Button type="submit" disabled={isPending || !name || !targetAmount} className="w-full h-11 text-base font-bold">
+              {isPending ? tc('loading') : tc('save')}
+            </Button>
+          </SheetFooter>
+        </form>
+      </SheetContent>
+    </Sheet>
   );
 }

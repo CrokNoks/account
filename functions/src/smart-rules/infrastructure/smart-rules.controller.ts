@@ -2,10 +2,12 @@ import {
   Controller,
   Get,
   Post,
+  Patch,
   Body,
   Param,
   UseGuards,
   Delete,
+  NotFoundException,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -29,6 +31,29 @@ class CreateSmartRuleDto {
   @IsString()
   @ApiProperty({ required: false, nullable: true })
   categoryId: string | null;
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  @ApiProperty({ required: false, type: [String] })
+  tagIds?: string[];
+
+  @IsOptional()
+  @IsNumber()
+  @ApiProperty({ required: false })
+  priority?: number;
+}
+
+class UpdateSmartRuleDto {
+  @IsOptional()
+  @IsString()
+  @ApiProperty({ required: false })
+  pattern?: string;
+
+  @IsOptional()
+  @IsString()
+  @ApiProperty({ required: false, nullable: true })
+  categoryId?: string | null;
 
   @IsOptional()
   @IsArray()
@@ -69,6 +94,21 @@ export class SmartRulesController {
       tagIds: dto.tagIds || [],
       priority: dto.priority || 0,
     });
+
+    await this.repository.save(rule);
+    return this.mapToResponse(rule);
+  }
+
+  @Patch(':id')
+  @ApiOperation({ summary: 'Update a smart rule' })
+  async update(@Param('id') id: string, @Body() dto: UpdateSmartRuleDto) {
+    const rule = await this.repository.findById(id);
+    if (!rule) throw new NotFoundException('Smart rule not found');
+
+    if (dto.pattern !== undefined) rule.updatePattern(dto.pattern);
+    if (dto.categoryId !== undefined) rule.updateCategory(dto.categoryId);
+    if (dto.tagIds !== undefined) rule.updateTags(dto.tagIds);
+    if (dto.priority !== undefined) rule.updatePriority(dto.priority);
 
     await this.repository.save(rule);
     return this.mapToResponse(rule);

@@ -131,6 +131,7 @@ export function TransactionForm({
           <div className="space-y-2 flex flex-col">
             <label className="text-sm font-medium">{t('fields.category')}</label>
             <CategorySelector 
+              key={accountId}
               accountId={accountId}
               value={categoryId}
               onChange={setCategoryId}

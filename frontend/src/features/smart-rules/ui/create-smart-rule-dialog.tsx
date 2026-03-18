@@ -101,6 +101,7 @@ export function CreateSmartRuleDialog() {
               <div className="space-y-2">
                 <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">{t('fields.category')}</label>
                 <CategorySelector 
+                  key={activeAccountId}
                   accountId={activeAccountId}
                   value={categoryId}
                   onChange={setCategoryId}

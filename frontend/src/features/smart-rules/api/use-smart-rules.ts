@@ -38,6 +38,20 @@ export function useCreateSmartRule() {
   });
 }
 
+export function useUpdateSmartRule() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ accountId, id, data }: { accountId: string, id: string, data: Partial<SmartRule> }) => {
+      const { data: result } = await apiClient.patch(`/${accountId}/smart-rules/${id}`, data);
+      return result;
+    },
+    onSuccess: (_, { accountId }) => {
+      queryClient.invalidateQueries({ queryKey: ['smart-rules', accountId] });
+    },
+  });
+}
+
 export function useDeleteSmartRule() {
   const queryClient = useQueryClient();
 

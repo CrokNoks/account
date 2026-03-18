@@ -12,12 +12,12 @@ export interface SmartRuleProps {
 export class SmartRule {
   public readonly id: string;
   public readonly accountId: string;
-  public readonly pattern: string;
-  public readonly categoryId: string | null;
-  public readonly tagIds: string[];
-  public readonly priority: number;
+  public pattern: string;
+  public categoryId: string | null;
+  public tagIds: string[];
+  public priority: number;
   public readonly createdAt: Date;
-  public readonly updatedAt: Date;
+  public updatedAt: Date;
 
   constructor(props: SmartRuleProps) {
     this.id = props.id;
@@ -28,6 +28,30 @@ export class SmartRule {
     this.priority = props.priority;
     this.createdAt = props.createdAt;
     this.updatedAt = props.updatedAt;
+  }
+
+  public updatePattern(pattern: string) {
+    this.pattern = pattern;
+    this.touch();
+  }
+
+  public updateCategory(categoryId: string | null) {
+    this.categoryId = categoryId;
+    this.touch();
+  }
+
+  public updateTags(tagIds: string[]) {
+    this.tagIds = tagIds;
+    this.touch();
+  }
+
+  public updatePriority(priority: number) {
+    this.priority = priority;
+    this.touch();
+  }
+
+  private touch() {
+    this.updatedAt = new Date();
   }
 
   public matches(description: string): boolean {

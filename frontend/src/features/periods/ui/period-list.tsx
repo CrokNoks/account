@@ -25,9 +25,11 @@ import { EditPeriodBudgetsSheet } from './edit-period-budgets-sheet';
 
 export function PeriodList() {
   const t = useTranslations('Budgets');
+  const tc = useTranslations('Common');
   const { activeAccountId } = useAccountStore();
   const { data: periods, isLoading } = usePeriods(activeAccountId);
   const { mutate: updatePeriod, isPending: isUpdating } = useUpdatePeriod();
+  const { mutate: deletePeriod, isPending: isDeleting } = useDeletePeriod();
   const [editingPeriod, setEditingPeriod] = useState<Period | null>(null);
   const [editingBudgetsPeriodId, setEditingBudgetsPeriodId] = useState<string | null>(null);
 
@@ -39,6 +41,19 @@ export function PeriodList() {
       data: { isActive: false }
     }, {
       onSuccess: () => toast.success(t('updated'))
+    });
+  };
+
+  const handleDelete = (id: string) => {
+    if (!activeAccountId || !confirm(t('confirm_delete'))) return;
+
+    deletePeriod({
+      accountId: activeAccountId,
+      id: id
+    }, {
+      onSuccess: () => {
+        toast.success(t('deleted'));
+      }
     });
   };
 
@@ -66,23 +81,36 @@ export function PeriodList() {
                     {t('close_period')}
                   </Button>
                 )}
-                <Button 
-                  variant="ghost" 
-                  size="icon-sm" 
-                  className="opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8 text-muted-foreground hover:text-primary"
-                  onClick={() => setEditingBudgetsPeriodId(period.id)}
-                  title="Modifier les budgets"
-                >
-                  <PieChart className="w-3.5 h-3.5" />
-                </Button>
-                <Button 
-                  variant="ghost" 
-                  size="icon-sm" 
-                  className="opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8"
-                  onClick={() => setEditingPeriod(period)}
-                >
-                  <Pencil className="w-3.5 h-3.5" />
-                </Button>
+                <div className="flex items-center gap-1">
+                  <Button 
+                    variant="ghost" 
+                    size="icon-sm" 
+                    className="opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8 text-muted-foreground hover:text-primary"
+                    onClick={() => setEditingBudgetsPeriodId(period.id)}
+                    title="Modifier les budgets"
+                  >
+                    <PieChart className="w-3.5 h-3.5" />
+                  </Button>
+                  <Button 
+                    variant="ghost" 
+                    size="icon-sm" 
+                    className="opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8"
+                    onClick={() => setEditingPeriod(period)}
+                    title="Modifier les dates"
+                  >
+                    <Pencil className="w-3.5 h-3.5" />
+                  </Button>
+                  <Button 
+                    variant="ghost" 
+                    size="icon-sm" 
+                    className="opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8 text-destructive"
+                    onClick={() => handleDelete(period.id)}
+                    title="Supprimer la période"
+                    disabled={isDeleting}
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </Button>
+                </div>
                 {period.isActive && <Badge variant="default">{t('active')}</Badge>}
               </div>
             </CardHeader>
@@ -119,7 +147,6 @@ function EditPeriodDialog({ period, open, onOpenChange }: { period: Period, open
   const [isActive, setIsActive] = useState(period.isActive);
   
   const { mutate: updatePeriod, isPending } = useUpdatePeriod();
-  const { mutate: deletePeriod, isPending: isDeleting } = useDeletePeriod();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -132,20 +159,6 @@ function EditPeriodDialog({ period, open, onOpenChange }: { period: Period, open
     }, {
       onSuccess: () => {
         toast.success(t('updated'));
-        onOpenChange(false);
-      }
-    });
-  };
-
-  const handleDelete = () => {
-    if (!activeAccountId || !confirm(t('confirm_delete'))) return;
-
-    deletePeriod({
-      accountId: activeAccountId,
-      id: period.id
-    }, {
-      onSuccess: () => {
-        toast.success(t('deleted'));
         onOpenChange(false);
       }
     });
@@ -174,18 +187,8 @@ function EditPeriodDialog({ period, open, onOpenChange }: { period: Period, open
               <label htmlFor="active" className="text-sm font-medium cursor-pointer">{t('fields.is_active')}</label>
             </div>
           </div>
-          <SheetFooter className="p-6 border-t bg-muted/20 flex flex-row gap-2">
-            <Button 
-              type="button" 
-              variant="outline" 
-              className="flex-1 h-11 text-destructive hover:text-destructive border-destructive/20 hover:border-destructive/50" 
-              onClick={handleDelete}
-              disabled={isDeleting || isPending}
-            >
-              <Trash2 className="w-4 h-4 mr-2" />
-              {tc('delete')}
-            </Button>
-            <Button type="submit" className="flex-[2] h-11 text-base font-semibold" disabled={isPending || isDeleting}>
+          <SheetFooter className="p-6 border-t bg-muted/20">
+            <Button type="submit" className="w-full h-11 text-base font-semibold" disabled={isPending}>
               {isPending ? tc('loading') : tc('save')}
             </Button>
           </SheetFooter>

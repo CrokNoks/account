@@ -8,7 +8,7 @@ import { useDeleteTag } from '../api/use-delete-tag';
 import { useAccountStore } from '@/features/accounts/model/use-account-store';
 import { useUiStore } from '@/shared/model/use-ui-store';
 import { Button } from "@/components/ui/button";
-import { Pencil, Trash2 } from 'lucide-react';
+import { Pencil, Trash2, Eye } from 'lucide-react';
 import { 
   Sheet, 
   SheetContent, 
@@ -54,7 +54,7 @@ export function TagList() {
             onClick={() => setTagDetailId(tag.id)}
           >
             <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-              <CardTitle className="text-sm font-bold flex items-center gap-2 truncate pr-16">
+              <CardTitle className="text-sm font-bold flex items-center gap-2 truncate pr-20">
                 <div 
                   className="w-3 h-3 rounded-full shrink-0 shadow-sm border border-black/10" 
                   style={{ backgroundColor: tag.color || '#94a3b8' }} 
@@ -66,7 +66,17 @@ export function TagList() {
                   variant="ghost" 
                   size="icon-xs" 
                   className="h-6 w-6 hover:bg-background/50"
-                  onClick={() => setEditingTag(tag)}
+                  onClick={(e) => { e.stopPropagation(); setTagDetailId(tag.id); }}
+                  title="Voir les détails"
+                >
+                  <Eye className="w-3 h-3 text-muted-foreground" />
+                </Button>
+                <Button 
+                  variant="ghost" 
+                  size="icon-xs" 
+                  className="h-6 w-6 hover:bg-background/50"
+                  onClick={(e) => { e.stopPropagation(); setEditingTag(tag); }}
+                  title="Modifier"
                 >
                   <Pencil className="w-3 h-3 text-muted-foreground" />
                 </Button>
@@ -74,7 +84,8 @@ export function TagList() {
                   variant="ghost" 
                   size="icon-xs" 
                   className="h-6 w-6 hover:bg-background/50 text-muted-foreground hover:text-destructive"
-                  onClick={() => handleDelete(tag.id)}
+                  onClick={(e) => { e.stopPropagation(); handleDelete(tag.id); }}
+                  title="Supprimer"
                 >
                   <Trash2 className="w-3 h-3" />
                 </Button>

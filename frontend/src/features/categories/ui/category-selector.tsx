@@ -35,32 +35,40 @@ export function CategorySelector({
 
   return (
     <Select 
-      value={value} 
+      value={value || "none"} 
       onValueChange={(v) => onChange(v === 'none' ? '' : (v || ''))}
       disabled={disabled || isLoading || !accountId}
     >
-      <SelectTrigger className={cn("w-full h-11", className)}>
+      <SelectTrigger className={cn("w-full h-11 justify-between", className)}>
         <SelectValue placeholder={placeholder || "Sélectionner une catégorie..."}>
-          {value ? (
+          {selectedCategory ? (
             <div className="flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full" style={{ backgroundColor: selectedCategory?.color }} />
-              {selectedCategory?.name}
+              <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: selectedCategory.color }} />
+              <span className="truncate">{selectedCategory.name}</span>
             </div>
           ) : (
-            placeholder || "Sélectionner une catégorie..."
+            <span className="text-muted-foreground">{placeholder || "Sélectionner une catégorie..."}</span>
           )}
         </SelectValue>
       </SelectTrigger>
       <SelectContent>
-        <SelectItem value="none">Sans catégorie</SelectItem>
-        {categories?.map((cat) => (
-          <SelectItem key={cat.id} value={cat.id}>
-            <div className="flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full" style={{ backgroundColor: cat.color }} />
-              {cat.name}
-            </div>
-          </SelectItem>
-        ))}
+        <SelectItem value="none">
+          <span className="italic text-muted-foreground">Sans catégorie</span>
+        </SelectItem>
+        {categories && categories.length > 0 ? (
+          categories.map((cat) => (
+            <SelectItem key={cat.id} value={cat.id}>
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: cat.color }} />
+                <span className="truncate">{cat.name}</span>
+              </div>
+            </SelectItem>
+          ))
+        ) : !isLoading && (
+          <div className="p-2 text-xs text-center text-muted-foreground">
+            Aucune catégorie trouvée
+          </div>
+        )}
       </SelectContent>
     </Select>
   );

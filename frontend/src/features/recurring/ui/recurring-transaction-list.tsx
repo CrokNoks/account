@@ -162,6 +162,7 @@ function EditRecurringDialog({ transaction, open, onOpenChange }: { transaction:
               <div className="space-y-2">
                 <label className="text-sm font-medium">{t('fields.category')}</label>
                 <CategorySelector 
+                  key={activeAccountId}
                   accountId={activeAccountId}
                   value={categoryId}
                   onChange={setCategoryId}

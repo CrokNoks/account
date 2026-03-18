@@ -505,6 +505,7 @@ export function TransactionList({
                 <div className="space-y-1.5">
                   <label className="text-[10px] font-bold uppercase text-muted-foreground px-1">{t('fields.category')}</label>
                   <CategorySelector 
+                    key={activeAccountId}
                     accountId={activeAccountId}
                     value={selectedCategoryId === 'all' ? '' : selectedCategoryId}
                     onChange={(v) => setSelectedCategoryId(v || 'all')}
