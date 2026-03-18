@@ -24,6 +24,7 @@ import { toCents, toAbsCents } from '@/shared/lib/format';
 
 export function CreateTransactionDrawer() {
   const t = useTranslations('Transactions');
+  const tc = useTranslations('Common');
   const { activeAccountId } = useAccountStore();
   const { isCreateTransactionDrawerOpen, setCreateTransactionDrawerOpen } = useUiStore();
   const { data: periods } = usePeriods(activeAccountId);
@@ -195,7 +196,7 @@ export function CreateTransactionDrawer() {
             onSubmit={(v) => handleSubmit(v, false)}
             onAddAnother={(v) => handleSubmit(v, true)}
             isPending={isPending}
-            submitLabel={t('save')}
+            submitLabel={tc('save')}
             mode={mode}
             key={`${mode}-${JSON.stringify(initialValues)}`}
           />
