@@ -12,7 +12,6 @@ import {
 import {
   ApiTags,
   ApiOperation,
-  ApiResponse,
   ApiBearerAuth,
   ApiProperty,
 } from '@nestjs/swagger';

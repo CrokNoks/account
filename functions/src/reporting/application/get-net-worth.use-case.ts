@@ -1,4 +1,4 @@
-import { Injectable, Inject } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { AccountRepository } from '../../accounts/domain/account.repository.interface';
 import { TransactionRepository } from '../../transactions/domain/transaction.repository.interface';
 import { startOfDay, subDays, eachDayOfInterval, format } from 'date-fns';
@@ -20,7 +20,7 @@ export class GetNetWorthUseCase {
     private readonly transactionRepository: TransactionRepository,
   ) {}
 
-  async execute(_userId: string): Promise<NetWorthResponse> {
+  async execute(): Promise<NetWorthResponse> {
     // 1. Get all accounts for this user
     // Note: RLS ensures we only get accounts the user has access to
     const accounts = await this.accountRepository.findAllForUser();

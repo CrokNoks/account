@@ -19,11 +19,11 @@ import {
   IsString,
   IsBoolean,
   ValidateNested,
-  IsObject,
   IsOptional,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { SupabaseAuthGuard } from '../../auth/supabase-auth.guard';
+import { AuthenticatedRequest } from '../../auth/authenticated-request.interface';
 import { GetUserPreferencesUseCase } from '../application/get-user-preferences.use-case';
 import { UpdateUserPreferencesUseCase } from '../application/update-user-preferences.use-case';
 import {
@@ -83,7 +83,9 @@ export class PreferencesController {
   @Get()
   @ApiOperation({ summary: 'Get user preferences' })
   @ApiResponse({ status: 200, type: UserPreferencesResponseDto })
-  async get(@Request() req: any): Promise<UserPreferencesResponseDto> {
+  async get(
+    @Request() req: AuthenticatedRequest,
+  ): Promise<UserPreferencesResponseDto> {
     const preferences = await this.getUserPreferencesUseCase.execute(
       req.user.id,
     );
@@ -98,7 +100,7 @@ export class PreferencesController {
   @ApiOperation({ summary: 'Update dashboard layout' })
   @ApiResponse({ status: 200, type: UserPreferencesResponseDto })
   async update(
-    @Request() req: any,
+    @Request() req: AuthenticatedRequest,
     @Body() dto: DashboardLayoutDto,
   ): Promise<UserPreferencesResponseDto> {
     const preferences = await this.updateUserPreferencesUseCase.execute({

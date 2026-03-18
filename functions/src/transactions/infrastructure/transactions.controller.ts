@@ -233,13 +233,13 @@ export class FindTransactionsQueryDto {
   categoryId?: string;
 
   @IsOptional()
-  @Transform(({ value }) => {
+  @Transform(({ value }): string[] | undefined => {
     if (!value) return undefined;
-    if (Array.isArray(value)) return value;
+    if (Array.isArray(value)) return value as string[];
     if (typeof value === 'string') {
       return value.includes(',') ? value.split(',') : [value];
     }
-    return [value];
+    return [String(value)];
   })
   @IsArray()
   @IsString({ each: true })
@@ -255,10 +255,10 @@ export class FindTransactionsQueryDto {
   maxAmount?: string;
 
   @IsOptional()
-  @Transform(({ value }) => {
+  @Transform(({ value }): boolean | string | undefined => {
     if (value === 'true') return true;
     if (value === 'false') return false;
-    return value;
+    return value as string | undefined;
   })
   @IsBoolean()
   reconciled?: boolean;

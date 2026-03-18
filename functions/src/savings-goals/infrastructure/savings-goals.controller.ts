@@ -11,7 +11,6 @@ import {
 import {
   ApiTags,
   ApiOperation,
-  ApiResponse,
   ApiBearerAuth,
   ApiProperty,
 } from '@nestjs/swagger';
@@ -22,6 +21,7 @@ import {
   UpdateSavingsGoalUseCase,
 } from '../application/savings-goals.use-cases';
 import type { SavingsGoalRepository } from '../domain/savings-goal.repository.interface';
+import { SavingsGoal } from '../domain/savings-goal.entity';
 import {
   IsString,
   IsOptional,
@@ -112,7 +112,7 @@ export class SavingsGoalsController {
     await this.repository.delete(id);
   }
 
-  private mapToResponse(g: any) {
+  private mapToResponse(g: SavingsGoal) {
     return {
       id: g.id,
       accountId: g.accountId,

@@ -233,8 +233,8 @@ export class ReportingController {
     summary: 'Get total net worth evolution across all accounts',
   })
   @ApiResponse({ status: 200, type: NetWorthResponseDto })
-  async getNetWorth(@Request() req: any): Promise<NetWorthResponseDto> {
-    return this.getNetWorthUseCase.execute(req.user.id);
+  async getNetWorth(): Promise<NetWorthResponseDto> {
+    return this.getNetWorthUseCase.execute();
   }
 
   @Get('periods/:periodId/reporting/stats')
