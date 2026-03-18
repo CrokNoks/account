@@ -265,7 +265,7 @@ export default function Home() {
         </div>
         <div className="flex items-center gap-2">
           {!isEditing ? (
-            <Button variant="outline" size="icon" onClick={handleStartEditing} title="Personnaliser le dashboard">
+            <Button variant="outline" size="icon" onClick={handleStartEditing} title="Personnaliser le dashboard" className="hidden lg:flex">
               <Settings2 className="w-4 h-4" />
             </Button>
           ) : (
