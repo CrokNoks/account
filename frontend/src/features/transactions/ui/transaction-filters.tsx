@@ -8,8 +8,8 @@ import { Search, Filter, X } from 'lucide-react';
 import { CategorySelector } from '@/features/categories/ui/category-selector';
 import { TagSelector } from '@/features/tags/ui/tag-selector';
 import { format } from 'date-fns';
-import { cn } from "@/lib/utils";
 import { Period } from "@/features/periods/model/types";
+import { useTranslations } from "next-intl";
 
 interface TransactionFiltersProps {
   search: string;
@@ -22,8 +22,8 @@ interface TransactionFiltersProps {
   setSelectedCategoryId: (v: string) => void;
   selectedTagIds: string[];
   setSelectedTagIds: (v: string[]) => void;
-  statusFilter: string;
-  setStatusFilter: (v: any) => void;
+  statusFilter: 'all' | 'reconciled' | 'not_reconciled';
+  setStatusFilter: (v: 'all' | 'reconciled' | 'not_reconciled') => void;
   minAmount: string;
   setMinAmount: (v: string) => void;
   maxAmount: string;
@@ -38,7 +38,7 @@ interface TransactionFiltersProps {
   periodId?: string;
   onApply: () => void;
   onReset: () => void;
-  t: any;
+  t: ReturnType<typeof useTranslations>;
 }
 
 export function TransactionFilters({

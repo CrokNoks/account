@@ -5,7 +5,7 @@ import { useAccountStore } from '@/features/accounts/model/use-account-store';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { formatCurrency } from '@/shared/lib/format';
-import { Target, TrendingUp } from 'lucide-react';
+import { Target } from 'lucide-react';
 import { NoDataState } from '@/shared/ui/no-data-state';
 
 export function SavingsGoalsWidget() {

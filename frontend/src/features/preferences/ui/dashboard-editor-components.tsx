@@ -101,7 +101,7 @@ export function ManagementItem({ id, label, onAdd, onRemove, isActive = false }:
 }
 
 export function SortableWidget({ 
-  id, children, isEditing, width, desktopVisible, mobileVisible, onWidthChange, onToggleDevice 
+  children, desktopVisible, mobileVisible, width, 
 }: { 
   id: string, children: React.ReactNode, isEditing: boolean, width: number,
   desktopVisible: boolean, mobileVisible: boolean, onWidthChange: (width: number) => void,

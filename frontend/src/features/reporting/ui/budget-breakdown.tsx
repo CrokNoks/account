@@ -1,6 +1,6 @@
 'use client';
 
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { formatCurrency } from "@/shared/lib/format";
 import { useAccountStore } from "@/features/accounts/model/use-account-store";
 import { useBudgetBreakdown } from "../api/use-budget-breakdown";
@@ -11,7 +11,7 @@ import { PieChart } from "lucide-react";
 
 import { NoDataState } from "@/shared/ui/no-data-state";
 
-export function BudgetBreakdown({ title }: { title?: React.ReactNode }) {
+export function BudgetBreakdown() {
   const t = useTranslations('Reporting');
   const { activeAccountId, activePeriodId } = useAccountStore();
   
@@ -24,12 +24,10 @@ export function BudgetBreakdown({ title }: { title?: React.ReactNode }) {
 
   const header = (
     <CardHeader className="bg-muted/10 pb-3 shrink-0">
-      {title || (
-        <div className="flex items-center gap-2">
-          <PieChart className="w-4 h-4 text-primary" />
-          <h2 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">{t('breakdown')}</h2>
-        </div>
-      )}
+      <div className="flex items-center gap-2">
+        <PieChart className="w-4 h-4 text-primary" />
+        <h2 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">{t('breakdown')}</h2>
+      </div>
     </CardHeader>
   );
 
@@ -77,8 +75,8 @@ export function BudgetBreakdown({ title }: { title?: React.ReactNode }) {
 function BudgetGroup({ title, items, isExpense }: { title: string, items: BudgetCategoryBreakdown[], isExpense?: boolean }) {
   const t = useTranslations('Reporting');
   if (items.length === 0) return (
-    <div className="h-32 flex items-center justify-center text-muted-foreground italic bg-muted/5 rounded-xl border border-dashed">
-      Aucune donnée pour cette catégorie
+    <div className="h-32 flex items-center justify-center text-muted-foreground italic bg-muted/5 rounded-xl border border-dashed text-xs">
+      Aucune donnée pour {title.toLowerCase()}
     </div>
   );
 

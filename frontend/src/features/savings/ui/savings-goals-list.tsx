@@ -17,7 +17,6 @@ import { Input } from '@/components/ui/input';
 
 export function SavingsGoalsList() {
   const t = useTranslations('Savings');
-  const tc = useTranslations('Common');
   const { activeAccountId } = useAccountStore();
   const { data: goals, isLoading } = useSavingsGoals(activeAccountId);
   const { mutate: deleteGoal } = useDeleteSavingsGoal();

@@ -72,7 +72,10 @@ export function TopExpensesWidget() {
                 ))}
               </Pie>
               <Tooltip 
-                formatter={(value: any) => formatCurrency(Math.round(Number(value) * 100))}
+                formatter={(value: unknown) => {
+                  const numValue = typeof value === 'number' ? value : Number(value);
+                  return formatCurrency(Math.round(numValue * 100).toString());
+                }}
                 contentStyle={{ borderRadius: '8px', fontSize: '12px' }}
               />
               <Legend 

@@ -11,13 +11,14 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from '@/components/ui/badge';
 import { Button } from "@/components/ui/button";
-import { CheckCircle2, Circle, Pencil, Trash2, Repeat, Clock } from 'lucide-react';
+import { CheckCircle2, Circle, Pencil, Trash2, Repeat } from 'lucide-react';
 import { format } from 'date-fns';
 import { formatCurrency } from '@/shared/lib/format';
 import { cn } from "@/lib/utils";
 import { Transaction } from '../model/types';
 import { Category } from '@/features/categories/model/types';
 import { Tag } from '@/features/tags/model/types';
+import { useTranslations } from 'next-intl';
 
 interface TransactionTableProps {
   transactions: Transaction[];
@@ -33,7 +34,7 @@ interface TransactionTableProps {
   onTagClick: (tagId: string) => void;
   compact?: boolean;
   isUpdating?: boolean;
-  t: any; // Translation function
+  t: ReturnType<typeof useTranslations>; // Translation function
 }
 
 export function TransactionTable({

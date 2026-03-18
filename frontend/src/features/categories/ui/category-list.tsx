@@ -15,7 +15,6 @@ import {
   SheetContent, 
   SheetHeader, 
   SheetTitle, 
-  SheetFooter 
 } from "@/components/ui/sheet";
 import { Input } from "@/components/ui/input";
 import { 

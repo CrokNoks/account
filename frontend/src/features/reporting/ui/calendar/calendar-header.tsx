@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { format } from 'date-fns';
+import { format, type Locale } from 'date-fns';
 import { ChevronLeft, ChevronRight, Calendar as CalendarIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { CardHeader, CardTitle } from '@/components/ui/card';
@@ -17,7 +17,7 @@ interface CalendarHeaderProps {
   onPrev: () => void;
   onToday: () => void;
   totals: { income: bigint; expenses: bigint };
-  dateLocale: any;
+  dateLocale: Locale;
   calendarStart: Date;
 }
 

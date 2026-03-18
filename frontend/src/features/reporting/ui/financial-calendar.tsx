@@ -9,7 +9,6 @@ import {
   startOfWeek, 
   endOfWeek, 
   eachDayOfInterval, 
-  isSameMonth, 
   isSameDay, 
   parseISO,
   addWeeks,

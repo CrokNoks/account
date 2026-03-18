@@ -13,10 +13,7 @@ import {
   SheetContent, 
   SheetHeader, 
   SheetTitle, 
-  SheetFooter 
 } from "@/components/ui/sheet";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { toast } from 'sonner';
 import { useTranslations } from 'next-intl';
 import { ShareAccountDialog } from './share-account-dialog';

@@ -26,7 +26,6 @@ import { EditPeriodBudgetsSheet } from './edit-period-budgets-sheet';
 
 export function PeriodList() {
   const t = useTranslations('Budgets');
-  const tc = useTranslations('Common');
   const { activeAccountId } = useAccountStore();
   const { data: periods, isLoading } = usePeriods(activeAccountId);
   const { mutate: updatePeriod, isPending: isUpdating } = useUpdatePeriod();

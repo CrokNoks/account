@@ -5,7 +5,7 @@ import { useAccountStore } from '@/features/accounts/model/use-account-store';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { formatCurrency } from '@/shared/lib/format';
 import { Landmark } from 'lucide-react';
-import { LineChart, Line, ResponsiveContainer, YAxis, Tooltip } from 'recharts';
+import { LineChart, Line, ResponsiveContainer, Tooltip } from 'recharts';
 import { NoDataState } from '@/shared/ui/no-data-state';
 
 export function NetWorthWidget() {

@@ -99,7 +99,7 @@ export class SupabaseTransactionRepository implements TransactionRepository {
         page,
         limit,
         totalPages,
-      }
+      },
     };
   }
 

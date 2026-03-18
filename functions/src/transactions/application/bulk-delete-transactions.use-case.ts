@@ -12,10 +12,13 @@ export class BulkDeleteTransactionsUseCase {
 
   async execute(command: BulkDeleteTransactionsCommand): Promise<void> {
     const { accountId, ids } = command;
-    
+
     // Security check: ensure they belong to the account
-    const transactions = await this.transactionRepository.findAllByAccountUnpaginated(accountId);
-    const validIds = transactions.filter(t => ids.includes(t.id)).map(t => t.id);
+    const transactions =
+      await this.transactionRepository.findAllByAccountUnpaginated(accountId);
+    const validIds = transactions
+      .filter((t) => ids.includes(t.id))
+      .map((t) => t.id);
 
     if (validIds.length === 0) return;
 

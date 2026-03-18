@@ -8,9 +8,12 @@ export class MatchSmartRulesUseCase {
     private readonly ruleRepository: SmartRuleRepository,
   ) {}
 
-  async execute(accountId: string, description: string): Promise<{ categoryId: string | null, tagIds: string[] }> {
+  async execute(
+    accountId: string,
+    description: string,
+  ): Promise<{ categoryId: string | null; tagIds: string[] }> {
     const rules = await this.ruleRepository.findAllByAccount(accountId);
-    
+
     // Sort by priority (higher first)
     const sortedRules = rules.sort((a, b) => b.priority - a.priority);
 

@@ -1,10 +1,9 @@
 'use client';
 
 import * as React from 'react';
-import { format, isSameDay, isSameMonth, isToday, parseISO } from 'date-fns';
+import { format, isSameDay, isSameMonth, isToday } from 'date-fns';
 import { formatCurrency } from '@/shared/lib/format';
 import { cn } from '@/lib/utils';
-import { Badge } from '@/components/ui/badge';
 import { CalendarEvent } from '../../model/types';
 import { Category } from '@/features/categories/model/types';
 

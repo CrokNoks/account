@@ -84,7 +84,7 @@ export interface Anomaly {
   description: string;
   severity: 'low' | 'medium' | 'high';
   transactionIds: string[];
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 export interface NetWorthDataPoint {

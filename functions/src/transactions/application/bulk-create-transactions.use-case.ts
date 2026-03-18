@@ -28,9 +28,13 @@ export class BulkCreateTransactionsUseCase {
 
       // If no category provided, try to apply rules
       if (!categoryId) {
-        const ruleMatch = await this.matchRulesUseCase.execute(accountId, dto.description);
+        const ruleMatch = await this.matchRulesUseCase.execute(
+          accountId,
+          dto.description,
+        );
         if (ruleMatch.categoryId) categoryId = ruleMatch.categoryId;
-        if (ruleMatch.tagIds.length > 0) tagIds = [...tagIds, ...ruleMatch.tagIds];
+        if (ruleMatch.tagIds.length > 0)
+          tagIds = [...tagIds, ...ruleMatch.tagIds];
       }
 
       const transaction = Transaction.create({

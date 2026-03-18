@@ -1,3 +1,5 @@
+import { Transaction } from "@/features/transactions/model/types";
+
 export interface Tag {
   id: string;
   accountId: string;
@@ -37,5 +39,5 @@ export interface TagDetail {
   tag: Tag;
   totalAmount: string;
   transactionCount: number;
-  transactions: any[];
+  transactions: Transaction[];
 }

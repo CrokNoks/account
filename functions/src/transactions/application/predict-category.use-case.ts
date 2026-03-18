@@ -19,7 +19,10 @@ export class PredictCategoryUseCase {
     }
 
     // 1. Try smart rules first (Explicit user configuration)
-    const ruleMatch = await this.matchRulesUseCase.execute(accountId, description);
+    const ruleMatch = await this.matchRulesUseCase.execute(
+      accountId,
+      description,
+    );
     if (ruleMatch.categoryId || ruleMatch.tagIds.length > 0) {
       return {
         categoryId: ruleMatch.categoryId,

@@ -21,7 +21,7 @@ import { AIInsightsCard } from "@/features/reporting/ui/ai-insights-card";
 import { TransactionList } from "@/features/transactions/ui/transaction-list";
 import { Card } from "@/components/ui/card";
 
-export const WIDGET_COMPONENTS: Record<string, React.ComponentType<any>> = {
+export const WIDGET_COMPONENTS: Record<string, React.ComponentType> = {
   'stat-start': StatStartBalance,
   'stat-income': StatRealIncome,
   'stat-expenses': StatRealExpenses,

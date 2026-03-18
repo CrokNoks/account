@@ -1,6 +1,9 @@
 import { Injectable, Inject } from '@nestjs/common';
 import type { UserPreferencesRepository } from '../domain/user-preferences.repository.interface';
-import { UserPreferences, DashboardLayout } from '../domain/user-preferences.entity';
+import {
+  UserPreferences,
+  DashboardLayout,
+} from '../domain/user-preferences.entity';
 
 export interface UpdateUserPreferencesCommand {
   userId: string;
@@ -14,8 +17,10 @@ export class UpdateUserPreferencesUseCase {
     private readonly preferencesRepository: UserPreferencesRepository,
   ) {}
 
-  async execute(command: UpdateUserPreferencesCommand): Promise<UserPreferences> {
-    const normalizedWidgets = command.dashboardLayout.widgets.map(w => ({
+  async execute(
+    command: UpdateUserPreferencesCommand,
+  ): Promise<UserPreferences> {
+    const normalizedWidgets = command.dashboardLayout.widgets.map((w) => ({
       ...w,
       desktopVisible: w.desktopVisible ?? true,
       mobileVisible: w.mobileVisible ?? true,

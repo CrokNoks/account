@@ -1,6 +1,9 @@
 import { Injectable, Inject } from '@nestjs/common';
 import { SupabaseClient } from '@supabase/supabase-js';
-import { UserPreferences, DashboardLayout } from '../domain/user-preferences.entity';
+import {
+  UserPreferences,
+  DashboardLayout,
+} from '../domain/user-preferences.entity';
 import { UserPreferencesRepository } from '../domain/user-preferences.repository.interface';
 
 interface UserPreferencesRow {

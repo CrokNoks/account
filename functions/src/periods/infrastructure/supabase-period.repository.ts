@@ -67,7 +67,9 @@ export class SupabasePeriodRepository implements PeriodRepository {
       id: period.id,
       account_id: period.accountId,
       start_date: period.startDate.toISOString().split('T')[0],
-      end_date: period.endDate ? period.endDate.toISOString().split('T')[0] : null,
+      end_date: period.endDate
+        ? period.endDate.toISOString().split('T')[0]
+        : null,
       is_active: period.isActive,
       created_at: period.createdAt.toISOString(),
       updated_at: period.updatedAt.toISOString(),

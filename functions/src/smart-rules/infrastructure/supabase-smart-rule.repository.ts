@@ -61,7 +61,10 @@ export class SupabaseSmartRuleRepository implements SmartRuleRepository {
   }
 
   async delete(id: string): Promise<void> {
-    const { error } = await this.supabase.from('smart_rules').delete().eq('id', id);
+    const { error } = await this.supabase
+      .from('smart_rules')
+      .delete()
+      .eq('id', id);
     if (error) throw new Error(error.message);
   }
 

@@ -53,7 +53,9 @@ export class SupabaseSavingsGoalRepository implements SavingsGoalRepository {
       name: goal.name,
       target_amount: goal.targetAmount.toString(),
       current_amount: goal.currentAmount.toString(),
-      deadline: goal.deadline ? goal.deadline.toISOString().split('T')[0] : null,
+      deadline: goal.deadline
+        ? goal.deadline.toISOString().split('T')[0]
+        : null,
       color: goal.color,
       created_at: goal.createdAt.toISOString(),
       updated_at: goal.updatedAt.toISOString(),
@@ -63,7 +65,10 @@ export class SupabaseSavingsGoalRepository implements SavingsGoalRepository {
   }
 
   async delete(id: string): Promise<void> {
-    const { error } = await this.supabase.from('savings_goals').delete().eq('id', id);
+    const { error } = await this.supabase
+      .from('savings_goals')
+      .delete()
+      .eq('id', id);
     if (error) throw new Error(error.message);
   }
 

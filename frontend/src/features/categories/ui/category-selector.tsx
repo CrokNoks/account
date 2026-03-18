@@ -7,10 +7,8 @@ import {
   SelectTrigger, 
   SelectValue 
 } from "@/components/ui/select";
-import { CategoryType } from '@/features/categories/model/types';
 import { useCategories } from '@/features/categories/api/use-categories';
 import { cn } from "@/lib/utils";
-import { useTranslations } from 'next-intl';
 
 interface CategorySelectorProps {
   accountId: string | null;
@@ -29,7 +27,6 @@ export function CategorySelector({
   className,
   disabled,
 }: CategorySelectorProps) {
-  const t = useTranslations('Categories');
   const { data: categories, isLoading } = useCategories(accountId);
 
   const selectedCategory = categories?.find((c) => c.id === value);

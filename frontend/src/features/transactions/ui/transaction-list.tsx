@@ -9,7 +9,6 @@ import { usePeriods } from '@/features/budgets/api/use-periods';
 import { useCategories } from '@/features/categories/api/use-categories';
 import { useTags } from '@/features/tags/api/use-tags';
 import { toCents, fromCents } from '@/shared/lib/format';
-import { Badge } from '@/components/ui/badge';
 import { Plus, Receipt } from 'lucide-react';
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -20,7 +19,6 @@ import {
   SheetHeader, 
   SheetTitle 
 } from "@/components/ui/sheet";
-import { Card } from "@/components/ui/card";
 import { useUiStore } from '@/shared/model/use-ui-store';
 import { toast } from 'sonner';
 import { useTranslations } from 'next-intl';
@@ -51,7 +49,6 @@ export function TransactionList({
   extraActions?: React.ReactNode
 }) {
   const t = useTranslations('Transactions');
-  const tc = useTranslations('Common');
   const { activeAccountId, activePeriodId } = useAccountStore();
   const { setTagDetailId, isCreateTransactionDrawerOpen, setCreateTransactionDrawerOpen } = useUiStore();
   const { data: periods } = usePeriods(activeAccountId);
@@ -67,7 +64,7 @@ export function TransactionList({
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   
   const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(25);
+  const [limit] = useState(25);
   const [selectedPeriodId, setSelectedPeriodId] = useState<string | 'all'>('all');
   const [statusFilter, setStatusFilter] = useState<'all' | 'reconciled' | 'not_reconciled'>('all');
   
@@ -82,28 +79,56 @@ export function TransactionList({
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
 
-  const [filterTrigger, setFilterTrigger] = useState(0);
+  const [appliedFilters, setAppliedFilters] = useState({
+    search: '',
+    categoryId: 'all',
+    selectedTagIds: [] as string[],
+    statusFilter: 'all',
+    minAmount: '',
+    maxAmount: '',
+    startDate: '',
+    endDate: '',
+  });
 
   const filterOptions = useMemo(() => ({
     periodId: effectivePeriodId === 'all' ? undefined : (effectivePeriodId || undefined),
-    search: search || undefined,
-    categoryId: selectedCategoryId === 'all' ? undefined : selectedCategoryId,
-    tagIds: selectedTagIds.length > 0 ? selectedTagIds.join(',') : undefined,
-    minAmount: minAmount ? toCents(minAmount) : undefined,
-    maxAmount: maxAmount ? toCents(maxAmount) : undefined,
-    startDate: startDate || undefined,
-    endDate: endDate || undefined,
-    reconciled: statusFilter === 'all' ? undefined : statusFilter === 'reconciled',
+    search: appliedFilters.search || undefined,
+    categoryId: appliedFilters.categoryId === 'all' ? undefined : appliedFilters.categoryId,
+    tagIds: appliedFilters.selectedTagIds.length > 0 ? appliedFilters.selectedTagIds.join(',') : undefined,
+    minAmount: appliedFilters.minAmount ? toCents(appliedFilters.minAmount) : undefined,
+    maxAmount: appliedFilters.maxAmount ? toCents(appliedFilters.maxAmount) : undefined,
+    startDate: appliedFilters.startDate || undefined,
+    endDate: appliedFilters.endDate || undefined,
+    reconciled: appliedFilters.statusFilter === 'all' ? undefined : appliedFilters.statusFilter === 'reconciled',
     page,
     limit,
-  }), [filterTrigger, page, limit, effectivePeriodId, activeAccountId]);
+  }), [page, limit, effectivePeriodId, appliedFilters]);
 
   const handleApplyFilters = () => {
     setPage(1);
-    setFilterTrigger(prev => prev + 1);
+    setAppliedFilters({
+      search,
+      categoryId: selectedCategoryId,
+      selectedTagIds,
+      statusFilter,
+      minAmount,
+      maxAmount,
+      startDate,
+      endDate,
+    });
   };
 
   const handleResetFilters = () => {
+    const defaultFilters = {
+      search: '',
+      categoryId: 'all',
+      selectedTagIds: [],
+      statusFilter: 'all',
+      minAmount: '',
+      maxAmount: '',
+      startDate: '',
+      endDate: '',
+    };
     setSearch('');
     setSelectedCategoryId('all');
     setSelectedTagIds([]);
@@ -113,21 +138,21 @@ export function TransactionList({
     setEndDate('');
     setStatusFilter('all');
     setPage(1);
-    setFilterTrigger(prev => prev + 1);
+    setAppliedFilters(defaultFilters);
   };
 
   const activeFiltersCount = useMemo(() => {
     return [
-      filterOptions.search,
-      filterOptions.categoryId,
-      filterOptions.tagIds,
-      filterOptions.minAmount,
-      filterOptions.maxAmount,
-      filterOptions.startDate,
-      filterOptions.endDate,
-      filterOptions.reconciled !== undefined
-    ].filter(v => v !== undefined && v !== 'all' && v !== '').length;
-  }, [filterOptions]);
+      appliedFilters.search,
+      appliedFilters.categoryId !== 'all',
+      appliedFilters.selectedTagIds.length > 0,
+      appliedFilters.minAmount,
+      appliedFilters.maxAmount,
+      appliedFilters.startDate,
+      appliedFilters.endDate,
+      appliedFilters.statusFilter !== 'all'
+    ].filter(Boolean).length;
+  }, [appliedFilters]);
 
   const { data: transactions, isLoading } = useTransactions(activeAccountId, filterOptions);
 

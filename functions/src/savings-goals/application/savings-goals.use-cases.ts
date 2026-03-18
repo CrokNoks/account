@@ -66,9 +66,18 @@ export class UpdateSavingsGoalUseCase {
     const updated = new SavingsGoal({
       ...existing,
       name: command.name ?? existing.name,
-      targetAmount: command.targetAmount ? BigInt(command.targetAmount) : existing.targetAmount,
-      currentAmount: command.currentAmount ? BigInt(command.currentAmount) : existing.currentAmount,
-      deadline: command.deadline === null ? null : (command.deadline ? new Date(command.deadline) : existing.deadline),
+      targetAmount: command.targetAmount
+        ? BigInt(command.targetAmount)
+        : existing.targetAmount,
+      currentAmount: command.currentAmount
+        ? BigInt(command.currentAmount)
+        : existing.currentAmount,
+      deadline:
+        command.deadline === null
+          ? null
+          : command.deadline
+            ? new Date(command.deadline)
+            : existing.deadline,
       color: command.color ?? existing.color,
       updatedAt: new Date(),
     });

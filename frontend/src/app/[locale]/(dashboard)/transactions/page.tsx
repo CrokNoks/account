@@ -3,9 +3,8 @@
 import { TransactionList } from "@/features/transactions/ui/transaction-list";
 import { useTranslations } from 'next-intl';
 import { Link } from '@/i18n/routing';
-import { FileUp, Plus } from 'lucide-react';
+import { FileUp } from 'lucide-react';
 import { Button } from "@/components/ui/button";
-import { useUiStore } from "@/shared/model/use-ui-store";
 
 export default function TransactionsPage() {
   const t = useTranslations('Transactions');

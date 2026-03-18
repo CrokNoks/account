@@ -16,7 +16,6 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useAccountStore } from '@/features/accounts/model/use-account-store';
 import { usePeriodDraft } from '../api/use-period-draft';
 import { useCreatePeriod } from '../api/use-create-period';
-import { PeriodDraft } from '../model/types';
 import { Plus, Calculator } from 'lucide-react';
 import { formatCurrency, toCents, fromCents } from '@/shared/lib/format';
 import { useTranslations } from 'next-intl';

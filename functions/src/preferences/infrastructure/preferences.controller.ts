@@ -26,7 +26,10 @@ import { Type } from 'class-transformer';
 import { SupabaseAuthGuard } from '../../auth/supabase-auth.guard';
 import { GetUserPreferencesUseCase } from '../application/get-user-preferences.use-case';
 import { UpdateUserPreferencesUseCase } from '../application/update-user-preferences.use-case';
-import { DashboardLayout, DashboardWidgetConfig } from '../domain/user-preferences.entity';
+import {
+  DashboardLayout,
+  DashboardWidgetConfig,
+} from '../domain/user-preferences.entity';
 
 class DashboardWidgetConfigDto implements DashboardWidgetConfig {
   @IsString()
@@ -81,7 +84,9 @@ export class PreferencesController {
   @ApiOperation({ summary: 'Get user preferences' })
   @ApiResponse({ status: 200, type: UserPreferencesResponseDto })
   async get(@Request() req: any): Promise<UserPreferencesResponseDto> {
-    const preferences = await this.getUserPreferencesUseCase.execute(req.user.id);
+    const preferences = await this.getUserPreferencesUseCase.execute(
+      req.user.id,
+    );
     return {
       userId: preferences.userId,
       dashboardLayout: preferences.dashboardLayout,

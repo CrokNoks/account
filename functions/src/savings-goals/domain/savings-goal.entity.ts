@@ -44,10 +44,15 @@ export class SavingsGoal {
     }
   }
 
-  static create(props: Omit<SavingsGoalProps, 'id' | 'createdAt' | 'updatedAt' | 'currentAmount'> & { 
-    id?: string, 
-    currentAmount?: bigint 
-  }): SavingsGoal {
+  static create(
+    props: Omit<
+      SavingsGoalProps,
+      'id' | 'createdAt' | 'updatedAt' | 'currentAmount'
+    > & {
+      id?: string;
+      currentAmount?: bigint;
+    },
+  ): SavingsGoal {
     const now = new Date();
     return new SavingsGoal({
       ...props,

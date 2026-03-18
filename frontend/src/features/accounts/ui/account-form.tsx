@@ -12,7 +12,6 @@ import {
   SelectValue 
 } from "@/components/ui/select";
 import { useTranslations } from 'next-intl';
-import { fromCents } from '@/shared/lib/format';
 
 export interface AccountFormValues {
   name: string;

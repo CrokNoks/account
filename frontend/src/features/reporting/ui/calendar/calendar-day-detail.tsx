@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { format } from 'date-fns';
+import { format, type Locale } from 'date-fns';
 import { Calendar as CalendarIcon, Info } from 'lucide-react';
 import { 
   Sheet, 
@@ -20,7 +20,7 @@ interface CalendarDayDetailProps {
   onClose: () => void;
   dayEvents: CalendarEvent[];
   dayTotal: bigint;
-  dateLocale: any;
+  dateLocale: Locale;
   categories?: Category[];
 }
 

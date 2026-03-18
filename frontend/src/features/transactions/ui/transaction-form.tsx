@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useRef } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -8,10 +8,9 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { TagSelector } from '@/features/tags/ui/tag-selector';
 import { CategorySelector } from '@/features/categories/ui/category-selector';
 import { useTranslations } from 'next-intl';
-import { cn } from '@/lib/utils';
 import { useAccounts } from '@/features/accounts/api/use-accounts';
 import { usePredictCategory } from '../api/use-predict-category';
-import { Sparkles, Clock } from 'lucide-react';
+import { Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 
 export interface TransactionFormValues {

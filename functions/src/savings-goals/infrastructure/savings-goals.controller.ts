@@ -16,13 +16,18 @@ import {
   ApiProperty,
 } from '@nestjs/swagger';
 import { SupabaseAuthGuard } from '../../auth/supabase-auth.guard';
-import { 
-  GetSavingsGoalsUseCase, 
-  CreateSavingsGoalUseCase, 
-  UpdateSavingsGoalUseCase 
+import {
+  GetSavingsGoalsUseCase,
+  CreateSavingsGoalUseCase,
+  UpdateSavingsGoalUseCase,
 } from '../application/savings-goals.use-cases';
 import type { SavingsGoalRepository } from '../domain/savings-goal.repository.interface';
-import { IsString, IsOptional, IsDateString, IsNumberString } from 'class-validator';
+import {
+  IsString,
+  IsOptional,
+  IsDateString,
+  IsNumberString,
+} from 'class-validator';
 import { Inject } from '@nestjs/common';
 
 class CreateSavingsGoalDto {
@@ -47,9 +52,17 @@ class CreateSavingsGoalDto {
 
 class UpdateSavingsGoalDto {
   @IsOptional() @IsString() @ApiProperty({ required: false }) name?: string;
-  @IsOptional() @IsNumberString() @ApiProperty({ required: false }) targetAmount?: string;
-  @IsOptional() @IsNumberString() @ApiProperty({ required: false }) currentAmount?: string;
-  @IsOptional() @IsDateString() @ApiProperty({ required: false }) deadline?: string | null;
+  @IsOptional()
+  @IsNumberString()
+  @ApiProperty({ required: false })
+  targetAmount?: string;
+  @IsOptional()
+  @IsNumberString()
+  @ApiProperty({ required: false })
+  currentAmount?: string;
+  @IsOptional() @IsDateString() @ApiProperty({ required: false }) deadline?:
+    | string
+    | null;
   @IsOptional() @IsString() @ApiProperty({ required: false }) color?: string;
 }
 
@@ -70,13 +83,19 @@ export class SavingsGoalsController {
   @ApiOperation({ summary: 'Get all savings goals' })
   async findAll(@Param('accountId') accountId: string) {
     const goals = await this.getSavingsGoalsUseCase.execute(accountId);
-    return goals.map(g => this.mapToResponse(g));
+    return goals.map((g) => this.mapToResponse(g));
   }
 
   @Post()
   @ApiOperation({ summary: 'Create a savings goal' })
-  async create(@Param('accountId') accountId: string, @Body() dto: CreateSavingsGoalDto) {
-    const goal = await this.createSavingsGoalUseCase.execute({ ...dto, accountId });
+  async create(
+    @Param('accountId') accountId: string,
+    @Body() dto: CreateSavingsGoalDto,
+  ) {
+    const goal = await this.createSavingsGoalUseCase.execute({
+      ...dto,
+      accountId,
+    });
     return this.mapToResponse(goal);
   }
 

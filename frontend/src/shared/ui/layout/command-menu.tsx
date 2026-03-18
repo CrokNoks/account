@@ -9,9 +9,7 @@ import {
   GitBranch,
   Tags,
   Calendar,
-  Settings,
   Plus,
-  ArrowRightLeft,
   Search,
   User,
   Calculator,
@@ -26,17 +24,14 @@ import {
   CommandSeparator,
 } from '@/components/ui/command';
 import { useUiStore } from '@/shared/model/use-ui-store';
-import { useAccountStore } from '@/features/accounts/model/use-account-store';
 import { useTranslations } from 'next-intl';
 
 export function CommandMenu() {
   const [open, setOpen] = React.useState(false);
   const router = useRouter();
-  const t = useTranslations('Navigation');
   const tt = useTranslations('Transactions');
   
   const { setCreateTransactionDrawerOpen } = useUiStore();
-  const { activeAccountId } = useAccountStore();
 
   React.useEffect(() => {
     const down = (e: KeyboardEvent) => {

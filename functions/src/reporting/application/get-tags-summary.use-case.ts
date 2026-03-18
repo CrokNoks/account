@@ -31,10 +31,11 @@ export class GetTagsSummaryUseCase {
       }
     }
 
-    const transactions = await this.transactionRepository.findAllByAccountUnpaginated(
-      accountId,
-      { startDate, endDate },
-    );
+    const transactions =
+      await this.transactionRepository.findAllByAccountUnpaginated(accountId, {
+        startDate,
+        endDate,
+      });
     const tags = await this.tagRepository.findAllByAccount(accountId);
 
     const tagStats = new Map<string, { total: bigint; count: number }>();

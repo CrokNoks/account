@@ -31,7 +31,6 @@ import { CategorySelector } from '@/features/categories/ui/category-selector';
 
 export function SmartRulesList() {
   const t = useTranslations('SmartRules');
-  const tc = useTranslations('Common');
   const { activeAccountId } = useAccountStore();
   const { data: rules, isLoading } = useSmartRules(activeAccountId);
   const { data: categories } = useCategories(activeAccountId);

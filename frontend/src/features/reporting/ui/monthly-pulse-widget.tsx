@@ -4,7 +4,7 @@ import { usePeriodComparison } from '../api/use-period-comparison';
 import { usePeriods } from '@/features/budgets/api/use-periods';
 import { useAccountStore } from '@/features/accounts/model/use-account-store';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Activity, ArrowUpRight, ArrowDownRight, Minus } from 'lucide-react';
+import { Activity, ArrowUpRight, ArrowDownRight } from 'lucide-react';
 import { formatCurrency } from '@/shared/lib/format';
 import { cn } from '@/lib/utils';
 import { NoDataState } from '@/shared/ui/no-data-state';

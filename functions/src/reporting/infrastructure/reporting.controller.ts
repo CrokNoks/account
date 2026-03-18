@@ -61,7 +61,10 @@ import {
   Anomaly,
 } from '../application/get-anomalies.use-case';
 import { IgnoreAnomalyUseCase } from '../application/ignore-anomaly.use-case';
-import { GetNetWorthUseCase, NetWorthResponse } from '../application/get-net-worth.use-case';
+import {
+  GetNetWorthUseCase,
+  NetWorthResponse,
+} from '../application/get-net-worth.use-case';
 import {
   ScanReceiptUseCase,
   ScanReceiptResult,
@@ -183,7 +186,8 @@ class NetWorthDataPointDto {
 
 class NetWorthResponseDto implements NetWorthResponse {
   @ApiProperty() currentTotal: string;
-  @ApiProperty({ type: [NetWorthDataPointDto] }) history: NetWorthDataPointDto[];
+  @ApiProperty({ type: [NetWorthDataPointDto] })
+  history: NetWorthDataPointDto[];
 }
 
 @ApiTags('reporting')
@@ -225,7 +229,9 @@ export class ReportingController {
   }
 
   @Get('reporting/net-worth')
-  @ApiOperation({ summary: 'Get total net worth evolution across all accounts' })
+  @ApiOperation({
+    summary: 'Get total net worth evolution across all accounts',
+  })
   @ApiResponse({ status: 200, type: NetWorthResponseDto })
   async getNetWorth(@Request() req: any): Promise<NetWorthResponseDto> {
     return this.getNetWorthUseCase.execute(req.user.id);

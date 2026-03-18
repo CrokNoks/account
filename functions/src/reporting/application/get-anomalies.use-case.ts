@@ -37,10 +37,11 @@ export class GetAnomaliesUseCase {
 
     const historyStartDate = subMonths(targetStartDate, 6);
 
-    const allTransactions = await this.transactionRepository.findAllByAccountUnpaginated(
-      accountId,
-      { startDate: historyStartDate, endDate: targetEndDate },
-    );
+    const allTransactions =
+      await this.transactionRepository.findAllByAccountUnpaginated(accountId, {
+        startDate: historyStartDate,
+        endDate: targetEndDate,
+      });
 
     console.log(
       `[GetAnomalies] Analyzing ${allTransactions.length} transactions for account ${accountId}`,

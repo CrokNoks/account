@@ -57,12 +57,16 @@ export class SmartRule {
   public matches(description: string): boolean {
     const lowerDesc = description.toLowerCase();
     const lowerPattern = this.pattern.toLowerCase();
-    
+
     // Simple substring match for now, could be regex later
     return lowerDesc.includes(lowerPattern);
   }
 
-  static create(props: Omit<SmartRuleProps, 'id' | 'createdAt' | 'updatedAt'> & { id?: string }): SmartRule {
+  static create(
+    props: Omit<SmartRuleProps, 'id' | 'createdAt' | 'updatedAt'> & {
+      id?: string;
+    },
+  ): SmartRule {
     const now = new Date();
     return new SmartRule({
       ...props,

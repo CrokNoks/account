@@ -9,6 +9,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Transaction } from '../model/types';
 import { Category } from '@/features/categories/model/types';
 import { Tag } from '@/features/tags/model/types';
+import { useTranslations } from 'next-intl';
 
 interface TransactionMobileListProps {
   transactions: Transaction[];
@@ -21,7 +22,7 @@ interface TransactionMobileListProps {
   onTagClick: (tagId: string) => void;
   compact?: boolean;
   isUpdating?: boolean;
-  t: any;
+  t: ReturnType<typeof useTranslations>;
 }
 
 export function TransactionMobileList({

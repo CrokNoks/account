@@ -81,12 +81,15 @@ export class SmartRulesController {
   @ApiOperation({ summary: 'Get all smart rules' })
   async findAll(@Param('accountId') accountId: string) {
     const rules = await this.repository.findAllByAccount(accountId);
-    return rules.map(r => this.mapToResponse(r));
+    return rules.map((r) => this.mapToResponse(r));
   }
 
   @Post()
   @ApiOperation({ summary: 'Create a smart rule' })
-  async create(@Param('accountId') accountId: string, @Body() dto: CreateSmartRuleDto) {
+  async create(
+    @Param('accountId') accountId: string,
+    @Body() dto: CreateSmartRuleDto,
+  ) {
     const rule = SmartRule.create({
       accountId,
       pattern: dto.pattern,

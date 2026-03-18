@@ -1,6 +1,5 @@
 import { SavingsGoalsList } from "@/features/savings/ui/savings-goals-list";
 import { CreateSavingsGoalDialog } from "@/features/savings/ui/create-savings-goal-dialog";
-import { useTranslations } from 'next-intl';
 import { Target } from 'lucide-react';
 
 export default function SavingsPage() {

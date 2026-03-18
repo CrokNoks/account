@@ -46,7 +46,10 @@ export class Period {
   }
 
   static create(
-    props: Omit<PeriodProps, 'id' | 'createdAt' | 'updatedAt' | 'isActive' | 'endDate'> & {
+    props: Omit<
+      PeriodProps,
+      'id' | 'createdAt' | 'updatedAt' | 'isActive' | 'endDate'
+    > & {
       id?: string;
       endDate?: Date | null;
       createdAt?: Date;
