@@ -6,6 +6,9 @@ export const apiClient = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+  paramsSerializer: {
+    indexes: null, // This removes the brackets [] from array parameters
+  }
 });
 
 // Interceptor to attach Supabase JWT to requests

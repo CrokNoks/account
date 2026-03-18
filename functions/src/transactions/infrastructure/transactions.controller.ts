@@ -37,7 +37,7 @@ import {
   IsArray,
   ValidateNested,
 } from 'class-validator';
-import { Type } from 'class-transformer';
+import { Type, Transform } from 'class-transformer';
 import { PeriodRepository } from '../../periods/domain/period.repository.interface';
 import { Inject, NotFoundException } from '@nestjs/common';
 
@@ -233,9 +233,12 @@ export class FindTransactionsQueryDto {
   categoryId?: string;
 
   @IsOptional()
+  @Transform(({ value }) => {
+    if (!value) return undefined;
+    return Array.isArray(value) ? value : [value];
+  })
   @IsArray()
   @IsString({ each: true })
-  @Type(() => String)
   @ApiProperty({ required: false, type: [String] })
   tagIds?: string[];
 
