@@ -235,7 +235,11 @@ export class FindTransactionsQueryDto {
   @IsOptional()
   @Transform(({ value }) => {
     if (!value) return undefined;
-    return Array.isArray(value) ? value : [value];
+    if (Array.isArray(value)) return value;
+    if (typeof value === 'string') {
+      return value.includes(',') ? value.split(',') : [value];
+    }
+    return [value];
   })
   @IsArray()
   @IsString({ each: true })

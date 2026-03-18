@@ -101,7 +101,7 @@ export function TransactionList({
     periodId: effectivePeriodId === 'all' ? undefined : effectivePeriodId,
     search: debouncedSearch || undefined,
     categoryId: selectedCategoryId === 'all' ? undefined : selectedCategoryId,
-    tagIds: selectedTagIds.length > 0 ? selectedTagIds : undefined,
+    tagIds: selectedTagIds.length > 0 ? selectedTagIds.join(',') : undefined,
     minAmount: debouncedMinAmount ? toCents(debouncedMinAmount) : undefined,
     maxAmount: debouncedMaxAmount ? toCents(debouncedMaxAmount) : undefined,
     startDate: debouncedStartDate || undefined,
