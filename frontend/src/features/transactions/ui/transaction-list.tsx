@@ -52,7 +52,7 @@ export function TransactionList({
   extraActions?: React.ReactNode
 }) {
   const t = useTranslations('Transactions');
-  const { activeAccountId } = useAccountStore();
+  const { activeAccountId, activePeriodId } = useAccountStore();
   const { setTagDetailId, isCreateTransactionDrawerOpen, setCreateTransactionDrawerOpen } = useUiStore();
   const { data: periods } = usePeriods(activeAccountId);
   const { data: categories } = useCategories(activeAccountId);
@@ -68,8 +68,8 @@ export function TransactionList({
   const [selectedPeriodId, setSelectedPeriodId] = useState<string | 'all'>('all');
   const [statusFilter, setStatusFilter] = useState<'all' | 'reconciled' | 'not_reconciled'>('all');
   
-  // Use prop if provided (Dashboard), otherwise use local filter state (Transactions page)
-  const effectivePeriodId = periodId || selectedPeriodId;
+  // Use prop if provided, otherwise use activePeriodId (Dashboard), otherwise use local filter state (Transactions page)
+  const effectivePeriodId = periodId || (compact ? activePeriodId : selectedPeriodId);
   
   // Advanced filters state
   const [isFilterOpen, setIsFilterOpen] = useState(false);

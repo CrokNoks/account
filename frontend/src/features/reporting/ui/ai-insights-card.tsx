@@ -5,16 +5,14 @@ import { BaseAIInsightsCard } from './base-ai-insights-card';
 import { Sparkles } from 'lucide-react';
 import { useLocale } from 'next-intl';
 
-interface AIInsightsCardProps {
-  accountId: string | null;
-  periodId: string | null;
-}
+import { useAccountStore } from '@/features/accounts/model/use-account-store';
 
-export function AIInsightsCard({ accountId, periodId }: AIInsightsCardProps) {
+export function AIInsightsCard() {
+  const { activeAccountId, activePeriodId } = useAccountStore();
   const locale = useLocale();
-  const { data: insights, isLoading, isError, refetch, isFetching } = useAIInsights(accountId, periodId, locale);
+  const { data: insights, isLoading, isError, refetch, isFetching } = useAIInsights(activeAccountId, activePeriodId, locale);
 
-  if (!accountId || !periodId) return null;
+  if (!activeAccountId || !activePeriodId) return null;
 
   return (
     <BaseAIInsightsCard

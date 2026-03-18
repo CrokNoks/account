@@ -61,6 +61,35 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 
+const WIDGET_COMPONENTS: Record<string, React.ComponentType> = {
+  'stat-start': StatStartBalance,
+  'stat-income': StatRealIncome,
+  'stat-expenses': StatRealExpenses,
+  'stat-bank': StatBankBalance,
+  'stat-upcoming': StatUpcomingBalance,
+  'stat-forecast': StatForecastBalance,
+  'anomalies': AnomaliesWidget,
+  'net-worth': NetWorthWidget,
+  'pulse': MonthlyPulseWidget,
+  'top-expenses': TopExpensesWidget,
+  'upcoming': UpcomingDeadlinesWidget,
+  'insights': AIInsightsCard,
+  'breakdown': () => (
+    <div data-tour="budget-breakdown" className="h-full">
+      <BudgetBreakdown />
+    </div>
+  ),
+  'tags': TagStatsSummary,
+  'savings': SavingsGoalsWidget,
+  'transactions': () => (
+    <div data-tour="transaction-list" className="h-full min-h-0">
+      <Card className="border-2 shadow-sm h-full overflow-hidden flex flex-col pt-0">
+        <TransactionList compact />
+      </Card>
+    </div>
+  ),
+};
+
 export default function Home() {
   const t = useTranslations('Dashboard');
   const router = useRouter();
@@ -301,6 +330,10 @@ export default function Home() {
       <div className="grid grid-cols-12 gap-8">
         {layout.map((widget) => {
           const widgetId = widget.id;
+          const WidgetComponent = WIDGET_COMPONENTS[widgetId];
+          
+          if (!WidgetComponent) return null;
+
           return (
             <SortableWidget 
               key={widgetId} 
@@ -312,34 +345,7 @@ export default function Home() {
               onWidthChange={(newWidth) => updateWidgetWidth(widgetId, newWidth)}
               onToggleDevice={(device) => toggleDeviceVisibility(widgetId, device)}
             >
-              {widgetId === 'stat-start' && <StatStartBalance />}
-              {widgetId === 'stat-income' && <StatRealIncome />}
-              {widgetId === 'stat-expenses' && <StatRealExpenses />}
-              {widgetId === 'stat-bank' && <StatBankBalance />}
-              {widgetId === 'stat-upcoming' && <StatUpcomingBalance />}
-              {widgetId === 'stat-forecast' && <StatForecastBalance />}
-              {widgetId === 'anomalies' && <AnomaliesWidget />}
-              {widgetId === 'net-worth' && <NetWorthWidget />}
-              {widgetId === 'pulse' && <MonthlyPulseWidget />}
-              {widgetId === 'top-expenses' && <TopExpensesWidget />}
-              {widgetId === 'upcoming' && <UpcomingDeadlinesWidget />}
-              {widgetId === 'insights' && currentPeriod?.isActive && (
-                <AIInsightsCard accountId={activeAccountId} periodId={activePeriodId} />
-              )}
-              {widgetId === 'breakdown' && (
-                <div data-tour="budget-breakdown" className="h-full">
-                  <BudgetBreakdown />
-                </div>
-              )}
-              {widgetId === 'tags' && <TagStatsSummary />}
-              {widgetId === 'savings' && <SavingsGoalsWidget />}
-              {widgetId === 'transactions' && (
-                <div data-tour="transaction-list" className="h-full min-h-0">
-                  <Card className="border-2 shadow-sm h-full overflow-hidden flex flex-col pt-0">
-                    <TransactionList periodId={activePeriodId || undefined} compact />
-                  </Card>
-                </div>
-              )}
+              <WidgetComponent />
             </SortableWidget>
           );
         })}
