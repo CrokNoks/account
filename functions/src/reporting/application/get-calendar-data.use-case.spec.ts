@@ -46,7 +46,7 @@ describe('GetCalendarDataUseCase', () => {
         {
           provide: TransactionRepository,
           useValue: {
-            findAllByAccount: jest
+            findAllByAccountUnpaginated: jest
               .fn()
               .mockResolvedValue(mockActualTransactions),
           },
@@ -100,7 +100,7 @@ describe('GetCalendarDataUseCase', () => {
       metadata: {},
     });
 
-    transactionRepository.findAllByAccount.mockResolvedValue([
+    transactionRepository.findAllByAccountUnpaginated.mockResolvedValue([
       ...mockActualTransactions,
       paidTransaction,
     ]);

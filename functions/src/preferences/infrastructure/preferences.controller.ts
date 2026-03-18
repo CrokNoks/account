@@ -23,7 +23,7 @@ import {
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { SupabaseAuthGuard } from '../../auth/supabase-auth.guard';
-import { AuthenticatedRequest } from '../../auth/authenticated-request.interface';
+import { type AuthenticatedRequest } from '../../auth/authenticated-request.interface';
 import { GetUserPreferencesUseCase } from '../application/get-user-preferences.use-case';
 import { UpdateUserPreferencesUseCase } from '../application/update-user-preferences.use-case';
 import {

@@ -20,6 +20,16 @@ describe('GetTransactionsByAccountUseCase', () => {
     }),
   ];
 
+  const mockPaginatedResult = {
+    data: mockTransactions,
+    meta: {
+      total: 1,
+      page: 1,
+      limit: 1000,
+      totalPages: 1,
+    },
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -27,7 +37,7 @@ describe('GetTransactionsByAccountUseCase', () => {
         {
           provide: TransactionRepository,
           useValue: {
-            findAllByAccount: jest.fn().mockResolvedValue(mockTransactions),
+            findAllByAccount: jest.fn().mockResolvedValue(mockPaginatedResult),
           },
         },
       ],
@@ -43,7 +53,7 @@ describe('GetTransactionsByAccountUseCase', () => {
 
   it('should return transactions for an account', async () => {
     const result = await useCase.execute('acc-1');
-    expect(result).toEqual(mockTransactions);
+    expect(result).toEqual(mockPaginatedResult);
     expect(repository.findAllByAccount).toHaveBeenCalledWith(
       'acc-1',
       undefined,

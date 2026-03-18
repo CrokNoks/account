@@ -22,7 +22,7 @@ describe('GetAnomaliesUseCase', () => {
         {
           provide: TransactionRepository,
           useValue: {
-            findAllByAccount: jest.fn(),
+            findAllByAccountUnpaginated: jest.fn(),
           },
         },
         {
@@ -79,7 +79,7 @@ describe('GetAnomaliesUseCase', () => {
       metadata: {},
     });
 
-    transactionRepository.findAllByAccount.mockResolvedValue([
+    transactionRepository.findAllByAccountUnpaginated.mockResolvedValue([
       tx1,
       tx2,
       txNormal,
@@ -131,7 +131,7 @@ describe('GetAnomaliesUseCase', () => {
       metadata: {},
     });
 
-    transactionRepository.findAllByAccount.mockResolvedValue([
+    transactionRepository.findAllByAccountUnpaginated.mockResolvedValue([
       txSmall1,
       txSmall2,
       txIncome1,
@@ -186,7 +186,7 @@ describe('GetAnomaliesUseCase', () => {
       metadata: {},
     });
 
-    transactionRepository.findAllByAccount.mockResolvedValue([
+    transactionRepository.findAllByAccountUnpaginated.mockResolvedValue([
       ...history,
       outlier,
     ]);
@@ -238,7 +238,9 @@ describe('GetAnomaliesUseCase', () => {
       }),
     ];
 
-    transactionRepository.findAllByAccount.mockResolvedValue(transactions);
+    transactionRepository.findAllByAccountUnpaginated.mockResolvedValue(
+      transactions,
+    );
 
     const anomalies = await useCase.execute(accountId);
 
