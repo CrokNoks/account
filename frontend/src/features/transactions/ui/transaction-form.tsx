@@ -102,11 +102,23 @@ export function TransactionForm({
     onSubmit(currentValues);
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLFormElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      const target = e.target as HTMLElement;
+      // Let native behaviour handle Enter in textareas
+      if (target.tagName === 'TEXTAREA') return;
+      if (onAddAnother && isFormValid) {
+        e.preventDefault();
+        onAddAnother(currentValues);
+      }
+    }
+  };
+
   const availableDestinations = accounts?.filter(a => a.id !== accountId) || [];
   const isFormValid = accountId && description && amount && (mode === 'standard' || (mode === 'transfer' && destinationAccountId));
 
   return (
-    <form onSubmit={handleFormSubmit} className="space-y-6">
+    <form onSubmit={handleFormSubmit} onKeyDown={handleKeyDown} className="space-y-6">
       <div className="space-y-2">
         <label className="text-sm font-medium">{t('fields.date')}</label>
         <Input 

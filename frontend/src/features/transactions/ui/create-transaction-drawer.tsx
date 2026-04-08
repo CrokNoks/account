@@ -34,6 +34,7 @@ export function CreateTransactionDrawer() {
   const isPending = isCreatingTransaction || isCreatingTransfer || isScanning;
   const [mode, setMode] = useState<'standard' | 'transfer'>('standard');
   const [initialValues, setInitialValues] = useState<Partial<TransactionFormValues>>({});
+  const [formKey, setFormKey] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const activePeriod = periods?.find(p => p.isActive);
@@ -99,6 +100,7 @@ export function CreateTransactionDrawer() {
     setCreateTransactionDrawerOpen(open);
     if (!open) {
       setInitialValues({});
+      setFormKey(k => k + 1);
       setMode('standard');
     }
   };
@@ -118,6 +120,7 @@ export function CreateTransactionDrawer() {
         onSuccess: () => {
           toast.success(`Transfer "${values.description}" created`);
           setInitialValues({});
+          setFormKey(k => k + 1);
           if (!addAnother) setCreateTransactionDrawerOpen(false);
         }
       });
@@ -135,6 +138,7 @@ export function CreateTransactionDrawer() {
         onSuccess: () => {
           toast.success(`Transaction "${values.description}" added`);
           setInitialValues({});
+          setFormKey(k => k + 1);
           if (!addAnother) setCreateTransactionDrawerOpen(false);
         }
       });
@@ -197,7 +201,7 @@ export function CreateTransactionDrawer() {
             isPending={isPending}
             submitLabel={tc('save')}
             mode={mode}
-            key={`${mode}-${JSON.stringify(initialValues)}`}
+            key={`${mode}-${formKey}`}
           />
         </div>
       </SheetContent>
