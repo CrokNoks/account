@@ -19,7 +19,7 @@ import { TransactionForm, TransactionFormValues } from './transaction-form';
 import { Receipt, ArrowRightLeft, Camera, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTranslations } from 'next-intl';
-import { toCents, toAbsCents } from '@/shared/lib/format';
+import { toCents, toAbsCents, isUnreadableAmount } from '@/shared/lib/format';
 
 export function CreateTransactionDrawer() {
   const t = useTranslations('Transactions');
@@ -105,6 +105,10 @@ export function CreateTransactionDrawer() {
 
   const handleSubmit = (values: TransactionFormValues, addAnother = false) => {
     if (!activeAccountId) return;
+    if (isUnreadableAmount(values.amount)) {
+      toast.error(tc('invalid_amount'));
+      return;
+    }
 
     if (mode === 'transfer') {
       if (!values.destinationAccountId) return;

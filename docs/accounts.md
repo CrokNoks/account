@@ -32,6 +32,7 @@ Mise à jour : 2026-10-30 · Commit : 157b272
 - Compte (`accounts`) : id, nom, propriétaire, description (optionnelle, ajoutée `20260311100000`), solde initial (centimes, BIGINT depuis `20260307000000_migrate_to_v2.sql:14-15`), dates de création/modification.
 - Partage (`account_shares`) : id, compte, utilisateur, permission (`read`|`write`), date. Suppression du compte supprime ses partages (CASCADE).
 - Utilisateur (`app_users`) : id, email (copie de l'auth Supabase).
+- Front : un solde initial non vide et illisible est refusé avec un message d'erreur (création et modification) au lieu d'être enregistré comme 0.
 - Front : compte actif et période active mémorisés dans le navigateur (`features/accounts/model/use-account-store.ts`) ; changer de compte remet la période à vide.
 
 ## Ce qu'on peut faire

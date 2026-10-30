@@ -8,7 +8,7 @@ import { useDeleteTransaction } from '../api/use-delete-transaction';
 import { usePeriods } from '@/features/budgets/api/use-periods';
 import { useCategories } from '@/features/categories/api/use-categories';
 import { useTags } from '@/features/tags/api/use-tags';
-import { toCents, fromCents } from '@/shared/lib/format';
+import { toCents, fromCents, isUnreadableAmount, toOptionalCents } from '@/shared/lib/format';
 import { Plus, Receipt } from 'lucide-react';
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -95,8 +95,8 @@ export function TransactionList({
     search: appliedFilters.search || undefined,
     categoryId: appliedFilters.categoryId === 'all' ? undefined : appliedFilters.categoryId,
     tagIds: appliedFilters.selectedTagIds.length > 0 ? appliedFilters.selectedTagIds.join(',') : undefined,
-    minAmount: appliedFilters.minAmount ? toCents(appliedFilters.minAmount) : undefined,
-    maxAmount: appliedFilters.maxAmount ? toCents(appliedFilters.maxAmount) : undefined,
+    minAmount: toOptionalCents(appliedFilters.minAmount),
+    maxAmount: toOptionalCents(appliedFilters.maxAmount),
     startDate: appliedFilters.startDate || undefined,
     endDate: appliedFilters.endDate || undefined,
     reconciled: appliedFilters.statusFilter === 'all' ? undefined : appliedFilters.statusFilter === 'reconciled',
@@ -146,8 +146,8 @@ export function TransactionList({
       appliedFilters.search,
       appliedFilters.categoryId !== 'all',
       appliedFilters.selectedTagIds.length > 0,
-      appliedFilters.minAmount,
-      appliedFilters.maxAmount,
+      toOptionalCents(appliedFilters.minAmount),
+      toOptionalCents(appliedFilters.maxAmount),
       appliedFilters.startDate,
       appliedFilters.endDate,
       appliedFilters.statusFilter !== 'all'
@@ -388,6 +388,10 @@ function EditTransactionDialog({ transaction, open, onOpenChange }: { transactio
 
   const handleSubmit = (values: TransactionFormValues) => {
     if (!activeAccountId) return;
+    if (isUnreadableAmount(values.amount)) {
+      toast.error(tc('invalid_amount'));
+      return;
+    }
     updateTransaction({
       accountId: activeAccountId,
       id: transaction.id,

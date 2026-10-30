@@ -12,8 +12,9 @@ import { Button } from "@/components/ui/button";
 import { useCreateAccount } from '../api/use-create-account';
 import { Plus } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { toast } from 'sonner';
 import { useUiStore } from '@/shared/model/use-ui-store';
-import { toCents } from '@/shared/lib/format';
+import { toCents, isUnreadableAmount } from '@/shared/lib/format';
 import { AccountForm, AccountFormValues } from './account-form';
 
 export function CreateAccountDialog() {
@@ -24,6 +25,10 @@ export function CreateAccountDialog() {
   const { mutate: createAccount, isPending } = useCreateAccount();
 
   const handleSubmit = (values: AccountFormValues) => {
+    if (isUnreadableAmount(values.balance)) {
+      toast.error(tc('invalid_amount'));
+      return;
+    }
     createAccount({
       name: values.name,
       description: values.description,

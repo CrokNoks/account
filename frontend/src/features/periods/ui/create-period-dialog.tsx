@@ -17,8 +17,9 @@ import { useAccountStore } from '@/features/accounts/model/use-account-store';
 import { usePeriodDraft } from '../api/use-period-draft';
 import { useCreatePeriod } from '../api/use-create-period';
 import { Plus, Calculator } from 'lucide-react';
-import { formatCurrency, toCents, fromCents } from '@/shared/lib/format';
+import { formatCurrency, toCents, fromCents, isUnreadableAmount } from '@/shared/lib/format';
 import { useTranslations } from 'next-intl';
+import { toast } from 'sonner';
 
 export function CreatePeriodDialog() {
   const { activeAccountId } = useAccountStore();
@@ -60,6 +61,10 @@ export function CreatePeriodDialog() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!activeAccountId) return;
+    if (Object.values(budgets).some(isUnreadableAmount)) {
+      toast.error(tc('invalid_amount'));
+      return;
+    }
 
     createPeriod({
       accountId: activeAccountId,

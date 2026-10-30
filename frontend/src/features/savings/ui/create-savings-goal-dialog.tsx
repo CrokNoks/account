@@ -15,7 +15,8 @@ import { useAccountStore } from '@/features/accounts/model/use-account-store';
 import { useCreateSavingsGoal } from '../api/use-savings-goals';
 import { Plus, Target } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { toCents } from '@/shared/lib/format';
+import { toast } from 'sonner';
+import { toCents, isUnreadableAmount } from '@/shared/lib/format';
 
 export function CreateSavingsGoalDialog() {
   const t = useTranslations('Savings');
@@ -32,6 +33,10 @@ export function CreateSavingsGoalDialog() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!activeAccountId || !name || !targetAmount) return;
+    if (isUnreadableAmount(targetAmount)) {
+      toast.error(tc('invalid_amount'));
+      return;
+    }
 
     createGoal({
       accountId: activeAccountId,

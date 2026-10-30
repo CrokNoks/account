@@ -16,7 +16,8 @@ import { useAccountStore } from '@/features/accounts/model/use-account-store';
 import { useCreateRecurringTransaction } from '../api/use-create-recurring-transaction';
 import { Plus, Repeat } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { toCents } from '@/shared/lib/format';
+import { toast } from 'sonner';
+import { toCents, isUnreadableAmount } from '@/shared/lib/format';
 import { CategorySelector } from '@/features/categories/ui/category-selector';
 
 export interface CreateRecurringDialogProps {
@@ -77,6 +78,10 @@ export function CreateRecurringDialog({
 
   const handleSubmit = (addAnother = false) => {
     if (!activeAccountId || !description || !amount) return;
+    if (isUnreadableAmount(amount)) {
+      toast.error(tc('invalid_amount'));
+      return;
+    }
 
     createRecurring({
       accountId: activeAccountId,

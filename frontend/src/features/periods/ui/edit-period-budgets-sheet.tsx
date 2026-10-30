@@ -16,7 +16,7 @@ import { useCategories } from '@/features/categories/api/use-categories';
 import { usePeriodBudgets } from '../api/use-period-budgets';
 import { useUpdatePeriodBudgets } from '../api/use-update-period-budgets';
 import { toast } from 'sonner';
-import { toCents, fromCents } from '@/shared/lib/format';
+import { toCents, fromCents, isUnreadableAmount } from '@/shared/lib/format';
 import { useTranslations } from 'next-intl';
 import { Calculator } from 'lucide-react';
 
@@ -52,6 +52,10 @@ export function EditPeriodBudgetsSheet({ periodId, open, onOpenChange }: EditPer
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!activeAccountId) return;
+    if (Object.values(budgets).some(isUnreadableAmount)) {
+      toast.error(tc('invalid_amount'));
+      return;
+    }
 
     updateBudgets({
       accountId: activeAccountId,

@@ -61,6 +61,24 @@ export function centsToDecimalString(cents: bigint): string {
 }
 
 /**
+ * True when the input is non-empty but holds no readable amount (so toCents would
+ * silently turn it into "0"). Empty input is NOT unreadable: each form decides
+ * whether an empty field is required or means 0.
+ */
+export function isUnreadableAmount(input: string): boolean {
+  return input.trim() !== '' && parseAmountToCents(input) === null;
+}
+
+/**
+ * Cents of a filter input, or undefined when it is empty or unreadable
+ * (no filter instead of a filter on 0).
+ */
+export function toOptionalCents(input: string): string | undefined {
+  const cents = parseAmountToCents(input);
+  return cents === null ? undefined : cents.toString();
+}
+
+/**
  * Converts a string amount (e.g. "10.50", "1 234,56") to cents (e.g. "1050").
  * Invalid input returns "0".
  */

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formatCurrency, fromCents, toAbsCents, toCents } from './format';
+import { formatCurrency, fromCents, isUnreadableAmount, toAbsCents, toCents, toOptionalCents } from './format';
 
 // Intl insère des espaces insécables : on les normalise pour comparer.
 const plain = (s: string) => s.replace(/[  ]/g, ' ');
@@ -99,5 +99,22 @@ describe('fromCents', () => {
     for (const cents of ['0', '7', '1050', '-4250', '123456']) {
       expect(toCents(fromCents(cents))).toBe(cents);
     }
+  });
+});
+
+describe('isUnreadableAmount / toOptionalCents', () => {
+  it('flags non-empty unreadable input only', () => {
+    expect(isUnreadableAmount('abc')).toBe(true);
+    expect(isUnreadableAmount('1e-5')).toBe(true);
+    expect(isUnreadableAmount('')).toBe(false);
+    expect(isUnreadableAmount('  ')).toBe(false);
+    expect(isUnreadableAmount('12,50')).toBe(false);
+    expect(isUnreadableAmount('0')).toBe(false);
+  });
+  it('gives undefined for empty or unreadable input, cents otherwise', () => {
+    expect(toOptionalCents('')).toBeUndefined();
+    expect(toOptionalCents('abc')).toBeUndefined();
+    expect(toOptionalCents('0')).toBe('0');
+    expect(toOptionalCents('10,5')).toBe('1050');
   });
 });

@@ -15,7 +15,7 @@ import {
   TableHeader, 
   TableRow 
 } from "@/components/ui/table";
-import { formatCurrency, toCents, fromCents } from '@/shared/lib/format';
+import { formatCurrency, toCents, fromCents, isUnreadableAmount } from '@/shared/lib/format';
 import { Badge } from '@/components/ui/badge';
 import { Trash2, CalendarDays, Pencil } from 'lucide-react';
 import { Button } from "@/components/ui/button";
@@ -130,6 +130,10 @@ function EditRecurringDialog({ transaction, open, onOpenChange }: { transaction:
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!activeAccountId) return;
+    if (isUnreadableAmount(amount)) {
+      toast.error(tc('invalid_amount'));
+      return;
+    }
 
     updateRecurring({
       accountId: activeAccountId,

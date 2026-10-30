@@ -38,7 +38,7 @@ Qui : toutes les routes exigent un token de connexion valide (`@UseGuards(Supaba
 | Modifier | `PATCH /:accountId/recurring/:id` | modification partielle | `recurring.controller.ts:126` |
 | Supprimer | `DELETE /:accountId/recurring/:id` | supprime | `recurring.controller.ts:147` |
 
-Front (`frontend/src/features/recurring/`) : liste avec modification en panneau et suppression après confirmation navigateur (`ui/recurring-transaction-list.tsx`), dialogue de création (`ui/create-recurring-dialog.tsx`, montant converti par `toCents`). Hooks `useRecurringTransactions`, `useCreateRecurringTransaction`, `useUpdateRecurringTransaction`, `useDeleteRecurringTransaction` (clé `['recurring-transactions', accountId]`, messages de succès/échec par notification).
+Front (`frontend/src/features/recurring/`) : liste avec modification en panneau et suppression après confirmation navigateur (`ui/recurring-transaction-list.tsx`), dialogue de création (`ui/create-recurring-dialog.tsx`, montant converti par `toCents` ; un montant illisible est refusé avec un message d'erreur, y compris à la modification). Hooks `useRecurringTransactions`, `useCreateRecurringTransaction`, `useUpdateRecurringTransaction`, `useDeleteRecurringTransaction` (clé `['recurring-transactions', accountId]`, messages de succès/échec par notification).
 
 ## Statuts et transitions
 Pas de cycle de vie.

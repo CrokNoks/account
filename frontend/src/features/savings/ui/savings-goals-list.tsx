@@ -6,7 +6,7 @@ import { useAccountStore } from '@/features/accounts/model/use-account-store';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
-import { formatCurrency, toCents, fromCents } from '@/shared/lib/format';
+import { formatCurrency, toCents, fromCents, isUnreadableAmount } from '@/shared/lib/format';
 import { Trash2, Pencil, Calendar, ArrowUpRight } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
@@ -17,6 +17,7 @@ import { Input } from '@/components/ui/input';
 
 export function SavingsGoalsList() {
   const t = useTranslations('Savings');
+  const tc = useTranslations('Common');
   const { activeAccountId } = useAccountStore();
   const { data: goals, isLoading } = useSavingsGoals(activeAccountId);
   const { mutate: deleteGoal } = useDeleteSavingsGoal();
@@ -39,6 +40,10 @@ export function SavingsGoalsList() {
 
   const handleContribute = (goal: SavingsGoal) => {
     if (!activeAccountId || !contributionAmount) return;
+    if (isUnreadableAmount(contributionAmount)) {
+      toast.error(tc('invalid_amount'));
+      return;
+    }
     
     const current = BigInt(goal.currentAmount);
     const added = BigInt(toCents(contributionAmount));
@@ -130,7 +135,8 @@ export function SavingsGoalsList() {
               <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Montant à ajouter</label>
               <div className="relative">
                 <Input 
-                  type="number" 
+                  type="text" 
+                  inputMode="decimal"
                   placeholder="0.00" 
                   value={contributionAmount}
                   onChange={(e) => setContributionAmount(e.target.value)}
@@ -178,6 +184,10 @@ function EditSavingsGoalSheet({ goal, open, onOpenChange }: { goal: SavingsGoal,
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!activeAccountId || !name || !targetAmount) return;
+    if (isUnreadableAmount(targetAmount) || isUnreadableAmount(currentAmount)) {
+      toast.error(tc('invalid_amount'));
+      return;
+    }
 
     updateGoal({
       accountId: activeAccountId,

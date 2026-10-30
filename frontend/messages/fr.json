@@ -229,6 +229,7 @@
     "waking_up_backend": "Démarrage du serveur...",
     "backend_unavailable": "Serveur indisponible",
     "backend_error_desc": "Impossible de joindre le serveur. Il est peut-être en maintenance ou met trop de temps à démarrer.",
+    "invalid_amount": "Montant illisible : saisissez un nombre (ex. 12,50).",
     "retry": "Réessayer"
   },
   "Tour": {

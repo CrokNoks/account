@@ -5,7 +5,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Account } from '../model/types';
 import { useAccounts } from '../api/use-accounts';
 import { useUpdateAccount } from '../api/use-update-account';
-import { formatCurrency, toCents, fromCents } from '@/shared/lib/format';
+import { formatCurrency, toCents, fromCents, isUnreadableAmount } from '@/shared/lib/format';
 import { Landmark, Pencil, Share2 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { 
@@ -106,6 +106,10 @@ function EditAccountDialog({ account, open, onOpenChange }: { account: Account, 
   const { mutate: updateAccount, isPending } = useUpdateAccount();
 
   const handleSubmit = (values: AccountFormValues) => {
+    if (isUnreadableAmount(values.balance)) {
+      toast.error(tc('invalid_amount'));
+      return;
+    }
     updateAccount({
       id: account.id,
       data: {
