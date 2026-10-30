@@ -70,3 +70,16 @@ describe.each(cases)('recurring $name error toast', ({ method, fallback, run, va
     expect(toast.error).toHaveBeenCalledTimes(1);
   });
 });
+
+describe.each(cases)('recurring $name success', ({ method, run, vars }) => {
+  it('does not toast by itself (the screen shows the success message)', async () => {
+    vi.clearAllMocks();
+    vi.mocked(apiClient[method]).mockResolvedValue({ data: {} });
+    const { result } = run();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    act(() => (result.current as any).mutate(vars));
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await waitFor(() => expect((result.current as any).isSuccess).toBe(true));
+    expect(toast.success).not.toHaveBeenCalled();
+  });
+});

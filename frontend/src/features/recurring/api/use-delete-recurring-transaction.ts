@@ -15,7 +15,6 @@ export function useDeleteRecurringTransaction() {
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['recurring-transactions', variables.accountId] });
-      toast.success(t('deleted'));
     },
     onError: (error) => {
       toast.error(getApiErrorMessage(error, t('delete_error')));

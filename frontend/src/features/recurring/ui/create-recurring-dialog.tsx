@@ -91,6 +91,7 @@ export function CreateRecurringDialog({
       dayOfMonth: parseInt(dayOfMonth, 10),
     }, {
       onSuccess: () => {
+        toast.success(t('created'));
         resetForm();
         if (!addAnother) {
           setOpen(false);

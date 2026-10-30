@@ -16,7 +16,6 @@ export function useUpdateRecurringTransaction() {
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['recurring-transactions', variables.accountId] });
-      toast.success(t('updated'));
     },
     onError: (error) => {
       toast.error(getApiErrorMessage(error, t('update_error')));

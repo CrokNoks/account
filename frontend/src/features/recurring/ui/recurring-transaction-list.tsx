@@ -146,6 +146,7 @@ function EditRecurringDialog({ transaction, open, onOpenChange }: { transaction:
       }
     }, {
       onSuccess: () => {
+        toast.success(t('updated'));
         onOpenChange(false);
       }
     });
