@@ -1,4 +1,5 @@
 import { SupabaseClient } from '@supabase/supabase-js';
+import { NotFoundError } from '../../shared/domain/errors';
 import { Transaction } from '../domain/transaction.entity';
 import { SupabaseTransactionRepository } from './supabase-transaction.repository';
 
@@ -155,12 +156,23 @@ describe('SupabaseTransactionRepository atomic writes', () => {
       expect(from).not.toHaveBeenCalled();
     });
 
-    it('throws the database error', async () => {
-      const { repository } = repoWith({ message: 'transaction not found' });
+    it('turns P0002 (transaction not found) into a NotFoundError', async () => {
+      const { repository } = repoWith({
+        code: 'P0002',
+        message: 'transaction not found',
+      });
 
-      await expect(repository.updateMany([tx()])).rejects.toThrow(
-        'transaction not found',
+      await expect(repository.updateMany([tx()])).rejects.toBeInstanceOf(
+        NotFoundError,
       );
+    });
+
+    it('throws any other database error as is', async () => {
+      const { repository } = repoWith({ code: '42501', message: 'rls' });
+
+      const result = repository.updateMany([tx()]);
+      await expect(result).rejects.not.toBeInstanceOf(NotFoundError);
+      await expect(result).rejects.toThrow('rls');
     });
   });
 

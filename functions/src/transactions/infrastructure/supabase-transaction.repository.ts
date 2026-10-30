@@ -1,6 +1,7 @@
 import { Injectable, Inject } from '@nestjs/common';
 import { SupabaseClient } from '@supabase/supabase-js';
 import { Transaction } from '../domain/transaction.entity';
+import { NotFoundError } from '../../shared/domain/errors';
 import { toTransactionPayload } from './transaction-payload';
 import {
   TransactionRepository,
@@ -237,6 +238,10 @@ export class SupabaseTransactionRepository implements TransactionRepository {
       p_transactions: transactions.map(toTransactionPayload),
     });
 
+    // P0002 : update_transactions n'a pas trouvé l'une des transactions
+    // (supprimée entre le contrôle et l'écriture) et a tout annulé.
+    if (error?.code === 'P0002')
+      throw new NotFoundError('Transaction not found');
     if (error) throw new Error(error.message);
   }
 
