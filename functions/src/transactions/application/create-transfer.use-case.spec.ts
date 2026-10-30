@@ -7,7 +7,7 @@ import { AccountShare } from '../../accounts/domain/account-share.entity';
 import { ForbiddenError, NotFoundError } from '../../shared/domain/errors';
 
 describe('CreateTransferUseCase', () => {
-  let repository: jest.Mocked<Pick<TransactionRepository, 'save'>>;
+  let repository: jest.Mocked<Pick<TransactionRepository, 'saveTransfer'>>;
   let accounts: { findById: jest.Mock };
   let shares: { findAllByAccount: jest.Mock };
   let useCase: CreateTransferUseCase;
@@ -22,7 +22,7 @@ describe('CreateTransferUseCase', () => {
   };
 
   beforeEach(() => {
-    repository = { save: jest.fn().mockResolvedValue(undefined) };
+    repository = { saveTransfer: jest.fn().mockResolvedValue(undefined) };
     accounts = {
       findById: jest
         .fn()
@@ -75,12 +75,11 @@ describe('CreateTransferUseCase', () => {
     }
   });
 
-  it('saves both transactions', async () => {
+  it('saves both transactions in one atomic call', async () => {
     const [out, into] = await useCase.execute(command);
 
-    expect(repository.save).toHaveBeenCalledTimes(2);
-    expect(repository.save).toHaveBeenNthCalledWith(1, out);
-    expect(repository.save).toHaveBeenNthCalledWith(2, into);
+    expect(repository.saveTransfer).toHaveBeenCalledTimes(1);
+    expect(repository.saveTransfer).toHaveBeenCalledWith(out, into);
   });
 
   it.each([BigInt(0), BigInt(-100)])(
@@ -89,7 +88,7 @@ describe('CreateTransferUseCase', () => {
       await expect(useCase.execute({ ...command, amount })).rejects.toThrow(
         'Transfer amount must be strictly positive',
       );
-      expect(repository.save).not.toHaveBeenCalled();
+      expect(repository.saveTransfer).not.toHaveBeenCalled();
     },
   );
 
@@ -97,7 +96,7 @@ describe('CreateTransferUseCase', () => {
     await expect(
       useCase.execute({ ...command, destinationAccountId: 'acc-src' }),
     ).rejects.toThrow('Source and destination accounts must be different');
-    expect(repository.save).not.toHaveBeenCalled();
+    expect(repository.saveTransfer).not.toHaveBeenCalled();
   });
 
   describe('destination account access', () => {
@@ -114,7 +113,7 @@ describe('CreateTransferUseCase', () => {
       await expect(useCase.execute(command)).rejects.toBeInstanceOf(
         NotFoundError,
       );
-      expect(repository.save).not.toHaveBeenCalled();
+      expect(repository.saveTransfer).not.toHaveBeenCalled();
     });
 
     it('refuses (403) a destination shared in read only, without saving', async () => {
@@ -124,7 +123,7 @@ describe('CreateTransferUseCase', () => {
       await expect(useCase.execute(command)).rejects.toBeInstanceOf(
         ForbiddenError,
       );
-      expect(repository.save).not.toHaveBeenCalled();
+      expect(repository.saveTransfer).not.toHaveBeenCalled();
     });
 
     it('refuses (403) when no share belongs to the caller', async () => {
@@ -134,7 +133,7 @@ describe('CreateTransferUseCase', () => {
       await expect(useCase.execute(command)).rejects.toBeInstanceOf(
         ForbiddenError,
       );
-      expect(repository.save).not.toHaveBeenCalled();
+      expect(repository.saveTransfer).not.toHaveBeenCalled();
     });
 
     it('accepts a destination shared in write', async () => {
@@ -142,18 +141,14 @@ describe('CreateTransferUseCase', () => {
       shares.findAllByAccount.mockResolvedValue([share('user-1', 'write')]);
 
       await useCase.execute(command);
-      expect(repository.save).toHaveBeenCalledTimes(2);
+      expect(repository.saveTransfer).toHaveBeenCalledTimes(1);
     });
   });
 
-  // Comportement actuel documenté (docs/transactions.md) : le virement n'est pas atomique.
-  it('leaves the debit saved when saving the credit fails (not atomic)', async () => {
-    repository.save
-      .mockResolvedValueOnce(undefined)
-      .mockRejectedValueOnce(new Error('db down'));
+  it('writes nothing else and propagates the error when the atomic save fails', async () => {
+    repository.saveTransfer.mockRejectedValue(new Error('db down'));
 
     await expect(useCase.execute(command)).rejects.toThrow('db down');
-    expect(repository.save).toHaveBeenCalledTimes(2);
-    expect(repository.save.mock.calls[0][0].amount).toBe(BigInt(-15000));
+    expect(repository.saveTransfer).toHaveBeenCalledTimes(1);
   });
 });

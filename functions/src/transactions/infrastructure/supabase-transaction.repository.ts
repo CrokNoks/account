@@ -1,6 +1,7 @@
 import { Injectable, Inject } from '@nestjs/common';
 import { SupabaseClient } from '@supabase/supabase-js';
 import { Transaction } from '../domain/transaction.entity';
+import { toTransactionPayload } from './transaction-payload';
 import {
   TransactionRepository,
   FindAllTransactionsOptions,
@@ -242,6 +243,16 @@ export class SupabaseTransactionRepository implements TransactionRepository {
 
       if (tagsError) throw new Error(tagsError.message);
     }
+  }
+
+  async saveTransfer(debit: Transaction, credit: Transaction): Promise<void> {
+    // Fonction SQL create_transfer : une seule transaction base de données.
+    const { error } = await this.supabase.rpc('create_transfer', {
+      p_debit: toTransactionPayload(debit),
+      p_credit: toTransactionPayload(credit),
+    });
+
+    if (error) throw new Error(error.message);
   }
 
   async delete(id: string): Promise<void> {

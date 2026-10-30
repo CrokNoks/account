@@ -35,6 +35,11 @@ export abstract class TransactionRepository {
   abstract findAllByPeriod(periodId: string): Promise<Transaction[]>;
   abstract findById(id: string): Promise<Transaction | null>;
   abstract save(transaction: Transaction): Promise<void>;
+  /**
+   * Enregistre le débit et le crédit d'un virement dans une seule transaction
+   * base de données : les deux lignes sont écrites, ou aucune.
+   */
+  abstract saveTransfer(debit: Transaction, credit: Transaction): Promise<void>;
   abstract delete(id: string): Promise<void>;
   abstract sumAmountByAccountBeforeDate(
     accountId: string,

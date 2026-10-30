@@ -466,7 +466,7 @@ describe('Cross-account references (e2e)', () => {
     it('works toward an account owned by the caller', async () => {
       mocks.accounts.findById.mockResolvedValue(destination(USER.id));
       await send().expect(201);
-      expect(mocks.transactions.save).toHaveBeenCalledTimes(2);
+      expect(mocks.transactions.saveTransfer).toHaveBeenCalledTimes(1);
     });
 
     it('works toward an account shared with write permission', async () => {
@@ -481,13 +481,13 @@ describe('Cross-account references (e2e)', () => {
         }),
       ]);
       await send().expect(201);
-      expect(mocks.transactions.save).toHaveBeenCalledTimes(2);
+      expect(mocks.transactions.saveTransfer).toHaveBeenCalledTimes(1);
     });
 
     it('answers 404 without writing for an unknown or invisible destination', async () => {
       mocks.accounts.findById.mockResolvedValue(null);
       await send().expect(404);
-      expect(mocks.transactions.save).not.toHaveBeenCalled();
+      expect(mocks.transactions.saveTransfer).not.toHaveBeenCalled();
     });
 
     it('answers 403 without writing for a destination shared in read only', async () => {
@@ -502,7 +502,7 @@ describe('Cross-account references (e2e)', () => {
         }),
       ]);
       await send().expect(403);
-      expect(mocks.transactions.save).not.toHaveBeenCalled();
+      expect(mocks.transactions.saveTransfer).not.toHaveBeenCalled();
     });
   });
 

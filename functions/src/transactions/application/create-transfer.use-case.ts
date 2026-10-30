@@ -76,8 +76,11 @@ export class CreateTransferUseCase {
       pending: false,
     });
 
-    await this.transactionRepository.save(sourceTransaction);
-    await this.transactionRepository.save(destinationTransaction);
+    // Une seule écriture atomique : les deux lignes ou aucune.
+    await this.transactionRepository.saveTransfer(
+      sourceTransaction,
+      destinationTransaction,
+    );
 
     return [sourceTransaction, destinationTransaction];
   }
