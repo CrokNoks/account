@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@/shared/api/api-client';
 import { toast } from 'sonner';
+import { getApiErrorMessage } from '@/shared/api/mutation-error';
 import { useTranslations } from 'next-intl';
 import { CreateRecurringTransactionData } from '../model/types';
 
@@ -18,8 +19,8 @@ export function useCreateRecurringTransaction() {
       queryClient.invalidateQueries({ queryKey: ['recurring-transactions', variables.accountId] });
       toast.success(t('created'));
     },
-    onError: () => {
-      toast.error(t('create_error'));
+    onError: (error) => {
+      toast.error(getApiErrorMessage(error, t('create_error')));
     },
   });
 }

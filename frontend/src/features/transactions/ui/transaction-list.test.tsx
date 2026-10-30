@@ -1,8 +1,11 @@
 import { fireEvent, render, screen } from '@testing-library/react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { toast } from 'sonner';
 import { TransactionList } from './transaction-list';
 
 const useTransactions = vi.fn();
+const bulkDelete = vi.fn();
+const bulkUpdate = vi.fn();
 
 vi.mock('next-intl', () => ({ useTranslations: () => (key: string) => key }));
 vi.mock('sonner', () => ({ toast: { error: vi.fn(), success: vi.fn(), info: vi.fn() } }));
@@ -27,8 +30,8 @@ vi.mock('../api/use-update-transaction', () => ({
 }));
 vi.mock('../api/use-delete-transaction', () => ({ useDeleteTransaction: () => ({ mutate: vi.fn() }) }));
 vi.mock('../api/use-bulk-transactions', () => ({
-  useBulkUpdateTransactions: () => ({ mutate: vi.fn() }),
-  useBulkDeleteTransactions: () => ({ mutate: vi.fn() }),
+  useBulkUpdateTransactions: () => ({ mutate: bulkUpdate }),
+  useBulkDeleteTransactions: () => ({ mutate: bulkDelete }),
 }));
 vi.mock('@/features/recurring/ui/create-recurring-dialog', () => ({ CreateRecurringDialog: () => null }));
 vi.mock('./transaction-form', () => ({ TransactionForm: () => null }));
@@ -43,8 +46,14 @@ vi.mock('./transaction-table', () => ({
 }));
 vi.mock('./transaction-mobile-list', () => ({ TransactionMobileList: () => null }));
 vi.mock('./bulk-actions-bar', () => ({
-  BulkActionsBar: ({ selectedCount }: { selectedCount: number }) =>
-    selectedCount > 0 ? <div data-testid="bulk-bar">{`count:${selectedCount}`}</div> : null,
+  BulkActionsBar: ({ selectedCount, onBulkDelete, onBulkReconcile }: { selectedCount: number; onBulkDelete: () => void; onBulkReconcile: () => void }) =>
+    selectedCount > 0 ? (
+      <div data-testid="bulk-bar">
+        {`count:${selectedCount}`}
+        <button onClick={onBulkDelete}>bulk delete</button>
+        <button onClick={onBulkReconcile}>bulk reconcile</button>
+      </div>
+    ) : null,
 }));
 vi.mock('./transaction-filters', () => ({
   TransactionFilters: (p: {
@@ -108,7 +117,7 @@ describe('TransactionList selection', () => {
     render(<TransactionList />);
     fireEvent.click(screen.getByText('select a'));
     fireEvent.click(screen.getByText('select b'));
-    expect(screen.getByTestId('bulk-bar').textContent).toBe('count:2');
+    expect(screen.getByTestId('bulk-bar').textContent).toContain('count:2');
 
     fireEvent.click(screen.getByText('2'));
     expect(screen.queryByTestId('bulk-bar')).toBeNull();
@@ -133,6 +142,46 @@ describe('TransactionList selection', () => {
     fireEvent.click(screen.getByText('select a'));
     fireEvent.click(screen.getByText('select b'));
     fireEvent.click(screen.getByText('select b'));
-    expect(screen.getByTestId('bulk-bar').textContent).toBe('count:1');
+    expect(screen.getByTestId('bulk-bar').textContent).toContain('count:1');
+  });
+});
+
+describe('TransactionList bulk error toast', () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  beforeEach(() => {
+    bulkDelete.mockReset();
+    bulkUpdate.mockReset();
+    vi.mocked(toast.error).mockReset();
+    vi.stubGlobal('confirm', () => true);
+    useTransactions.mockReset();
+    useTransactions.mockReturnValue({
+      data: { data: [{ id: 'a' }], meta: { page: 1, totalPages: 1, total: 1, limit: 25 } },
+      isLoading: false,
+    });
+  });
+
+  function selectOneAndClick(label: string) {
+    render(<TransactionList />);
+    fireEvent.click(screen.getByText('select a'));
+    fireEvent.click(screen.getByText(label));
+  }
+
+  it('shows the API message once when the bulk delete fails', () => {
+    bulkDelete.mockImplementation((_vars, opts) =>
+      opts.onError({ response: { data: { message: 'Transaction introuvable' } } }),
+    );
+    selectOneAndClick('bulk delete');
+
+    expect(toast.error).toHaveBeenCalledTimes(1);
+    expect(toast.error).toHaveBeenCalledWith('Transaction introuvable');
+  });
+
+  it('shows the generic message when the bulk update fails without an API message', () => {
+    bulkUpdate.mockImplementation((_vars, opts) => opts.onError(new Error('Network Error')));
+    selectOneAndClick('bulk reconcile');
+
+    expect(toast.error).toHaveBeenCalledTimes(1);
+    expect(toast.error).toHaveBeenCalledWith('error');
   });
 });

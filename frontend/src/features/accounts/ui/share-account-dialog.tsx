@@ -16,6 +16,7 @@ import { useManageShare } from '../api/use-manage-share';
 import { Trash2, UserPlus, Shield, ShieldCheck } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTranslations } from 'next-intl';
+import { getApiErrorMessage } from '@/shared/api/mutation-error';
 
 interface ShareAccountDialogProps {
   accountId: string;
@@ -43,9 +44,8 @@ export function ShareAccountDialog({ accountId, accountName, open, onOpenChange 
         toast.success(t('share_success'));
         setEmail('');
       },
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      onError: (err: any) => {
-        toast.error(err.response?.data?.message || tc('error'));
+      onError: (err) => {
+        toast.error(getApiErrorMessage(err, tc('error')));
       }
     });
   };

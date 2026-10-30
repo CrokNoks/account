@@ -43,7 +43,7 @@ Montants en centimes (texte dans les réponses), sauf Sankey (euros, nombre) et 
 | Analyse IA d'évolution : 6 dernières périodes clôturées ; si aucune, message « pas assez de données ». | `get-evolution-ai-insights.use-case.ts:15-57` | ❌ |
 | Gemini : sans clé `GEMINI_API_KEY`, renvoie un texte d'erreur (pas d'exception) ; réponses gardées 15 min en mémoire par texte de demande ; quota dépassé (429) ou autre erreur renvoient un message en texte normal. Modèle `gemini-flash-latest`. | `gemini.service.ts:22-82` | ❌ |
 | Scan de ticket : image + type MIME envoyés à Gemini, qui doit répondre en JSON (date, montant signé, enseigne, DEBIT/CREDIT). Toute erreur ou JSON illisible renvoie quatre champs vides, sans erreur. Un montant 0 reste 0 (seul un montant absent ou null est vide) ; une chaîne vide devient null. Sans clé IA, même résultat vide. | `scan-receipt.use-case.ts:21-69` | ❌ |
-| Front scan : l'image est réduite à 1024 px max et envoyée en JPEG ; seuls date, montant et description préremplissent le formulaire de transaction (le type DEBIT/CREDIT est ignoré). | `frontend/src/features/transactions/ui/create-transaction-drawer.tsx:41-96` | ❌ |
+| Front scan : l'image est réduite à 1024 px max et envoyée en JPEG ; seuls date, montant et description préremplissent le formulaire de transaction (le type DEBIT/CREDIT est ignoré) ; si le scan échoue, la notification affiche le message renvoyé par l'API, à défaut un message traduit. | `frontend/src/features/transactions/ui/create-transaction-drawer.tsx:41-96` | ❌ |
 | Front IA : résultat gardé 30 min (`staleTime`), langue = langue de l'interface. | `frontend/src/features/reporting/api/use-ai-insights.ts:15` | ❌ |
 
 ## Ce qu'on stocke

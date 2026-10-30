@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useState } from 'react';
 import { toast } from 'sonner';
+import { getApiErrorMessage } from '@/shared/api/mutation-error';
 import { useTranslations } from 'next-intl';
 
 export function AnomaliesWidget() {
@@ -58,14 +59,14 @@ export function AnomaliesWidget() {
         type: anomaly.type 
       },
       {
-        onError: () => {
+        onError: (error) => {
           // Revert optimistic update on error
           setDismissedIds(prev => {
             const next = new Set(prev);
             next.delete(anomaly.id);
             return next;
           });
-          toast.error(t('update_error'));
+          toast.error(getApiErrorMessage(error, t('update_error')));
         }
       }
     );

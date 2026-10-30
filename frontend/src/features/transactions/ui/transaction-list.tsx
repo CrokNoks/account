@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/sheet";
 import { useUiStore } from '@/shared/model/use-ui-store';
 import { toast } from 'sonner';
+import { getApiErrorMessage } from '@/shared/api/mutation-error';
 import { useTranslations } from 'next-intl';
 import { CreateRecurringDialog } from '@/features/recurring/ui/create-recurring-dialog';
 import { 
@@ -179,8 +180,7 @@ export function TransactionList({
   const displayedIds = useMemo(() => new Set(transactions?.data.map(t => t.id) ?? []), [transactions]);
   const bulkIds = useMemo(() => selectedIds.filter(id => displayedIds.has(id)), [selectedIds, displayedIds]);
 
-  const bulkErrorMessage = (err: unknown) =>
-    (err as { response?: { data?: { message?: string } } })?.response?.data?.message || tc('error');
+  const bulkErrorMessage = (err: unknown) => getApiErrorMessage(err, tc('error'));
 
   const toggleSelectAll = () => {
     if (transactions?.data && selectedIds.length === transactions.data.length) {

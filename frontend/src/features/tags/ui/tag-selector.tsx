@@ -21,6 +21,7 @@ import { Badge } from '@/components/ui/badge';
 import { useTags } from '../api/use-tags';
 import { useCreateTag } from '../api/use-create-tag';
 import { toast } from 'sonner';
+import { getApiErrorMessage } from '@/shared/api/mutation-error';
 import { useTranslations } from 'next-intl';
 
 interface TagSelectorProps {
@@ -60,8 +61,8 @@ export function TagSelector({ accountId, selectedTagIds, onChange }: TagSelector
         setInputValue('');
         toast.success(t('created', { name: newTag.name }));
       },
-      onError: () => {
-        toast.error(t('create_error'));
+      onError: (error) => {
+        toast.error(getApiErrorMessage(error, t('create_error')));
       }
     });
   };

@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@/shared/api/api-client';
 import { toast } from 'sonner';
+import { getApiErrorMessage } from '@/shared/api/mutation-error';
 import { useTranslations } from 'next-intl';
 import { UpdateRecurringTransactionData } from '../model/types';
 
@@ -17,8 +18,8 @@ export function useUpdateRecurringTransaction() {
       queryClient.invalidateQueries({ queryKey: ['recurring-transactions', variables.accountId] });
       toast.success(t('updated'));
     },
-    onError: () => {
-      toast.error(t('update_error'));
+    onError: (error) => {
+      toast.error(getApiErrorMessage(error, t('update_error')));
     },
   });
 }

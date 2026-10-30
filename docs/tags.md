@@ -39,7 +39,7 @@ Qui : connecté (token exigé, `@UseGuards(SupabaseAuthGuard)`, `tags.controller
 Front (`frontend/src/features/tags/`) : `tag-list`, `create-tag-dialog`, `tag-detail-drawer`, `tag-stats-summary`, `tag-selector` (choix de tags dans un formulaire, avec création à la volée du tag saisi) ; hooks `use-tags`, `use-create-tag`, `use-update-tag`, `use-delete-tag`, `use-tags-summary`, `use-tag-details`.
 
 ## Zones d'ombre
-- Création à la volée : le `tag-selector` crée un tag avec seulement un nom (`tag-selector.tsx:52-55`) ; l'API accepte maintenant ce cas et applique la couleur par défaut `#94a3b8`. Ce gris est choisi par le back, l'utilisateur ne le voit pas choisir.
+- Création à la volée : le `tag-selector` crée un tag avec seulement un nom (`tag-selector.tsx:52-55`) ; l'API accepte maintenant ce cas et applique la couleur par défaut `#94a3b8`. Ce gris est choisi par le back, l'utilisateur ne le voit pas choisir. Si la création échoue, la notification affiche le message renvoyé par l'API (par exemple un nom déjà pris), à défaut un message traduit.
 - Aucun test ne couvre le module tags.
 - Le nom unique par compte est une contrainte base : sa violation (code Postgres 23505) est traduite par le repository en `ConflictError` → 409 « A tag with this name already exists » (création et renommage), testé dans `supabase-tag.repository.spec.ts` et e2e `validation.e2e-spec.ts`. Un tag introuvable à la modification renvoie 404 (`NotFoundError`).
 - Rien n'empêche, dans le code, un nom composé d'espaces seulement côté API (`IsString` seul) ; l'entité le refuse ensuite.

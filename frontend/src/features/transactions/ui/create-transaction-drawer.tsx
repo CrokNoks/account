@@ -18,6 +18,7 @@ import { useUiStore } from '@/shared/model/use-ui-store';
 import { TransactionForm, TransactionFormValues } from './transaction-form';
 import { Receipt, ArrowRightLeft, Camera, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { getApiErrorMessage } from '@/shared/api/mutation-error';
 import { useTranslations } from 'next-intl';
 import { toCents, toAbsCents, isUnreadableAmount } from '@/shared/lib/format';
 
@@ -85,8 +86,8 @@ export function CreateTransactionDrawer() {
             }));
             toast.success(t('scan.success'));
           },
-          onError: () => {
-            toast.error(t('scan.error'));
+          onError: (error) => {
+            toast.error(getApiErrorMessage(error, t('scan.error')));
           }
         });
       };
