@@ -62,7 +62,7 @@ Identité : toutes les routes sont sous `SupabaseAuthGuard` (jeton Supabase exig
 | Évolution | `GET /reporting/evolution` | connecté | une ligne par période | l.262 |
 | Analyse IA d'évolution | `GET /reporting/evolution/ai-insights?locale=` | connecté | texte Markdown | l.316 |
 | Trésorerie prévue | `POST /reporting/cashflow?days=` | connecté | solde + événements | l.329 |
-| Scan de ticket | `POST /reporting/scan-receipt` (`base64Image`, `mimeType`) | connecté ; aucun contrôle du compte ni du corps (pas de classe de validation : corps non vérifié) | champs extraits | l.340 |
+| Scan de ticket | `POST /reporting/scan-receipt` (`base64Image`, `mimeType`) | connecté ; aucun contrôle du compte ; corps validé par `ScanReceiptDto` : `base64Image` non vide, `mimeType` parmi `image/jpeg`, `image/png`, `image/webp`, `image/heic`, sinon 400 sans appel à l'IA (le front envoie `image/jpeg`) | champs extraits | l.354 |
 | Résumé des tags | `GET /reporting/tags-summary?periodId=` | connecté | liste | l.348 |
 | Détail d'un tag | `GET /reporting/tags/:tagId?periodId=` | connecté | détail | l.358 |
 | Calendrier | `GET /reporting/calendar?year=&month=` | connecté | événements du mois | l.369 |

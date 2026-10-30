@@ -14,10 +14,11 @@ Mise à jour : 2026-10-30 · Commit : 157b272
 | --- | --- | --- |
 | Le nom est obligatoire (pas vide ni que des espaces) | `functions/src/categories/domain/category.entity.ts:45` | ✅ `category.entity.spec.ts` « should throw error if name is empty » |
 | Le type doit être l'une des 4 valeurs | `category.entity.ts:48` ; en base `supabase/migrations/20260307000000_migrate_to_v2.sql:32` (contrainte CHECK) | ❌ côté code ; base non testée |
-| La couleur doit être au format hexadécimal `#RRGGBB` | `category.entity.ts:51` ; DTO `IsHexColor` `categories.controller.ts:41` | ✅ « should throw error if color is invalid hex » |
+| La couleur doit être au format hexadécimal `#RRGGBB` | `category.entity.ts:51` ; DTO `IsHexColor` `categories.controller.ts:42` ; couleur invalide → 400 (e2e `validation.e2e-spec.ts`) | ✅ « should throw error if color is invalid hex » |
 | Le budget est facultatif | `category.entity.ts:15` | ✅ « should allow null budget » |
-| Le budget est reçu en texte numérique et converti en entier (centimes) | `categories.controller.ts:53-59,148` | ❌ |
+| Le budget est reçu en texte numérique et converti en entier (centimes) | `categories.controller.ts:53-59,154` | ❌ |
 | Modification partielle : un champ non envoyé garde sa valeur ; impossible de vider la description ou le budget (valeur vide ignorée) | `categories.controller.ts:122-132` | ❌ |
+| Le corps de la création est validé (`CreateCategoryBodyDto`, sans `accountId`) : nom, couleur `#RRGGBB`, type (enum), budget en texte numérique ; champ inconnu ou `accountId` → 400, le compte vient uniquement de l'URL | `categories.controller.ts:64-66,144-156` | ✅ e2e `validation.e2e-spec.ts` |
 | Le type d'une catégorie peut être changé après création | `categories.controller.ts:70,127` | ❌ |
 | Création et lecture passent par des cas d'usage ; la modification passe directement par le dépôt, sans cas d'usage | `categories.controller.ts:119-134` | ❌ |
 | Accès en base : lecture si accès « read » au compte, écriture si « write » (propriétaire = tout) | `20251221_schema_complete.sql:208-225` (RLS), `:140` | ❌ |
@@ -46,5 +47,5 @@ Pas de cycle de vie.
 - Le nom n'est pas unique : le code et la base lus (création) n'empêchent pas deux catégories de même nom dans un compte.
 - Pourquoi une catégorie n'est pas supprimable depuis l'application : inconnu (route absente). Effet d'une suppression directe en base sur les transactions : à voir dans le module transactions (hors périmètre).
 - Le budget de catégorie : le code ne montre pas où il est consommé dans ce module (aucun calcul ici).
-- Une catégorie introuvable à la modification lève une erreur générique (`new Error`), pas un 404 (`categories.controller.ts:120`).
+- Une catégorie introuvable à la modification lève une erreur générique (`new Error`), pas un 404 (`categories.controller.ts:122`).
 - `accountId` de l'URL non rapproché de celui de la catégorie modifiée.

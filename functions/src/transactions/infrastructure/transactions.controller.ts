@@ -16,6 +16,8 @@ import {
   ApiResponse,
   ApiBearerAuth,
   ApiProperty,
+  OmitType,
+  PartialType,
 } from '@nestjs/swagger';
 import { SupabaseAuthGuard } from '../../auth/supabase-auth.guard';
 import { GetTransactionsByAccountUseCase } from '../application/get-transactions-by-account.use-case';
@@ -113,6 +115,15 @@ export class CreateTransactionDto {
   })
   savingsGoalId?: string;
 }
+
+// accountId vient de l'URL, jamais du body.
+export class CreateTransactionBodyDto extends OmitType(CreateTransactionDto, [
+  'accountId',
+] as const) {}
+
+export class UpdateTransactionDto extends PartialType(
+  CreateTransactionBodyDto,
+) {}
 
 export class CreateTransferDto {
   @IsString()
@@ -368,11 +379,7 @@ export class TransactionsController {
   @ApiResponse({ status: 200, type: TransactionResponseDto })
   async update(
     @Param('id') id: string,
-    @Body()
-    dto: Partial<CreateTransactionDto> & {
-      reconciled?: boolean;
-      pending?: boolean;
-    },
+    @Body() dto: UpdateTransactionDto,
   ): Promise<TransactionResponseDto> {
     const existing = await this.transactionRepository.findById(id);
     if (!existing) throw new Error('Transaction not found');
@@ -381,19 +388,21 @@ export class TransactionsController {
     const pending =
       dto.reconciled === true ? false : (dto.pending ?? existing.pending);
 
+    // Le DTO transformé porte toutes ses clés (undefined si absentes) :
+    // on ne garde que les champs réellement fournis.
+    const provided = Object.fromEntries(
+      Object.entries(dto).filter(([, value]) => value !== undefined),
+    ) as Partial<Omit<UpdateTransactionDto, 'date' | 'amount'>>;
+
     const updated = new Transaction({
       ...existing,
-      ...dto,
+      ...provided,
       pending,
-      tagIds: dto.tagIds !== undefined ? dto.tagIds : existing.tagIds,
-      savingsGoalId:
-        dto.savingsGoalId !== undefined
-          ? dto.savingsGoalId
-          : existing.savingsGoalId,
-      date: dto.date ? new Date(dto.date) : existing.date,
-      amount: dto.amount
-        ? BigInt(Math.round(Number(dto.amount)))
-        : existing.amount,
+      date: dto.date !== undefined ? new Date(dto.date) : existing.date,
+      amount:
+        dto.amount !== undefined
+          ? BigInt(Math.round(Number(dto.amount)))
+          : existing.amount,
       updatedAt: new Date(),
     });
 
@@ -475,7 +484,7 @@ export class TransactionsController {
   @ApiResponse({ status: 201, type: TransactionResponseDto })
   async create(
     @Param('accountId') accountId: string,
-    @Body() dto: Omit<CreateTransactionDto, 'accountId'>,
+    @Body() dto: CreateTransactionBodyDto,
   ): Promise<TransactionResponseDto> {
     const transaction = await this.createTransactionUseCase.execute({
       ...dto,

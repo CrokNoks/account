@@ -51,6 +51,30 @@ export class CreateRecurringTransactionDto {
   dayOfMonth: number;
 }
 
+export class UpdateRecurringTransactionDto {
+  @IsOptional()
+  @IsString()
+  @ApiProperty({ required: false, nullable: true })
+  categoryId?: string | null;
+
+  @IsOptional()
+  @IsString()
+  @ApiProperty({ required: false })
+  description?: string;
+
+  @IsOptional()
+  @IsNumberString()
+  @ApiProperty({ required: false, description: 'Amount in cents' })
+  amount?: string;
+
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Max(31)
+  @ApiProperty({ required: false, description: 'Day of the month (1-31)' })
+  dayOfMonth?: number;
+}
+
 export class RecurringTransactionResponseDto {
   @ApiProperty() id: string;
   @ApiProperty() accountId: string;
@@ -104,12 +128,19 @@ export class RecurringController {
   @ApiResponse({ status: 200, type: RecurringTransactionResponseDto })
   async update(
     @Param('id') id: string,
-    @Body() dto: Partial<CreateRecurringTransactionDto>,
+    @Body() dto: UpdateRecurringTransactionDto,
   ): Promise<RecurringTransactionResponseDto> {
-    const transaction = await this.updateRecurringUseCase.execute(id, {
-      ...dto,
-      amount: dto.amount ? BigInt(Math.round(Number(dto.amount))) : undefined,
-    });
+    // Le DTO transformé porte toutes ses clés (valeur undefined si absentes) :
+    // on ne garde que les champs réellement fournis.
+    const data = {
+      ...(dto.categoryId !== undefined && { categoryId: dto.categoryId }),
+      ...(dto.description !== undefined && { description: dto.description }),
+      ...(dto.dayOfMonth !== undefined && { dayOfMonth: dto.dayOfMonth }),
+      ...(dto.amount !== undefined && {
+        amount: BigInt(Math.round(Number(dto.amount))),
+      }),
+    };
+    const transaction = await this.updateRecurringUseCase.execute(id, data);
     return this.mapToResponse(transaction);
   }
 

@@ -65,19 +65,23 @@ describe('Transactions routes (e2e)', () => {
       expect(mocks.transactions.save).toHaveBeenCalledTimes(1);
     });
 
-    // Comportement actuel : le body est typé Omit<CreateTransactionDto, ...>,
-    // ValidationPipe ne voit qu'un Object et ne valide rien.
-    describe('body is not validated', () => {
+    describe('body validation', () => {
       it.each([
         ['an unknown field', { ...body, foo: 'bar' }],
+        ['an accountId in the body', { ...body, accountId: 'acc-pirate' }],
         ['non string tag ids', { ...body, tagIds: [1, 2] }],
         ['an amount sent as number', { ...body, amount: -4250 }],
-      ])('accepts %s', async (_, payload) => {
+        ['a non numeric amount', { ...body, amount: '12 €' }],
+        ['a missing date', { ...body, date: undefined }],
+        ['an invalid date', { ...body, date: 'hier' }],
+        ['a missing description', { ...body, description: undefined }],
+      ])('answers 400 without saving for %s', async (_, payload) => {
         await http()
           .post('/acc-1/transactions')
           .set(auth())
           .send(payload)
-          .expect(201);
+          .expect(400);
+        expect(mocks.transactions.save).not.toHaveBeenCalled();
       });
 
       it('rounds a decimal amount to the nearest cent', async () => {
@@ -90,35 +94,18 @@ describe('Transactions routes (e2e)', () => {
         expect((res.body as Record<string, unknown>).amount).toBe('13');
       });
 
-      it.each([
-        ['a missing date', { ...body, date: undefined }],
-        ['an invalid date', { ...body, date: 'hier' }],
-      ])(
-        'saves the transaction with %s, then answers 500',
-        async (_, payload) => {
-          await http()
-            .post('/acc-1/transactions')
-            .set(auth())
-            .send(payload)
-            .expect(500);
+      it('accepts the payload sent by the front (null category, no period)', () =>
+        http()
+          .post('/acc-1/transactions')
+          .set(auth())
+          .send({ ...body, categoryId: null, pending: false, tagIds: [] })
+          .expect(201));
 
-          expect(mocks.transactions.save).toHaveBeenCalledTimes(1);
-          const [[saved]] = mocks.transactions.save.mock.calls as [
-            Transaction,
-          ][];
-          expect(Number.isNaN(saved.date.getTime())).toBe(true);
-        },
-      );
-
-      it.each([
-        ['a non numeric amount', { ...body, amount: '12 €' }],
-        ['a missing description', { ...body, description: undefined }],
-        ['a blank description', { ...body, description: '   ' }],
-      ])('answers 500 without saving for %s', async (_, payload) => {
+      it('answers 500 without saving for a blank description (entity rule)', async () => {
         await http()
           .post('/acc-1/transactions')
           .set(auth())
-          .send(payload)
+          .send({ ...body, description: '   ' })
           .expect(500);
         expect(mocks.transactions.save).not.toHaveBeenCalled();
       });
@@ -259,18 +246,54 @@ describe('Transactions routes (e2e)', () => {
         .expect(500);
     });
 
-    // Comportement actuel : le body (type intersection) n'est pas validé par
-    // ValidationPipe et il est recopié dans la transaction.
-    it('does not validate the body: unknown fields pass and accountId can be overwritten', async () => {
-      const res = await http()
+    it('refuses unknown fields and an accountId in the body, without saving', async () => {
+      mocks.transactions.findById.mockResolvedValue(tx('t1'));
+
+      await http()
         .patch('/acc-1/transactions/t1')
         .set(auth())
-        .send({ accountId: 'acc-pirate', foo: 'bar' })
+        .send({ accountId: 'acc-pirate' })
+        .expect(400);
+      await http()
+        .patch('/acc-1/transactions/t1')
+        .set(auth())
+        .send({ foo: 'bar' })
+        .expect(400);
+      expect(mocks.transactions.save).not.toHaveBeenCalled();
+    });
+
+    it('refuses an invalid amount or date', async () => {
+      mocks.transactions.findById.mockResolvedValue(tx('t1'));
+
+      await http()
+        .patch('/acc-1/transactions/t1')
+        .set(auth())
+        .send({ amount: 'abc' })
+        .expect(400);
+      await http()
+        .patch('/acc-1/transactions/t1')
+        .set(auth())
+        .send({ date: 'hier' })
+        .expect(400);
+      expect(mocks.transactions.save).not.toHaveBeenCalled();
+    });
+
+    it('only changes the provided fields', async () => {
+      const existing = tx('t1');
+      mocks.transactions.findById.mockResolvedValue(existing);
+
+      await http()
+        .patch('/acc-1/transactions/t1')
+        .set(auth())
+        .send({ notes: 'x' })
         .expect(200);
 
-      expect((res.body as Record<string, unknown>).accountId).toBe(
-        'acc-pirate',
-      );
+      const [[saved]] = mocks.transactions.save.mock.calls as [Transaction][];
+      expect(saved.notes).toBe('x');
+      expect(saved.description).toBe(existing.description);
+      expect(saved.amount).toBe(existing.amount);
+      expect(saved.date).toEqual(existing.date);
+      expect(saved.accountId).toBe(existing.accountId);
     });
 
     // Comportement actuel documenté : rien ne vérifie que la transaction
@@ -293,17 +316,16 @@ describe('Transactions routes (e2e)', () => {
   describe('bulk routes declared after :id', () => {
     // Comportement actuel documenté (docs/transactions.md) : PATCH :id et
     // DELETE :id sont déclarées avant PATCH bulk et DELETE bulk, qui sont donc
-    // inatteignables.
-    it('PATCH /bulk is handled as PATCH /:id with id "bulk"', async () => {
-      mocks.transactions.findById.mockResolvedValue(null);
-
+    // inatteignables. Le body {ids, data} est maintenant refusé par le DTO de
+    // PATCH :id (400) avant même de chercher la transaction "bulk".
+    it('PATCH /bulk is handled as PATCH /:id: the {ids, data} body is refused with 400', async () => {
       await http()
         .patch('/acc-1/transactions/bulk')
         .set(auth())
         .send({ ids: ['t1'], data: { reconciled: true } })
-        .expect(500);
+        .expect(400);
 
-      expect(mocks.transactions.findById).toHaveBeenCalledWith('bulk');
+      expect(mocks.transactions.save).not.toHaveBeenCalled();
       expect(
         mocks.transactions.findAllByAccountUnpaginated,
       ).not.toHaveBeenCalled();

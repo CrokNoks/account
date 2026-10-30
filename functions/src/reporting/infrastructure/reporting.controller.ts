@@ -69,7 +69,7 @@ import {
   ScanReceiptUseCase,
   ScanReceiptResult,
 } from '../application/scan-receipt.use-case';
-import { IsArray, IsString, IsIn } from 'class-validator';
+import { IsArray, IsString, IsIn, IsNotEmpty } from 'class-validator';
 
 export class IgnoreAnomalyDto {
   @IsArray()
@@ -81,6 +81,20 @@ export class IgnoreAnomalyDto {
   @IsIn(['duplicate', 'spike', 'outlier'])
   @ApiProperty({ enum: ['duplicate', 'spike', 'outlier'] })
   type: 'duplicate' | 'spike' | 'outlier';
+}
+
+export class ScanReceiptDto {
+  @IsString()
+  @IsNotEmpty()
+  @ApiProperty({ description: 'Receipt image, base64 encoded' })
+  base64Image: string;
+
+  @IsString()
+  @IsIn(['image/jpeg', 'image/png', 'image/webp', 'image/heic'])
+  @ApiProperty({
+    enum: ['image/jpeg', 'image/png', 'image/webp', 'image/heic'],
+  })
+  mimeType: string;
 }
 
 class AnomalyDto implements Anomaly {
@@ -339,9 +353,7 @@ export class ReportingController {
 
   @Post('reporting/scan-receipt')
   @ApiOperation({ summary: 'Scan a receipt image to extract data' })
-  async scanReceipt(
-    @Body() dto: { base64Image: string; mimeType: string },
-  ): Promise<ScanReceiptResult> {
+  async scanReceipt(@Body() dto: ScanReceiptDto): Promise<ScanReceiptResult> {
     return this.scanReceiptUseCase.execute(dto.base64Image, dto.mimeType);
   }
 

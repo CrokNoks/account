@@ -25,7 +25,8 @@ Mise à jour : 2026-10-30 · Commit : 157b272
 | Brouillon : toutes les catégories du compte sont listées (stat à 0 si aucun historique) | `get-period-draft.use-case.ts:54-58` | ✅ « should include category stats… » |
 | Remplacer les budgets : supprime tous les budgets de la période puis recrée ceux fournis, en ignorant les montants égaux à 0 | `update-period-budgets.use-case.ts:21-37` | ❌ |
 | À la création le montant 0 n'est PAS filtré (contrairement au remplacement) | `create-period-with-budgets.use-case.ts:52-58` | ❌ |
-| Montants en centimes, reçus en texte puis convertis en entier | `periods.controller.ts:48,148,221` | ❌ |
+| Le corps de la création est validé (`CreatePeriodBodyDto`, sans `accountId`) : dates ISO, `budgets` obligatoire (liste, même vide), `injectRecurring` booléen facultatif ; champ inconnu, `accountId` ou `budgets` absent → 400 (le compte vient uniquement de l'URL) | `periods.controller.ts:78-80,212-230` | ✅ e2e `validation.e2e-spec.ts` |
+| Montants en centimes, reçus en texte puis convertis en entier | `periods.controller.ts:48,154,227` | ❌ |
 | Une transaction ajoutée sans période reçoit automatiquement la période marquée active du compte | base : `supabase/migrations/20251229111000_add_period_id_to_expenses.sql:9-37` (trigger `assign_period_id`, renommé `set_transactions_period_id` dans `20260307000000_migrate_to_v2.sql`) | ❌ |
 | Supprimer une période supprime ses budgets ; ses transactions perdent leur période (restent) ; supprimer un compte supprime ses périodes | `20251229112000_create_budget_instances_table.sql:3` (CASCADE), `20251229111000...sql:3` (SET NULL), `20251229110500_create_periods_table.sql:3` | ❌ |
 | Accès en base : lecture/écriture selon l'accès au compte (propriétaire ou partage) | `20251229110500_create_periods_table.sql:16-30` | ❌ |
@@ -34,18 +35,18 @@ Mise à jour : 2026-10-30 · Commit : 157b272
 Période (table `periods`) : id ; compte ; date de début ; date de fin (peut être vide) ; `estimated_end_date` (colonne présente en base, non utilisée par le code) ; active oui/non ; dates de création/modification. Dates enregistrées sans heure (`YYYY-MM-DD`, `supabase-period.repository.ts:69`). Budgets : voir `docs/budgets.md`.
 
 ## Ce qu'on peut faire
-Qui : toutes les routes exigent un token de connexion valide (`@UseGuards(SupabaseAuthGuard)`, `periods.controller.ts:101` ; stratégie JWT `functions/src/auth/supabase.strategy.ts:61`). Pas de middleware global ni de décorateur d'identité : le contrôleur ne lit pas l'utilisateur. Les droits sont contrôlés uniquement en base (RLS) car le client Supabase porte le token de l'utilisateur (`functions/src/supabase/supabase.module.ts:25-38`). Le contrôleur ne vérifie pas que `:id` appartient à `:accountId`.
+Qui : toutes les routes exigent un token de connexion valide (`@UseGuards(SupabaseAuthGuard)`, `periods.controller.ts:107` ; stratégie JWT `functions/src/auth/supabase.strategy.ts:61`). Pas de middleware global ni de décorateur d'identité : le contrôleur ne lit pas l'utilisateur. Les droits sont contrôlés uniquement en base (RLS) car le client Supabase porte le token de l'utilisateur (`functions/src/supabase/supabase.module.ts:25-38`). Le contrôleur ne vérifie pas que `:id` appartient à `:accountId`.
 
 | Action | Point d'entrée | Effet | Source |
 | --- | --- | --- | --- |
-| Lister les périodes | `GET /:accountId/periods` | tri par début décroissant | `periods.controller.ts:112`, `supabase-period.repository.ts:52` |
-| Brouillon | `GET /:accountId/periods/draft-init` | dates suggérées + stats par catégorie | `periods.controller.ts:119` |
-| Budgets d'une période | `GET /:accountId/periods/:id/budgets` | liste (id, catégorie, montant) | `periods.controller.ts:128` |
-| Remplacer les budgets | `PUT /:accountId/periods/:id/budgets` | voir règle | `periods.controller.ts:140` |
-| Lire une période | `GET /:accountId/periods/:id` | renvoie la période ou rien | `periods.controller.ts:159` |
+| Lister les périodes | `GET /:accountId/periods` | tri par début décroissant | `periods.controller.ts:118`, `supabase-period.repository.ts:52` |
+| Brouillon | `GET /:accountId/periods/draft-init` | dates suggérées + stats par catégorie | `periods.controller.ts:125` |
+| Budgets d'une période | `GET /:accountId/periods/:id/budgets` | liste (id, catégorie, montant) | `periods.controller.ts:134` |
+| Remplacer les budgets | `PUT /:accountId/periods/:id/budgets` | voir règle | `periods.controller.ts:146` |
+| Lire une période | `GET /:accountId/periods/:id` | renvoie la période ou rien | `periods.controller.ts:165` |
 | Modifier (dates, active) | `PATCH /:accountId/periods/:id` | met à jour ; ne désactive pas les autres périodes quand on réactive | `periods.controller.ts:169` |
-| Supprimer | `DELETE /:accountId/periods/:id` | supprime | `periods.controller.ts:199` |
-| Créer avec budgets | `POST /:accountId/periods` | voir règles ; renvoie id, dates, nombre de budgets | `periods.controller.ts:206` |
+| Supprimer | `DELETE /:accountId/periods/:id` | supprime | `periods.controller.ts:205` |
+| Créer avec budgets | `POST /:accountId/periods` | voir règles ; renvoie id, dates, nombre de budgets | `periods.controller.ts:212` |
 
 Front (`frontend/src/features/periods/`) : liste (`ui/period-list.tsx`) avec « clôturer » (PATCH `isActive:false`, après confirmation navigateur), édition des dates, suppression (confirmation), édition des budgets (`ui/edit-period-budgets-sheet.tsx`) et création (`ui/create-period-dialog.tsx`, pré-remplie par le brouillon, montants saisis convertis par `toCents`). Hooks : `usePeriods` (dans `features/budgets`), `usePeriodDraft`, `usePeriodBudgets`, `useCreatePeriod`, `useUpdatePeriod`, `useUpdatePeriodBudgets`, `useDeletePeriod`. Après création/modification, le front rafraîchit aussi les transactions et le reporting.
 
@@ -57,5 +58,5 @@ Active / inactive (`is_active`). Création : la nouvelle est active, les autres 
 - Réactiver une période laisse-t-il volontairement plusieurs périodes actives ? Non traité.
 - Pourquoi le montant 0 est filtré au remplacement mais pas à la création : inconnu.
 - La date du jour du brouillon est calculée côté serveur avec son fuseau ; l'effet sur les dates n'est pas précisé.
-- Les erreurs « Period not found » sont des erreurs génériques (`periods.controller.ts:178`), pas des 404.
+- Les erreurs « Period not found » sont des erreurs génériques (`periods.controller.ts:184`), pas des 404.
 - Le comportement du trigger `assign_period_id` (condition exacte de choix de la période) se lit dans la migration ; la prise en compte de la date de la transaction n'y figure pas (commentaire d'hésitation, lignes 22-24).

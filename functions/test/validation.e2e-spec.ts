@@ -43,6 +43,12 @@ describe('Request body validation (e2e)', () => {
       ['patch', '/acc-1/periods/p1'],
       ['put', '/acc-1/periods/p1/budgets'],
       ['post', '/acc-1/recurring'],
+      ['post', '/acc-1/transactions'],
+      ['patch', '/acc-1/transactions/t1'],
+      ['post', '/acc-1/periods'],
+      ['post', '/acc-1/categories'],
+      ['post', '/acc-1/reporting/scan-receipt'],
+      ['patch', '/acc-1/recurring/r1'],
       ['post', '/acc-1/tags'],
       ['patch', '/acc-1/tags/t1'],
       ['post', '/acc-1/smart-rules'],
@@ -70,24 +76,41 @@ describe('Request body validation (e2e)', () => {
         .expect(400));
   });
 
-  // Comportement actuel : ces routes typent leur body avec Omit<>, Partial<>
-  // ou un type littéral ; ValidationPipe ne voit qu'un Object et ne valide rien.
-  describe('routes whose body is not validated', () => {
-    it('POST /:accountId/categories accepts unknown fields', () =>
-      http()
-        .post('/acc-1/categories')
-        .set(auth())
-        .send({ name: 'Courses', color: '#000000', type: 'expense', foo: 1 })
-        .expect(201));
-
-    it('POST /:accountId/categories answers 500 (not 400) for an invalid color and type', () =>
+  describe('bodies that used to be typed Omit<>/literal are now validated', () => {
+    it('POST /:accountId/categories answers 400 for an invalid color and type', () =>
       http()
         .post('/acc-1/categories')
         .set(auth())
         .send({ name: 'Courses', color: 'red', type: 'weird' })
-        .expect(500));
+        .expect(400));
 
-    it('POST /:accountId/periods accepts unknown fields', () =>
+    it('POST /:accountId/categories refuses an accountId in the body', () =>
+      http()
+        .post('/acc-1/categories')
+        .set(auth())
+        .send({
+          name: 'Courses',
+          color: '#000000',
+          type: 'expense',
+          accountId: 'acc-other',
+        })
+        .expect(400));
+
+    it('POST /:accountId/categories accepts the front payload', () =>
+      http()
+        .post('/acc-1/categories')
+        .set(auth())
+        .send({ name: 'Courses', color: '#000000', type: 'expense' })
+        .expect(201));
+
+    it('POST /:accountId/periods answers 400 without budgets', () =>
+      http()
+        .post('/acc-1/periods')
+        .set(auth())
+        .send({ startDate: '2026-03-01', endDate: '2026-03-31' })
+        .expect(400));
+
+    it('POST /:accountId/periods refuses an accountId in the body', () =>
       http()
         .post('/acc-1/periods')
         .set(auth())
@@ -95,39 +118,71 @@ describe('Request body validation (e2e)', () => {
           startDate: '2026-03-01',
           endDate: '2026-03-31',
           budgets: [],
-          foo: 1,
+          accountId: 'acc-other',
         })
-        .expect(201));
+        .expect(400));
 
-    it('POST /:accountId/periods answers 500 (not 400) without budgets', () =>
-      http()
+    it('POST /:accountId/periods accepts the front payload', () => {
+      mocks.recurring.findAllByAccount.mockResolvedValue([]);
+      return http()
         .post('/acc-1/periods')
         .set(auth())
-        .send({ startDate: '2026-03-01', endDate: '2026-03-31' })
-        .expect(500));
+        .send({
+          startDate: '2026-03-01',
+          endDate: '2026-03-31',
+          budgets: [{ categoryId: 'c1', amountAllocated: '10000' }],
+          injectRecurring: true,
+        })
+        .expect(201);
+    });
+  });
 
-    it('PATCH /:accountId/recurring/:id lets the body move the recurring transaction to another account', async () => {
+  describe('PATCH /:accountId/recurring/:id', () => {
+    it('keeps the existing amount when the body has no amount', async () => {
       const res = await http()
         .patch('/acc-1/recurring/r1')
         .set(auth())
-        .send({ amount: '-90000', accountId: 'acc-other' })
-        .expect(200);
-
-      expect((res.body as { accountId: string }).accountId).toBe('acc-other');
-    });
-
-    it('PATCH /:accountId/recurring/:id without amount saves an undefined amount, then answers 500', async () => {
-      await http()
-        .patch('/acc-1/recurring/r1')
-        .set(auth())
         .send({ description: 'Loyer appartement' })
-        .expect(500);
+        .expect(200);
 
       const [[saved]] = mocks.recurring.save.mock.calls as [
         RecurringTransaction,
       ][];
       expect(saved.description).toBe('Loyer appartement');
-      expect(saved.amount).toBeUndefined();
+      expect(saved.amount).toBe(BigInt(-85000));
+      expect((res.body as { amount: string }).amount).toBe('-85000');
+    });
+
+    it('updates the amount when provided', async () => {
+      await http()
+        .patch('/acc-1/recurring/r1')
+        .set(auth())
+        .send({ amount: '-90000' })
+        .expect(200);
+
+      const [[saved]] = mocks.recurring.save.mock.calls as [
+        RecurringTransaction,
+      ][];
+      expect(saved.amount).toBe(BigInt(-90000));
+    });
+
+    it('refuses to move the recurring transaction to another account', async () => {
+      await http()
+        .patch('/acc-1/recurring/r1')
+        .set(auth())
+        .send({ amount: '-90000', accountId: 'acc-other' })
+        .expect(400);
+
+      expect(mocks.recurring.save).not.toHaveBeenCalled();
+    });
+
+    it('rejects an invalid amount and day of month', async () => {
+      await http()
+        .patch('/acc-1/recurring/r1')
+        .set(auth())
+        .send({ amount: 'abc', dayOfMonth: 40 })
+        .expect(400);
+      expect(mocks.recurring.save).not.toHaveBeenCalled();
     });
   });
 });

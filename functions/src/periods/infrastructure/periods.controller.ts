@@ -15,6 +15,7 @@ import {
   ApiResponse,
   ApiBearerAuth,
   ApiProperty,
+  OmitType,
 } from '@nestjs/swagger';
 import { SupabaseAuthGuard } from '../../auth/supabase-auth.guard';
 import {
@@ -72,6 +73,11 @@ export class CreatePeriodDto {
   @ApiProperty({ required: false })
   injectRecurring?: boolean;
 }
+
+// accountId vient de l'URL, jamais du body.
+export class CreatePeriodBodyDto extends OmitType(CreatePeriodDto, [
+  'accountId',
+] as const) {}
 
 export class UpdatePeriodDto {
   @IsOptional()
@@ -210,7 +216,7 @@ export class PeriodsController {
   @ApiResponse({ status: 201 })
   async create(
     @Param('accountId') accountId: string,
-    @Body() dto: Omit<CreatePeriodDto, 'accountId'>,
+    @Body() dto: CreatePeriodBodyDto,
   ) {
     const result = await this.createPeriodWithBudgetsUseCase.execute({
       accountId,

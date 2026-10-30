@@ -14,6 +14,7 @@ import {
   ApiResponse,
   ApiBearerAuth,
   ApiProperty,
+  OmitType,
 } from '@nestjs/swagger';
 import { SupabaseAuthGuard } from '../../auth/supabase-auth.guard';
 import { GetCategoriesUseCase } from '../application/get-categories.use-case';
@@ -58,6 +59,11 @@ export class CreateCategoryDto {
   })
   budget?: string; // We accept it as a string to handle BigInt
 }
+
+// accountId vient de l'URL, jamais du body.
+export class CreateCategoryBodyDto extends OmitType(CreateCategoryDto, [
+  'accountId',
+] as const) {}
 
 export class UpdateCategoryDto {
   @IsOptional() @IsString() @ApiProperty({ required: false }) name?: string;
@@ -140,7 +146,7 @@ export class CategoriesController {
   @ApiResponse({ status: 201, type: CategoryResponseDto })
   async create(
     @Param('accountId') accountId: string,
-    @Body() dto: Omit<CreateCategoryDto, 'accountId'>,
+    @Body() dto: CreateCategoryBodyDto,
   ): Promise<CategoryResponseDto> {
     const category = await this.createCategoryUseCase.execute({
       ...dto,

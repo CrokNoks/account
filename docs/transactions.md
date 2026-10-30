@@ -23,14 +23,15 @@ Mise à jour : 2026-10-30 · Commit : 157b272
 | Import en lot : traité ligne par ligne, sans transaction globale (un échec laisse les lignes déjà créées) | `bulk-create-transactions.use-case.ts:25-52` | ❌ |
 | Virement : montant strictement positif ; comptes source et destination différents | `application/create-transfer.use-case.ts:20-25` | ❌ |
 | Virement : sortie = montant négatif, entrée = montant positif, sans catégorie, metadata `transferId`, `type` (`transfer_out`/`transfer_in`), `relatedAccountId` ; les deux lignes sont enregistrées l'une après l'autre (pas atomique) | `create-transfer.use-case.ts:27-58` | ❌ |
-| Modification : si `reconciled` passe à vrai, `pending` est remis à faux | `infrastructure/transactions.controller.ts:380-382` | ❌ |
-| Modification : tags et objectif d'épargne conservés si non fournis ; montant arrondi à l'entier | `transactions.controller.ts:384-398` | ❌ |
+| Modification : si `reconciled` passe à vrai, `pending` est remis à faux | `infrastructure/transactions.controller.ts:390-392` | ✅ e2e `transactions.e2e-spec.ts` |
+| Modification : seuls les champs fournis changent (tags, objectif d'épargne, date, montant conservés sinon) ; montant arrondi à l'entier | `transactions.controller.ts:394-410` | ✅ e2e `transactions.e2e-spec.ts` |
+| Création et modification : le corps est validé (`CreateTransactionBodyDto` / `UpdateTransactionDto`, sans `accountId`) : date ISO, montant en texte numérique, description texte ; champ inconnu, `accountId`, date ou montant invalide → 400 et rien n'est enregistré ; une description vide ou blanche reste refusée par l'entité (500) | `transactions.controller.ts:120-126,377,482` | ✅ e2e `transactions.e2e-spec.ts`, `validation.e2e-spec.ts` |
 | Modification/suppression en lot : seules les transactions réellement dans le compte de l'URL sont touchées, les autres identifiants sont ignorés silencieusement | `bulk-update-transactions.use-case.ts:24-30`, `bulk-delete-transactions.use-case.ts:15-22` | ❌ |
 | Modification en lot : seuls catégorie, tags, rapprochée, en attente sont modifiables ; ici `reconciled=true` ne remet PAS `pending` à faux | `bulk-update-transactions.use-case.ts:34-44` | ❌ |
 | Prédiction de catégorie : description de moins de 3 caractères → aucune ; sinon règles intelligentes d'abord, puis classifieur statistique (Bayes) entraîné sur les transactions déjà catégorisées du compte | `application/predict-category.use-case.ts:21-62` | ❌ |
 | Liste : tri par date décroissante ; pagination page 1, 1000 par page par défaut | `infrastructure/supabase-transaction.repository.ts:81-88` | ✅ partielle : `get-transactions-by-account.use-case.spec.ts` (options transmises, repo simulé) |
 | Liste : filtres date de début/fin (inclusifs, au jour), texte (description OU notes, insensible à la casse), catégorie, tags (au moins un des tags), montant min/max, rapprochée | `supabase-transaction.repository.ts:54-79` | ❌ |
-| Liste avec `periodId` : les dates de la période remplacent `startDate`/`endDate` ; période inconnue → 404 | `transactions.controller.ts:338-343` | ❌ |
+| Liste avec `periodId` : les dates de la période remplacent `startDate`/`endDate` ; période inconnue → 404 | `transactions.controller.ts:349-354` | ❌ |
 | Enregistrer une transaction remplace entièrement ses tags (suppression puis réinsertion) | `supabase-transaction.repository.ts:225-244` | ❌ |
 | Solde cumulé avant une date : somme des montants des transactions strictement antérieures (appel SQL) ; en cas d'erreur renvoie 0 | `supabase-transaction.repository.ts:157-176`, `supabase/migrations/20260308100000_add_sum_transactions_func.sql` | ❌ |
 | En base : à l'insertion, si aucune période n'est donnée, la période active du compte est affectée | `supabase/migrations/20251229111000_add_period_id_to_expenses.sql:9-37` (trigger renommé `set_transactions_period_id`, `20260307000000_migrate_to_v2.sql`) | ❌ |
@@ -44,27 +45,27 @@ Mise à jour : 2026-10-30 · Commit : 157b272
 Transaction (`transactions`) : id, compte, catégorie (optionnelle), période (optionnelle), date (jour), description, montant (centimes, BIGINT), rapprochée, en attente, moyen de paiement, notes, metadata (JSON libre, contient `transferId` pour les virements), objectif d'épargne (optionnel), dates de création/modification. Table de liaison `transaction_tags` (transaction, tag) ; supprimée avec la transaction. L'API renvoie les montants en texte.
 
 ## Ce qu'on peut faire
-Toutes les routes sont préfixées par l'identifiant du compte : `/:accountId/transactions`. Qui : connecté (token exigé, `@UseGuards(SupabaseAuthGuard)`, `transactions.controller.ts:297`), pas de middleware ni de décorateur d'identité ; l'identité n'est pas lue. Le contrôle propriétaire/partage n'est fait que par la base (RLS) via le token transmis ; le code ne vérifie pas que l'utilisateur a accès à `:accountId`.
+Toutes les routes sont préfixées par l'identifiant du compte : `/:accountId/transactions`. Qui : connecté (token exigé, `@UseGuards(SupabaseAuthGuard)`, `transactions.controller.ts:308`), pas de middleware ni de décorateur d'identité ; l'identité n'est pas lue. Le contrôle propriétaire/partage n'est fait que par la base (RLS) via le token transmis ; le code ne vérifie pas que l'utilisateur a accès à `:accountId`.
 
 | Action | Point d'entrée | Qui | Effet | Source |
 | --- | --- | --- | --- | --- |
-| Lister (filtres, pages) | `GET /:accountId/transactions` | connecté + RLS | `{data, meta}` | `transactions.controller.ts:325` |
-| Prédire la catégorie | `GET /:accountId/transactions/predict-category?description=` | connecté | `categoryId` (+ `tagIds` si règle) | `:313` |
-| Créer | `POST /:accountId/transactions` | connecté + RLS (`write`) | transaction créée | `:473` |
-| Créer en lot (import) | `POST /:accountId/transactions/bulk` | idem | transactions créées | `:411` |
-| Virement | `POST /:accountId/transactions/transfer` | idem (`write` sur le compte source ; destination non vérifiée par le code) | 2 transactions | `:456` |
-| Modifier | `PATCH /:accountId/transactions/:id` | idem ; le compte de l'URL n'est pas comparé à celui de la transaction | transaction mise à jour | `:366` |
-| Supprimer | `DELETE /:accountId/transactions/:id` (204) | idem ; idem | supprimée | `:404` |
-| Modifier en lot | `PATCH /:accountId/transactions/bulk` | idem, compte contrôlé | voir règles | `:429` |
-| Supprimer en lot | `DELETE /:accountId/transactions/bulk` (corps `ids`) | idem, compte contrôlé | voir règles | `:443` |
+| Lister (filtres, pages) | `GET /:accountId/transactions` | connecté + RLS | `{data, meta}` | `transactions.controller.ts:336` |
+| Prédire la catégorie | `GET /:accountId/transactions/predict-category?description=` | connecté | `categoryId` (+ `tagIds` si règle) | `:324` |
+| Créer | `POST /:accountId/transactions` | connecté + RLS (`write`) | transaction créée | `:482` |
+| Créer en lot (import) | `POST /:accountId/transactions/bulk` | idem | transactions créées | `:420` |
+| Virement | `POST /:accountId/transactions/transfer` | idem (`write` sur le compte source ; destination non vérifiée par le code) | 2 transactions | `:465` |
+| Modifier | `PATCH /:accountId/transactions/:id` | idem ; le compte de l'URL n'est pas comparé à celui de la transaction | transaction mise à jour | `:377` |
+| Supprimer | `DELETE /:accountId/transactions/:id` (204) | idem ; idem | supprimée | `:413` |
+| Modifier en lot | `PATCH /:accountId/transactions/bulk` | idem, compte contrôlé | voir règles | `:438` |
+| Supprimer en lot | `DELETE /:accountId/transactions/bulk` (corps `ids`) | idem, compte contrôlé | voir règles | `:452` |
 
 Front (`frontend/src/features/transactions/`) : `transaction-list` (liste, filtres, sélection, création de récurrente), `transaction-table` / `transaction-mobile-list`, `transaction-filters`, `create-transaction-drawer` + `transaction-form` (mode standard ou virement), `bulk-actions-bar`, import en 3 étapes (`import/import-upload-step`, `import-mapping-step` : montant unique ou colonnes débit/crédit, `import-validation-step`). Hooks : `use-transactions`, `use-create-transaction`, `use-update-transaction`, `use-delete-transaction`, `use-create-transfer`, `use-bulk-transactions`, `use-bulk-create-transactions`, `use-predict-category`.
 
 ## Statuts et transitions
-`pending` (en attente) et `reconciled` (rapprochée) sont deux booléens indépendants. Marquer rapprochée une transaction via la modification simple la sort de l'attente (`transactions.controller.ts:380-382`) ; via la modification en lot, non. Aucune transition n'est interdite par le code.
+`pending` (en attente) et `reconciled` (rapprochée) sont deux booléens indépendants. Marquer rapprochée une transaction via la modification simple la sort de l'attente (`transactions.controller.ts:390-392`) ; via la modification en lot, non. Aucune transition n'est interdite par le code.
 
 ## Zones d'ombre
-- Ordre des routes : `PATCH :id` (ligne 366) et `DELETE :id` (404) sont déclarées avant `PATCH bulk` (429) et `DELETE bulk` (443). Le code ne montre pas si `bulk` est capté comme un `:id` ; à vérifier à l'exécution.
+- Ordre des routes : `PATCH :id` (ligne 377) et `DELETE :id` (413) sont déclarées avant `PATCH bulk` (438) et `DELETE bulk` (452). Vérifié par les tests e2e : `bulk` est capté comme un `:id`. `PATCH /bulk` répond maintenant 400 (le corps `{ids, data}` est refusé par `UpdateTransactionDto`) au lieu de 500, et `DELETE /bulk` supprime l'id « bulk » sans toucher aux ids demandés ; la modification et la suppression en lot sont donc inutilisables.
 - Le code ne vérifie pas que la transaction modifiée/supprimée appartient au compte de l'URL, ni que le compte de destination d'un virement est accessible ; seule la base (RLS) bloque.
 - Dans le virement, le montant est lu avec `Math.round(Number(...))` : le comportement pour de très grands montants (précision) n'est pas défini.
 - Le virement ne porte pas de catégorie et sa catégorie « transfer » (type de catégorie, `20260307000000`) n'est pas utilisée ici : le code ne dit pas le lien voulu.

@@ -99,15 +99,14 @@ describe('Front/back contract (e2e)', () => {
   });
 
   describe('receipt scan', () => {
-    // Comportement actuel documenté : le body n'a pas de DTO, il n'est pas validé.
-    it('accepts any body and returns empty fields when the AI is not configured', async () => {
+    it('accepts the payload sent by the front and returns empty fields when the AI is not configured', async () => {
       mocks.gemini.analyzeImage.mockRejectedValue(new Error('no key'));
       jest.spyOn(console, 'error').mockImplementation(() => {});
 
       const res = await http()
         .post('/acc-1/reporting/scan-receipt')
         .set(auth())
-        .send({ anything: true })
+        .send({ base64Image: 'AAAA', mimeType: 'image/jpeg' })
         .expect(201);
 
       expect(res.body).toEqual({
@@ -116,6 +115,20 @@ describe('Front/back contract (e2e)', () => {
         description: null,
         type: null,
       });
+    });
+
+    it.each([
+      ['an unknown body', { anything: true }],
+      ['an empty image', { base64Image: '', mimeType: 'image/jpeg' }],
+      ['an unsupported mime type', { base64Image: 'AAAA', mimeType: 'text/x' }],
+      ['a missing mime type', { base64Image: 'AAAA' }],
+    ])('answers 400 without calling the AI for %s', async (_, payload) => {
+      await http()
+        .post('/acc-1/reporting/scan-receipt')
+        .set(auth())
+        .send(payload)
+        .expect(400);
+      expect(mocks.gemini.analyzeImage).not.toHaveBeenCalled();
     });
   });
 });
