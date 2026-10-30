@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { TransactionRepository } from '../domain/transaction.repository.interface';
+import { resolvePending } from '../domain/pending-rule';
 import { AccountReferencesService } from '../../shared/application/account-references.service';
 
 export interface BulkUpdateTransactionsCommand {
@@ -45,7 +46,7 @@ export class BulkUpdateTransactionsUseCase {
         tagIds: data.tagIds !== undefined ? data.tagIds : tx.tagIds,
         reconciled:
           data.reconciled !== undefined ? data.reconciled : tx.reconciled,
-        pending: data.pending !== undefined ? data.pending : tx.pending,
+        pending: resolvePending(data.reconciled, data.pending, tx.pending),
       });
 
       await this.transactionRepository.save(updated);

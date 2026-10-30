@@ -121,9 +121,8 @@ describe('BulkUpdateTransactionsUseCase', () => {
     expect(t1.tagIds).toEqual(['tag-new']);
   });
 
-  // Comportement actuel documenté (docs/transactions.md) : en lot, pointer une
-  // transaction ne la sort pas de l'attente, contrairement à la modification simple.
-  it('does not reset pending when reconciling in bulk', async () => {
+  // Même règle que la modification simple : pointer sort de l'attente.
+  it('resets pending when reconciling in bulk', async () => {
     repository.findAllByAccountUnpaginated.mockResolvedValue([
       tx('t1', { pending: true }),
     ]);
@@ -136,6 +135,34 @@ describe('BulkUpdateTransactionsUseCase', () => {
 
     const [t1] = saved();
     expect(t1.reconciled).toBe(true);
-    expect(t1.pending).toBe(true);
+    expect(t1.pending).toBe(false);
+  });
+
+  it('resets pending when reconciling even if pending: true is also provided', async () => {
+    repository.findAllByAccountUnpaginated.mockResolvedValue([
+      tx('t1', { pending: true }),
+    ]);
+
+    await useCase.execute({
+      accountId: 'acc-1',
+      ids: ['t1'],
+      data: { reconciled: true, pending: true },
+    });
+
+    expect(saved()[0].pending).toBe(false);
+  });
+
+  it('keeps pending when un-reconciling without providing it', async () => {
+    repository.findAllByAccountUnpaginated.mockResolvedValue([
+      tx('t1', { pending: true, reconciled: true }),
+    ]);
+
+    await useCase.execute({
+      accountId: 'acc-1',
+      ids: ['t1'],
+      data: { reconciled: false },
+    });
+
+    expect(saved()[0].pending).toBe(true);
   });
 });

@@ -33,6 +33,7 @@ import { BulkDeleteTransactionsUseCase } from '../application/bulk-delete-transa
 import { CreateTransferUseCase } from '../application/create-transfer.use-case';
 import { TransactionRepository } from '../domain/transaction.repository.interface';
 import { Transaction } from '../domain/transaction.entity';
+import { resolvePending } from '../domain/pending-rule';
 import {
   IsString,
   IsOptional,
@@ -452,9 +453,12 @@ export class TransactionsController {
       savingsGoalId: dto.savingsGoalId,
     });
 
-    // If reconciling, auto-clear pending
-    const pending =
-      dto.reconciled === true ? false : (dto.pending ?? existing.pending);
+    // Pointer sort de l'attente (règle partagée avec la modification en lot)
+    const pending = resolvePending(
+      dto.reconciled,
+      dto.pending,
+      existing.pending,
+    );
 
     // Le DTO transformé porte toutes ses clés (undefined si absentes) :
     // on ne garde que les champs réellement fournis.
