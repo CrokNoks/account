@@ -12,7 +12,7 @@ import { Loader2, ArrowRight, ArrowLeft, CheckCircle2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { apiClient } from '@/shared/api/api-client';
 import { useRouter } from '@/i18n/routing';
-import { toCents } from '@/shared/lib/format';
+import { toCents, parseAmountToCents, centsToDecimalString } from '@/shared/lib/format';
 import { ParsedTransaction, ImportStep, ImportMapping } from '@/features/transactions/model/import-types';
 import { ImportUploadStep } from '@/features/transactions/ui/import/import-upload-step';
 import { ImportMappingStep } from '@/features/transactions/ui/import/import-mapping-step';
@@ -118,20 +118,18 @@ export default function ImportTransactionsPage() {
       const dateVal = rowArr[dateIdx];
       const descVal = rowArr[descIdx];
       
-      let finalAmount = "0";
+      let cents: bigint | null;
       if (amountMode === 'single') {
-        finalAmount = rowArr[amountIdx] || "0";
+        cents = parseAmountToCents((rowArr[amountIdx] || '0').toString());
       } else {
-        const d = rowArr[debitIdx] || "0";
-        const c = rowArr[creditIdx] || "0";
-        const dv = parseFloat(d.toString().replace(/[^\d.,-]/g, '').replace(',', '.')) || 0;
-        const cv = parseFloat(c.toString().replace(/[^\d.,-]/g, '').replace(',', '.')) || 0;
-        finalAmount = (cv - Math.abs(dv)).toString();
+        const dv = parseAmountToCents((rowArr[debitIdx] || '0').toString()) ?? BigInt(0);
+        const cv = parseAmountToCents((rowArr[creditIdx] || '0').toString()) ?? BigInt(0);
+        cents = cv - (dv < BigInt(0) ? -dv : dv);
       }
 
       if (!dateVal || !descVal) continue;
 
-      const cleanAmount = finalAmount.toString().replace(/[^\d.,-]/g, '').replace(',', '.');
+      const cleanAmount = centsToDecimalString(cents ?? BigInt(0));
       
       let isoDate = new Date().toISOString().split('T')[0];
       try {

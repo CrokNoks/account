@@ -41,21 +41,34 @@ describe('toCents', () => {
     expect(toCents(amount)).toBe('0');
   });
 
-  // Comportement actuel : les séparateurs de milliers ne sont pas gérés,
-  // parseFloat s'arrête au premier caractère inattendu.
-  describe('thousands separators (current behaviour)', () => {
+  describe('thousands separators', () => {
     it.each([
-      ['1 234,56', '100'],
-      ['1.234,56', '123'],
-      ['12,345.67', '1235'],
+      ['1 234,56', '123456'],
+      ['1\u00a0234,56', '123456'],
+      ['1\u202f234,56', '123456'],
+      ['1.234,56', '123456'],
+      ['12,345.67', '1234567'],
+      ['1.234.567', '123456700'],
+      ['1,234,567', '123456700'],
+      ['-1.234,56', '-123456'],
+      ['42,50-', '-4250'],
+      ['€ 1 234,56', '123456'],
+      ['1234,56 EUR', '123456'],
+      ['10.50', '1050'],
+      ['10,50', '1050'],
+      ['.5', '50'],
+      ['1.2,3,4', '0'],
+      ['1-2', '0'],
     ])('converts %j to %s cents', (amount, expected) => {
       expect(toCents(amount)).toBe(expected);
     });
   });
 
-  // Comportement actuel : arrondi flottant (1.005 * 100 = 100.4999…).
-  it('rounds 1.005 down to 100 cents', () => {
-    expect(toCents('1.005')).toBe('100');
+  it('rounds half-up on the string, without floating point', () => {
+    expect(toCents('1.005')).toBe('101');
+    expect(toCents('1.004')).toBe('100');
+    expect(toCents('0,015')).toBe('2');
+    expect(toCents('-1,005')).toBe('-101');
   });
 });
 
@@ -63,6 +76,7 @@ describe('toAbsCents', () => {
   it.each([
     ['-42,50', '4250'],
     ['42.5', '4250'],
+    ['-1.234,56', '123456'],
     ['abc', '0'],
   ])('converts %j to %s cents', (amount, expected) => {
     expect(toAbsCents(amount)).toBe(expected);

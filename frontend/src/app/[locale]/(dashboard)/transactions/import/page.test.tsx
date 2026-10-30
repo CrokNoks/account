@@ -37,13 +37,14 @@ type ImportedLine = {
   reconciled: boolean;
 };
 
-async function importCsv(csv: string): Promise<ImportedLine[]> {
+async function importCsv(csv: string, separate = false): Promise<ImportedLine[]> {
   const { container } = render(<ImportPage />);
   const input = container.querySelector('input[type="file"]')!;
   fireEvent.change(input, {
     target: { files: [new File([csv], 'releve.csv', { type: 'text/csv' })] },
   });
 
+  if (separate) fireEvent.click(await screen.findByRole('button', { name: /Débit \/ Crédit/ }));
   fireEvent.click(await screen.findByRole('button', { name: /Analyser les données/ }));
   const confirm = await screen.findByRole('button', { name: /Confirmer l.import/ });
   await waitFor(() => expect(confirm).toBeEnabled());
@@ -129,10 +130,32 @@ describe('CSV import page', () => {
     expect(line.amount).toBe('-123456');
   });
 
-  // Comportement actuel : le point comme séparateur de milliers fausse le montant.
-  it('turns "-1.234,56" into -123 cents (dot as thousands separator)', async () => {
+  it('turns "-1.234,56" into -123456 cents (dot as thousands separator)', async () => {
     const [line] = await importCsv(['Date;Libellé;Montant', '01/03/2026;LOYER;-1.234,56'].join('\n'));
 
-    expect(line.amount).toBe('-123');
+    expect(line.amount).toBe('-123456');
+  });
+
+  it('keeps "12,345.67" as 1234567 cents and a trailing minus as negative', async () => {
+    const lines = await importCsv(
+      ['Date;Libellé;Montant', '01/03/2026;A;"12,345.67"', '01/03/2026;B;42,50-'].join('\n'),
+    );
+
+    expect(lines.map((l) => l.amount)).toEqual(['1234567', '-4250']);
+  });
+
+  it('computes debit/credit columns in integer cents (no float drift)', async () => {
+    const lines = await importCsv(
+      [
+        'Date;Libellé;Debit;Credit',
+        '01/03/2026;A;"1.234,56";',
+        '02/03/2026;B;;"2 000,10"',
+        '03/03/2026;C;0,10;0,30',
+        '04/03/2026;D;-5,05;',
+      ].join('\n'),
+      true,
+    );
+
+    expect(lines.map((l) => l.amount)).toEqual(['-123456', '200010', '20', '-505']);
   });
 });
