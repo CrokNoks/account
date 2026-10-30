@@ -6,6 +6,7 @@ import { useAccountStore } from '@/features/accounts/model/use-account-store';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Activity, ArrowUpRight, ArrowDownRight } from 'lucide-react';
 import { formatCurrency } from '@/shared/lib/format';
+import { expensePulsePercentage } from '@/shared/lib/percentage';
 import { cn } from '@/lib/utils';
 import { NoDataState } from '@/shared/ui/no-data-state';
 
@@ -50,11 +51,7 @@ export function MonthlyPulseWidget() {
   const totalExpenseA = comparison.expenses.reduce((sum, item) => sum + BigInt(item.period1Real), BigInt(0));
   const totalExpenseB = comparison.expenses.reduce((sum, item) => sum + BigInt(item.period2Real), BigInt(0));
   
-  const diff = totalExpenseB + totalExpenseA; // Expenses are negative
-  let percentage = 0;
-  if (totalExpenseA !== BigInt(0)) {
-    percentage = Math.round(Number((diff * BigInt(-100)) / totalExpenseA));
-  }
+  const percentage = expensePulsePercentage(totalExpenseA, totalExpenseB);
 
   const isMoreExpensive = totalExpenseB < totalExpenseA; // Both negative, so B < A means B spent MORE
 
