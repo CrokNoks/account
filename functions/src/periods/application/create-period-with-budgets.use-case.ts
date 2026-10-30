@@ -1,10 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { PeriodRepository } from '../domain/period.repository.interface';
 import { Period } from '../domain/period.entity';
-import { BudgetRepository } from '../../budgets/domain/budget.repository.interface';
 import { BudgetInstance } from '../../budgets/domain/budget-instance.entity';
 import { RecurringTransactionRepository } from '../../recurring/domain/recurring-transaction.repository.interface';
-import { TransactionRepository } from '../../transactions/domain/transaction.repository.interface';
 import { Transaction } from '../../transactions/domain/transaction.entity';
 import { recurringDayInMonth } from '../../shared/domain/recurring-day';
 import { AccountReferencesService } from '../../shared/application/account-references.service';
@@ -24,9 +22,7 @@ export interface CreatePeriodWithBudgetsCommand {
 export class CreatePeriodWithBudgetsUseCase {
   constructor(
     private readonly periodRepository: PeriodRepository,
-    private readonly budgetRepository: BudgetRepository,
     private readonly recurringRepository: RecurringTransactionRepository,
-    private readonly transactionRepository: TransactionRepository,
     private readonly references: AccountReferencesService,
   ) {}
 
@@ -37,17 +33,6 @@ export class CreatePeriodWithBudgetsUseCase {
       command.accountId,
       command.budgets.map((b) => b.categoryId),
     );
-
-    // 0. Deactivate existing active periods for this account
-    const existingPeriods = await this.periodRepository.findAllByAccount(
-      command.accountId,
-    );
-    for (const p of existingPeriods) {
-      if (p.isActive) {
-        const deactivated = p.deactivate();
-        await this.periodRepository.save(deactivated);
-      }
-    }
 
     // 1. Create Period
     const period = Period.create({
@@ -101,14 +86,13 @@ export class CreatePeriodWithBudgetsUseCase {
       }
     }
 
-    // 4. Save everything
-    await this.periodRepository.save(period);
-    if (budgetInstances.length > 0) {
-      await this.budgetRepository.saveBulk(budgetInstances);
-    }
-    for (const t of generatedTransactions) {
-      await this.transactionRepository.save(t);
-    }
+    // 4. Écriture atomique : désactivation des autres périodes actives du compte,
+    // période, budgets et transactions récurrentes, en une seule transaction.
+    await this.periodRepository.createWithBudgets(
+      period,
+      budgetInstances,
+      generatedTransactions,
+    );
 
     return { period, budgets: budgetInstances };
   }

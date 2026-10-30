@@ -2,6 +2,11 @@ import { Injectable, Inject } from '@nestjs/common';
 import { SupabaseClient } from '@supabase/supabase-js';
 import { Period } from '../domain/period.entity';
 import { PeriodRepository } from '../domain/period.repository.interface';
+import { BudgetInstance } from '../../budgets/domain/budget-instance.entity';
+import { toBudgetPayload } from '../../budgets/infrastructure/budget-payload';
+import { Transaction } from '../../transactions/domain/transaction.entity';
+import { toTransactionPayload } from '../../transactions/infrastructure/transaction-payload';
+import { ConflictError } from '../../shared/domain/errors';
 
 interface PeriodRow {
   id: string;
@@ -12,6 +17,9 @@ interface PeriodRow {
   created_at: string;
   updated_at: string;
 }
+
+/** Code Postgres d'une violation de contrainte d'unicité. */
+const UNIQUE_VIOLATION = '23505';
 
 @Injectable()
 export class SupabasePeriodRepository implements PeriodRepository {
@@ -75,6 +83,39 @@ export class SupabasePeriodRepository implements PeriodRepository {
       updated_at: period.updatedAt.toISOString(),
     });
 
+    if (error) throw new Error(error.message);
+  }
+
+  async createWithBudgets(
+    period: Period,
+    budgets: BudgetInstance[],
+    transactions: Transaction[],
+  ): Promise<void> {
+    // Fonction SQL create_period_with_budgets : une seule transaction base de données.
+    const { error } = await this.supabase.rpc('create_period_with_budgets', {
+      p_period: {
+        id: period.id,
+        account_id: period.accountId,
+        start_date: period.startDate.toISOString().split('T')[0],
+        end_date: period.endDate
+          ? period.endDate.toISOString().split('T')[0]
+          : null,
+        is_active: period.isActive,
+        created_at: period.createdAt.toISOString(),
+        updated_at: period.updatedAt.toISOString(),
+      },
+      p_budgets: budgets.map(toBudgetPayload),
+      p_transactions: transactions.map(toTransactionPayload),
+    });
+
+    // UNIQUE(period_id, category_id) : budget_instances_period_id_category_id_key
+    if (
+      error?.code === UNIQUE_VIOLATION &&
+      error.message.includes('budget_instances')
+    )
+      throw new ConflictError(
+        'A budget already exists for this category in this period',
+      );
     if (error) throw new Error(error.message);
   }
 

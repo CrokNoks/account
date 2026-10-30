@@ -152,7 +152,7 @@ const routes: Route[] = [
       endDate: '2026-03-31',
       budgets: [{ categoryId: category, amountAllocated: '100' }],
     }),
-    writes: ['periods.save', 'budgets.saveBulk'],
+    writes: ['periods.createWithBudgets'],
     okStatus: 201,
     supports: ['category'],
   },
