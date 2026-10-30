@@ -3,7 +3,13 @@
   "rootDir": ".",
   "testEnvironment": "node",
   "testRegex": ".e2e-spec.ts$",
+  "setupFiles": ["<rootDir>/e2e-env.ts"],
   "transform": {
+    "node_modules/(afinn-165[^/]*|uuid|jose)/.+\\.js$": [
+      "ts-jest",
+      { "tsconfig": { "allowJs": true } }
+    ],
     "^.+\\.(t|j)s$": "ts-jest"
-  }
+  },
+  "transformIgnorePatterns": ["/node_modules/(?!(afinn-165[^/]*|uuid|jose)/)"]
 }
