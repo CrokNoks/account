@@ -9,7 +9,7 @@ const tx = (id: string, overrides: Partial<Transaction> = {}) =>
   Transaction.create({
     id,
     accountId: 'acc-1',
-    categoryId: 'cat-1',
+    categoryId: '00000000-0000-4000-8000-000000000012',
     date: new Date('2026-03-01T00:00:00.000Z'),
     description: `tx ${id}`,
     amount: BigInt(-4250),
@@ -33,18 +33,24 @@ describe('Transactions routes (e2e)', () => {
     jest.clearAllMocks();
     mocks.transactions.save.mockResolvedValue(undefined);
     mocks.transactions.delete.mockResolvedValue(undefined);
-    mocks.transactions.findById.mockResolvedValue(tx('t1'));
+    mocks.transactions.findById.mockResolvedValue(
+      tx('00000000-0000-4000-8000-000000000016'),
+    );
     mocks.transactions.findAllByAccountUnpaginated.mockResolvedValue([
-      tx('t1'),
-      tx('t2'),
+      tx('00000000-0000-4000-8000-000000000016'),
+      tx('00000000-0000-4000-8000-000000000017'),
     ]);
     mocks.smartRules.findAllByAccount.mockResolvedValue([]);
     mocks.categories.findById.mockResolvedValue({
-      id: 'cat-2',
+      id: '00000000-0000-4000-8000-000000000013',
       accountId: 'acc-1',
     });
     mocks.accounts.findById.mockResolvedValue(
-      new Account({ id: 'acc-2', name: 'Épargne', ownerId: 'user-1' }),
+      new Account({
+        id: '00000000-0000-4000-8000-000000000014',
+        name: 'Épargne',
+        ownerId: 'user-1',
+      }),
     );
   });
 
@@ -127,7 +133,7 @@ describe('Transactions routes (e2e)', () => {
   describe('GET /:accountId/transactions', () => {
     it('passes filters and pagination to the repository', async () => {
       mocks.transactions.findAllByAccount.mockResolvedValue({
-        data: [tx('t1')],
+        data: [tx('00000000-0000-4000-8000-000000000016')],
         meta: { total: 1, page: 2, limit: 10, totalPages: 1 },
       });
 
@@ -165,7 +171,7 @@ describe('Transactions routes (e2e)', () => {
 
       await http()
         .get('/acc-1/transactions')
-        .query({ periodId: 'nope' })
+        .query({ periodId: '00000000-0000-4000-8000-000000000021' })
         .set(auth())
         .expect(404);
     });
@@ -177,7 +183,7 @@ describe('Transactions routes (e2e)', () => {
         .post('/acc-1/transactions/transfer')
         .set(auth())
         .send({
-          destinationAccountId: 'acc-2',
+          destinationAccountId: '00000000-0000-4000-8000-000000000014',
           date: '2026-03-01',
           description: 'Épargne',
           amount: '15000',
@@ -191,7 +197,7 @@ describe('Transactions routes (e2e)', () => {
         ]),
       ).toEqual([
         ['acc-1', '-15000'],
-        ['acc-2', '15000'],
+        ['00000000-0000-4000-8000-000000000014', '15000'],
       ]);
     });
 
@@ -236,7 +242,7 @@ describe('Transactions routes (e2e)', () => {
   describe('PATCH /:accountId/transactions/:id', () => {
     it('updates the transaction and clears pending when reconciling', async () => {
       mocks.transactions.findById.mockResolvedValue(
-        tx('t1', { pending: true }),
+        tx('00000000-0000-4000-8000-000000000016', { pending: true }),
       );
 
       const res = await http()
@@ -259,7 +265,9 @@ describe('Transactions routes (e2e)', () => {
     });
 
     it('refuses unknown fields and an accountId in the body, without saving', async () => {
-      mocks.transactions.findById.mockResolvedValue(tx('t1'));
+      mocks.transactions.findById.mockResolvedValue(
+        tx('00000000-0000-4000-8000-000000000016'),
+      );
 
       await http()
         .patch('/acc-1/transactions/t1')
@@ -275,7 +283,9 @@ describe('Transactions routes (e2e)', () => {
     });
 
     it('refuses an invalid amount or date', async () => {
-      mocks.transactions.findById.mockResolvedValue(tx('t1'));
+      mocks.transactions.findById.mockResolvedValue(
+        tx('00000000-0000-4000-8000-000000000016'),
+      );
 
       await http()
         .patch('/acc-1/transactions/t1')
@@ -291,7 +301,7 @@ describe('Transactions routes (e2e)', () => {
     });
 
     it('only changes the provided fields', async () => {
-      const existing = tx('t1');
+      const existing = tx('00000000-0000-4000-8000-000000000016');
       mocks.transactions.findById.mockResolvedValue(existing);
 
       await http()
@@ -311,7 +321,7 @@ describe('Transactions routes (e2e)', () => {
     // Le détail de toutes les routes `:id` est dans account-ownership.e2e-spec.ts.
     it('answers 404 without saving for a transaction of another account', async () => {
       mocks.transactions.findById.mockResolvedValue(
-        tx('t9', { accountId: 'acc-other' }),
+        tx('00000000-0000-4000-8000-000000000018', { accountId: 'acc-other' }),
       );
 
       await http()
@@ -328,13 +338,19 @@ describe('Transactions routes (e2e)', () => {
       await http()
         .patch('/acc-1/transactions/bulk')
         .set(auth())
-        .send({ ids: ['t1'], data: { categoryId: 'cat-2', pending: true } })
+        .send({
+          ids: ['00000000-0000-4000-8000-000000000016'],
+          data: {
+            categoryId: '00000000-0000-4000-8000-000000000013',
+            pending: true,
+          },
+        })
         .expect(200);
 
       const [[saved]] = mocks.transactions.save.mock.calls as [Transaction][];
       expect(mocks.transactions.save).toHaveBeenCalledTimes(1);
-      expect(saved.id).toBe('t1');
-      expect(saved.categoryId).toBe('cat-2');
+      expect(saved.id).toBe('00000000-0000-4000-8000-000000000016');
+      expect(saved.categoryId).toBe('00000000-0000-4000-8000-000000000013');
       expect(saved.pending).toBe(true);
     });
 
@@ -348,7 +364,7 @@ describe('Transactions routes (e2e)', () => {
       await http()
         .patch('/acc-1/transactions/bulk')
         .set(auth())
-        .send({ ids: ['t1'], data })
+        .send({ ids: ['00000000-0000-4000-8000-000000000016'], data })
         .expect(400);
 
       expect(mocks.transactions.save).not.toHaveBeenCalled();
@@ -358,7 +374,10 @@ describe('Transactions routes (e2e)', () => {
       await http()
         .patch('/acc-1/transactions/bulk')
         .set(auth())
-        .send({ ids: ['t1'], data: { categoryId: null } })
+        .send({
+          ids: ['00000000-0000-4000-8000-000000000016'],
+          data: { categoryId: null },
+        })
         .expect(200);
 
       const [[saved]] = mocks.transactions.save.mock.calls as [Transaction][];
@@ -369,10 +388,19 @@ describe('Transactions routes (e2e)', () => {
       await http()
         .delete('/acc-1/transactions/bulk')
         .set(auth())
-        .send({ ids: ['t1', 't2', 't-other-account'] })
+        .send({
+          ids: [
+            '00000000-0000-4000-8000-000000000016',
+            '00000000-0000-4000-8000-000000000017',
+            '00000000-0000-4000-8000-000000000099',
+          ],
+        })
         .expect(200);
 
-      expect(mocks.transactions.delete.mock.calls).toEqual([['t1'], ['t2']]);
+      expect(mocks.transactions.delete.mock.calls).toEqual([
+        ['00000000-0000-4000-8000-000000000016'],
+        ['00000000-0000-4000-8000-000000000017'],
+      ]);
     });
 
     it('DELETE /bulk answers 400 without deleting when ids is missing', async () => {

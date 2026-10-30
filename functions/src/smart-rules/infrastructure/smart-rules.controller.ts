@@ -19,7 +19,13 @@ import { ensureBelongsToAccount } from '../../shared/domain/account-ownership';
 import { SupabaseAuthGuard } from '../../auth/supabase-auth.guard';
 import type { SmartRuleRepository } from '../domain/smart-rule.repository.interface';
 import { SmartRule } from '../domain/smart-rule.entity';
-import { IsString, IsOptional, IsArray, IsNumber } from 'class-validator';
+import {
+  IsString,
+  IsOptional,
+  IsArray,
+  IsNumber,
+  IsUUID,
+} from 'class-validator';
 import { Inject } from '@nestjs/common';
 
 class CreateSmartRuleDto {
@@ -28,13 +34,13 @@ class CreateSmartRuleDto {
   pattern: string;
 
   @IsOptional()
-  @IsString()
+  @IsUUID()
   @ApiProperty({ required: false, nullable: true })
   categoryId: string | null;
 
   @IsOptional()
   @IsArray()
-  @IsString({ each: true })
+  @IsUUID(undefined, { each: true })
   @ApiProperty({ required: false, type: [String] })
   tagIds?: string[];
 
@@ -51,13 +57,13 @@ class UpdateSmartRuleDto {
   pattern?: string;
 
   @IsOptional()
-  @IsString()
+  @IsUUID()
   @ApiProperty({ required: false, nullable: true })
   categoryId?: string | null;
 
   @IsOptional()
   @IsArray()
-  @IsString({ each: true })
+  @IsUUID(undefined, { each: true })
   @ApiProperty({ required: false, type: [String] })
   tagIds?: string[];
 

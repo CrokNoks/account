@@ -76,6 +76,7 @@ Front : un hook par route dans `api/` (clés React Query dédiées) ; écrans `u
 Pas de cycle de vie. Une anomalie ignorée le reste (aucune route pour la rétablir).
 
 ## Zones d'ombre
+- Les `transactionIds` de l'ignorance d'anomalies doivent être des UUID : sinon 400 (voir `transactions.md`). Les identifiants de route/query (`periodId`, `tagId`, `compareWith`) ne sont pas encore validés.
 - Trésorerie prévue : le front l'appelle en `GET` (`use-cashflow-forecast.ts:10`) et le back l'expose désormais en `GET` ; l'ancienne route `POST` n'existe plus (404). Le défaut de 90 jours et les bornes de `days` sont couverts par les tests e2e.
 - Le scan et les analyses IA envoient des données financières / images à Google Gemini ; la clé est passée dans l'URL (`gemini.service.ts`). Aucune limite de taille d'image ni de fréquence dans le code.
 - `forecastBalance` a deux définitions différentes (stats vs évolution) ; laquelle fait foi n'est pas dit.

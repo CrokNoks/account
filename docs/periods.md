@@ -54,6 +54,7 @@ Front (`frontend/src/features/periods/`) : liste (`ui/period-list.tsx`) avec « 
 Active / inactive (`is_active`). Création : la nouvelle est active, les autres actives passent inactives. Clôture : active -> inactive via PATCH. Rien n'interdit (code lu) de réactiver une période inactive par PATCH ni d'avoir alors plusieurs actives.
 
 ## Zones d'ombre
+- Les `categoryId` des budgets reçus en body doivent être des UUID : sinon 400 (voir `transactions.md`). Ceux de la route ne sont pas encore validés.
 - Les périodes peuvent-elles se chevaucher ? Aucun contrôle trouvé (code ni base).
 - Réactiver une période laisse-t-il volontairement plusieurs périodes actives ? Non traité.
 - Pourquoi le montant 0 est filtré au remplacement mais pas à la création : inconnu.

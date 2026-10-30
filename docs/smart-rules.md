@@ -45,6 +45,7 @@ Front (`frontend/src/features/smart-rules/`) : liste avec création/modification
 Pas de cycle de vie.
 
 ## Zones d'ombre
+- Les identifiants reçus en body (`categoryId`, `tagIds`) doivent être des UUID : sinon 400 (voir `transactions.md`). Ceux de la route ne sont pas encore validés.
 - Deux règles de même priorité : l'ordre entre elles dépend de l'ordre renvoyé par la base (tri stable non garanti par le code).
 - Quand une règle donne une catégorie vide mais des étiquettes, la prédiction de catégorie renvoie quand même un résultat (voir `predict-category.use-case.ts:26`) ; l'intention n'est pas documentée.
 - À la création et à la modification, la catégorie et les étiquettes citées doivent appartenir au compte de l'URL : sinon 400 sans écriture (`AccountReferencesService`, `smart-rules.controller.ts`) ; e2e `cross-account-references.e2e-spec.ts`.

@@ -125,7 +125,7 @@ describe('Request body validation (e2e)', () => {
     it('POST /:accountId/periods accepts the front payload', () => {
       mocks.recurring.findAllByAccount.mockResolvedValue([]);
       mocks.categories.findById.mockResolvedValue({
-        id: 'c1',
+        id: '00000000-0000-4000-8000-000000000019',
         accountId: 'acc-1',
       });
       return http()
@@ -134,7 +134,12 @@ describe('Request body validation (e2e)', () => {
         .send({
           startDate: '2026-03-01',
           endDate: '2026-03-31',
-          budgets: [{ categoryId: 'c1', amountAllocated: '10000' }],
+          budgets: [
+            {
+              categoryId: '00000000-0000-4000-8000-000000000019',
+              amountAllocated: '10000',
+            },
+          ],
           injectRecurring: true,
         })
         .expect(201);
@@ -198,6 +203,88 @@ describe('Request body validation (e2e)', () => {
         .send({ amount: 'abc', dayOfMonth: 40 })
         .expect(400);
       expect(mocks.recurring.save).not.toHaveBeenCalled();
+    });
+  });
+  describe('ids received in a body or a query must be UUIDs (400, no repository call)', () => {
+    const tx = { date: '2026-03-01', description: 'CB', amount: '-100' };
+    const bad = 'not-a-uuid';
+    it.each([
+      ['post', '/acc-1/transactions', { ...tx, savingsGoalId: bad }],
+      ['post', '/acc-1/transactions', { ...tx, categoryId: bad }],
+      ['post', '/acc-1/transactions', { ...tx, periodId: bad }],
+      ['post', '/acc-1/transactions', { ...tx, tagIds: [bad] }],
+      ['patch', '/acc-1/transactions/t1', { savingsGoalId: bad }],
+      [
+        'post',
+        '/acc-1/transactions/bulk',
+        { transactions: [{ ...tx, categoryId: bad }] },
+      ],
+      ['patch', '/acc-1/transactions/bulk', { ids: [bad], data: {} }],
+      [
+        'patch',
+        '/acc-1/transactions/bulk',
+        { ids: [], data: { categoryId: bad } },
+      ],
+      ['delete', '/acc-1/transactions/bulk', { ids: [bad] }],
+      [
+        'post',
+        '/acc-1/transactions/transfer',
+        {
+          destinationAccountId: bad,
+          date: '2026-03-01',
+          description: 'x',
+          amount: '100',
+        },
+      ],
+      [
+        'post',
+        '/acc-1/recurring',
+        { categoryId: bad, description: 'x', amount: '-1', dayOfMonth: 5 },
+      ],
+      ['post', '/acc-1/smart-rules', { pattern: 'x', categoryId: bad }],
+      ['post', '/acc-1/smart-rules', { pattern: 'x', tagIds: [bad] }],
+      [
+        'post',
+        '/acc-1/periods',
+        {
+          startDate: '2026-03-01',
+          endDate: '2026-03-31',
+          budgets: [{ categoryId: bad, amountAllocated: '1' }],
+        },
+      ],
+      [
+        'post',
+        '/acc-1/reporting/anomalies/ignore',
+        { transactionIds: [bad], type: 'outlier' },
+      ],
+    ] as const)('%s %s %j', async (method, url, body) => {
+      const res = await http()[method](url).set(auth()).send(body);
+
+      expect(res.status).toBe(400);
+      expect(JSON.stringify(res.body)).toMatch(/UUID/i);
+      for (const repo of [
+        'transactions',
+        'categories',
+        'tags',
+        'savingsGoals',
+        'periods',
+      ] as const) {
+        expect(mocks[repo].findById).not.toHaveBeenCalled();
+        expect(mocks[repo].save).not.toHaveBeenCalled();
+      }
+    });
+
+    it('GET /:accountId/transactions answers 400 for a malformed categoryId or periodId', async () => {
+      await http()
+        .get('/acc-1/transactions')
+        .query({ categoryId: bad })
+        .set(auth())
+        .expect(400);
+      await http()
+        .get('/acc-1/transactions')
+        .query({ periodId: bad })
+        .set(auth())
+        .expect(400);
     });
   });
 });

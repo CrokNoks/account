@@ -18,7 +18,7 @@ const base = (accountId: string) => ({
 const fixtures = {
   transactions: (accountId: string) => ({
     ...base(accountId),
-    categoryId: 'cat-1',
+    categoryId: '00000000-0000-4000-8000-000000000012',
     periodId: null,
     date: now,
     description: 'tx',
@@ -29,7 +29,7 @@ const fixtures = {
   }),
   recurring: (accountId: string) => ({
     ...base(accountId),
-    categoryId: 'cat-1',
+    categoryId: '00000000-0000-4000-8000-000000000012',
     description: 'loyer',
     amount: BigInt(-50000),
     dayOfMonth: 5,
@@ -216,7 +216,14 @@ const routes: Route[] = [
     repo: 'periods',
     method: 'put',
     url: '/acc-1/periods/x1/budgets',
-    body: { budgets: [{ categoryId: 'c', amountAllocated: '100' }] },
+    body: {
+      budgets: [
+        {
+          categoryId: '00000000-0000-4000-8000-000000000040',
+          amountAllocated: '100',
+        },
+      ],
+    },
     writes: ['budgets.deleteAllByPeriod', 'budgets.saveBulk'],
     okStatus: 200,
   },
@@ -300,7 +307,7 @@ describe('Account ownership of :id routes (e2e)', () => {
       mocks.periods.findById.mockResolvedValue(fixtures.periods('acc-other'));
       await http()
         .get('/acc-1/transactions')
-        .query({ periodId: 'x1' })
+        .query({ periodId: '00000000-0000-4000-8000-000000000041' })
         .set(auth())
         .expect(404);
       expect(mocks.transactions.findAllByAccount).not.toHaveBeenCalled();

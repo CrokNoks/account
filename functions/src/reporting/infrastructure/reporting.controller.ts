@@ -78,6 +78,7 @@ import {
   IsOptional,
   Max,
   Min,
+  IsUUID,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 
@@ -99,7 +100,7 @@ export class CashflowQueryDto {
 
 export class IgnoreAnomalyDto {
   @IsArray()
-  @IsString({ each: true })
+  @IsUUID(undefined, { each: true })
   @ApiProperty()
   transactionIds: string[];
 

@@ -28,11 +28,12 @@ import {
   IsInt,
   Min,
   Max,
+  IsUUID,
 } from 'class-validator';
 
 export class CreateRecurringTransactionDto {
   @IsOptional()
-  @IsString()
+  @IsUUID()
   @ApiProperty({ required: false, nullable: true })
   categoryId: string | null;
 
@@ -53,7 +54,7 @@ export class CreateRecurringTransactionDto {
 
 export class UpdateRecurringTransactionDto {
   @IsOptional()
-  @IsString()
+  @IsUUID()
   @ApiProperty({ required: false, nullable: true })
   categoryId?: string | null;
 

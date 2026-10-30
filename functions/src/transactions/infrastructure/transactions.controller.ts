@@ -43,6 +43,7 @@ import {
   IsObject,
   IsArray,
   ValidateNested,
+  IsUUID,
 } from 'class-validator';
 import { Type, Transform } from 'class-transformer';
 import { PeriodRepository } from '../../periods/domain/period.repository.interface';
@@ -55,12 +56,12 @@ export class CreateTransactionDto {
   accountId?: string;
 
   @IsOptional()
-  @IsString()
+  @IsUUID()
   @ApiProperty({ description: 'Category ID', required: false, nullable: true })
   categoryId: string | null;
 
   @IsOptional()
-  @IsString()
+  @IsUUID()
   @ApiProperty({ description: 'Period ID', required: false, nullable: true })
   periodId?: string | null;
 
@@ -103,7 +104,7 @@ export class CreateTransactionDto {
 
   @IsOptional()
   @IsArray()
-  @IsString({ each: true })
+  @IsUUID(undefined, { each: true })
   @ApiProperty({
     description: 'Tag IDs associated with the transaction',
     required: false,
@@ -112,7 +113,7 @@ export class CreateTransactionDto {
   tagIds?: string[];
 
   @IsOptional()
-  @IsString()
+  @IsUUID()
   @ApiProperty({
     description:
       'Savings Goal ID if the transaction is linked to a savings goal',
@@ -131,7 +132,7 @@ export class UpdateTransactionDto extends PartialType(
 ) {}
 
 export class CreateTransferDto {
-  @IsString()
+  @IsUUID()
   @ApiProperty({ description: 'Destination Account ID' })
   destinationAccountId: string;
 
@@ -158,13 +159,13 @@ export class BulkCreateTransactionsDto {
 
 export class BulkUpdateTransactionsDataDto {
   @IsOptional()
-  @IsString()
+  @IsUUID()
   @ApiProperty({ required: false, nullable: true })
   categoryId?: string | null;
 
   @IsOptional()
   @IsArray()
-  @IsString({ each: true })
+  @IsUUID(undefined, { each: true })
   @ApiProperty({ required: false, type: [String] })
   tagIds?: string[];
 
@@ -181,7 +182,7 @@ export class BulkUpdateTransactionsDataDto {
 
 export class BulkUpdateTransactionsDto {
   @IsArray()
-  @IsString({ each: true })
+  @IsUUID(undefined, { each: true })
   @ApiProperty({ type: [String] })
   ids: string[];
 
@@ -194,7 +195,7 @@ export class BulkUpdateTransactionsDto {
 
 export class BulkDeleteTransactionsDto {
   @IsArray()
-  @IsString({ each: true })
+  @IsUUID(undefined, { each: true })
   @ApiProperty({ type: [String] })
   ids: string[];
 }
@@ -269,7 +270,7 @@ export class PaginatedTransactionsResponseDto {
 
 export class FindTransactionsQueryDto {
   @IsOptional()
-  @IsString()
+  @IsUUID()
   periodId?: string;
 
   @IsOptional()
@@ -277,7 +278,7 @@ export class FindTransactionsQueryDto {
   search?: string;
 
   @IsOptional()
-  @IsString()
+  @IsUUID()
   categoryId?: string;
 
   @IsOptional()
@@ -290,7 +291,7 @@ export class FindTransactionsQueryDto {
     return [String(value)];
   })
   @IsArray()
-  @IsString({ each: true })
+  @IsUUID(undefined, { each: true })
   @ApiProperty({ required: false, type: [String] })
   tagIds?: string[];
 

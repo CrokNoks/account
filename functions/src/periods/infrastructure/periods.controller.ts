@@ -34,12 +34,13 @@ import {
   ValidateNested,
   IsOptional,
   IsBoolean,
+  IsUUID,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ensureBelongsToAccount } from '../../shared/domain/account-ownership';
 
 export class BudgetInitDto {
-  @IsString()
+  @IsUUID()
   @ApiProperty()
   categoryId: string;
 

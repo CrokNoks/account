@@ -14,7 +14,7 @@ import { Transaction } from '../src/transactions/domain/transaction.entity';
  */
 const now = new Date('2026-01-01T00:00:00.000Z');
 
-const tx = (id = 't1') =>
+const tx = (id = '00000000-0000-4000-8000-000000000016') =>
   Transaction.create({
     id,
     accountId: 'acc-1',
@@ -85,7 +85,7 @@ const routes: Route[] = [
     method: 'patch',
     url: '/acc-1/transactions/bulk',
     body: ({ category, tags }) => ({
-      ids: ['t1'],
+      ids: ['00000000-0000-4000-8000-000000000016'],
       data: {
         ...(category && { categoryId: category }),
         ...(tags && { tagIds: tags }),
@@ -189,29 +189,29 @@ describe('Cross-account references (e2e)', () => {
     const owner = (id: string, accountId: string) => ({ id, accountId });
     mocks.categories.findById.mockImplementation((id: string) =>
       Promise.resolve(
-        id === 'cat-own'
+        id === '00000000-0000-4000-8000-000000000001'
           ? owner(id, 'acc-1')
-          : id === 'cat-foreign'
+          : id === '00000000-0000-4000-8000-000000000002'
             ? owner(id, 'acc-other')
-            : id === 'cat-global'
+            : id === '00000000-0000-4000-8000-000000000003'
               ? owner(id, null as unknown as string)
               : null,
       ),
     );
     mocks.tags.findById.mockImplementation((id: string) =>
       Promise.resolve(
-        id === 'tag-own'
+        id === '00000000-0000-4000-8000-000000000005'
           ? owner(id, 'acc-1')
-          : id === 'tag-foreign'
+          : id === '00000000-0000-4000-8000-000000000006'
             ? owner(id, 'acc-other')
             : null,
       ),
     );
     mocks.savingsGoals.findById.mockImplementation((id: string) =>
       Promise.resolve(
-        id === 'goal-own'
+        id === '00000000-0000-4000-8000-000000000007'
           ? owner(id, 'acc-1')
-          : id === 'goal-foreign'
+          : id === '00000000-0000-4000-8000-000000000008'
             ? owner(id, 'acc-other')
             : null,
       ),
@@ -264,16 +264,29 @@ describe('Cross-account references (e2e)', () => {
 
     it('accepts references of the account of the URL', async () => {
       await send({
-        category: 'cat-own',
-        ...(r.supports.includes('tags') && { tags: ['tag-own'] }),
-        ...(r.supports.includes('goal') && { goal: 'goal-own' }),
+        category: '00000000-0000-4000-8000-000000000001',
+        ...(r.supports.includes('tags') && {
+          tags: ['00000000-0000-4000-8000-000000000005'],
+        }),
+        ...(r.supports.includes('goal') && {
+          goal: '00000000-0000-4000-8000-000000000007',
+        }),
       }).expect(r.okStatus);
     });
 
     it.each([
-      ['a category of another account', { category: 'cat-foreign' }],
-      ['a global category', { category: 'cat-global' }],
-      ['an unknown category', { category: 'cat-ghost' }],
+      [
+        'a category of another account',
+        { category: '00000000-0000-4000-8000-000000000002' },
+      ],
+      [
+        'a global category',
+        { category: '00000000-0000-4000-8000-000000000003' },
+      ],
+      [
+        'an unknown category',
+        { category: '00000000-0000-4000-8000-000000000004' },
+      ],
     ])('answers 400 without writing for %s', async (_label, refs) => {
       const res = await send(refs).expect(400);
       expect((res.body as { message: string }).message).toBe(
@@ -284,7 +297,13 @@ describe('Cross-account references (e2e)', () => {
 
     if (r.supports.includes('tags')) {
       it('answers 400 without writing for a tag of another account', async () => {
-        await send({ category: 'cat-own', tags: ['tag-own', 'tag-foreign'] })
+        await send({
+          category: '00000000-0000-4000-8000-000000000001',
+          tags: [
+            '00000000-0000-4000-8000-000000000005',
+            '00000000-0000-4000-8000-000000000006',
+          ],
+        })
           .expect(400)
           .expect(({ body }) =>
             expect((body as { message: string }).message).toBe(
@@ -297,7 +316,10 @@ describe('Cross-account references (e2e)', () => {
 
     if (r.supports.includes('goal')) {
       it('answers 400 without writing for a savings goal of another account', async () => {
-        await send({ category: 'cat-own', goal: 'goal-foreign' })
+        await send({
+          category: '00000000-0000-4000-8000-000000000001',
+          goal: '00000000-0000-4000-8000-000000000008',
+        })
           .expect(400)
           .expect(({ body }) =>
             expect((body as { message: string }).message).toBe(
@@ -345,9 +367,9 @@ describe('Cross-account references (e2e)', () => {
     beforeEach(() => {
       mocks.periods.findById.mockImplementation((id: string) =>
         Promise.resolve(
-          id === 'per-own'
+          id === '00000000-0000-4000-8000-000000000009'
             ? { id, accountId: 'acc-1' }
-            : id === 'per-foreign'
+            : id === '00000000-0000-4000-8000-000000000010'
               ? { id, accountId: 'acc-other' }
               : null,
         ),
@@ -359,13 +381,13 @@ describe('Cross-account references (e2e)', () => {
         http()[r.method](r.url).set(auth()).send(r.body(periodId));
 
       it('accepts a period of the account, or no period', async () => {
-        await send('per-own').expect(r.okStatus);
+        await send('00000000-0000-4000-8000-000000000009').expect(r.okStatus);
         await send(null).expect(r.okStatus);
       });
 
       it.each([
-        ['a period of another account', 'per-foreign'],
-        ['an unknown period', 'per-ghost'],
+        ['a period of another account', '00000000-0000-4000-8000-000000000010'],
+        ['an unknown period', '00000000-0000-4000-8000-000000000011'],
       ])('answers 400 without writing for %s', async (_label, periodId) => {
         const res = await send(periodId).expect(400);
         expect((res.body as { message: string }).message).toBe(
@@ -422,7 +444,7 @@ describe('Cross-account references (e2e)', () => {
 
   describe('POST /:accountId/transactions/transfer', () => {
     const body = {
-      destinationAccountId: 'acc-2',
+      destinationAccountId: '00000000-0000-4000-8000-000000000014',
       date: '2026-03-01',
       description: 'Épargne',
       amount: '15000',
@@ -430,7 +452,11 @@ describe('Cross-account references (e2e)', () => {
     const send = () =>
       http().post('/acc-1/transactions/transfer').set(auth()).send(body);
     const destination = (ownerId: string) =>
-      new Account({ id: 'acc-2', name: 'Dest', ownerId });
+      new Account({
+        id: '00000000-0000-4000-8000-000000000014',
+        name: 'Dest',
+        ownerId,
+      });
 
     it('works toward an account owned by the caller', async () => {
       mocks.accounts.findById.mockResolvedValue(destination(USER.id));
@@ -442,7 +468,7 @@ describe('Cross-account references (e2e)', () => {
       mocks.accounts.findById.mockResolvedValue(destination('someone-else'));
       mocks.shares.findAllByAccount.mockResolvedValue([
         new AccountShare({
-          accountId: 'acc-2',
+          accountId: '00000000-0000-4000-8000-000000000014',
           userId: USER.id,
           permission: 'write',
         }),
@@ -461,7 +487,7 @@ describe('Cross-account references (e2e)', () => {
       mocks.accounts.findById.mockResolvedValue(destination('someone-else'));
       mocks.shares.findAllByAccount.mockResolvedValue([
         new AccountShare({
-          accountId: 'acc-2',
+          accountId: '00000000-0000-4000-8000-000000000014',
           userId: USER.id,
           permission: 'read',
         }),
@@ -479,14 +505,16 @@ describe('Cross-account references (e2e)', () => {
         .send({ transactionIds: ids, type: 'outlier' });
 
     it('marks transactions of the account', async () => {
-      await send(['t1']).expect(201, { success: true });
+      await send(['00000000-0000-4000-8000-000000000016']).expect(201, {
+        success: true,
+      });
       expect(mocks.transactions.save).toHaveBeenCalledTimes(1);
     });
 
     it('answers 404 without writing when a transaction is of another account', async () => {
       mocks.transactions.findById.mockImplementation((id: string) =>
         Promise.resolve(
-          id === 't1'
+          id === '00000000-0000-4000-8000-000000000016'
             ? tx()
             : Transaction.create({
                 id,
@@ -500,13 +528,16 @@ describe('Cross-account references (e2e)', () => {
               }),
         ),
       );
-      await send(['t1', 't9']).expect(404);
+      await send([
+        '00000000-0000-4000-8000-000000000016',
+        '00000000-0000-4000-8000-000000000018',
+      ]).expect(404);
       expect(mocks.transactions.save).not.toHaveBeenCalled();
     });
 
     it('answers 404 without writing for an unknown transaction', async () => {
       mocks.transactions.findById.mockResolvedValue(null);
-      await send(['ghost']).expect(404);
+      await send(['00000000-0000-4000-8000-000000000042']).expect(404);
       expect(mocks.transactions.save).not.toHaveBeenCalled();
     });
   });
