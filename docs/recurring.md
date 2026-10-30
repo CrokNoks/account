@@ -44,7 +44,7 @@ Front (`frontend/src/features/recurring/`) : liste avec modification en panneau 
 Pas de cycle de vie.
 
 ## Zones d'ombre
-- Les identifiants reçus en body (`categoryId`) doivent être des UUID : sinon 400 (voir `transactions.md`). Ceux de la route (`:id`) ne sont pas encore validés.
+- Les identifiants reçus en body (`categoryId`) doivent être des UUID : sinon 400 (voir `transactions.md`). Ceux de la route (`:accountId`, `:id`) le sont aussi (voir `transactions.md`).
 - Une récurrente n'a ni date de début/fin ni état actif : le code ne permet pas de la suspendre.
 - Rien ne les injecte automatiquement chaque mois : seule la création d'une période avec `injectRecurring` le fait.
 - Le signe attendu du montant (dépense négative ?) n'est pas imposé.

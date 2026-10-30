@@ -22,7 +22,7 @@ describe('Front/back contract (e2e)', () => {
     mocks.accounts.save.mockResolvedValue(undefined);
     mocks.accounts.findById.mockResolvedValue(
       new Account({
-        id: 'acc-1',
+        id: '00000000-0000-4000-8000-000000000101',
         name: 'Courant',
         ownerId: USER.id,
         initialBalance: BigInt(0),
@@ -72,7 +72,7 @@ describe('Front/back contract (e2e)', () => {
   describe('tag creation', () => {
     it('creates a tag with a hex color', () =>
       http()
-        .post('/acc-1/tags')
+        .post('/00000000-0000-4000-8000-000000000101/tags')
         .set(auth())
         .send({ name: 'Vacances', color: '#22c55e' })
         .expect(201));
@@ -80,7 +80,7 @@ describe('Front/back contract (e2e)', () => {
     // Le tag-selector du front crée un tag à la volée sans couleur.
     it('creates a tag without color with the default color', async () => {
       const res = await http()
-        .post('/acc-1/tags')
+        .post('/00000000-0000-4000-8000-000000000101/tags')
         .set(auth())
         .send({ name: 'Vacances' })
         .expect(201);
@@ -91,7 +91,7 @@ describe('Front/back contract (e2e)', () => {
 
     it('still rejects a color that is not hexadecimal', () =>
       http()
-        .post('/acc-1/tags')
+        .post('/00000000-0000-4000-8000-000000000101/tags')
         .set(auth())
         .send({ name: 'Vacances', color: 'green' })
         .expect(400));
@@ -104,7 +104,7 @@ describe('Front/back contract (e2e)', () => {
       d.setDate(d.getDate() + 60);
       mocks.recurring.findAllByAccount.mockResolvedValue([
         RecurringTransaction.create({
-          accountId: 'acc-1',
+          accountId: '00000000-0000-4000-8000-000000000101',
           categoryId: null,
           description: 'Assurance',
           amount: BigInt(-1000),
@@ -115,7 +115,7 @@ describe('Front/back contract (e2e)', () => {
 
     it('answers to the GET sent by the front', async () => {
       const res = await http()
-        .get('/acc-1/reporting/cashflow')
+        .get('/00000000-0000-4000-8000-000000000101/reporting/cashflow')
         .query({ days: '30' })
         .set(auth())
         .expect(200);
@@ -126,7 +126,7 @@ describe('Front/back contract (e2e)', () => {
     it('converts days to a number (a 10-day horizon hides a 60-day event)', async () => {
       inSixtyDays();
       const res = await http()
-        .get('/acc-1/reporting/cashflow')
+        .get('/00000000-0000-4000-8000-000000000101/reporting/cashflow')
         .query({ days: '10' })
         .set(auth())
         .expect(200);
@@ -137,7 +137,7 @@ describe('Front/back contract (e2e)', () => {
     it('defaults to 90 days without the days parameter', async () => {
       inSixtyDays();
       const res = await http()
-        .get('/acc-1/reporting/cashflow')
+        .get('/00000000-0000-4000-8000-000000000101/reporting/cashflow')
         .set(auth())
         .expect(200);
 
@@ -150,7 +150,7 @@ describe('Front/back contract (e2e)', () => {
       'answers 400 for days=%s',
       async (days) => {
         await http()
-          .get('/acc-1/reporting/cashflow')
+          .get('/00000000-0000-4000-8000-000000000101/reporting/cashflow')
           .query({ days })
           .set(auth())
           .expect(400);
@@ -160,14 +160,17 @@ describe('Front/back contract (e2e)', () => {
 
     it.each(['1', '365'])('accepts days=%s', (days) =>
       http()
-        .get('/acc-1/reporting/cashflow')
+        .get('/00000000-0000-4000-8000-000000000101/reporting/cashflow')
         .query({ days })
         .set(auth())
         .expect(200),
     );
 
     it('is no longer exposed as POST', () =>
-      http().post('/acc-1/reporting/cashflow').set(auth()).expect(404));
+      http()
+        .post('/00000000-0000-4000-8000-000000000101/reporting/cashflow')
+        .set(auth())
+        .expect(404));
   });
 
   describe('receipt scan', () => {
@@ -176,7 +179,7 @@ describe('Front/back contract (e2e)', () => {
       jest.spyOn(console, 'error').mockImplementation(() => {});
 
       const res = await http()
-        .post('/acc-1/reporting/scan-receipt')
+        .post('/00000000-0000-4000-8000-000000000101/reporting/scan-receipt')
         .set(auth())
         .send({ base64Image: 'AAAA', mimeType: 'image/jpeg' })
         .expect(201);
@@ -196,7 +199,7 @@ describe('Front/back contract (e2e)', () => {
       ['a missing mime type', { base64Image: 'AAAA' }],
     ])('answers 400 without calling the AI for %s', async (_, payload) => {
       await http()
-        .post('/acc-1/reporting/scan-receipt')
+        .post('/00000000-0000-4000-8000-000000000101/reporting/scan-receipt')
         .set(auth())
         .send(payload)
         .expect(400);

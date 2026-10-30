@@ -12,7 +12,7 @@ describe('Accounts and sharing routes (e2e)', () => {
 
   const account = (ownerId = USER.id) =>
     new Account({
-      id: 'acc-1',
+      id: '00000000-0000-4000-8000-000000000101',
       name: 'Courant',
       ownerId,
       initialBalance: BigInt(150000),
@@ -33,7 +33,7 @@ describe('Accounts and sharing routes (e2e)', () => {
     mocks.shares.save.mockResolvedValue(undefined);
     mocks.shares.delete.mockResolvedValue(undefined);
     mocks.users.findByEmail.mockResolvedValue({
-      id: 'guest-1',
+      id: '00000000-0000-4000-8000-000000000105',
       email: 'guest@example.com',
     });
   });
@@ -45,7 +45,7 @@ describe('Accounts and sharing routes (e2e)', () => {
 
     expect(res.body).toEqual([
       expect.objectContaining({
-        id: 'acc-1',
+        id: '00000000-0000-4000-8000-000000000101',
         ownerId: USER.id,
         initialBalance: '150000',
         createdAt: '2026-01-01T00:00:00.000Z',
@@ -55,7 +55,7 @@ describe('Accounts and sharing routes (e2e)', () => {
 
   it('PATCH /accounts/:id updates the initial balance and keeps the owner', async () => {
     const res = await http()
-      .patch('/accounts/acc-1')
+      .patch('/accounts/00000000-0000-4000-8000-000000000101')
       .set(auth())
       .send({ initialBalance: '-2500' })
       .expect(200);
@@ -69,24 +69,26 @@ describe('Accounts and sharing routes (e2e)', () => {
   describe('POST /accounts/:id/shares', () => {
     it('shares the account on behalf of the authenticated user', async () => {
       await http()
-        .post('/accounts/acc-1/shares')
+        .post('/accounts/00000000-0000-4000-8000-000000000101/shares')
         .set(auth())
         .send({ email: 'guest@example.com', permission: 'write' })
         .expect(201, { success: true });
 
       const [[share]] = mocks.shares.save.mock.calls as [AccountShare][];
       expect(share).toMatchObject({
-        accountId: 'acc-1',
-        userId: 'guest-1',
+        accountId: '00000000-0000-4000-8000-000000000101',
+        userId: '00000000-0000-4000-8000-000000000105',
         permission: 'write',
       });
     });
 
     it('answers 403 when the authenticated user is not the owner', async () => {
-      mocks.accounts.findById.mockResolvedValue(account('someone-else'));
+      mocks.accounts.findById.mockResolvedValue(
+        account('00000000-0000-4000-8000-000000000104'),
+      );
 
       await http()
-        .post('/accounts/acc-1/shares')
+        .post('/accounts/00000000-0000-4000-8000-000000000101/shares')
         .set(auth())
         .send({ email: 'guest@example.com', permission: 'read' })
         .expect(403, {
@@ -101,7 +103,7 @@ describe('Accounts and sharing routes (e2e)', () => {
       mocks.accounts.findById.mockResolvedValue(null);
 
       await http()
-        .post('/accounts/nope/shares')
+        .post('/accounts/00000000-0000-4000-8000-000000000199/shares')
         .set(auth())
         .send({ email: 'guest@example.com', permission: 'read' })
         .expect(404);
@@ -112,7 +114,7 @@ describe('Accounts and sharing routes (e2e)', () => {
       mocks.users.findByEmail.mockResolvedValue(null);
 
       await http()
-        .post('/accounts/acc-1/shares')
+        .post('/accounts/00000000-0000-4000-8000-000000000101/shares')
         .set(auth())
         .send({ email: 'ghost@example.com', permission: 'read' })
         .expect(404);
@@ -126,7 +128,7 @@ describe('Accounts and sharing routes (e2e)', () => {
       });
 
       await http()
-        .post('/accounts/acc-1/shares')
+        .post('/accounts/00000000-0000-4000-8000-000000000101/shares')
         .set(auth())
         .send({ email: USER.email, permission: 'read' })
         .expect(400);
@@ -137,18 +139,27 @@ describe('Accounts and sharing routes (e2e)', () => {
   describe('DELETE /accounts/:id/shares/:userId', () => {
     it('removes the share when the authenticated user is the owner', async () => {
       await http()
-        .delete('/accounts/acc-1/shares/guest-1')
+        .delete(
+          '/accounts/00000000-0000-4000-8000-000000000101/shares/00000000-0000-4000-8000-000000000105',
+        )
         .set(auth())
         .expect(200, { success: true });
 
-      expect(mocks.shares.delete).toHaveBeenCalledWith('acc-1', 'guest-1');
+      expect(mocks.shares.delete).toHaveBeenCalledWith(
+        '00000000-0000-4000-8000-000000000101',
+        '00000000-0000-4000-8000-000000000105',
+      );
     });
 
     it('refuses (403) when the authenticated user is not the owner', async () => {
-      mocks.accounts.findById.mockResolvedValue(account('someone-else'));
+      mocks.accounts.findById.mockResolvedValue(
+        account('00000000-0000-4000-8000-000000000104'),
+      );
 
       await http()
-        .delete('/accounts/acc-1/shares/guest-1')
+        .delete(
+          '/accounts/00000000-0000-4000-8000-000000000101/shares/00000000-0000-4000-8000-000000000105',
+        )
         .set(auth())
         .expect(403);
       expect(mocks.shares.delete).not.toHaveBeenCalled();
@@ -159,13 +170,21 @@ describe('Accounts and sharing routes (e2e)', () => {
     it('lists the shares for the owner', async () => {
       mocks.shares.findAllByAccount.mockResolvedValue([]);
 
-      await http().get('/accounts/acc-1/shares').set(auth()).expect(200, []);
+      await http()
+        .get('/accounts/00000000-0000-4000-8000-000000000101/shares')
+        .set(auth())
+        .expect(200, []);
     });
 
     it('refuses (403) when the authenticated user is not the owner', async () => {
-      mocks.accounts.findById.mockResolvedValue(account('someone-else'));
+      mocks.accounts.findById.mockResolvedValue(
+        account('00000000-0000-4000-8000-000000000104'),
+      );
 
-      await http().get('/accounts/acc-1/shares').set(auth()).expect(403);
+      await http()
+        .get('/accounts/00000000-0000-4000-8000-000000000101/shares')
+        .set(auth())
+        .expect(403);
       expect(mocks.shares.findAllByAccount).not.toHaveBeenCalled();
     });
   });

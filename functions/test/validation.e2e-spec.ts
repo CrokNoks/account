@@ -25,8 +25,8 @@ describe('Request body validation (e2e)', () => {
     mocks.budgets.saveBulk.mockResolvedValue(undefined);
     mocks.recurring.findById.mockResolvedValue(
       RecurringTransaction.create({
-        id: 'r1',
-        accountId: 'acc-1',
+        id: '00000000-0000-4000-8000-000000000114',
+        accountId: '00000000-0000-4000-8000-000000000101',
         categoryId: null,
         description: 'Loyer',
         amount: BigInt(-85000),
@@ -38,28 +38,55 @@ describe('Request body validation (e2e)', () => {
   describe('routes with a DTO class reject unknown fields with 400', () => {
     it.each([
       ['post', '/accounts'],
-      ['patch', '/accounts/acc-1'],
-      ['post', '/accounts/acc-1/shares'],
-      ['patch', '/acc-1/categories/c1'],
-      ['patch', '/acc-1/periods/p1'],
-      ['put', '/acc-1/periods/p1/budgets'],
-      ['post', '/acc-1/recurring'],
-      ['post', '/acc-1/transactions'],
-      ['patch', '/acc-1/transactions/t1'],
-      ['post', '/acc-1/periods'],
-      ['post', '/acc-1/categories'],
-      ['post', '/acc-1/reporting/scan-receipt'],
-      ['patch', '/acc-1/recurring/r1'],
-      ['post', '/acc-1/tags'],
-      ['patch', '/acc-1/tags/t1'],
-      ['post', '/acc-1/smart-rules'],
-      ['patch', '/acc-1/smart-rules/s1'],
-      ['post', '/acc-1/savings-goals'],
-      ['patch', '/acc-1/savings-goals/g1'],
+      ['patch', '/accounts/00000000-0000-4000-8000-000000000101'],
+      ['post', '/accounts/00000000-0000-4000-8000-000000000101/shares'],
+      [
+        'patch',
+        '/00000000-0000-4000-8000-000000000101/categories/00000000-0000-4000-8000-000000000112',
+      ],
+      [
+        'patch',
+        '/00000000-0000-4000-8000-000000000101/periods/00000000-0000-4000-8000-000000000113',
+      ],
+      [
+        'put',
+        '/00000000-0000-4000-8000-000000000101/periods/00000000-0000-4000-8000-000000000113/budgets',
+      ],
+      ['post', '/00000000-0000-4000-8000-000000000101/recurring'],
+      ['post', '/00000000-0000-4000-8000-000000000101/transactions'],
+      [
+        'patch',
+        '/00000000-0000-4000-8000-000000000101/transactions/00000000-0000-4000-8000-000000000111',
+      ],
+      ['post', '/00000000-0000-4000-8000-000000000101/periods'],
+      ['post', '/00000000-0000-4000-8000-000000000101/categories'],
+      ['post', '/00000000-0000-4000-8000-000000000101/reporting/scan-receipt'],
+      [
+        'patch',
+        '/00000000-0000-4000-8000-000000000101/recurring/00000000-0000-4000-8000-000000000114',
+      ],
+      ['post', '/00000000-0000-4000-8000-000000000101/tags'],
+      [
+        'patch',
+        '/00000000-0000-4000-8000-000000000101/tags/00000000-0000-4000-8000-000000000111',
+      ],
+      ['post', '/00000000-0000-4000-8000-000000000101/smart-rules'],
+      [
+        'patch',
+        '/00000000-0000-4000-8000-000000000101/smart-rules/00000000-0000-4000-8000-000000000115',
+      ],
+      ['post', '/00000000-0000-4000-8000-000000000101/savings-goals'],
+      [
+        'patch',
+        '/00000000-0000-4000-8000-000000000101/savings-goals/00000000-0000-4000-8000-000000000116',
+      ],
       ['patch', '/preferences'],
-      ['post', '/acc-1/transactions/transfer'],
-      ['post', '/acc-1/transactions/bulk'],
-      ['post', '/acc-1/reporting/anomalies/ignore'],
+      ['post', '/00000000-0000-4000-8000-000000000101/transactions/transfer'],
+      ['post', '/00000000-0000-4000-8000-000000000101/transactions/bulk'],
+      [
+        'post',
+        '/00000000-0000-4000-8000-000000000101/reporting/anomalies/ignore',
+      ],
     ] as const)('%s %s', async (method, url) => {
       const res = await http()[method](url).set(auth()).send({ foo: 'bar' });
 
@@ -71,7 +98,7 @@ describe('Request body validation (e2e)', () => {
 
     it('rejects an invalid share permission', () =>
       http()
-        .post('/accounts/acc-1/shares')
+        .post('/accounts/00000000-0000-4000-8000-000000000101/shares')
         .set(auth())
         .send({ email: 'guest@example.com', permission: 'admin' })
         .expect(400));
@@ -80,46 +107,46 @@ describe('Request body validation (e2e)', () => {
   describe('bodies that used to be typed Omit<>/literal are now validated', () => {
     it('POST /:accountId/categories answers 400 for an invalid color and type', () =>
       http()
-        .post('/acc-1/categories')
+        .post('/00000000-0000-4000-8000-000000000101/categories')
         .set(auth())
         .send({ name: 'Courses', color: 'red', type: 'weird' })
         .expect(400));
 
     it('POST /:accountId/categories refuses an accountId in the body', () =>
       http()
-        .post('/acc-1/categories')
+        .post('/00000000-0000-4000-8000-000000000101/categories')
         .set(auth())
         .send({
           name: 'Courses',
           color: '#000000',
           type: 'expense',
-          accountId: 'acc-other',
+          accountId: '00000000-0000-4000-8000-000000000102',
         })
         .expect(400));
 
     it('POST /:accountId/categories accepts the front payload', () =>
       http()
-        .post('/acc-1/categories')
+        .post('/00000000-0000-4000-8000-000000000101/categories')
         .set(auth())
         .send({ name: 'Courses', color: '#000000', type: 'expense' })
         .expect(201));
 
     it('POST /:accountId/periods answers 400 without budgets', () =>
       http()
-        .post('/acc-1/periods')
+        .post('/00000000-0000-4000-8000-000000000101/periods')
         .set(auth())
         .send({ startDate: '2026-03-01', endDate: '2026-03-31' })
         .expect(400));
 
     it('POST /:accountId/periods refuses an accountId in the body', () =>
       http()
-        .post('/acc-1/periods')
+        .post('/00000000-0000-4000-8000-000000000101/periods')
         .set(auth())
         .send({
           startDate: '2026-03-01',
           endDate: '2026-03-31',
           budgets: [],
-          accountId: 'acc-other',
+          accountId: '00000000-0000-4000-8000-000000000102',
         })
         .expect(400));
 
@@ -127,10 +154,10 @@ describe('Request body validation (e2e)', () => {
       mocks.recurring.findAllByAccount.mockResolvedValue([]);
       mocks.categories.findById.mockResolvedValue({
         id: '00000000-0000-4000-8000-000000000019',
-        accountId: 'acc-1',
+        accountId: '00000000-0000-4000-8000-000000000101',
       });
       return http()
-        .post('/acc-1/periods')
+        .post('/00000000-0000-4000-8000-000000000101/periods')
         .set(auth())
         .send({
           startDate: '2026-03-01',
@@ -152,7 +179,9 @@ describe('Request body validation (e2e)', () => {
       mocks.recurring.findById.mockResolvedValue(null);
 
       await http()
-        .patch('/acc-1/recurring/nope')
+        .patch(
+          '/00000000-0000-4000-8000-000000000101/recurring/00000000-0000-4000-8000-000000000199',
+        )
         .set(auth())
         .send({ description: 'x' })
         .expect(404);
@@ -161,7 +190,9 @@ describe('Request body validation (e2e)', () => {
 
     it('keeps the existing amount when the body has no amount', async () => {
       const res = await http()
-        .patch('/acc-1/recurring/r1')
+        .patch(
+          '/00000000-0000-4000-8000-000000000101/recurring/00000000-0000-4000-8000-000000000114',
+        )
         .set(auth())
         .send({ description: 'Loyer appartement' })
         .expect(200);
@@ -176,7 +207,9 @@ describe('Request body validation (e2e)', () => {
 
     it('updates the amount when provided', async () => {
       await http()
-        .patch('/acc-1/recurring/r1')
+        .patch(
+          '/00000000-0000-4000-8000-000000000101/recurring/00000000-0000-4000-8000-000000000114',
+        )
         .set(auth())
         .send({ amount: '-90000' })
         .expect(200);
@@ -189,9 +222,14 @@ describe('Request body validation (e2e)', () => {
 
     it('refuses to move the recurring transaction to another account', async () => {
       await http()
-        .patch('/acc-1/recurring/r1')
+        .patch(
+          '/00000000-0000-4000-8000-000000000101/recurring/00000000-0000-4000-8000-000000000114',
+        )
         .set(auth())
-        .send({ amount: '-90000', accountId: 'acc-other' })
+        .send({
+          amount: '-90000',
+          accountId: '00000000-0000-4000-8000-000000000102',
+        })
         .expect(400);
 
       expect(mocks.recurring.save).not.toHaveBeenCalled();
@@ -199,7 +237,9 @@ describe('Request body validation (e2e)', () => {
 
     it('rejects an invalid amount and day of month', async () => {
       await http()
-        .patch('/acc-1/recurring/r1')
+        .patch(
+          '/00000000-0000-4000-8000-000000000101/recurring/00000000-0000-4000-8000-000000000114',
+        )
         .set(auth())
         .send({ amount: 'abc', dayOfMonth: 40 })
         .expect(400);
@@ -210,26 +250,54 @@ describe('Request body validation (e2e)', () => {
     const tx = { date: '2026-03-01', description: 'CB', amount: '-100' };
     const bad = 'not-a-uuid';
     it.each([
-      ['post', '/acc-1/transactions', { ...tx, savingsGoalId: bad }],
-      ['post', '/acc-1/transactions', { ...tx, categoryId: bad }],
-      ['post', '/acc-1/transactions', { ...tx, periodId: bad }],
-      ['post', '/acc-1/transactions', { ...tx, tagIds: [bad] }],
-      ['patch', '/acc-1/transactions/t1', { savingsGoalId: bad }],
       [
         'post',
-        '/acc-1/transactions/bulk',
-        { transactions: [{ ...tx, categoryId: bad }] },
+        '/00000000-0000-4000-8000-000000000101/transactions',
+        { ...tx, savingsGoalId: bad },
       ],
-      ['patch', '/acc-1/transactions/bulk', { ids: [bad], data: {} }],
+      [
+        'post',
+        '/00000000-0000-4000-8000-000000000101/transactions',
+        { ...tx, categoryId: bad },
+      ],
+      [
+        'post',
+        '/00000000-0000-4000-8000-000000000101/transactions',
+        { ...tx, periodId: bad },
+      ],
+      [
+        'post',
+        '/00000000-0000-4000-8000-000000000101/transactions',
+        { ...tx, tagIds: [bad] },
+      ],
       [
         'patch',
-        '/acc-1/transactions/bulk',
-        { ids: [], data: { categoryId: bad } },
+        '/00000000-0000-4000-8000-000000000101/transactions/00000000-0000-4000-8000-000000000111',
+        { savingsGoalId: bad },
       ],
-      ['delete', '/acc-1/transactions/bulk', { ids: [bad] }],
       [
         'post',
-        '/acc-1/transactions/transfer',
+        '/00000000-0000-4000-8000-000000000101/transactions/bulk',
+        { transactions: [{ ...tx, categoryId: bad }] },
+      ],
+      [
+        'patch',
+        '/00000000-0000-4000-8000-000000000101/transactions/bulk',
+        { ids: [bad], data: {} },
+      ],
+      [
+        'patch',
+        '/00000000-0000-4000-8000-000000000101/transactions/bulk',
+        { ids: [], data: { categoryId: bad } },
+      ],
+      [
+        'delete',
+        '/00000000-0000-4000-8000-000000000101/transactions/bulk',
+        { ids: [bad] },
+      ],
+      [
+        'post',
+        '/00000000-0000-4000-8000-000000000101/transactions/transfer',
         {
           destinationAccountId: bad,
           date: '2026-03-01',
@@ -239,14 +307,22 @@ describe('Request body validation (e2e)', () => {
       ],
       [
         'post',
-        '/acc-1/recurring',
+        '/00000000-0000-4000-8000-000000000101/recurring',
         { categoryId: bad, description: 'x', amount: '-1', dayOfMonth: 5 },
       ],
-      ['post', '/acc-1/smart-rules', { pattern: 'x', categoryId: bad }],
-      ['post', '/acc-1/smart-rules', { pattern: 'x', tagIds: [bad] }],
       [
         'post',
-        '/acc-1/periods',
+        '/00000000-0000-4000-8000-000000000101/smart-rules',
+        { pattern: 'x', categoryId: bad },
+      ],
+      [
+        'post',
+        '/00000000-0000-4000-8000-000000000101/smart-rules',
+        { pattern: 'x', tagIds: [bad] },
+      ],
+      [
+        'post',
+        '/00000000-0000-4000-8000-000000000101/periods',
         {
           startDate: '2026-03-01',
           endDate: '2026-03-31',
@@ -255,7 +331,7 @@ describe('Request body validation (e2e)', () => {
       ],
       [
         'post',
-        '/acc-1/reporting/anomalies/ignore',
+        '/00000000-0000-4000-8000-000000000101/reporting/anomalies/ignore',
         { transactionIds: [bad], type: 'outlier' },
       ],
     ] as const)('%s %s %j', async (method, url, body) => {
@@ -277,12 +353,12 @@ describe('Request body validation (e2e)', () => {
 
     it('GET /:accountId/transactions answers 400 for a malformed categoryId or periodId', async () => {
       await http()
-        .get('/acc-1/transactions')
+        .get('/00000000-0000-4000-8000-000000000101/transactions')
         .query({ categoryId: bad })
         .set(auth())
         .expect(400);
       await http()
-        .get('/acc-1/transactions')
+        .get('/00000000-0000-4000-8000-000000000101/transactions')
         .query({ periodId: bad })
         .set(auth())
         .expect(400);
@@ -294,7 +370,7 @@ describe('Request body validation (e2e)', () => {
         new ConflictError('A tag with this name already exists'),
       );
       const res = await http()
-        .post('/acc-1/tags')
+        .post('/00000000-0000-4000-8000-000000000101/tags')
         .set(auth())
         .send({ name: 'Vacances', color: '#ff0000' })
         .expect(409);

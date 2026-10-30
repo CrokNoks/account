@@ -9,7 +9,7 @@ import { auth, createE2EApp, Mocks } from './e2e-app';
  */
 const now = new Date('2026-01-01T00:00:00.000Z');
 const base = (accountId: string) => ({
-  id: 'x1',
+  id: '00000000-0000-4000-8000-000000000107',
   accountId,
   createdAt: now,
   updatedAt: now,
@@ -88,7 +88,7 @@ const routes: Route[] = [
     name: 'PATCH transactions/:id',
     repo: 'transactions',
     method: 'patch',
-    url: '/acc-1/transactions/x1',
+    url: '/00000000-0000-4000-8000-000000000101/transactions/00000000-0000-4000-8000-000000000107',
     body: { notes: 'n' },
     writes: ['transactions.save'],
     okStatus: 200,
@@ -97,7 +97,7 @@ const routes: Route[] = [
     name: 'DELETE transactions/:id',
     repo: 'transactions',
     method: 'delete',
-    url: '/acc-1/transactions/x1',
+    url: '/00000000-0000-4000-8000-000000000101/transactions/00000000-0000-4000-8000-000000000107',
     writes: ['transactions.delete'],
     okStatus: 204,
   },
@@ -105,7 +105,7 @@ const routes: Route[] = [
     name: 'PATCH recurring/:id',
     repo: 'recurring',
     method: 'patch',
-    url: '/acc-1/recurring/x1',
+    url: '/00000000-0000-4000-8000-000000000101/recurring/00000000-0000-4000-8000-000000000107',
     body: { description: 'n' },
     writes: ['recurring.save'],
     okStatus: 200,
@@ -114,7 +114,7 @@ const routes: Route[] = [
     name: 'DELETE recurring/:id',
     repo: 'recurring',
     method: 'delete',
-    url: '/acc-1/recurring/x1',
+    url: '/00000000-0000-4000-8000-000000000101/recurring/00000000-0000-4000-8000-000000000107',
     writes: ['recurring.delete'],
     okStatus: 200,
   },
@@ -122,7 +122,7 @@ const routes: Route[] = [
     name: 'PATCH categories/:id',
     repo: 'categories',
     method: 'patch',
-    url: '/acc-1/categories/x1',
+    url: '/00000000-0000-4000-8000-000000000101/categories/00000000-0000-4000-8000-000000000107',
     body: { name: 'n' },
     writes: ['categories.save'],
     okStatus: 200,
@@ -131,7 +131,7 @@ const routes: Route[] = [
     name: 'PATCH tags/:id',
     repo: 'tags',
     method: 'patch',
-    url: '/acc-1/tags/x1',
+    url: '/00000000-0000-4000-8000-000000000101/tags/00000000-0000-4000-8000-000000000107',
     body: { name: 'n' },
     writes: ['tags.save'],
     okStatus: 200,
@@ -140,7 +140,7 @@ const routes: Route[] = [
     name: 'DELETE tags/:id',
     repo: 'tags',
     method: 'delete',
-    url: '/acc-1/tags/x1',
+    url: '/00000000-0000-4000-8000-000000000101/tags/00000000-0000-4000-8000-000000000107',
     writes: ['tags.delete'],
     okStatus: 200,
   },
@@ -148,7 +148,7 @@ const routes: Route[] = [
     name: 'PATCH smart-rules/:id',
     repo: 'smartRules',
     method: 'patch',
-    url: '/acc-1/smart-rules/x1',
+    url: '/00000000-0000-4000-8000-000000000101/smart-rules/00000000-0000-4000-8000-000000000107',
     body: { priority: 2 },
     writes: ['smartRules.save'],
     okStatus: 200,
@@ -157,7 +157,7 @@ const routes: Route[] = [
     name: 'DELETE smart-rules/:id',
     repo: 'smartRules',
     method: 'delete',
-    url: '/acc-1/smart-rules/x1',
+    url: '/00000000-0000-4000-8000-000000000101/smart-rules/00000000-0000-4000-8000-000000000107',
     writes: ['smartRules.delete'],
     okStatus: 200,
   },
@@ -165,7 +165,7 @@ const routes: Route[] = [
     name: 'PATCH savings-goals/:id',
     repo: 'savingsGoals',
     method: 'patch',
-    url: '/acc-1/savings-goals/x1',
+    url: '/00000000-0000-4000-8000-000000000101/savings-goals/00000000-0000-4000-8000-000000000107',
     body: { name: 'n' },
     writes: ['savingsGoals.save'],
     okStatus: 200,
@@ -174,7 +174,7 @@ const routes: Route[] = [
     name: 'DELETE savings-goals/:id',
     repo: 'savingsGoals',
     method: 'delete',
-    url: '/acc-1/savings-goals/x1',
+    url: '/00000000-0000-4000-8000-000000000101/savings-goals/00000000-0000-4000-8000-000000000107',
     writes: ['savingsGoals.delete'],
     okStatus: 200,
   },
@@ -182,7 +182,7 @@ const routes: Route[] = [
     name: 'GET periods/:id',
     repo: 'periods',
     method: 'get',
-    url: '/acc-1/periods/x1',
+    url: '/00000000-0000-4000-8000-000000000101/periods/00000000-0000-4000-8000-000000000107',
     writes: [],
     okStatus: 200,
   },
@@ -190,7 +190,7 @@ const routes: Route[] = [
     name: 'PATCH periods/:id',
     repo: 'periods',
     method: 'patch',
-    url: '/acc-1/periods/x1',
+    url: '/00000000-0000-4000-8000-000000000101/periods/00000000-0000-4000-8000-000000000107',
     body: { isActive: false },
     writes: ['periods.save'],
     okStatus: 200,
@@ -199,7 +199,7 @@ const routes: Route[] = [
     name: 'DELETE periods/:id',
     repo: 'periods',
     method: 'delete',
-    url: '/acc-1/periods/x1',
+    url: '/00000000-0000-4000-8000-000000000101/periods/00000000-0000-4000-8000-000000000107',
     writes: ['periods.delete'],
     okStatus: 200,
   },
@@ -207,7 +207,7 @@ const routes: Route[] = [
     name: 'GET periods/:id/budgets',
     repo: 'periods',
     method: 'get',
-    url: '/acc-1/periods/x1/budgets',
+    url: '/00000000-0000-4000-8000-000000000101/periods/00000000-0000-4000-8000-000000000107/budgets',
     writes: [],
     okStatus: 200,
   },
@@ -215,7 +215,7 @@ const routes: Route[] = [
     name: 'PUT periods/:id/budgets',
     repo: 'periods',
     method: 'put',
-    url: '/acc-1/periods/x1/budgets',
+    url: '/00000000-0000-4000-8000-000000000101/periods/00000000-0000-4000-8000-000000000107/budgets',
     body: {
       budgets: [
         {
@@ -250,7 +250,7 @@ describe('Account ownership of :id routes (e2e)', () => {
     // Catégorie référencée par le PUT budgets : celle du compte de l'URL.
     mocks.categories.findById.mockResolvedValue({
       id: 'c',
-      accountId: 'acc-1',
+      accountId: '00000000-0000-4000-8000-000000000101',
     });
   });
 
@@ -269,12 +269,16 @@ describe('Account ownership of :id routes (e2e)', () => {
     it('works on an element of the account of the URL', async () => {
       mocks[
         r.repo === 'periods' ? 'periods' : r.repo
-      ].findById.mockResolvedValue(fixtures[r.repo]('acc-1'));
+      ].findById.mockResolvedValue(
+        fixtures[r.repo]('00000000-0000-4000-8000-000000000101'),
+      );
       await send(r).expect(r.okStatus);
     });
 
     it('answers 404 without writing for an element of another account', async () => {
-      mocks[r.repo].findById.mockResolvedValue(fixtures[r.repo]('acc-other'));
+      mocks[r.repo].findById.mockResolvedValue(
+        fixtures[r.repo]('00000000-0000-4000-8000-000000000102'),
+      );
       const res = await send(r).expect(404);
       expectNoWrite(r);
       mocks[r.repo].findById.mockResolvedValue(null);
@@ -294,7 +298,9 @@ describe('Account ownership of :id routes (e2e)', () => {
     it('refuses to modify a global category (accountId null)', async () => {
       mocks.categories.findById.mockResolvedValue(fixtures.categories(null));
       await http()
-        .patch('/acc-1/categories/x1')
+        .patch(
+          '/00000000-0000-4000-8000-000000000101/categories/00000000-0000-4000-8000-000000000107',
+        )
         .set(auth())
         .send({ name: 'n' })
         .expect(404);
@@ -304,9 +310,11 @@ describe('Account ownership of :id routes (e2e)', () => {
 
   describe('GET /:accountId/transactions?periodId=', () => {
     it('answers 404 for a period of another account', async () => {
-      mocks.periods.findById.mockResolvedValue(fixtures.periods('acc-other'));
+      mocks.periods.findById.mockResolvedValue(
+        fixtures.periods('00000000-0000-4000-8000-000000000102'),
+      );
       await http()
-        .get('/acc-1/transactions')
+        .get('/00000000-0000-4000-8000-000000000101/transactions')
         .query({ periodId: '00000000-0000-4000-8000-000000000041' })
         .set(auth())
         .expect(404);
@@ -316,54 +324,84 @@ describe('Account ownership of :id routes (e2e)', () => {
 
   describe('reporting of a period of another account', () => {
     it.each([
-      'periods/x1/reporting/stats',
-      'periods/x1/reporting/budget-breakdown',
-      'periods/x1/reporting/comparison?compareWith=x1',
-      'periods/x1/reporting/sankey',
-      'periods/x1/reporting/ai-insights',
-      'reporting/tags-summary?periodId=x1',
-      'reporting/anomalies?periodId=x1',
-    ])('GET /acc-1/%s answers 404', async (path) => {
-      mocks.periods.findById.mockResolvedValue(fixtures.periods('acc-other'));
-      mocks.accounts.findById.mockResolvedValue({
-        id: 'acc-1',
-        initialBalance: BigInt(0),
-        description: null,
-      });
-      await http().get(`/acc-1/${path}`).set(auth()).expect(404);
-      expect(
-        mocks.transactions.findAllByAccountUnpaginated,
-      ).not.toHaveBeenCalled();
-    });
+      'periods/00000000-0000-4000-8000-000000000107/reporting/stats',
+      'periods/00000000-0000-4000-8000-000000000107/reporting/budget-breakdown',
+      'periods/00000000-0000-4000-8000-000000000107/reporting/comparison?compareWith=00000000-0000-4000-8000-000000000107',
+      'periods/00000000-0000-4000-8000-000000000107/reporting/sankey',
+      'periods/00000000-0000-4000-8000-000000000107/reporting/ai-insights',
+      'reporting/tags-summary?periodId=00000000-0000-4000-8000-000000000107',
+      'reporting/anomalies?periodId=00000000-0000-4000-8000-000000000107',
+    ])(
+      'GET /00000000-0000-4000-8000-000000000101/%s answers 404',
+      async (path) => {
+        mocks.periods.findById.mockResolvedValue(
+          fixtures.periods('00000000-0000-4000-8000-000000000102'),
+        );
+        mocks.accounts.findById.mockResolvedValue({
+          id: '00000000-0000-4000-8000-000000000101',
+          initialBalance: BigInt(0),
+          description: null,
+        });
+        await http()
+          .get(`/00000000-0000-4000-8000-000000000101/${path}`)
+          .set(auth())
+          .expect(404);
+        expect(
+          mocks.transactions.findAllByAccountUnpaginated,
+        ).not.toHaveBeenCalled();
+      },
+    );
 
     it('GET reporting/tags/:tagId answers 404 with a period of another account', async () => {
-      mocks.tags.findById.mockResolvedValue(fixtures.tags('acc-1'));
-      mocks.periods.findById.mockResolvedValue(fixtures.periods('acc-other'));
+      mocks.tags.findById.mockResolvedValue(
+        fixtures.tags('00000000-0000-4000-8000-000000000101'),
+      );
+      mocks.periods.findById.mockResolvedValue(
+        fixtures.periods('00000000-0000-4000-8000-000000000102'),
+      );
       await http()
-        .get('/acc-1/reporting/tags/x1?periodId=x1')
+        .get(
+          '/00000000-0000-4000-8000-000000000101/reporting/tags/00000000-0000-4000-8000-000000000107?periodId=00000000-0000-4000-8000-000000000107',
+        )
         .set(auth())
         .expect(404);
     });
   });
 
   describe('GET /accounts/:id/shares', () => {
-    const account = (ownerId: string) => ({ id: 'acc-1', ownerId });
+    const account = (ownerId: string) => ({
+      id: '00000000-0000-4000-8000-000000000101',
+      ownerId,
+    });
 
     it('lists the shares for the owner', async () => {
-      mocks.accounts.findById.mockResolvedValue(account('user-1'));
+      mocks.accounts.findById.mockResolvedValue(
+        account('00000000-0000-4000-8000-000000000106'),
+      );
       mocks.shares.findAllByAccount.mockResolvedValue([]);
-      await http().get('/accounts/acc-1/shares').set(auth()).expect(200, []);
+      await http()
+        .get('/accounts/00000000-0000-4000-8000-000000000101/shares')
+        .set(auth())
+        .expect(200, []);
     });
 
     it('answers 403 for someone who is not the owner', async () => {
-      mocks.accounts.findById.mockResolvedValue(account('someone-else'));
-      await http().get('/accounts/acc-1/shares').set(auth()).expect(403);
+      mocks.accounts.findById.mockResolvedValue(
+        account('00000000-0000-4000-8000-000000000104'),
+      );
+      await http()
+        .get('/accounts/00000000-0000-4000-8000-000000000101/shares')
+        .set(auth())
+        .expect(403);
       expect(mocks.shares.findAllByAccount).not.toHaveBeenCalled();
     });
 
     it('answers 404 for an unknown account', async () => {
       mocks.accounts.findById.mockResolvedValue(null);
-      await http().get('/accounts/nope/shares').set(auth()).expect(404);
+      await http()
+        .get('/accounts/00000000-0000-4000-8000-000000000199/shares')
+        .set(auth())
+        .expect(404);
       expect(mocks.shares.findAllByAccount).not.toHaveBeenCalled();
     });
   });

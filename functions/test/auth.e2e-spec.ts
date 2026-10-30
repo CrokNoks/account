@@ -31,15 +31,15 @@ describe('Health and authentication (e2e)', () => {
     const routes = [
       ['get', '/accounts'],
       ['get', '/preferences'],
-      ['get', '/acc-1/transactions'],
-      ['get', '/acc-1/tags'],
-      ['get', '/acc-1/categories'],
-      ['get', '/acc-1/periods'],
-      ['get', '/acc-1/recurring'],
-      ['get', '/acc-1/smart-rules'],
-      ['get', '/acc-1/savings-goals'],
-      ['get', '/acc-1/reporting/net-worth'],
-      ['post', '/acc-1/reporting/scan-receipt'],
+      ['get', '/00000000-0000-4000-8000-000000000101/transactions'],
+      ['get', '/00000000-0000-4000-8000-000000000101/tags'],
+      ['get', '/00000000-0000-4000-8000-000000000101/categories'],
+      ['get', '/00000000-0000-4000-8000-000000000101/periods'],
+      ['get', '/00000000-0000-4000-8000-000000000101/recurring'],
+      ['get', '/00000000-0000-4000-8000-000000000101/smart-rules'],
+      ['get', '/00000000-0000-4000-8000-000000000101/savings-goals'],
+      ['get', '/00000000-0000-4000-8000-000000000101/reporting/net-worth'],
+      ['post', '/00000000-0000-4000-8000-000000000101/reporting/scan-receipt'],
     ] as const;
 
     it.each(routes)('%s %s rejects a request without token', (method, url) =>
@@ -48,13 +48,13 @@ describe('Health and authentication (e2e)', () => {
 
     it('rejects a token signed with another secret', () =>
       request(app.getHttpServer())
-        .get('/acc-1/tags')
+        .get('/00000000-0000-4000-8000-000000000101/tags')
         .set('Authorization', `Bearer ${token(undefined, undefined, 'wrong')}`)
         .expect(401));
 
     it('rejects an expired token', () =>
       request(app.getHttpServer())
-        .get('/acc-1/tags')
+        .get('/00000000-0000-4000-8000-000000000101/tags')
         .set(
           'Authorization',
           `Bearer ${token(
@@ -70,13 +70,13 @@ describe('Health and authentication (e2e)', () => {
 
     it('rejects a token without subject', () =>
       request(app.getHttpServer())
-        .get('/acc-1/tags')
+        .get('/00000000-0000-4000-8000-000000000101/tags')
         .set('Authorization', `Bearer ${token({ email: USER.email })}`)
         .expect(401));
 
     it('rejects a malformed Authorization header', () =>
       request(app.getHttpServer())
-        .get('/acc-1/tags')
+        .get('/00000000-0000-4000-8000-000000000101/tags')
         .set('Authorization', token())
         .expect(401));
 

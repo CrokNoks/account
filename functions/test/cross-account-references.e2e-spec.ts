@@ -17,7 +17,7 @@ const now = new Date('2026-01-01T00:00:00.000Z');
 const tx = (id = '00000000-0000-4000-8000-000000000016') =>
   Transaction.create({
     id,
-    accountId: 'acc-1',
+    accountId: '00000000-0000-4000-8000-000000000101',
     categoryId: null,
     date: now,
     description: 'tx',
@@ -51,7 +51,7 @@ const routes: Route[] = [
   {
     name: 'POST transactions',
     method: 'post',
-    url: '/acc-1/transactions',
+    url: '/00000000-0000-4000-8000-000000000101/transactions',
     body: txBody,
     writes: ['transactions.save'],
     okStatus: 201,
@@ -60,7 +60,7 @@ const routes: Route[] = [
   {
     name: 'PATCH transactions/:id',
     method: 'patch',
-    url: '/acc-1/transactions/t1',
+    url: '/00000000-0000-4000-8000-000000000101/transactions/00000000-0000-4000-8000-000000000111',
     body: ({ category, tags, goal }) => ({
       ...(category && { categoryId: category }),
       ...(tags && { tagIds: tags }),
@@ -73,7 +73,7 @@ const routes: Route[] = [
   {
     name: 'POST transactions/bulk',
     method: 'post',
-    url: '/acc-1/transactions/bulk',
+    url: '/00000000-0000-4000-8000-000000000101/transactions/bulk',
     // la 1re ligne est saine : rien ne doit être écrit quand la 2e est refusée
     body: (r) => ({ transactions: [txBody({}), txBody(r)] }),
     writes: ['transactions.save'],
@@ -83,7 +83,7 @@ const routes: Route[] = [
   {
     name: 'PATCH transactions/bulk',
     method: 'patch',
-    url: '/acc-1/transactions/bulk',
+    url: '/00000000-0000-4000-8000-000000000101/transactions/bulk',
     body: ({ category, tags }) => ({
       ids: ['00000000-0000-4000-8000-000000000016'],
       data: {
@@ -98,7 +98,7 @@ const routes: Route[] = [
   {
     name: 'POST recurring',
     method: 'post',
-    url: '/acc-1/recurring',
+    url: '/00000000-0000-4000-8000-000000000101/recurring',
     body: ({ category }) => ({
       categoryId: category ?? null,
       description: 'Loyer',
@@ -112,7 +112,7 @@ const routes: Route[] = [
   {
     name: 'PATCH recurring/:id',
     method: 'patch',
-    url: '/acc-1/recurring/r1',
+    url: '/00000000-0000-4000-8000-000000000101/recurring/00000000-0000-4000-8000-000000000114',
     body: ({ category }) => ({ categoryId: category }),
     writes: ['recurring.save'],
     okStatus: 200,
@@ -121,7 +121,7 @@ const routes: Route[] = [
   {
     name: 'POST smart-rules',
     method: 'post',
-    url: '/acc-1/smart-rules',
+    url: '/00000000-0000-4000-8000-000000000101/smart-rules',
     body: ({ category, tags }) => ({
       pattern: 'carrefour',
       categoryId: category ?? null,
@@ -134,7 +134,7 @@ const routes: Route[] = [
   {
     name: 'PATCH smart-rules/:id',
     method: 'patch',
-    url: '/acc-1/smart-rules/s1',
+    url: '/00000000-0000-4000-8000-000000000101/smart-rules/00000000-0000-4000-8000-000000000115',
     body: ({ category, tags }) => ({
       ...(category && { categoryId: category }),
       ...(tags && { tagIds: tags }),
@@ -146,7 +146,7 @@ const routes: Route[] = [
   {
     name: 'POST periods (budgets)',
     method: 'post',
-    url: '/acc-1/periods',
+    url: '/00000000-0000-4000-8000-000000000101/periods',
     body: ({ category }) => ({
       startDate: '2026-03-01',
       endDate: '2026-03-31',
@@ -159,7 +159,7 @@ const routes: Route[] = [
   {
     name: 'PUT periods/:id/budgets',
     method: 'put',
-    url: '/acc-1/periods/p1/budgets',
+    url: '/00000000-0000-4000-8000-000000000101/periods/00000000-0000-4000-8000-000000000113/budgets',
     body: ({ category }) => ({
       budgets: [{ categoryId: category, amountAllocated: '100' }],
     }),
@@ -190,9 +190,9 @@ describe('Cross-account references (e2e)', () => {
     mocks.categories.findById.mockImplementation((id: string) =>
       Promise.resolve(
         id === '00000000-0000-4000-8000-000000000001'
-          ? owner(id, 'acc-1')
+          ? owner(id, '00000000-0000-4000-8000-000000000101')
           : id === '00000000-0000-4000-8000-000000000002'
-            ? owner(id, 'acc-other')
+            ? owner(id, '00000000-0000-4000-8000-000000000102')
             : id === '00000000-0000-4000-8000-000000000003'
               ? owner(id, null as unknown as string)
               : null,
@@ -201,18 +201,18 @@ describe('Cross-account references (e2e)', () => {
     mocks.tags.findById.mockImplementation((id: string) =>
       Promise.resolve(
         id === '00000000-0000-4000-8000-000000000005'
-          ? owner(id, 'acc-1')
+          ? owner(id, '00000000-0000-4000-8000-000000000101')
           : id === '00000000-0000-4000-8000-000000000006'
-            ? owner(id, 'acc-other')
+            ? owner(id, '00000000-0000-4000-8000-000000000102')
             : null,
       ),
     );
     mocks.savingsGoals.findById.mockImplementation((id: string) =>
       Promise.resolve(
         id === '00000000-0000-4000-8000-000000000007'
-          ? owner(id, 'acc-1')
+          ? owner(id, '00000000-0000-4000-8000-000000000101')
           : id === '00000000-0000-4000-8000-000000000008'
-            ? owner(id, 'acc-other')
+            ? owner(id, '00000000-0000-4000-8000-000000000102')
             : null,
       ),
     );
@@ -222,12 +222,12 @@ describe('Cross-account references (e2e)', () => {
     mocks.recurring.findAllByAccount.mockResolvedValue([]);
     mocks.periods.findAllByAccount.mockResolvedValue([]);
     mocks.periods.findById.mockResolvedValue({
-      id: 'p1',
-      accountId: 'acc-1',
+      id: '00000000-0000-4000-8000-000000000113',
+      accountId: '00000000-0000-4000-8000-000000000101',
     });
     mocks.recurring.findById.mockResolvedValue({
-      id: 'r1',
-      accountId: 'acc-1',
+      id: '00000000-0000-4000-8000-000000000114',
+      accountId: '00000000-0000-4000-8000-000000000101',
       categoryId: null,
       description: 'Loyer',
       amount: BigInt(-50000),
@@ -236,8 +236,8 @@ describe('Cross-account references (e2e)', () => {
       updatedAt: now,
     });
     mocks.smartRules.findById.mockResolvedValue({
-      id: 's1',
-      accountId: 'acc-1',
+      id: '00000000-0000-4000-8000-000000000115',
+      accountId: '00000000-0000-4000-8000-000000000101',
       pattern: 'x',
       categoryId: null,
       tagIds: [],
@@ -342,21 +342,21 @@ describe('Cross-account references (e2e)', () => {
       {
         name: 'POST transactions',
         method: 'post',
-        url: '/acc-1/transactions',
+        url: '/00000000-0000-4000-8000-000000000101/transactions',
         body: (periodId) => ({ ...txBody({}), periodId }),
         okStatus: 201,
       },
       {
         name: 'PATCH transactions/:id',
         method: 'patch',
-        url: '/acc-1/transactions/t1',
+        url: '/00000000-0000-4000-8000-000000000101/transactions/00000000-0000-4000-8000-000000000111',
         body: (periodId) => ({ periodId }),
         okStatus: 200,
       },
       {
         name: 'POST transactions/bulk',
         method: 'post',
-        url: '/acc-1/transactions/bulk',
+        url: '/00000000-0000-4000-8000-000000000101/transactions/bulk',
         body: (periodId) => ({
           transactions: [txBody({}), { ...txBody({}), periodId }],
         }),
@@ -368,9 +368,9 @@ describe('Cross-account references (e2e)', () => {
       mocks.periods.findById.mockImplementation((id: string) =>
         Promise.resolve(
           id === '00000000-0000-4000-8000-000000000009'
-            ? { id, accountId: 'acc-1' }
+            ? { id, accountId: '00000000-0000-4000-8000-000000000101' }
             : id === '00000000-0000-4000-8000-000000000010'
-              ? { id, accountId: 'acc-other' }
+              ? { id, accountId: '00000000-0000-4000-8000-000000000102' }
               : null,
         ),
       );
@@ -401,7 +401,7 @@ describe('Cross-account references (e2e)', () => {
   describe('PATCH /accounts/:id', () => {
     const account = (ownerId: string) =>
       new Account({
-        id: 'acc-1',
+        id: '00000000-0000-4000-8000-000000000101',
         name: 'Courant',
         ownerId,
         createdAt: now,
@@ -411,7 +411,7 @@ describe('Cross-account references (e2e)', () => {
     it('lets the owner update the account', async () => {
       mocks.accounts.findById.mockResolvedValue(account(USER.id));
       await http()
-        .patch('/accounts/acc-1')
+        .patch('/accounts/00000000-0000-4000-8000-000000000101')
         .set(auth())
         .send({ name: 'Renommé' })
         .expect(200)
@@ -422,9 +422,11 @@ describe('Cross-account references (e2e)', () => {
     });
 
     it('answers 403 without writing for a user who only has a share', async () => {
-      mocks.accounts.findById.mockResolvedValue(account('someone-else'));
+      mocks.accounts.findById.mockResolvedValue(
+        account('00000000-0000-4000-8000-000000000104'),
+      );
       await http()
-        .patch('/accounts/acc-1')
+        .patch('/accounts/00000000-0000-4000-8000-000000000101')
         .set(auth())
         .send({ name: 'Piraté' })
         .expect(403);
@@ -434,7 +436,7 @@ describe('Cross-account references (e2e)', () => {
     it('answers 404 without writing for an unknown account', async () => {
       mocks.accounts.findById.mockResolvedValue(null);
       await http()
-        .patch('/accounts/nope')
+        .patch('/accounts/00000000-0000-4000-8000-000000000199')
         .set(auth())
         .send({ name: 'x' })
         .expect(404);
@@ -450,7 +452,10 @@ describe('Cross-account references (e2e)', () => {
       amount: '15000',
     };
     const send = () =>
-      http().post('/acc-1/transactions/transfer').set(auth()).send(body);
+      http()
+        .post('/00000000-0000-4000-8000-000000000101/transactions/transfer')
+        .set(auth())
+        .send(body);
     const destination = (ownerId: string) =>
       new Account({
         id: '00000000-0000-4000-8000-000000000014',
@@ -465,7 +470,9 @@ describe('Cross-account references (e2e)', () => {
     });
 
     it('works toward an account shared with write permission', async () => {
-      mocks.accounts.findById.mockResolvedValue(destination('someone-else'));
+      mocks.accounts.findById.mockResolvedValue(
+        destination('00000000-0000-4000-8000-000000000104'),
+      );
       mocks.shares.findAllByAccount.mockResolvedValue([
         new AccountShare({
           accountId: '00000000-0000-4000-8000-000000000014',
@@ -484,7 +491,9 @@ describe('Cross-account references (e2e)', () => {
     });
 
     it('answers 403 without writing for a destination shared in read only', async () => {
-      mocks.accounts.findById.mockResolvedValue(destination('someone-else'));
+      mocks.accounts.findById.mockResolvedValue(
+        destination('00000000-0000-4000-8000-000000000104'),
+      );
       mocks.shares.findAllByAccount.mockResolvedValue([
         new AccountShare({
           accountId: '00000000-0000-4000-8000-000000000014',
@@ -500,7 +509,9 @@ describe('Cross-account references (e2e)', () => {
   describe('POST /:accountId/reporting/anomalies/ignore', () => {
     const send = (ids: string[]) =>
       http()
-        .post('/acc-1/reporting/anomalies/ignore')
+        .post(
+          '/00000000-0000-4000-8000-000000000101/reporting/anomalies/ignore',
+        )
         .set(auth())
         .send({ transactionIds: ids, type: 'outlier' });
 
@@ -518,7 +529,7 @@ describe('Cross-account references (e2e)', () => {
             ? tx()
             : Transaction.create({
                 id,
-                accountId: 'acc-other',
+                accountId: '00000000-0000-4000-8000-000000000102',
                 categoryId: null,
                 date: now,
                 description: 'x',

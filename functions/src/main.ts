@@ -1,8 +1,9 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
-import { ValidationPipe, INestApplication } from '@nestjs/common';
+import { INestApplication } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { onRequest } from 'firebase-functions/v2/https';
+import { globalPipes } from './shared/infrastructure/route-id.pipe';
 import express from 'express';
 import { ExpressAdapter } from '@nestjs/platform-express';
 
@@ -23,13 +24,7 @@ async function createNestServer(
     credentials: true,
   });
 
-  app.useGlobalPipes(
-    new ValidationPipe({
-      whitelist: true,
-      forbidNonWhitelisted: true,
-      transform: true,
-    }),
-  );
+  app.useGlobalPipes(...globalPipes());
 
   const config = new DocumentBuilder()
     .setTitle('Account V2 API')

@@ -1,4 +1,4 @@
-import { INestApplication, ValidationPipe } from '@nestjs/common';
+import { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import * as jwt from 'jsonwebtoken';
 import { App } from 'supertest/types';
@@ -12,12 +12,16 @@ import { PeriodRepository } from '../src/periods/domain/period.repository.interf
 import { RecurringTransactionRepository } from '../src/recurring/domain/recurring-transaction.repository.interface';
 import { TagRepository } from '../src/tags/domain/tag.repository.interface';
 import { TransactionRepository } from '../src/transactions/domain/transaction.repository.interface';
+import { globalPipes } from '../src/shared/infrastructure/route-id.pipe';
 import { GeminiService } from '../src/reporting/application/gemini.service';
 
 // Doit correspondre à test/e2e-env.ts
 const JWT_SECRET = 'e2e-secret';
 
-export const USER = { id: 'user-1', email: 'user@example.com' };
+export const USER = {
+  id: '00000000-0000-4000-8000-000000000106',
+  email: 'user@example.com',
+};
 
 export function token(
   payload: Record<string, unknown> = { sub: USER.id, email: USER.email },
@@ -83,13 +87,7 @@ export async function createE2EApp(): Promise<{
     logger: false,
   });
   // Même configuration que createNestServer (src/main.ts)
-  app.useGlobalPipes(
-    new ValidationPipe({
-      whitelist: true,
-      forbidNonWhitelisted: true,
-      transform: true,
-    }),
-  );
+  app.useGlobalPipes(...globalPipes());
   await app.init();
   return { app, mocks };
 }
