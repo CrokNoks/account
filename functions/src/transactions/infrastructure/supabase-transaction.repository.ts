@@ -203,46 +203,13 @@ export class SupabaseTransactionRepository implements TransactionRepository {
   }
 
   async save(transaction: Transaction): Promise<void> {
-    const { error } = await this.supabase.from('transactions').upsert({
-      id: transaction.id,
-      account_id: transaction.accountId,
-      category_id: transaction.categoryId,
-      period_id: transaction.periodId,
-      date: transaction.date.toISOString().split('T')[0],
-      description: transaction.description,
-      amount: transaction.amount.toString(),
-      reconciled: transaction.reconciled,
-      pending: transaction.pending,
-      payment_method: transaction.paymentMethod,
-      notes: transaction.notes,
-      metadata: transaction.metadata || {},
-      savings_goal_id: transaction.savingsGoalId || null,
-      created_at: transaction.createdAt.toISOString(),
-      updated_at: transaction.updatedAt.toISOString(),
+    // Fonction SQL save_transaction : upsert + remplacement des tags dans une
+    // seule transaction base de données, toutes les erreurs sont remontées.
+    const { error } = await this.supabase.rpc('save_transaction', {
+      p_transaction: toTransactionPayload(transaction),
     });
 
     if (error) throw new Error(error.message);
-
-    // Update tags
-    // First, delete existing tags for this transaction
-    await this.supabase
-      .from('transaction_tags')
-      .delete()
-      .eq('transaction_id', transaction.id);
-
-    // Then, insert new tags
-    if (transaction.tagIds && transaction.tagIds.length > 0) {
-      const tagInserts = transaction.tagIds.map((tagId) => ({
-        transaction_id: transaction.id,
-        tag_id: tagId,
-      }));
-
-      const { error: tagsError } = await this.supabase
-        .from('transaction_tags')
-        .insert(tagInserts);
-
-      if (tagsError) throw new Error(tagsError.message);
-    }
   }
 
   async saveTransfer(debit: Transaction, credit: Transaction): Promise<void> {

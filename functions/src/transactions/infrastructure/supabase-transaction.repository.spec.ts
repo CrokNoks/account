@@ -101,4 +101,29 @@ describe('SupabaseTransactionRepository atomic writes', () => {
       );
     });
   });
+
+  describe('save', () => {
+    it('calls save_transaction once with the transaction and its tags', async () => {
+      const { repository, rpc, from } = repoWith(null);
+      const t = tx({ tagIds: ['tag-1'] });
+
+      await repository.save(t);
+
+      expect(rpc).toHaveBeenCalledTimes(1);
+      expect(rpc.mock.calls[0][0]).toBe('save_transaction');
+      expect(rpc.mock.calls[0][1].p_transaction).toMatchObject({
+        id: t.id,
+        account_id: 'acc-1',
+        amount: '-15000',
+        tag_ids: ['tag-1'],
+      });
+      expect(from).not.toHaveBeenCalled();
+    });
+
+    it('throws the database error', async () => {
+      const { repository } = repoWith({ message: 'row-level security' });
+
+      await expect(repository.save(tx())).rejects.toThrow('row-level security');
+    });
+  });
 });

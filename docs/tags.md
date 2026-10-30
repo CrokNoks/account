@@ -19,7 +19,7 @@ Mise à jour : 2026-10-30 · Commit : 157b272
 | Supprimer un tag le retire de toutes les transactions (liaison en cascade) | `20260313092403_create_tags_tables.sql:13-17` | ❌ |
 | En base : lire les tags = accès `read` au compte ; créer/modifier/supprimer = accès `write` (propriétaire ou partagé `write`) | `20260313092403_create_tags_tables.sql:25-39` | ❌ |
 | En base : mêmes droits pour la liaison transaction-tag, via le compte de la transaction | `20260313092403_create_tags_tables.sql:43-79` | ❌ |
-| Poser des tags sur une transaction : voir `transactions.md` (remplacement complet à chaque enregistrement) | `supabase-transaction.repository.ts:225-244` | ❌ |
+| Poser des tags sur une transaction : voir `transactions.md` (remplacement complet à chaque enregistrement, atomique via `save_transaction`) | `supabase-transaction.repository.ts` (`save`) | ❌ |
 
 ## Ce qu'on stocke
 Tag (`tags`) : id, compte, nom (50 caractères max), couleur (7 caractères, `#RRGGBB`), dates de création/modification (mise à jour automatique par trigger `set_tags_updated_at`). Liaison `transaction_tags` (transaction, tag).
