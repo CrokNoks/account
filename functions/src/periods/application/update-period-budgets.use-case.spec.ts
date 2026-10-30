@@ -5,22 +5,19 @@ import { AccountReferencesService } from '../../shared/application/account-refer
 import { DomainValidationError } from '../../shared/domain/errors';
 
 describe('UpdatePeriodBudgetsUseCase', () => {
-  let repository: { deleteAllByPeriod: jest.Mock; saveBulk: jest.Mock };
+  let repository: {
+    replaceForPeriod: jest.Mock;
+    deleteAllByPeriod: jest.Mock;
+    saveBulk: jest.Mock;
+  };
   let useCase: UpdatePeriodBudgetsUseCase;
-  let calls: string[];
   let refs: { ensureCategories: jest.Mock };
 
   beforeEach(() => {
-    calls = [];
     repository = {
-      deleteAllByPeriod: jest.fn(() => {
-        calls.push('delete');
-        return Promise.resolve();
-      }),
-      saveBulk: jest.fn(() => {
-        calls.push('save');
-        return Promise.resolve();
-      }),
+      replaceForPeriod: jest.fn().mockResolvedValue(undefined),
+      deleteAllByPeriod: jest.fn(),
+      saveBulk: jest.fn(),
     };
     refs = { ensureCategories: jest.fn().mockResolvedValue(undefined) };
     useCase = new UpdatePeriodBudgetsUseCase(
@@ -29,7 +26,7 @@ describe('UpdatePeriodBudgetsUseCase', () => {
     );
   });
 
-  it('replaces the budgets of the period: delete all, then save the new ones', async () => {
+  it('replaces the budgets of the period in one atomic call', async () => {
     const result = await useCase.execute({
       accountId: 'acc-1',
       periodId: 'per-1',
@@ -39,12 +36,13 @@ describe('UpdatePeriodBudgetsUseCase', () => {
       ],
     });
 
-    expect(calls).toEqual(['delete', 'save']);
-    expect(repository.deleteAllByPeriod).toHaveBeenCalledWith('per-1');
+    expect(repository.replaceForPeriod).toHaveBeenCalledTimes(1);
+    expect(repository.replaceForPeriod).toHaveBeenCalledWith('per-1', result);
+    expect(repository.deleteAllByPeriod).not.toHaveBeenCalled();
+    expect(repository.saveBulk).not.toHaveBeenCalled();
     expect(result).toHaveLength(2);
     expect(result.every((b) => b instanceof BudgetInstance)).toBe(true);
     expect(result.every((b) => b.periodId === 'per-1')).toBe(true);
-    expect(repository.saveBulk).toHaveBeenCalledWith(result);
   });
 
   it('drops budgets allocated to 0', async () => {
@@ -58,9 +56,10 @@ describe('UpdatePeriodBudgetsUseCase', () => {
     });
 
     expect(result.map((b) => b.categoryId)).toEqual(['cat-b']);
+    expect(repository.replaceForPeriod).toHaveBeenCalledWith('per-1', result);
   });
 
-  it('only deletes when every budget is 0 or the list is empty', async () => {
+  it('replaces with an empty list when every budget is 0', async () => {
     const result = await useCase.execute({
       accountId: 'acc-1',
       periodId: 'per-1',
@@ -68,13 +67,11 @@ describe('UpdatePeriodBudgetsUseCase', () => {
     });
 
     expect(result).toEqual([]);
-    expect(repository.deleteAllByPeriod).toHaveBeenCalledWith('per-1');
-    expect(repository.saveBulk).not.toHaveBeenCalled();
+    expect(repository.replaceForPeriod).toHaveBeenCalledWith('per-1', []);
   });
 
-  // Comportement actuel documenté (docs/periods.md) : remplacement non atomique.
-  it('leaves the period without budgets when saving fails after the delete', async () => {
-    repository.saveBulk.mockRejectedValue(new Error('db down'));
+  it('propagates the error of the atomic call; no separate delete or insert', async () => {
+    repository.replaceForPeriod.mockRejectedValue(new Error('db down'));
 
     await expect(
       useCase.execute({
@@ -83,7 +80,9 @@ describe('UpdatePeriodBudgetsUseCase', () => {
         budgets: [{ categoryId: 'cat-a', amountAllocated: BigInt(-100) }],
       }),
     ).rejects.toThrow('db down');
-    expect(repository.deleteAllByPeriod).toHaveBeenCalled();
+    expect(repository.replaceForPeriod).toHaveBeenCalledTimes(1);
+    expect(repository.deleteAllByPeriod).not.toHaveBeenCalled();
+    expect(repository.saveBulk).not.toHaveBeenCalled();
   });
 
   it('refuses a category of another account before deleting anything', async () => {
@@ -101,7 +100,6 @@ describe('UpdatePeriodBudgetsUseCase', () => {
     expect(refs.ensureCategories).toHaveBeenCalledWith('acc-1', [
       'cat-foreign',
     ]);
-    expect(repository.deleteAllByPeriod).not.toHaveBeenCalled();
-    expect(repository.saveBulk).not.toHaveBeenCalled();
+    expect(repository.replaceForPeriod).not.toHaveBeenCalled();
   });
 });

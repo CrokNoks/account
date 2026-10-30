@@ -6,6 +6,7 @@ import {
 } from '../domain/budget.repository.interface';
 import { ConflictError } from '../../shared/domain/errors';
 import { BudgetInstance } from '../domain/budget-instance.entity';
+import { toBudgetPayload } from './budget-payload';
 
 interface BudgetInstanceRow {
   id: string;
@@ -109,6 +110,21 @@ export class SupabaseBudgetRepository implements BudgetRepository {
       .delete()
       .eq('period_id', periodId);
 
+    if (error) throw new Error(error.message);
+  }
+
+  async replaceForPeriod(
+    periodId: string,
+    instances: BudgetInstance[],
+  ): Promise<void> {
+    // Fonction SQL replace_period_budgets : suppression + insertion dans une seule transaction.
+    const { error } = await this.supabase.rpc('replace_period_budgets', {
+      p_period_id: periodId,
+      p_budgets: instances.map(toBudgetPayload),
+    });
+
+    if (error?.code === UNIQUE_VIOLATION)
+      throw new ConflictError(DUPLICATE_BUDGET);
     if (error) throw new Error(error.message);
   }
 

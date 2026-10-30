@@ -163,7 +163,7 @@ const routes: Route[] = [
     body: ({ category }) => ({
       budgets: [{ categoryId: category, amountAllocated: '100' }],
     }),
-    writes: ['budgets.deleteAllByPeriod', 'budgets.saveBulk'],
+    writes: ['budgets.replaceForPeriod'],
     okStatus: 200,
     supports: ['category'],
   },

@@ -27,12 +27,9 @@ export class UpdatePeriodBudgetsUseCase {
       command.budgets.map((b) => b.categoryId),
     );
 
-    // 1. Delete existing budgets for the period
-    await this.budgetRepository.deleteAllByPeriod(command.periodId);
-
-    // 2. Create new Budget Instances
+    // 1. Nouveaux budgets (les montants à 0 ne sont pas enregistrés)
     const budgetInstances = command.budgets
-      .filter((b) => b.amountAllocated !== BigInt(0)) // Optional: don't save 0 budgets if desired
+      .filter((b) => b.amountAllocated !== BigInt(0))
       .map((b) =>
         BudgetInstance.create({
           periodId: command.periodId,
@@ -41,10 +38,12 @@ export class UpdatePeriodBudgetsUseCase {
         }),
       );
 
-    // 3. Save new instances
-    if (budgetInstances.length > 0) {
-      await this.budgetRepository.saveBulk(budgetInstances);
-    }
+    // 2. Remplacement atomique : suppression des anciens + insertion des nouveaux
+    // en une seule transaction (en cas d'échec, les anciens budgets restent).
+    await this.budgetRepository.replaceForPeriod(
+      command.periodId,
+      budgetInstances,
+    );
 
     return budgetInstances;
   }
