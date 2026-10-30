@@ -113,7 +113,7 @@ describe('GetTagDetailsUseCase', () => {
         categoryId: 'hotel',
         name: 'Cat hotel',
         amount: '-28000',
-        percentage: 52, // 52,8 % tronqué (division entière avant Math.round)
+        percentage: 53, // 52,8 % arrondi
       },
       {
         categoryId: 'resto',

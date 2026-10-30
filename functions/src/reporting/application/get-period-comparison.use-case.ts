@@ -3,6 +3,7 @@ import {
   GetBudgetBreakdownUseCase,
   BudgetCategoryBreakdown,
 } from './get-budget-breakdown.use-case';
+import { roundedPercentage } from '../../shared/domain/percentage';
 
 export interface ComparisonPoint {
   categoryId: string;
@@ -69,8 +70,7 @@ export class GetPeriodComparisonUseCase {
 
       let percentageDiff = 0;
       if (r1 !== BigInt(0)) {
-        percentageDiff =
-          Number((diff * BigInt(10000)) / (r1 < BigInt(0) ? -r1 : r1)) / 100;
+        percentageDiff = roundedPercentage(diff, r1 < BigInt(0) ? -r1 : r1, 2);
       }
 
       return {

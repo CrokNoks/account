@@ -124,7 +124,7 @@ describe('GetBudgetBreakdownUseCase', () => {
       real: '-45000',
       budget: '40000',
       remaining: '-5000',
-      percentage: 112, // 112,5 % tronqué (division entière avant arrondi)
+      percentage: 113, // 112,5 % arrondi (half away from zero)
     });
   });
 

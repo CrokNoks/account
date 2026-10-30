@@ -5,6 +5,7 @@ import { BudgetRepository } from '../../budgets/domain/budget.repository.interfa
 import { PeriodRepository } from '../../periods/domain/period.repository.interface';
 import { CategoryType } from '../../categories/domain/category.entity';
 import { ensureBelongsToAccount } from '../../shared/domain/account-ownership';
+import { roundedPercentage } from '../../shared/domain/percentage';
 
 export interface BudgetCategoryBreakdown {
   categoryId: string;
@@ -75,7 +76,7 @@ export class GetBudgetBreakdownUseCase {
       const remaining = budget + real; // be careful with signs, expenses are negative
       let percentage = 0;
       if (budget !== BigInt(0)) {
-        percentage = Math.round(Number((real * BigInt(100)) / budget));
+        percentage = roundedPercentage(real, budget);
         if (cat.type === CategoryType.EXPENSE) percentage = -percentage; // invert for expenses
       }
 

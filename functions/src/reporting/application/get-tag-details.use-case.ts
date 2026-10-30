@@ -6,6 +6,7 @@ import { CategoryRepository } from '../../categories/domain/category.repository.
 import { TagSummary } from './get-tags-summary.use-case';
 import { NotFoundError } from '../../shared/domain/errors';
 import { ensureBelongsToAccount } from '../../shared/domain/account-ownership';
+import { roundedPercentage } from '../../shared/domain/percentage';
 
 export interface TagCategoryBreakdown {
   categoryId: string | null;
@@ -100,10 +101,7 @@ export class GetTagDetailsUseCase {
     for (const [catId, amount] of amountByCategory.entries()) {
       const category = categories.find((c) => c.id === catId);
       const absAmount = amount < 0 ? -amount : amount;
-      const percentage =
-        totalAbsAmount > BigInt(0)
-          ? Math.round(Number((absAmount * BigInt(100)) / totalAbsAmount))
-          : 0;
+      const percentage = roundedPercentage(absAmount, totalAbsAmount);
 
       categoryBreakdown.push({
         categoryId: catId,
