@@ -6,7 +6,7 @@ Mise à jour : 2026-10-30 · Commit : 157b272
 | Mot | Ce que ça veut dire ici |
 | --- | --- |
 | Transaction récurrente | Un modèle (description, montant, catégorie, jour du mois). Ce n'est pas une vraie transaction : elle n'apparaît dans les comptes que si on l'injecte à la création d'une période. |
-| Jour du mois | Entier de 1 à 31 ; pour un mois plus court, le dernier jour du mois est utilisé (règle appliquée par `periods`). |
+| Jour du mois | Entier de 1 à 31 ; pour un mois plus court, le dernier jour du mois est utilisé (règle unique `shared/domain/recurring-day.ts`, appliquée par `periods`, le calendrier et la trésorerie prévue ; une seule occurrence par mois). |
 
 ## Règles métier
 | Règle | Source | Testée |

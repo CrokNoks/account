@@ -5,11 +5,11 @@ import {
   startOfMonth,
   endOfMonth,
   eachDayOfInterval,
-  getDate,
   isFuture,
   isToday,
   startOfDay,
 } from 'date-fns';
+import { isRecurringDueOn } from '../../shared/domain/recurring-day';
 
 export interface CalendarEvent {
   id: string;
@@ -60,9 +60,8 @@ export class GetCalendarDataUseCase {
     for (const day of daysInMonth) {
       // Only project if it's today or in the future
       if (isFuture(day) || isToday(day)) {
-        const dayOfMonth = getDate(day);
-        const matches = recurringTxs.filter(
-          (rt) => rt.dayOfMonth === dayOfMonth,
+        const matches = recurringTxs.filter((rt) =>
+          isRecurringDueOn(rt.dayOfMonth, day),
         );
 
         for (const match of matches) {

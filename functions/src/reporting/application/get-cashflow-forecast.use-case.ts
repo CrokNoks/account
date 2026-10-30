@@ -2,7 +2,8 @@ import { Injectable } from '@nestjs/common';
 import { AccountRepository } from '../../accounts/domain/account.repository.interface';
 import { TransactionRepository } from '../../transactions/domain/transaction.repository.interface';
 import { RecurringTransactionRepository } from '../../recurring/domain/recurring-transaction.repository.interface';
-import { addDays, getDate, startOfDay } from 'date-fns';
+import { addDays, startOfDay } from 'date-fns';
+import { isRecurringDueOn } from '../../shared/domain/recurring-day';
 import { NotFoundError } from '../../shared/domain/errors';
 
 export interface CashflowEvent {
@@ -55,10 +56,11 @@ export class GetCashflowForecastUseCase {
     // We iterate day by day to find recurring events
     for (let d = 0; d <= days; d++) {
       const currentDay = addDays(startDate, d);
-      const dayOfMonth = getDate(currentDay);
 
-      // Find recurring transactions matching this day of month
-      const matches = recurringTxs.filter((rt) => rt.dayOfMonth === dayOfMonth);
+      // Récurrentes dues ce jour (le 31 tombe le dernier jour d'un mois plus court)
+      const matches = recurringTxs.filter((rt) =>
+        isRecurringDueOn(rt.dayOfMonth, currentDay),
+      );
 
       for (const match of matches) {
         // Optimization: Avoid showing recurring if it already happened today (it would be in current balance)

@@ -115,4 +115,31 @@ describe('GetCalendarDataUseCase', () => {
 
     jest.useRealTimers();
   });
+
+  it('projects a day-31 recurring transaction on the last day of a shorter month, once', async () => {
+    jest.useFakeTimers().setSystemTime(new Date(2026, 3, 1));
+    const findRecurring = (
+      useCase as unknown as {
+        recurringRepository: { findAllByAccount: jest.Mock };
+      }
+    ).recurringRepository.findAllByAccount;
+    findRecurring.mockResolvedValue([
+      RecurringTransaction.create({
+        id: 'rec-31',
+        accountId,
+        categoryId: null,
+        description: 'Assurance',
+        amount: BigInt(-1000),
+        dayOfMonth: 31,
+      }),
+    ]);
+
+    const result = await useCase.execute(accountId, 2026, 4); // avril : 30 jours
+
+    const projected = result.filter((e) => e.type === 'recurring');
+    expect(projected).toHaveLength(1);
+    expect(getDate(new Date(projected[0].date))).toBe(30);
+
+    jest.useRealTimers();
+  });
 });

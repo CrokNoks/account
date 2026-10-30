@@ -6,6 +6,7 @@ import { BudgetInstance } from '../../budgets/domain/budget-instance.entity';
 import { RecurringTransactionRepository } from '../../recurring/domain/recurring-transaction.repository.interface';
 import { TransactionRepository } from '../../transactions/domain/transaction.repository.interface';
 import { Transaction } from '../../transactions/domain/transaction.entity';
+import { recurringDayInMonth } from '../../shared/domain/recurring-day';
 import { AccountReferencesService } from '../../shared/application/account-references.service';
 
 export interface CreatePeriodWithBudgetsCommand {
@@ -74,13 +75,8 @@ export class CreatePeriodWithBudgetsUseCase {
       for (const rec of recurring) {
         // Calculate the date for this month
         const transactionDate = new Date(command.startDate);
-        // Set to the specific day, handling end of month (e.g. 31st in Feb)
-        const lastDayOfMonth = new Date(
-          transactionDate.getFullYear(),
-          transactionDate.getMonth() + 1,
-          0,
-        ).getDate();
-        const day = Math.min(rec.dayOfMonth, lastDayOfMonth);
+        // Jour demandé, ramené au dernier jour du mois s'il n'existe pas (31 en février)
+        const day = recurringDayInMonth(rec.dayOfMonth, transactionDate);
         transactionDate.setDate(day);
 
         // Ensure date is within period range (if period is shorter than a month or unusual)

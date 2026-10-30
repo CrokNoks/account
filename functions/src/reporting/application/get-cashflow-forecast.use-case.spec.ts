@@ -84,23 +84,44 @@ describe('GetCashflowForecastUseCase', () => {
         'recurring',
       ],
       [
+        new Date(2026, 3, 30).toISOString(),
+        'Fin de mois longue',
+        '-100',
+        '354900',
+        'recurring',
+      ],
+      [
         new Date(2026, 4, 1).toISOString(),
         'Loyer',
         '-85000',
-        '270000',
+        '269900',
         'recurring',
       ],
     ]);
   });
 
-  // Comportement actuel : une récurrente du 31 est ignorée les mois de 30 jours
-  // (et un 29/30/31 en février).
-  it('skips a day-31 recurring transaction in a 30-day month', async () => {
+  it('places a day-31 recurring transaction on the last day of a 30-day month', async () => {
     const { events } = await useCase.execute('acc-1', 5);
 
-    expect(events.some((e) => e.description === 'Fin de mois longue')).toBe(
-      false,
-    );
+    const long = events.filter((e) => e.description === 'Fin de mois longue');
+    expect(long.map((e) => e.date)).toEqual([
+      new Date(2026, 3, 30).toISOString(),
+    ]);
+  });
+
+  it('places day 29/30/31 recurring transactions on 28 February, once', async () => {
+    jest.setSystemTime(new Date(2026, 1, 20, 10, 0, 0));
+    recurrings.findAllByAccount.mockResolvedValue([
+      recurring('Trente', -1, 30),
+      recurring('Trente et un', -2, 31),
+    ]);
+
+    const { events } = await useCase.execute('acc-1', 15); // jusqu'au 7 mars
+
+    expect(events.map((e) => [e.description, e.date])).toEqual([
+      ['Trente', new Date(2026, 1, 28).toISOString()],
+      ['Trente et un', new Date(2026, 1, 28).toISOString()],
+    ]);
   });
 
   it('includes today and the last day of the horizon', async () => {
