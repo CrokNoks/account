@@ -1,7 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import { AccountRepository } from '../../accounts/domain/account.repository.interface';
 import { TransactionRepository } from '../../transactions/domain/transaction.repository.interface';
-import { startOfDay, subDays, eachDayOfInterval, format } from 'date-fns';
+import {
+  startOfDay,
+  subDays,
+  addDays,
+  eachDayOfInterval,
+  format,
+} from 'date-fns';
 
 export interface NetWorthDataPoint {
   date: string;
@@ -28,71 +34,52 @@ export class GetNetWorthUseCase {
       return { currentTotal: '0', history: [] };
     }
 
-    // 2. Fetch ALL transactions for these accounts to calculate historical balance
-    // For simplicity/performance in a prototype, we'll look at the last 30 days
-    const endDate = startOfDay(new Date());
-    const startDate = subDays(endDate, 30);
+    // 2. Un seul chargement des transactions par compte. Le solde de fin de
+    // journée de chaque jour des 30 derniers jours (aujourd'hui inclus) est
+    // calculé en appliquant les transactions jour par jour ; les transactions
+    // datées après aujourd'hui ne comptent ni dans le total ni dans l'historique.
+    const today = startOfDay(new Date());
+    const startDate = subDays(today, 30);
+    const endOfToday = addDays(today, 1); // exclu
+    const days = eachDayOfInterval({ start: startDate, end: today });
+    const dayKeys = days.map((day) => format(day, 'yyyy-MM-dd'));
 
     let currentTotal = BigInt(0);
-    const accountBalancesAtStart = new Map<string, bigint>();
+    const totalByDay = new Map<string, bigint>(
+      dayKeys.map((key) => [key, BigInt(0)]),
+    );
 
     for (const account of accounts) {
-      // Calculate current balance for this account
-      // We fetch all transactions before today to find the balance history
       const transactions =
         await this.transactionRepository.findAllByAccountUnpaginated(
           account.id,
         );
 
-      const balanceNow = transactions.reduce(
-        (sum, t) => sum + t.amount,
-        account.initialBalance,
-      );
-      currentTotal += balanceNow;
-
-      // To build the sparkline, we need the balance 30 days ago
-      const transactionsInLast30Days = transactions.filter(
-        (t) => t.date >= startDate && t.date <= endDate,
-      );
-      const sumInLast30Days = transactionsInLast30Days.reduce(
-        (sum, t) => sum + t.amount,
-        BigInt(0),
-      );
-
-      accountBalancesAtStart.set(account.id, balanceNow - sumInLast30Days);
-    }
-
-    // 3. Build the 30-day history
-    const history: NetWorthDataPoint[] = [];
-    const days = eachDayOfInterval({ start: startDate, end: endDate });
-
-    // Initial state: balances at start of interval
-    const runningBalances = new Map(accountBalancesAtStart);
-
-    // Group transactions by date for efficiency
-    // This is a heavy operation, in production we would use a DB query with window functions
-    for (const day of days) {
-      const dayStr = format(day, 'yyyy-MM-dd');
-
-      // Update running balances with transactions from this day
-      // (This is a simplified logic, ideally we'd pre-fetch all txs for the range)
-      // For the prototype, we'll just show the trend
-
-      // Calculate daily total
-      let dayTotal = BigInt(0);
-      for (const balance of runningBalances.values()) {
-        dayTotal += balance;
+      // Solde au début de la fenêtre (fin de la veille du premier jour)
+      let running = account.initialBalance;
+      const deltaByDay = new Map<string, bigint>();
+      for (const t of transactions) {
+        if (t.date >= endOfToday) continue;
+        if (t.date < startDate) {
+          running += t.amount;
+          continue;
+        }
+        const key = format(t.date, 'yyyy-MM-dd');
+        deltaByDay.set(key, (deltaByDay.get(key) ?? BigInt(0)) + t.amount);
       }
 
-      history.push({
-        date: dayStr,
-        amount: dayTotal.toString(),
-      });
-
-      // Update balances for NEXT day (fake some volatility or fetch actually)
-      // Actually, let's keep it simple for the sparkline:
-      // just sum up txs incrementally
+      for (const key of dayKeys) {
+        running += deltaByDay.get(key) ?? BigInt(0);
+        totalByDay.set(key, (totalByDay.get(key) ?? BigInt(0)) + running);
+      }
+      currentTotal += running;
     }
+
+    // 3. Historique : un point par jour
+    const history: NetWorthDataPoint[] = dayKeys.map((key) => ({
+      date: key,
+      amount: (totalByDay.get(key) ?? BigInt(0)).toString(),
+    }));
 
     return {
       currentTotal: currentTotal.toString(),
