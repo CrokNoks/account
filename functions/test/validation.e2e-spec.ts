@@ -379,4 +379,36 @@ describe('Request body validation (e2e)', () => {
       );
     });
   });
+
+  describe('ids received in the query of reporting routes must be UUIDs (400, no repository call)', () => {
+    const acc = '00000000-0000-4000-8000-000000000101';
+    const ok = '00000000-0000-4000-8000-000000000113';
+    const anyRepoCalled = () =>
+      Object.values(mocks).some((repo) =>
+        Object.values(repo).some((fn) => fn.mock.calls.length > 0),
+      );
+
+    it.each([
+      `/${acc}/reporting/anomalies?periodId=not-a-uuid`,
+      `/${acc}/reporting/tags-summary?periodId=not-a-uuid`,
+      `/${acc}/reporting/tags/${ok}?periodId=not-a-uuid`,
+      `/${acc}/periods/${ok}/reporting/comparison?compareWith=not-a-uuid`,
+      `/${acc}/periods/${ok}/reporting/comparison`,
+    ])('GET %s answers 400', async (url) => {
+      jest.clearAllMocks();
+      await http().get(url).set(auth()).expect(400);
+      expect(anyRepoCalled()).toBe(false);
+    });
+
+    it('still accepts a valid periodId, or none', async () => {
+      for (const url of [
+        `/${acc}/reporting/anomalies?periodId=${ok}`,
+        `/${acc}/reporting/anomalies`,
+        `/${acc}/reporting/tags-summary`,
+      ]) {
+        const res = await http().get(url).set(auth());
+        expect(res.status).not.toBe(400);
+      }
+    });
+  });
 });

@@ -82,6 +82,19 @@ import {
 } from 'class-validator';
 import { Type } from 'class-transformer';
 
+export class PeriodQueryDto {
+  @IsOptional()
+  @IsUUID()
+  @ApiProperty({ required: false, format: 'uuid' })
+  periodId?: string;
+}
+
+export class CompareWithQueryDto {
+  @IsUUID()
+  @ApiProperty({ format: 'uuid' })
+  compareWith: string;
+}
+
 export class CashflowQueryDto {
   @IsOptional()
   @Type(() => Number)
@@ -321,7 +334,7 @@ export class ReportingController {
   async getComparison(
     @Param('accountId') accountId: string,
     @Param('periodId') periodId: string,
-    @Query('compareWith') compareWithId: string,
+    @Query() { compareWith: compareWithId }: CompareWithQueryDto,
   ): Promise<PeriodComparisonResponse> {
     return this.getPeriodComparisonUseCase.execute(
       accountId,
@@ -389,7 +402,7 @@ export class ReportingController {
   @ApiResponse({ status: 200, type: [TagSummaryDto] })
   async getTagsSummary(
     @Param('accountId') accountId: string,
-    @Query('periodId') periodId?: string,
+    @Query() { periodId }: PeriodQueryDto,
   ): Promise<TagSummaryDto[]> {
     return this.getTagsSummaryUseCase.execute(accountId, periodId);
   }
@@ -400,7 +413,7 @@ export class ReportingController {
   async getTagDetails(
     @Param('accountId') accountId: string,
     @Param('tagId') tagId: string,
-    @Query('periodId') periodId?: string,
+    @Query() { periodId }: PeriodQueryDto,
   ): Promise<TagDetailsDto> {
     return this.getTagDetailsUseCase.execute(accountId, tagId, periodId);
   }
@@ -425,7 +438,7 @@ export class ReportingController {
   @ApiResponse({ status: 200, type: [AnomalyDto] })
   async getAnomalies(
     @Param('accountId') accountId: string,
-    @Query('periodId') periodId?: string,
+    @Query() { periodId }: PeriodQueryDto,
   ): Promise<AnomalyDto[]> {
     return this.getAnomaliesUseCase.execute(accountId, periodId);
   }
