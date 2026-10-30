@@ -1,5 +1,6 @@
 import { BulkDeleteTransactionsUseCase } from './bulk-delete-transactions.use-case';
 import { TransactionRepository } from '../domain/transaction.repository.interface';
+import { NotFoundError } from '../../shared/domain/errors';
 import { Transaction } from '../domain/transaction.entity';
 
 describe('BulkDeleteTransactionsUseCase', () => {
@@ -39,15 +40,27 @@ describe('BulkDeleteTransactionsUseCase', () => {
     expect(repository.delete.mock.calls).toEqual([['t1'], ['t2']]);
   });
 
-  it('never deletes ids that do not belong to the account', async () => {
-    await useCase.execute({ accountId: 'acc-1', ids: ['t1', 'foreign'] });
+  it('answers 404 and deletes nothing when an id does not belong to the account', async () => {
+    const result = useCase.execute({
+      accountId: 'acc-1',
+      ids: ['t1', 'foreign'],
+    });
 
-    expect(repository.delete.mock.calls).toEqual([['t1']]);
+    await expect(result).rejects.toBeInstanceOf(NotFoundError);
+    await expect(result).rejects.toThrow('Transaction not found');
+    expect(repository.delete).not.toHaveBeenCalled();
   });
 
-  it('does nothing when no id belongs to the account', async () => {
-    await useCase.execute({ accountId: 'acc-1', ids: ['foreign'] });
-
+  it('answers 404 when no id belongs to the account', async () => {
+    await expect(
+      useCase.execute({ accountId: 'acc-1', ids: ['foreign'] }),
+    ).rejects.toBeInstanceOf(NotFoundError);
     expect(repository.delete).not.toHaveBeenCalled();
+  });
+
+  it('deletes a duplicated id only once', async () => {
+    await useCase.execute({ accountId: 'acc-1', ids: ['t1', 't1'] });
+
+    expect(repository.delete.mock.calls).toEqual([['t1']]);
   });
 });

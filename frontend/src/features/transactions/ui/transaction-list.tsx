@@ -49,6 +49,7 @@ export function TransactionList({
   extraActions?: React.ReactNode
 }) {
   const t = useTranslations('Transactions');
+  const tc = useTranslations('Common');
   const { activeAccountId, activePeriodId } = useAccountStore();
   const { setTagDetailId, isCreateTransactionDrawerOpen, setCreateTransactionDrawerOpen } = useUiStore();
   const { data: periods } = usePeriods(activeAccountId);
@@ -156,6 +157,14 @@ export function TransactionList({
 
   const { data: transactions, isLoading } = useTransactions(activeAccountId, filterOptions);
 
+  // Seuls les ids de la liste affichée (compte courant, page et filtres courants)
+  // sont envoyés aux actions en lot : l'API répond 404 pour tout id inconnu du compte.
+  const displayedIds = useMemo(() => new Set(transactions?.data.map(t => t.id) ?? []), [transactions]);
+  const bulkIds = useMemo(() => selectedIds.filter(id => displayedIds.has(id)), [selectedIds, displayedIds]);
+
+  const bulkErrorMessage = (err: unknown) =>
+    (err as { response?: { data?: { message?: string } } })?.response?.data?.message || tc('error');
+
   const toggleSelectAll = () => {
     if (transactions?.data && selectedIds.length === transactions.data.length) {
       setSelectedIds([]);
@@ -189,28 +198,30 @@ export function TransactionList({
   }, [activeAccountId, deleteTransaction, t]);
 
   const handleBulkDelete = () => {
-    if (!activeAccountId || selectedIds.length === 0 || !confirm(`Supprimer ${selectedIds.length} transactions ?`)) return;
-    bulkDelete({ accountId: activeAccountId, ids: selectedIds }, {
+    if (!activeAccountId || bulkIds.length === 0 || !confirm(`Supprimer ${bulkIds.length} transactions ?`)) return;
+    bulkDelete({ accountId: activeAccountId, ids: bulkIds }, {
       onSuccess: () => {
-        toast.success(`${selectedIds.length} transactions supprimées`);
+        toast.success(`${bulkIds.length} transactions supprimées`);
         setSelectedIds([]);
-      }
+      },
+      onError: (err) => toast.error(bulkErrorMessage(err)),
     });
   };
 
   const handleBulkReconcile = () => {
-    if (!activeAccountId || selectedIds.length === 0) return;
+    if (!activeAccountId || bulkIds.length === 0) return;
     bulkUpdate({ 
       accountId: activeAccountId, 
       command: {
-        ids: selectedIds, 
+        ids: bulkIds, 
         data: { reconciled: true } 
       }
     }, {
       onSuccess: () => {
-        toast.success(`${selectedIds.length} transactions pointées`);
+        toast.success(`${bulkIds.length} transactions pointées`);
         setSelectedIds([]);
-      }
+      },
+      onError: (err) => toast.error(bulkErrorMessage(err)),
     });
   };
 
@@ -351,7 +362,7 @@ export function TransactionList({
       )}
 
       <BulkActionsBar 
-        selectedCount={selectedIds.length}
+        selectedCount={bulkIds.length}
         onClearSelection={() => setSelectedIds([])}
         onBulkDelete={handleBulkDelete}
         onBulkReconcile={handleBulkReconcile}

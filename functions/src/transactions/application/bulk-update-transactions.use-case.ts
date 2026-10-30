@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { NotFoundError } from '../../shared/domain/errors';
 import { TransactionRepository } from '../domain/transaction.repository.interface';
 import { resolvePending } from '../domain/pending-rule';
 import { AccountReferencesService } from '../../shared/application/account-references.service';
@@ -22,22 +23,22 @@ export class BulkUpdateTransactionsUseCase {
   ) {}
 
   async execute(command: BulkUpdateTransactionsCommand): Promise<void> {
-    const { accountId, ids, data } = command;
+    const { accountId, data } = command;
+    const ids = [...new Set(command.ids)];
 
     await this.references.ensureReferences(accountId, data);
 
-    // We fetch them all to ensure they belong to the account (security)
-    // In a real high-perf system, we might use a direct update with a where clause on account_id
+    // Tout est vérifié avant la première écriture : un id inconnu ou d'un
+    // autre compte (même réponse) annule toute l'opération.
     const transactions =
       await this.transactionRepository.findAllByAccountUnpaginated(accountId);
-    const validIds = transactions
-      .filter((t) => ids.includes(t.id))
-      .map((t) => t.id);
+    const byId = new Map(transactions.map((t) => [t.id, t]));
+    const targets = ids.map((id) => byId.get(id));
+    if (targets.some((tx) => !tx)) {
+      throw new NotFoundError('Transaction not found');
+    }
 
-    if (validIds.length === 0) return;
-
-    for (const id of validIds) {
-      const tx = transactions.find((t) => t.id === id);
+    for (const tx of targets) {
       if (!tx) continue;
 
       const updated = tx.update({

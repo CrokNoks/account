@@ -392,7 +392,6 @@ describe('Transactions routes (e2e)', () => {
           ids: [
             '00000000-0000-4000-8000-000000000016',
             '00000000-0000-4000-8000-000000000017',
-            '00000000-0000-4000-8000-000000000099',
           ],
         })
         .expect(200);
@@ -401,6 +400,37 @@ describe('Transactions routes (e2e)', () => {
         ['00000000-0000-4000-8000-000000000016'],
         ['00000000-0000-4000-8000-000000000017'],
       ]);
+    });
+
+    it('DELETE /bulk answers 404 without deleting anything when an id is unknown or foreign', async () => {
+      await http()
+        .delete('/acc-1/transactions/bulk')
+        .set(auth())
+        .send({
+          ids: [
+            '00000000-0000-4000-8000-000000000016',
+            '00000000-0000-4000-8000-000000000099',
+          ],
+        })
+        .expect(404);
+
+      expect(mocks.transactions.delete).not.toHaveBeenCalled();
+    });
+
+    it('PATCH /bulk answers 404 without saving anything when an id is unknown or foreign', async () => {
+      await http()
+        .patch('/acc-1/transactions/bulk')
+        .set(auth())
+        .send({
+          ids: [
+            '00000000-0000-4000-8000-000000000016',
+            '00000000-0000-4000-8000-000000000099',
+          ],
+          data: { pending: true },
+        })
+        .expect(404);
+
+      expect(mocks.transactions.save).not.toHaveBeenCalled();
     });
 
     it('DELETE /bulk answers 400 without deleting when ids is missing', async () => {

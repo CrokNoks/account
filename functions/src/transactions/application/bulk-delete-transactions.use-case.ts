@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { TransactionRepository } from '../domain/transaction.repository.interface';
+import { NotFoundError } from '../../shared/domain/errors';
 
 export interface BulkDeleteTransactionsCommand {
   accountId: string;
@@ -11,18 +12,19 @@ export class BulkDeleteTransactionsUseCase {
   constructor(private readonly transactionRepository: TransactionRepository) {}
 
   async execute(command: BulkDeleteTransactionsCommand): Promise<void> {
-    const { accountId, ids } = command;
+    const { accountId } = command;
+    const ids = [...new Set(command.ids)];
 
-    // Security check: ensure they belong to the account
+    // Tout est vérifié avant la première suppression : un id inconnu ou d'un
+    // autre compte (même réponse) annule toute l'opération.
     const transactions =
       await this.transactionRepository.findAllByAccountUnpaginated(accountId);
-    const validIds = transactions
-      .filter((t) => ids.includes(t.id))
-      .map((t) => t.id);
+    const knownIds = new Set(transactions.map((t) => t.id));
+    if (ids.some((id) => !knownIds.has(id))) {
+      throw new NotFoundError('Transaction not found');
+    }
 
-    if (validIds.length === 0) return;
-
-    for (const id of validIds) {
+    for (const id of ids) {
       await this.transactionRepository.delete(id);
     }
   }

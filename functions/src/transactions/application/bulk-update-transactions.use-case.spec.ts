@@ -2,7 +2,10 @@ import { BulkUpdateTransactionsUseCase } from './bulk-update-transactions.use-ca
 import { TransactionRepository } from '../domain/transaction.repository.interface';
 import { Transaction } from '../domain/transaction.entity';
 import { AccountReferencesService } from '../../shared/application/account-references.service';
-import { DomainValidationError } from '../../shared/domain/errors';
+import {
+  DomainValidationError,
+  NotFoundError,
+} from '../../shared/domain/errors';
 
 describe('BulkUpdateTransactionsUseCase', () => {
   let repository: { findAllByAccountUnpaginated: jest.Mock; save: jest.Mock };
@@ -75,24 +78,37 @@ describe('BulkUpdateTransactionsUseCase', () => {
     expect(repository.save).not.toHaveBeenCalled();
   });
 
-  it('ignores ids that do not belong to the account', async () => {
-    await useCase.execute({
+  it('answers 404 and saves nothing when an id does not belong to the account', async () => {
+    const result = useCase.execute({
       accountId: 'acc-1',
       ids: ['t1', 'foreign'],
       data: { reconciled: true },
     });
 
-    expect(saved().map((t) => t.id)).toEqual(['t1']);
+    await expect(result).rejects.toBeInstanceOf(NotFoundError);
+    await expect(result).rejects.toThrow('Transaction not found');
+    expect(repository.save).not.toHaveBeenCalled();
   });
 
-  it('does nothing when no id belongs to the account', async () => {
+  it('answers 404 when no id belongs to the account', async () => {
+    await expect(
+      useCase.execute({
+        accountId: 'acc-1',
+        ids: ['foreign'],
+        data: { reconciled: true },
+      }),
+    ).rejects.toBeInstanceOf(NotFoundError);
+    expect(repository.save).not.toHaveBeenCalled();
+  });
+
+  it('updates a duplicated id only once', async () => {
     await useCase.execute({
       accountId: 'acc-1',
-      ids: ['foreign'],
+      ids: ['t1', 't1'],
       data: { reconciled: true },
     });
 
-    expect(repository.save).not.toHaveBeenCalled();
+    expect(saved().map((t) => t.id)).toEqual(['t1']);
   });
 
   it('keeps fields that are not provided', async () => {
