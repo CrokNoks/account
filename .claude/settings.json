@@ -1,0 +1,23 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git status:*)",
+      "Bash(git log:*)",
+      "Bash(git diff:*)",
+      "Bash(git show:*)",
+      "Bash(git rev-parse:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git rebase:*)",
+      "Bash(GIT_SEQUENCE_EDITOR=: git rebase:*)",
+      "Bash(npm run:*)",
+      "Bash(npm test:*)",
+      "Bash(npx httpyac:*)",
+      "Edit(http/**)",
+      "Write(http/**)"
+    ],
+    "deny": [
+      "Bash(git push:*)"
+    ]
+  }
+}
