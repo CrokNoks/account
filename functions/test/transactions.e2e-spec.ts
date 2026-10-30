@@ -231,7 +231,8 @@ describe('Transactions routes (e2e)', () => {
         .expect(201);
 
       expect(res.body).toHaveLength(2);
-      expect(mocks.transactions.save).toHaveBeenCalledTimes(2);
+      expect(mocks.transactions.saveMany).toHaveBeenCalledTimes(1);
+      expect(mocks.transactions.save).not.toHaveBeenCalled();
     });
 
     it('validates each line', () =>

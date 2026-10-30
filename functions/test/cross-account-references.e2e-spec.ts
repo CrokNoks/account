@@ -76,7 +76,7 @@ const routes: Route[] = [
     url: '/00000000-0000-4000-8000-000000000101/transactions/bulk',
     // la 1re ligne est saine : rien ne doit être écrit quand la 2e est refusée
     body: (r) => ({ transactions: [txBody({}), txBody(r)] }),
-    writes: ['transactions.save'],
+    writes: ['transactions.saveMany'],
     okStatus: 201,
     supports: ['category', 'tags', 'goal'],
   },
@@ -394,6 +394,7 @@ describe('Cross-account references (e2e)', () => {
           'Period does not belong to this account',
         );
         expect(mocks.transactions.save).not.toHaveBeenCalled();
+        expect(mocks.transactions.saveMany).not.toHaveBeenCalled();
       });
     });
   });

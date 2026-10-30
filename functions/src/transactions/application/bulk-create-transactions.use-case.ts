@@ -24,7 +24,7 @@ export class BulkCreateTransactionsUseCase {
     const { accountId, transactions } = command;
     const createdTransactions: Transaction[] = [];
 
-    // Tout est vérifié avant la première écriture (l'import n'est pas atomique).
+    // Tout est vérifié avant la première écriture puis tout est écrit en un seul appel atomique.
     for (const dto of transactions) {
       await this.references.ensureReferences(accountId, dto);
     }
@@ -55,8 +55,12 @@ export class BulkCreateTransactionsUseCase {
         pending: dto.pending ?? false,
       });
 
-      await this.transactionRepository.save(transaction);
       createdTransactions.push(transaction);
+    }
+
+    // Une seule écriture atomique : toutes les lignes (et leurs tags) ou aucune.
+    if (createdTransactions.length > 0) {
+      await this.transactionRepository.saveMany(createdTransactions);
     }
 
     return createdTransactions;

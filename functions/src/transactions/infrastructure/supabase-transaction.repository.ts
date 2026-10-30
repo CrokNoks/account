@@ -255,6 +255,15 @@ export class SupabaseTransactionRepository implements TransactionRepository {
     if (error) throw new Error(error.message);
   }
 
+  async saveMany(transactions: Transaction[]): Promise<void> {
+    // Fonction SQL create_transactions : une seule transaction base de données.
+    const { error } = await this.supabase.rpc('create_transactions', {
+      p_transactions: transactions.map(toTransactionPayload),
+    });
+
+    if (error) throw new Error(error.message);
+  }
+
   async delete(id: string): Promise<void> {
     const { error } = await this.supabase
       .from('transactions')

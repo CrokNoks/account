@@ -40,6 +40,11 @@ export abstract class TransactionRepository {
    * base de données : les deux lignes sont écrites, ou aucune.
    */
   abstract saveTransfer(debit: Transaction, credit: Transaction): Promise<void>;
+  /**
+   * Enregistre plusieurs nouvelles transactions (et leurs tags) dans une seule
+   * transaction base de données : toutes sont écrites, ou aucune.
+   */
+  abstract saveMany(transactions: Transaction[]): Promise<void>;
   abstract delete(id: string): Promise<void>;
   abstract sumAmountByAccountBeforeDate(
     accountId: string,

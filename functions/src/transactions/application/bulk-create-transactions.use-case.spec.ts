@@ -5,7 +5,7 @@ import { AccountReferencesService } from '../../shared/application/account-refer
 import { DomainValidationError } from '../../shared/domain/errors';
 
 describe('BulkCreateTransactionsUseCase', () => {
-  let repository: { save: jest.Mock };
+  let repository: { saveMany: jest.Mock; save: jest.Mock };
   let matchRules: { execute: jest.Mock };
   let useCase: BulkCreateTransactionsUseCase;
   let refs: jest.Mocked<AccountReferencesService>;
@@ -19,7 +19,10 @@ describe('BulkCreateTransactionsUseCase', () => {
   });
 
   beforeEach(() => {
-    repository = { save: jest.fn().mockResolvedValue(undefined) };
+    repository = {
+      saveMany: jest.fn().mockResolvedValue(undefined),
+      save: jest.fn(),
+    };
     matchRules = {
       execute: jest.fn().mockResolvedValue({ categoryId: null, tagIds: [] }),
     };
@@ -33,7 +36,7 @@ describe('BulkCreateTransactionsUseCase', () => {
     );
   });
 
-  it('creates and saves one transaction per line on the given account', async () => {
+  it('creates one transaction per line on the given account and saves them in one atomic call', async () => {
     const result = await useCase.execute({
       accountId: 'acc-1',
       transactions: [line(), line({ description: 'SNCF' })],
@@ -41,7 +44,9 @@ describe('BulkCreateTransactionsUseCase', () => {
 
     expect(result).toHaveLength(2);
     expect(result.every((t) => t.accountId === 'acc-1')).toBe(true);
-    expect(repository.save).toHaveBeenCalledTimes(2);
+    expect(repository.saveMany).toHaveBeenCalledTimes(1);
+    expect(repository.saveMany).toHaveBeenCalledWith(result);
+    expect(repository.save).not.toHaveBeenCalled();
   });
 
   it('refuses the whole import, before any write, when a later line references another account', async () => {
@@ -57,6 +62,7 @@ describe('BulkCreateTransactionsUseCase', () => {
         transactions: [line(), line({ categoryId: 'cat-foreign' })],
       }),
     ).rejects.toBeInstanceOf(DomainValidationError);
+    expect(repository.saveMany).not.toHaveBeenCalled();
     expect(repository.save).not.toHaveBeenCalled();
   });
 
@@ -112,17 +118,51 @@ describe('BulkCreateTransactionsUseCase', () => {
     expect(
       await useCase.execute({ accountId: 'acc-1', transactions: [] }),
     ).toEqual([]);
+    expect(repository.saveMany).not.toHaveBeenCalled();
     expect(repository.save).not.toHaveBeenCalled();
   });
 
-  // Comportement actuel documenté (docs/transactions.md) : l'import n'est pas atomique.
-  it('keeps already saved lines when a later line fails', async () => {
+  it('writes nothing when a later line is invalid', async () => {
     await expect(
       useCase.execute({
         accountId: 'acc-1',
         transactions: [line(), line({ description: '' })],
       }),
     ).rejects.toThrow('Description is required');
-    expect(repository.save).toHaveBeenCalledTimes(1);
+    expect(repository.saveMany).not.toHaveBeenCalled();
+    expect(repository.save).not.toHaveBeenCalled();
+  });
+
+  it('propagates the error of the atomic call; no line is written separately', async () => {
+    repository.saveMany.mockRejectedValue(new Error('db down'));
+
+    await expect(
+      useCase.execute({
+        accountId: 'acc-1',
+        transactions: [line(), line({ description: 'SNCF' })],
+      }),
+    ).rejects.toThrow('db down');
+    expect(repository.saveMany).toHaveBeenCalledTimes(1);
+    expect(repository.save).not.toHaveBeenCalled();
+  });
+
+  it('passes the tags (user and rule) of each line to the atomic call', async () => {
+    matchRules.execute.mockResolvedValue({
+      categoryId: null,
+      tagIds: ['tag-rule'],
+    });
+
+    await useCase.execute({
+      accountId: 'acc-1',
+      transactions: [line({ tagIds: ['tag-user'] }), line()],
+    });
+
+    const [saved] = repository.saveMany.mock.calls[0] as [
+      Array<{ tagIds: string[] }>,
+    ];
+    expect(saved.map((t) => t.tagIds)).toEqual([
+      ['tag-user', 'tag-rule'],
+      ['tag-rule'],
+    ]);
   });
 });
