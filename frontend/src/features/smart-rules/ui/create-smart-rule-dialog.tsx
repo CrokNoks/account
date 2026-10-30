@@ -86,14 +86,14 @@ export function CreateSmartRuleDialog() {
             <div className="space-y-2">
               <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">{t('fields.pattern')}</label>
               <Input 
-                placeholder="Ex: NETFLIX, TOTAL, AMZN..." 
+                placeholder={t('pattern_placeholder')} 
                 value={pattern}
                 onChange={(e) => setPattern(e.target.value)}
                 className="h-11 font-medium"
                 required
               />
               <p className="text-[10px] text-muted-foreground italic">
-                La règle sera appliquée si la description contient ce texte.
+                {t('pattern_hint')}
               </p>
             </div>
 
@@ -123,7 +123,7 @@ export function CreateSmartRuleDialog() {
               <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">{t('fields.tags')}</label>
               <div className="flex flex-wrap gap-2 p-3 bg-muted/30 rounded-xl border border-dashed">
                 {tags?.length === 0 ? (
-                  <p className="text-[10px] text-muted-foreground italic">Aucun tag disponible</p>
+                  <p className="text-[10px] text-muted-foreground italic">{t('no_tags')}</p>
                 ) : (
                   tags?.map((tag) => (
                     <Badge

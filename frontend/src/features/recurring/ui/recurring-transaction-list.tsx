@@ -78,10 +78,10 @@ export function RecurringTransactionList() {
                         borderColor: categories?.find(c => c.id === tr.categoryId)?.color,
                         color: categories?.find(c => c.id === tr.categoryId)?.color 
                       }}>
-                        {categories?.find(c => c.id === tr.categoryId)?.name || 'Categorized'}
+                        {categories?.find(c => c.id === tr.categoryId)?.name || t('categorized')}
                       </Badge>
                     ) : (
-                      <span className="italic text-xs text-muted-foreground">Uncategorized</span>
+                      <span className="italic text-xs text-muted-foreground">{t('uncategorized')}</span>
                     )}
                   </TableCell>
                   <TableCell className={`text-right font-bold ${parseInt(tr.amount, 10) < 0 ? 'text-red-500' : 'text-green-500'}`}>

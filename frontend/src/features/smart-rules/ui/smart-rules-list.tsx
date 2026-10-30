@@ -101,7 +101,7 @@ export function SmartRulesList() {
                               className="h-6"
                               style={{ backgroundColor: `${tag?.color}20`, color: tag?.color }}
                             >
-                              {tag?.name || 'Tag'}
+                              {tag?.name || t('tag')}
                             </Badge>
                           );
                         })}
@@ -196,7 +196,7 @@ function EditSmartRuleSheet({ rule, open, onOpenChange }: { rule: SmartRule, ope
             <div className="p-2 bg-primary/10 rounded-lg text-primary">
               <Sparkles className="w-5 h-5" />
             </div>
-            <SheetTitle className="text-xl font-bold">{tc('edit')} Règle</SheetTitle>
+            <SheetTitle className="text-xl font-bold">{t('edit_title')}</SheetTitle>
           </div>
         </SheetHeader>
         
@@ -205,7 +205,7 @@ function EditSmartRuleSheet({ rule, open, onOpenChange }: { rule: SmartRule, ope
             <div className="space-y-2">
               <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">{t('fields.pattern')}</label>
               <Input 
-                placeholder="Ex: NETFLIX, TOTAL, AMZN..." 
+                placeholder={t('pattern_placeholder')} 
                 value={pattern}
                 onChange={(e) => setPattern(e.target.value)}
                 className="h-11 font-medium"
@@ -239,7 +239,7 @@ function EditSmartRuleSheet({ rule, open, onOpenChange }: { rule: SmartRule, ope
               <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">{t('fields.tags')}</label>
               <div className="flex flex-wrap gap-2 p-3 bg-muted/30 rounded-xl border border-dashed">
                 {tags?.length === 0 ? (
-                  <p className="text-[10px] text-muted-foreground italic">Aucun tag disponible</p>
+                  <p className="text-[10px] text-muted-foreground italic">{t('no_tags')}</p>
                 ) : (
                   tags?.map((tag) => (
                     <Badge

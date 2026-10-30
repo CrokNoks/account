@@ -290,7 +290,15 @@
     "empty": "Aucune opération récurrente",
     "delete_confirm": "Supprimer cette récurrence ?",
     "deleted": "Récurrence supprimée",
-    "inject_label": "Injecter les opérations récurrentes"
+    "inject_label": "Injecter les opérations récurrentes",
+    "created": "Récurrence créée",
+    "updated": "Récurrence mise à jour",
+    "create_error": "Échec de la création de la récurrence",
+    "update_error": "Échec de la mise à jour de la récurrence",
+    "delete_error": "Échec de la suppression de la récurrence",
+    "categorized": "Catégorisée",
+    "uncategorized": "Non catégorisée",
+    "description_placeholder": "Netflix, Loyer, Salaire..."
   },
   "SmartRules": {
     "title": "Règles Intelligentes",
@@ -308,7 +316,12 @@
     "empty": "Aucune règle configurée",
     "delete_confirm": "Voulez-vous vraiment supprimer cette règle ?",
     "deleted": "Règle supprimée",
-    "create_confirm": "Créer la règle"
+    "create_confirm": "Créer la règle",
+    "pattern_placeholder": "Ex: NETFLIX, TOTAL, AMZN...",
+    "pattern_hint": "La règle sera appliquée si la description contient ce texte.",
+    "no_tags": "Aucun tag disponible",
+    "tag": "Tag",
+    "edit_title": "Modifier la règle"
   },
   "Savings": {
     "title": "Objectifs d'Épargne",

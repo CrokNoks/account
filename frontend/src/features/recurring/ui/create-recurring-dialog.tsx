@@ -138,7 +138,7 @@ export function CreateRecurringDialog({
           <div className="space-y-2">
             <label className="text-sm font-medium">{t('fields.description')}</label>
             <Input 
-              placeholder="Netflix, Rent, Salary..." 
+              placeholder={t('description_placeholder')} 
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               required

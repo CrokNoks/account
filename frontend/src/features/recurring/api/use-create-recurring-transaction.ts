@@ -1,10 +1,12 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@/shared/api/api-client';
 import { toast } from 'sonner';
+import { useTranslations } from 'next-intl';
 import { CreateRecurringTransactionData } from '../model/types';
 
 export function useCreateRecurringTransaction() {
   const queryClient = useQueryClient();
+  const t = useTranslations('Recurring');
 
   return useMutation({
     mutationFn: async (data: CreateRecurringTransactionData) => {
@@ -14,10 +16,10 @@ export function useCreateRecurringTransaction() {
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['recurring-transactions', variables.accountId] });
-      toast.success('Recurring transaction created');
+      toast.success(t('created'));
     },
     onError: () => {
-      toast.error('Failed to create recurring transaction');
+      toast.error(t('create_error'));
     },
   });
 }

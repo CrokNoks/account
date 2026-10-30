@@ -290,7 +290,15 @@
     "empty": "No recurring operations",
     "delete_confirm": "Delete this recurrence?",
     "deleted": "Recurring deleted",
-    "inject_label": "Inject recurring operations"
+    "inject_label": "Inject recurring operations",
+    "created": "Recurring transaction created",
+    "updated": "Recurring transaction updated",
+    "create_error": "Failed to create recurring transaction",
+    "update_error": "Failed to update recurring transaction",
+    "delete_error": "Failed to delete recurring transaction",
+    "categorized": "Categorized",
+    "uncategorized": "Uncategorized",
+    "description_placeholder": "Netflix, Rent, Salary..."
   },
   "SmartRules": {
     "title": "Smart Rules",
@@ -308,7 +316,12 @@
     "empty": "No rules configured",
     "delete_confirm": "Do you really want to delete this rule?",
     "deleted": "Rule deleted",
-    "create_confirm": "Create rule"
+    "create_confirm": "Create rule",
+    "pattern_placeholder": "E.g. NETFLIX, TOTAL, AMZN...",
+    "pattern_hint": "The rule applies if the description contains this text.",
+    "no_tags": "No tag available",
+    "tag": "Tag",
+    "edit_title": "Edit rule"
   },
   "Savings": {
     "title": "Savings Goals",
