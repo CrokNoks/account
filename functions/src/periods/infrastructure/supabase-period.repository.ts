@@ -6,7 +6,7 @@ import { BudgetInstance } from '../../budgets/domain/budget-instance.entity';
 import { toBudgetPayload } from '../../budgets/infrastructure/budget-payload';
 import { Transaction } from '../../transactions/domain/transaction.entity';
 import { toTransactionPayload } from '../../transactions/infrastructure/transaction-payload';
-import { ConflictError } from '../../shared/domain/errors';
+import { toDomainError } from '../../shared/infrastructure/supabase-error';
 
 interface PeriodRow {
   id: string;
@@ -19,7 +19,6 @@ interface PeriodRow {
 }
 
 /** Code Postgres d'une violation de contrainte d'unicité. */
-const UNIQUE_VIOLATION = '23505';
 
 @Injectable()
 export class SupabasePeriodRepository implements PeriodRepository {
@@ -83,7 +82,7 @@ export class SupabasePeriodRepository implements PeriodRepository {
       updated_at: period.updatedAt.toISOString(),
     });
 
-    if (error) throw new Error(error.message);
+    if (error) throw toDomainError(error);
   }
 
   async createWithBudgets(
@@ -109,20 +108,18 @@ export class SupabasePeriodRepository implements PeriodRepository {
     });
 
     // UNIQUE(period_id, category_id) : budget_instances_period_id_category_id_key
-    if (
-      error?.code === UNIQUE_VIOLATION &&
-      error.message.includes('budget_instances')
-    )
-      throw new ConflictError(
-        'A budget already exists for this category in this period',
-      );
-    if (error) throw new Error(error.message);
+    if (error)
+      throw toDomainError(error, {
+        conflict: error.message.includes('budget_instances')
+          ? 'A budget already exists for this category in this period'
+          : undefined,
+      });
   }
 
   async delete(id: string): Promise<void> {
     const { error } = await this.supabase.from('periods').delete().eq('id', id);
 
-    if (error) throw new Error(error.message);
+    if (error) throw toDomainError(error);
   }
 
   private mapToDomain(row: PeriodRow): Period {

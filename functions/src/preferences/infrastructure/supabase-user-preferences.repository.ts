@@ -5,6 +5,7 @@ import {
   DashboardLayout,
 } from '../domain/user-preferences.entity';
 import { UserPreferencesRepository } from '../domain/user-preferences.repository.interface';
+import { toDomainError } from '../../shared/infrastructure/supabase-error';
 
 interface UserPreferencesRow {
   user_id: string;
@@ -40,7 +41,7 @@ export class SupabaseUserPreferencesRepository implements UserPreferencesReposit
       updated_at: preferences.updatedAt.toISOString(),
     });
 
-    if (error) throw new Error(error.message);
+    if (error) throw toDomainError(error);
   }
 
   private mapToDomain(row: UserPreferencesRow): UserPreferences {

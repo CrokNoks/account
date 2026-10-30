@@ -2,6 +2,7 @@ import { Injectable, Inject } from '@nestjs/common';
 import { SupabaseClient } from '@supabase/supabase-js';
 import { AccountShareRepository } from '../domain/account-share.repository.interface';
 import { AccountShare } from '../domain/account-share.entity';
+import { toDomainError } from '../../shared/infrastructure/supabase-error';
 
 interface AccountShareRow {
   id: string;
@@ -58,7 +59,7 @@ export class SupabaseAccountShareRepository extends AccountShareRepository {
     );
 
     if (error) {
-      throw new Error(`Failed to save share: ${error.message}`);
+      throw toDomainError(error, { prefix: 'Failed to save share: ' });
     }
   }
 
@@ -70,7 +71,7 @@ export class SupabaseAccountShareRepository extends AccountShareRepository {
       .eq('user_id', userId);
 
     if (error) {
-      throw new Error(`Failed to delete share: ${error.message}`);
+      throw toDomainError(error, { prefix: 'Failed to delete share: ' });
     }
   }
 }

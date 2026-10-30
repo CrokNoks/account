@@ -2,6 +2,7 @@ import { Injectable, Inject } from '@nestjs/common';
 import { SupabaseClient } from '@supabase/supabase-js';
 import { Category, CategoryType } from '../domain/category.entity';
 import { CategoryRepository } from '../domain/category.repository.interface';
+import { toDomainError } from '../../shared/infrastructure/supabase-error';
 
 interface CategoryRow {
   id: string;
@@ -61,7 +62,7 @@ export class SupabaseCategoryRepository implements CategoryRepository {
       updated_at: category.updatedAt.toISOString(),
     });
 
-    if (error) throw new Error(error.message);
+    if (error) throw toDomainError(error);
   }
 
   async delete(id: string): Promise<void> {
@@ -70,7 +71,7 @@ export class SupabaseCategoryRepository implements CategoryRepository {
       .delete()
       .eq('id', id);
 
-    if (error) throw new Error(error.message);
+    if (error) throw toDomainError(error);
   }
 
   private mapToDomain(row: CategoryRow): Category {

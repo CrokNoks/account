@@ -1,5 +1,5 @@
 import { SupabaseClient } from '@supabase/supabase-js';
-import { NotFoundError } from '../../shared/domain/errors';
+import { ForbiddenError, NotFoundError } from '../../shared/domain/errors';
 import { Transaction } from '../domain/transaction.entity';
 import { SupabaseTransactionRepository } from './supabase-transaction.repository';
 
@@ -17,7 +17,7 @@ const tx = (
     ...overrides,
   });
 
-const deleteChain = (error: { message: string } | null) => {
+const deleteChain = (error: { code?: string; message: string } | null) => {
   const inFn = jest.fn().mockResolvedValue({ error });
   const del = jest.fn().mockReturnValue({ in: inFn });
   const from = jest.fn().mockReturnValue({ delete: del });
@@ -114,6 +114,17 @@ describe('SupabaseTransactionRepository atomic writes', () => {
   });
 
   describe('save', () => {
+    it('turns an RLS refusal (42501) of the rpc into a ForbiddenError', async () => {
+      const { repository } = repoWith({
+        code: '42501',
+        message: 'new row violates row-level security policy for table "x"',
+      });
+
+      const result = repository.save(tx());
+      await expect(result).rejects.toBeInstanceOf(ForbiddenError);
+      await expect(result).rejects.not.toThrow(/row-level security/);
+    });
+
     it('calls save_transaction once with the transaction and its tags', async () => {
       const { repository, rpc, from } = repoWith(null);
       const t = tx({ tagIds: ['tag-1'] });
@@ -168,7 +179,7 @@ describe('SupabaseTransactionRepository atomic writes', () => {
     });
 
     it('throws any other database error as is', async () => {
-      const { repository } = repoWith({ code: '42501', message: 'rls' });
+      const { repository } = repoWith({ code: 'XX000', message: 'rls' });
 
       const result = repository.updateMany([tx()]);
       await expect(result).rejects.not.toBeInstanceOf(NotFoundError);
@@ -194,6 +205,14 @@ describe('SupabaseTransactionRepository atomic writes', () => {
       await repository.deleteMany([]);
 
       expect(from).not.toHaveBeenCalled();
+    });
+
+    it('turns an RLS refusal (42501) into a ForbiddenError', async () => {
+      const { repository } = deleteChain({ code: '42501', message: 'rls' });
+
+      await expect(repository.deleteMany(['t1'])).rejects.toBeInstanceOf(
+        ForbiddenError,
+      );
     });
 
     it('throws the database error', async () => {

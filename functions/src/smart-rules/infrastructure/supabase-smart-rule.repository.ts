@@ -2,6 +2,7 @@ import { Injectable, Inject } from '@nestjs/common';
 import { SupabaseClient } from '@supabase/supabase-js';
 import { SmartRule } from '../domain/smart-rule.entity';
 import { SmartRuleRepository } from '../domain/smart-rule.repository.interface';
+import { toDomainError } from '../../shared/infrastructure/supabase-error';
 
 interface SmartRuleRow {
   id: string;
@@ -57,7 +58,7 @@ export class SupabaseSmartRuleRepository implements SmartRuleRepository {
       updated_at: rule.updatedAt.toISOString(),
     });
 
-    if (error) throw new Error(error.message);
+    if (error) throw toDomainError(error);
   }
 
   async delete(id: string): Promise<void> {
@@ -65,7 +66,7 @@ export class SupabaseSmartRuleRepository implements SmartRuleRepository {
       .from('smart_rules')
       .delete()
       .eq('id', id);
-    if (error) throw new Error(error.message);
+    if (error) throw toDomainError(error);
   }
 
   private mapToDomain(row: SmartRuleRow): SmartRule {

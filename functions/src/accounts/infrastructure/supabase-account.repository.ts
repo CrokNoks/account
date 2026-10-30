@@ -2,6 +2,7 @@ import { Injectable, Inject } from '@nestjs/common';
 import { SupabaseClient } from '@supabase/supabase-js';
 import { AccountRepository } from '../domain/account.repository.interface';
 import { Account } from '../domain/account.entity';
+import { toDomainError } from '../../shared/infrastructure/supabase-error';
 
 interface AccountRow {
   id: string;
@@ -33,7 +34,7 @@ export class SupabaseAccountRepository extends AccountRepository {
     });
 
     if (error) {
-      throw new Error(`Failed to save account: ${error.message}`);
+      throw toDomainError(error, { prefix: 'Failed to save account: ' });
     }
   }
 

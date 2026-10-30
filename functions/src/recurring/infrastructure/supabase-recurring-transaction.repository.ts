@@ -2,6 +2,7 @@ import { Injectable, Inject } from '@nestjs/common';
 import { SupabaseClient } from '@supabase/supabase-js';
 import { RecurringTransaction } from '../domain/recurring-transaction.entity';
 import { RecurringTransactionRepository } from '../domain/recurring-transaction.repository.interface';
+import { toDomainError } from '../../shared/infrastructure/supabase-error';
 
 interface RecurringTransactionRow {
   id: string;
@@ -60,7 +61,7 @@ export class SupabaseRecurringTransactionRepository implements RecurringTransact
         updated_at: transaction.updatedAt.toISOString(),
       });
 
-    if (error) throw new Error(error.message);
+    if (error) throw toDomainError(error);
   }
 
   async delete(id: string): Promise<void> {
@@ -69,7 +70,7 @@ export class SupabaseRecurringTransactionRepository implements RecurringTransact
       .delete()
       .eq('id', id);
 
-    if (error) throw new Error(error.message);
+    if (error) throw toDomainError(error);
   }
 
   private mapToDomain(row: RecurringTransactionRow): RecurringTransaction {

@@ -1,8 +1,8 @@
 import { Injectable, Inject } from '@nestjs/common';
 import { SupabaseClient } from '@supabase/supabase-js';
 import { Tag } from '../domain/tag.entity';
-import { ConflictError } from '../../shared/domain/errors';
 import { TagRepository } from '../domain/tag.repository.interface';
+import { toDomainError } from '../../shared/infrastructure/supabase-error';
 
 interface TagRow {
   id: string;
@@ -14,7 +14,6 @@ interface TagRow {
 }
 
 /** Code Postgres d'une violation de contrainte d'unicité. */
-const UNIQUE_VIOLATION = '23505';
 
 @Injectable()
 export class SupabaseTagRepository implements TagRepository {
@@ -59,16 +58,16 @@ export class SupabaseTagRepository implements TagRepository {
     });
 
     // UNIQUE(account_id, name) : tags_account_id_name_key
-    if (error?.code === UNIQUE_VIOLATION) {
-      throw new ConflictError('A tag with this name already exists');
-    }
-    if (error) throw new Error(error.message);
+    if (error)
+      throw toDomainError(error, {
+        conflict: 'A tag with this name already exists',
+      });
   }
 
   async delete(id: string): Promise<void> {
     const { error } = await this.supabase.from('tags').delete().eq('id', id);
 
-    if (error) throw new Error(error.message);
+    if (error) throw toDomainError(error);
   }
 
   private mapToDomain(row: TagRow): Tag {

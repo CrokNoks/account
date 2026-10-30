@@ -2,6 +2,7 @@ import { Injectable, Inject } from '@nestjs/common';
 import { SupabaseClient } from '@supabase/supabase-js';
 import { SavingsGoal } from '../domain/savings-goal.entity';
 import { SavingsGoalRepository } from '../domain/savings-goal.repository.interface';
+import { toDomainError } from '../../shared/infrastructure/supabase-error';
 
 interface SavingsGoalRow {
   id: string;
@@ -61,7 +62,7 @@ export class SupabaseSavingsGoalRepository implements SavingsGoalRepository {
       updated_at: goal.updatedAt.toISOString(),
     });
 
-    if (error) throw new Error(error.message);
+    if (error) throw toDomainError(error);
   }
 
   async delete(id: string): Promise<void> {
@@ -69,7 +70,7 @@ export class SupabaseSavingsGoalRepository implements SavingsGoalRepository {
       .from('savings_goals')
       .delete()
       .eq('id', id);
-    if (error) throw new Error(error.message);
+    if (error) throw toDomainError(error);
   }
 
   private mapToDomain(row: SavingsGoalRow): SavingsGoal {

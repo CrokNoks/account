@@ -90,7 +90,7 @@ describe('SupabaseBudgetRepository.replaceForPeriod', () => {
   });
 
   it('keeps any other database error as is', async () => {
-    const { repository } = rpcRepo({ code: '42501', message: 'rls' });
+    const { repository } = rpcRepo({ code: 'XX000', message: 'rls' });
 
     await expect(repository.replaceForPeriod('per-1', [])).rejects.toThrow(
       'rls',

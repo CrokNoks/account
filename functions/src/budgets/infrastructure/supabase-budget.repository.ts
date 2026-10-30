@@ -4,9 +4,9 @@ import {
   BudgetRepository,
   CategoryStats,
 } from '../domain/budget.repository.interface';
-import { ConflictError } from '../../shared/domain/errors';
 import { BudgetInstance } from '../domain/budget-instance.entity';
 import { toBudgetPayload } from './budget-payload';
+import { toDomainError } from '../../shared/infrastructure/supabase-error';
 
 interface BudgetInstanceRow {
   id: string;
@@ -25,7 +25,6 @@ interface CategoryStatsRow {
 }
 
 /** Code Postgres d'une violation de contrainte d'unicité. */
-const UNIQUE_VIOLATION = '23505';
 
 const DUPLICATE_BUDGET =
   'A budget already exists for this category in this period';
@@ -73,9 +72,7 @@ export class SupabaseBudgetRepository implements BudgetRepository {
     });
 
     // UNIQUE(period_id, category_id) : budget_instances_period_id_category_id_key
-    if (error?.code === UNIQUE_VIOLATION)
-      throw new ConflictError(DUPLICATE_BUDGET);
-    if (error) throw new Error(error.message);
+    if (error) throw toDomainError(error, { conflict: DUPLICATE_BUDGET });
   }
 
   async delete(id: string): Promise<void> {
@@ -84,7 +81,7 @@ export class SupabaseBudgetRepository implements BudgetRepository {
       .delete()
       .eq('id', id);
 
-    if (error) throw new Error(error.message);
+    if (error) throw toDomainError(error);
   }
 
   async replaceForPeriod(
@@ -97,9 +94,7 @@ export class SupabaseBudgetRepository implements BudgetRepository {
       p_budgets: instances.map(toBudgetPayload),
     });
 
-    if (error?.code === UNIQUE_VIOLATION)
-      throw new ConflictError(DUPLICATE_BUDGET);
-    if (error) throw new Error(error.message);
+    if (error) throw toDomainError(error, { conflict: DUPLICATE_BUDGET });
   }
 
   async getHistoricalStatsByAccount(

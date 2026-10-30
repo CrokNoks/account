@@ -1,5 +1,5 @@
 import { SupabaseClient } from '@supabase/supabase-js';
-import { ConflictError } from '../../shared/domain/errors';
+import { ConflictError, ForbiddenError } from '../../shared/domain/errors';
 import { Tag } from '../domain/tag.entity';
 import { SupabaseTagRepository } from './supabase-tag.repository';
 
@@ -36,6 +36,14 @@ describe('SupabaseTagRepository.save', () => {
     const result = repository.save(tag);
     await expect(result).rejects.toBeInstanceOf(ConflictError);
     await expect(result).rejects.toThrow('A tag with this name already exists');
+  });
+
+  it('turns an RLS refusal (42501) into a ForbiddenError', async () => {
+    const { repository } = repoWith({
+      code: '42501',
+      message: 'new row violates row-level security policy for table "tags"',
+    });
+    await expect(repository.save(tag)).rejects.toBeInstanceOf(ForbiddenError);
   });
 
   it('keeps any other database error as is', async () => {

@@ -1,13 +1,13 @@
 import { Injectable, Inject } from '@nestjs/common';
 import { SupabaseClient } from '@supabase/supabase-js';
 import { Transaction } from '../domain/transaction.entity';
-import { NotFoundError } from '../../shared/domain/errors';
 import { toTransactionPayload } from './transaction-payload';
 import {
   TransactionRepository,
   FindAllTransactionsOptions,
   PaginatedResult,
 } from '../domain/transaction.repository.interface';
+import { toDomainError } from '../../shared/infrastructure/supabase-error';
 
 interface TransactionTagRow {
   tag_id: string;
@@ -210,7 +210,7 @@ export class SupabaseTransactionRepository implements TransactionRepository {
       p_transaction: toTransactionPayload(transaction),
     });
 
-    if (error) throw new Error(error.message);
+    if (error) throw toDomainError(error);
   }
 
   async saveTransfer(debit: Transaction, credit: Transaction): Promise<void> {
@@ -220,7 +220,7 @@ export class SupabaseTransactionRepository implements TransactionRepository {
       p_credit: toTransactionPayload(credit),
     });
 
-    if (error) throw new Error(error.message);
+    if (error) throw toDomainError(error);
   }
 
   async saveMany(transactions: Transaction[]): Promise<void> {
@@ -229,7 +229,7 @@ export class SupabaseTransactionRepository implements TransactionRepository {
       p_transactions: transactions.map(toTransactionPayload),
     });
 
-    if (error) throw new Error(error.message);
+    if (error) throw toDomainError(error);
   }
 
   async updateMany(transactions: Transaction[]): Promise<void> {
@@ -240,9 +240,8 @@ export class SupabaseTransactionRepository implements TransactionRepository {
 
     // P0002 : update_transactions n'a pas trouvé l'une des transactions
     // (supprimée entre le contrôle et l'écriture) et a tout annulé.
-    if (error?.code === 'P0002')
-      throw new NotFoundError('Transaction not found');
-    if (error) throw new Error(error.message);
+    if (error)
+      throw toDomainError(error, { notFound: 'Transaction not found' });
   }
 
   async delete(id: string): Promise<void> {
@@ -251,7 +250,7 @@ export class SupabaseTransactionRepository implements TransactionRepository {
       .delete()
       .eq('id', id);
 
-    if (error) throw new Error(error.message);
+    if (error) throw toDomainError(error);
   }
 
   async deleteMany(ids: string[]): Promise<void> {
@@ -263,7 +262,7 @@ export class SupabaseTransactionRepository implements TransactionRepository {
       .delete()
       .in('id', ids);
 
-    if (error) throw new Error(error.message);
+    if (error) throw toDomainError(error);
   }
 
   private mapToDomain(row: TransactionRow): Transaction {

@@ -94,7 +94,7 @@ describe('SupabasePeriodRepository.createWithBudgets', () => {
   });
 
   it('keeps any other database error as is', async () => {
-    const { repository } = repoWith({ code: '42501', message: 'rls' });
+    const { repository } = repoWith({ code: 'XX000', message: 'rls' });
 
     const result = repository.createWithBudgets(period, [], []);
     await expect(result).rejects.not.toBeInstanceOf(ConflictError);
