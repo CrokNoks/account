@@ -138,7 +138,7 @@ export function TransactionTable({
                                 onTagClick(tagId);
                               }}
                             >
-                              {tag?.name || 'Tag'}
+                              {tag?.name || t('tag_fallback')}
                             </Badge>
                           );
                         })}

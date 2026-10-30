@@ -23,7 +23,8 @@
     "signin": "Se connecter",
     "signing_in": "Connexion en cours...",
     "error_empty": "Veuillez remplir tous les champs",
-    "error_generic": "Échec de la connexion"
+    "error_generic": "Échec de la connexion",
+    "email_placeholder": "nom@exemple.com"
   },
   "Dashboard": {
     "title": "Tableau de bord",
@@ -66,7 +67,9 @@
       "name": "Nom",
       "balance": "Solde initial",
       "description": "Objectif / Pitch",
-      "description_hint": "Décrivez l'utilité de ce compte pour aider l'IA à personnaliser ses analyses."
+      "description_hint": "Décrivez l'utilité de ce compte pour aider l'IA à personnaliser ses analyses.",
+      "name_placeholder": "Compte courant, Épargne...",
+      "description_placeholder": "Ex: Compte pour les dépenses du quotidien, loyer et abonnements..."
     },
     "select_account": "Sélectionner un compte",
     "share": "Partager",
@@ -127,7 +130,8 @@
       "min": "Min",
       "max": "Max",
       "date_to": "au",
-      "apply": "Appliquer les filtres"
+      "apply": "Appliquer les filtres",
+      "active_suffix": "(Active)"
     },
     "suggested_category": "Catégorie suggérée automatiquement",
     "form": {
@@ -150,7 +154,9 @@
     "new_transfer_title": "Nouveau virement",
     "mode_shortcut": "Mode :",
     "mode_standard": "Standard",
-    "mode_transfer": "Virement"
+    "mode_transfer": "Virement",
+    "edit_title": "Modifier la transaction",
+    "tag_fallback": "Tag"
   },
   "Import": {
     "title": "Import de transactions",
@@ -208,7 +214,9 @@
     "fields": {
       "name": "Nom",
       "type": "Type",
-      "color": "Couleur"
+      "color": "Couleur",
+      "budget": "Budget",
+      "name_placeholder": "Loyer, Courses..."
     },
     "types": {
       "expense": "Dépense",
@@ -216,7 +224,12 @@
       "transfer": "Virement",
       "savings": "Épargne"
     },
-    "empty": "Aucune catégorie configurée"
+    "empty": "Aucune catégorie configurée",
+    "selector": {
+      "placeholder": "Sélectionner une catégorie...",
+      "none": "Sans catégorie",
+      "empty": "Aucune catégorie trouvée"
+    }
   },
   "Tags": {
     "title": "Tags",
@@ -273,7 +286,13 @@
     "deleted": "Période supprimée",
     "close_period": "Clôturer la période",
     "confirm_delete": "Supprimer définitivement cette période ? Les budgets associés seront également supprimés.",
-    "inject_label": "Injecter les opérations récurrentes"
+    "inject_label": "Injecter les opérations récurrentes",
+    "no_categories": "Aucune catégorie disponible.",
+    "edit_budgets": "Modifier les budgets",
+    "edit_budgets_desc": "Ajustez les montants alloués pour chaque catégorie pour cette période.",
+    "edit_dates": "Modifier les dates",
+    "delete_period": "Supprimer la période",
+    "close_confirm": "Clôturer la période ?"
   },
   "Recurring": {
     "title": "Opérations Récurrentes",

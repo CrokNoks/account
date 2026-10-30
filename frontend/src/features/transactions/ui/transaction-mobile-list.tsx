@@ -129,7 +129,7 @@ export function TransactionMobileList({
                           onTagClick(tagId);
                         }}
                       >
-                        {tag?.name || 'Tag'}
+                        {tag?.name || t('tag_fallback')}
                       </Badge>
                     );
                   })}

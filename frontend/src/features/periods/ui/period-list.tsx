@@ -34,7 +34,7 @@ export function PeriodList() {
   const [editingBudgetsPeriodId, setEditingBudgetsPeriodId] = useState<string | null>(null);
 
   const handleClosePeriod = (period: Period) => {
-    if (!activeAccountId || !confirm(t('close_period') + '?')) return;
+    if (!activeAccountId || !confirm(t('close_confirm'))) return;
     updatePeriod({
       accountId: activeAccountId,
       id: period.id,
@@ -87,7 +87,7 @@ export function PeriodList() {
                     size="icon-sm" 
                     className="opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8 text-muted-foreground hover:text-primary"
                     onClick={() => setEditingBudgetsPeriodId(period.id)}
-                    title="Modifier les budgets"
+                    title={t('edit_budgets')}
                   >
                     <PieChart className="w-3.5 h-3.5" />
                   </Button>
@@ -96,7 +96,7 @@ export function PeriodList() {
                     size="icon-sm" 
                     className="opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8"
                     onClick={() => setEditingPeriod(period)}
-                    title="Modifier les dates"
+                    title={t('edit_dates')}
                   >
                     <Pencil className="w-3.5 h-3.5" />
                   </Button>
@@ -105,7 +105,7 @@ export function PeriodList() {
                     size="icon-sm" 
                     className="opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8 text-destructive"
                     onClick={() => handleDelete(period.id)}
-                    title="Supprimer la période"
+                    title={t('delete_period')}
                     disabled={isDeleting}
                   >
                     <Trash2 className="w-3.5 h-3.5" />

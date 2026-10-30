@@ -196,7 +196,7 @@ function EditCategoryDialog({ category, open, onOpenChange }: { category: Catego
               </div>
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium">Budget</label>
+              <label className="text-sm font-medium">{t('fields.budget')}</label>
               <Input type="number" step="0.01" value={budget} onChange={(e) => setBudget(e.target.value)} />
             </div>
             <div className="pt-4">

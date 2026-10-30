@@ -410,6 +410,7 @@ export function TransactionList({
 }
 
 function EditTransactionDialog({ transaction, open, onOpenChange }: { transaction: Transaction, open: boolean, onOpenChange: (o: boolean) => void }) {
+  const t = useTranslations('Transactions');
   const tc = useTranslations('Common');
   const { activeAccountId } = useAccountStore();
   const { mutate: updateTransaction, isPending } = useUpdateTransaction();
@@ -443,7 +444,7 @@ function EditTransactionDialog({ transaction, open, onOpenChange }: { transactio
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="right" className="flex flex-col gap-0 p-0">
         <SheetHeader className="p-6 border-b">
-          <SheetTitle>{tc('edit')} Transaction</SheetTitle>
+          <SheetTitle>{t('edit_title')}</SheetTitle>
         </SheetHeader>
         <div className="flex-1 overflow-y-auto p-6">
           <TransactionForm 

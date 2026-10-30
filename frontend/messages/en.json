@@ -23,7 +23,8 @@
     "signin": "Sign in",
     "signing_in": "Signing in...",
     "error_empty": "Please fill in all fields",
-    "error_generic": "Failed to sign in"
+    "error_generic": "Failed to sign in",
+    "email_placeholder": "name@example.com"
   },
   "Dashboard": {
     "title": "Dashboard",
@@ -66,7 +67,9 @@
       "name": "Name",
       "balance": "Initial Balance",
       "description": "Purpose / Pitch",
-      "description_hint": "Describe the purpose of this account to help the AI personalize its analysis."
+      "description_hint": "Describe the purpose of this account to help the AI personalize its analysis.",
+      "name_placeholder": "Checking account, Savings...",
+      "description_placeholder": "E.g. Account for everyday spending, rent and subscriptions..."
     },
     "select_account": "Select an account",
     "share": "Share",
@@ -127,7 +130,8 @@
       "min": "Min",
       "max": "Max",
       "date_to": "to",
-      "apply": "Apply filters"
+      "apply": "Apply filters",
+      "active_suffix": "(Active)"
     },
     "suggested_category": "Category suggested automatically",
     "form": {
@@ -150,7 +154,9 @@
     "new_transfer_title": "New transfer",
     "mode_shortcut": "Mode:",
     "mode_standard": "Standard",
-    "mode_transfer": "Transfer"
+    "mode_transfer": "Transfer",
+    "edit_title": "Edit transaction",
+    "tag_fallback": "Tag"
   },
   "Import": {
     "title": "Import transactions",
@@ -208,7 +214,9 @@
     "fields": {
       "name": "Name",
       "type": "Type",
-      "color": "Color"
+      "color": "Color",
+      "budget": "Budget",
+      "name_placeholder": "Rent, Groceries..."
     },
     "types": {
       "expense": "Expense",
@@ -216,7 +224,12 @@
       "transfer": "Transfer",
       "savings": "Savings"
     },
-    "empty": "No categories configured"
+    "empty": "No categories configured",
+    "selector": {
+      "placeholder": "Select a category...",
+      "none": "No category",
+      "empty": "No category found"
+    }
   },
   "Tags": {
     "title": "Tags",
@@ -273,7 +286,13 @@
     "deleted": "Period deleted",
     "close_period": "Close Period",
     "confirm_delete": "Permanently delete this period? Associated budgets will also be removed.",
-    "inject_label": "Inject recurring operations"
+    "inject_label": "Inject recurring operations",
+    "no_categories": "No category available.",
+    "edit_budgets": "Edit budgets",
+    "edit_budgets_desc": "Adjust the amounts allocated to each category for this period.",
+    "edit_dates": "Edit dates",
+    "delete_period": "Delete period",
+    "close_confirm": "Close the period?"
   },
   "Recurring": {
     "title": "Recurring Operations",

@@ -46,7 +46,7 @@ export function AccountForm({
       <div className="space-y-2">
         <label className="text-sm font-medium">{t('fields.name')}</label>
         <Input 
-          placeholder="Checking Account, Savings..." 
+          placeholder={t('fields.name_placeholder')} 
           value={name}
           onChange={(e) => setName(e.target.value)}
           required
@@ -67,7 +67,7 @@ export function AccountForm({
       <div className="space-y-2">
         <label className="text-sm font-medium">{t('fields.description')}</label>
         <Textarea 
-          placeholder="Ex: Compte pour les dépenses du quotidien, loyer et abonnements..." 
+          placeholder={t('fields.description_placeholder')} 
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           className="resize-none h-20"

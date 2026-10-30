@@ -21,6 +21,8 @@ import { ShareAccountDialog } from './share-account-dialog';
 import { AccountForm, AccountFormValues } from './account-form';
 
 export function AccountList() {
+  const t = useTranslations('Accounts');
+  const tc = useTranslations('Common');
   const { data: accounts, isLoading } = useAccounts();
   const currentUserId = useCurrentUserId();
   const [editingAccount, setEditingAccount] = useState<Account | null>(null);
@@ -50,7 +52,7 @@ export function AccountList() {
                       <Button 
                         variant="ghost" 
                         size="icon-sm" 
-                        aria-label="share-account"
+                        aria-label={t('share')}
                         className="opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8"
                         onClick={() => setSharingAccount(account)}
                       >
@@ -59,7 +61,7 @@ export function AccountList() {
                       <Button 
                         variant="ghost" 
                         size="icon-sm" 
-                        aria-label="edit-account"
+                        aria-label={tc('edit')}
                         className="opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8"
                         onClick={() => setEditingAccount(account)}
                       >

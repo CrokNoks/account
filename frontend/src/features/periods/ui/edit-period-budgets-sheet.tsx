@@ -79,9 +79,9 @@ export function EditPeriodBudgetsSheet({ periodId, open, onOpenChange }: EditPer
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="right" className="flex flex-col gap-0 p-0">
         <SheetHeader className="p-6 border-b">
-          <SheetTitle>Modifier les budgets</SheetTitle>
+          <SheetTitle>{t('edit_budgets')}</SheetTitle>
           <SheetDescription>
-            Ajustez les montants alloués pour chaque catégorie pour cette période.
+            {t('edit_budgets_desc')}
           </SheetDescription>
         </SheetHeader>
 
@@ -126,7 +126,7 @@ export function EditPeriodBudgetsSheet({ periodId, open, onOpenChange }: EditPer
                   ))
                 ) : (
                   <div className="p-8 text-center text-sm text-muted-foreground">
-                    Aucune catégorie disponible.
+                    {t('no_categories')}
                   </div>
                 )}
               </div>

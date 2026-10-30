@@ -71,7 +71,7 @@ export function CreateCategoryDialog() {
             <div className="space-y-2">
               <label className="text-sm font-medium">{t('fields.name')}</label>
               <Input 
-                placeholder="Rent, Groceries..." 
+                placeholder={t('fields.name_placeholder')} 
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 required

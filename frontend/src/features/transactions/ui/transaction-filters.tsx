@@ -217,7 +217,7 @@ export function TransactionFilters({
                       <SelectItem value="all">{t('all_periods')}</SelectItem>
                       {periods?.map((p) => (
                         <SelectItem key={p.id} value={p.id}>
-                          {format(new Date(p.startDate), 'dd/MM/yyyy')} - {format(new Date(p.endDate), 'dd/MM/yyyy')} {p.isActive && "(Active)"}
+                          {format(new Date(p.startDate), 'dd/MM/yyyy')} - {format(new Date(p.endDate), 'dd/MM/yyyy')} {p.isActive && t('filters.active_suffix')}
                         </SelectItem>
                       ))}
                     </SelectContent>

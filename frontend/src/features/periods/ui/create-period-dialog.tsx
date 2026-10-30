@@ -174,7 +174,7 @@ export function CreatePeriodDialog() {
                     ))
                   ) : (
                     <div className="p-8 text-center text-sm text-muted-foreground">
-                      Aucune catégorie disponible.
+                      {t('no_categories')}
                     </div>
                   )}
                 </div>
