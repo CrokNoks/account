@@ -49,6 +49,8 @@
     "real": "Réel",
     "budget": "Budget",
     "remaining": "Restant",
+    "over_budget_expense": "{amount} de dépassement",
+    "over_budget_income": "+{amount} au-delà du budget",
     "evolution_title": "Évolution",
     "evolution_desc": "Suivez l'évolution de votre solde et de vos revenus/dépenses au fil du temps.",
     "balance_evolution": "Évolution du solde en banque",

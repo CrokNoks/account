@@ -83,6 +83,8 @@ function BudgetGroup({ title, items, isExpense }: { title: string, items: Budget
   return (
     <div className="flex-1 overflow-y-auto space-y-6 pr-2 -mr-2">
         {items.map((item) => {
+          // remaining < 0 means the budget is exceeded (expense, saving or income alike)
+          const remaining = parseInt(item.remaining, 10);
           const percentage = Math.min(Math.abs(item.percentage), 100);
           
           // Simplify logic: if real is "worse" than budget
@@ -106,7 +108,18 @@ function BudgetGroup({ title, items, isExpense }: { title: string, items: Budget
               </div>
               <div className="flex justify-between text-[10px] text-muted-foreground uppercase tracking-wider">
                 <span>{item.percentage}%</span>
-                <span>{t('remaining')}: {formatCurrency(Math.abs(parseInt(item.remaining, 10)).toString())}</span>
+                {remaining < 0 ? (
+                  <span
+                    data-testid="over-budget"
+                    className={isExpense ? "text-red-600 font-bold" : "text-green-600 font-bold"}
+                  >
+                    {t(isExpense ? 'over_budget_expense' : 'over_budget_income', {
+                      amount: formatCurrency((-remaining).toString()),
+                    })}
+                  </span>
+                ) : (
+                  <span>{t('remaining')}: {formatCurrency(remaining.toString())}</span>
+                )}
               </div>
             </div>
           );

@@ -49,6 +49,8 @@
     "real": "Real",
     "budget": "Budget",
     "remaining": "Remaining",
+    "over_budget_expense": "{amount} over budget",
+    "over_budget_income": "+{amount} beyond budget",
     "evolution_title": "Evolution",
     "evolution_desc": "Track your balance and income/expenses evolution over time.",
     "balance_evolution": "Bank Balance Evolution",
