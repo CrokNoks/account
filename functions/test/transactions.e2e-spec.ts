@@ -313,32 +313,66 @@ describe('Transactions routes (e2e)', () => {
     });
   });
 
-  describe('bulk routes declared after :id', () => {
-    // Comportement actuel documenté (docs/transactions.md) : PATCH :id et
-    // DELETE :id sont déclarées avant PATCH bulk et DELETE bulk, qui sont donc
-    // inatteignables. Le body {ids, data} est maintenant refusé par le DTO de
-    // PATCH :id (400) avant même de chercher la transaction "bulk".
-    it('PATCH /bulk is handled as PATCH /:id: the {ids, data} body is refused with 400', async () => {
+  describe('bulk routes', () => {
+    it('PATCH /bulk updates the requested transactions of the account', async () => {
       await http()
         .patch('/acc-1/transactions/bulk')
         .set(auth())
-        .send({ ids: ['t1'], data: { reconciled: true } })
+        .send({ ids: ['t1'], data: { categoryId: 'cat-2', pending: true } })
+        .expect(200);
+
+      const [[saved]] = mocks.transactions.save.mock.calls as [Transaction][];
+      expect(mocks.transactions.save).toHaveBeenCalledTimes(1);
+      expect(saved.id).toBe('t1');
+      expect(saved.categoryId).toBe('cat-2');
+      expect(saved.pending).toBe(true);
+    });
+
+    it.each([
+      ['an unknown field in data', { foo: 'bar' }],
+      ['a non boolean reconciled', { reconciled: 'yes' }],
+      ['a non boolean pending', { pending: 1 }],
+      ['non string tag ids', { tagIds: [1] }],
+      ['a non string categoryId', { categoryId: 42 }],
+    ])('PATCH /bulk answers 400 without saving for %s', async (_, data) => {
+      await http()
+        .patch('/acc-1/transactions/bulk')
+        .set(auth())
+        .send({ ids: ['t1'], data })
         .expect(400);
 
       expect(mocks.transactions.save).not.toHaveBeenCalled();
-      expect(
-        mocks.transactions.findAllByAccountUnpaginated,
-      ).not.toHaveBeenCalled();
     });
 
-    it('DELETE /bulk deletes the id "bulk" and none of the requested ids', async () => {
+    it('PATCH /bulk accepts a null categoryId', async () => {
+      await http()
+        .patch('/acc-1/transactions/bulk')
+        .set(auth())
+        .send({ ids: ['t1'], data: { categoryId: null } })
+        .expect(200);
+
+      const [[saved]] = mocks.transactions.save.mock.calls as [Transaction][];
+      expect(saved.categoryId).toBeNull();
+    });
+
+    it('DELETE /bulk deletes the requested ids of the account and not the id "bulk"', async () => {
       await http()
         .delete('/acc-1/transactions/bulk')
         .set(auth())
-        .send({ ids: ['t1', 't2'] })
-        .expect(204);
+        .send({ ids: ['t1', 't2', 't-other-account'] })
+        .expect(200);
 
-      expect(mocks.transactions.delete.mock.calls).toEqual([['bulk']]);
+      expect(mocks.transactions.delete.mock.calls).toEqual([['t1'], ['t2']]);
+    });
+
+    it('DELETE /bulk answers 400 without deleting when ids is missing', async () => {
+      await http()
+        .delete('/acc-1/transactions/bulk')
+        .set(auth())
+        .send({})
+        .expect(400);
+
+      expect(mocks.transactions.delete).not.toHaveBeenCalled();
     });
   });
 

@@ -151,6 +151,29 @@ export class BulkCreateTransactionsDto {
   transactions: CreateTransactionDto[];
 }
 
+export class BulkUpdateTransactionsDataDto {
+  @IsOptional()
+  @IsString()
+  @ApiProperty({ required: false, nullable: true })
+  categoryId?: string | null;
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  @ApiProperty({ required: false, type: [String] })
+  tagIds?: string[];
+
+  @IsOptional()
+  @IsBoolean()
+  @ApiProperty({ required: false })
+  reconciled?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  @ApiProperty({ required: false })
+  pending?: boolean;
+}
+
 export class BulkUpdateTransactionsDto {
   @IsArray()
   @IsString({ each: true })
@@ -158,13 +181,10 @@ export class BulkUpdateTransactionsDto {
   ids: string[];
 
   @IsObject()
-  @ApiProperty()
-  data: {
-    categoryId?: string | null;
-    tagIds?: string[];
-    reconciled?: boolean;
-    pending?: boolean;
-  };
+  @ValidateNested()
+  @Type(() => BulkUpdateTransactionsDataDto)
+  @ApiProperty({ type: BulkUpdateTransactionsDataDto })
+  data: BulkUpdateTransactionsDataDto;
 }
 
 export class BulkDeleteTransactionsDto {
@@ -374,6 +394,35 @@ export class TransactionsController {
     };
   }
 
+  // Les routes statiques `bulk` doivent rester déclarées AVANT `:id`, sinon
+  // Express les fait correspondre à `:id` avec id = "bulk".
+  @Patch('bulk')
+  @ApiOperation({ summary: 'Update multiple transactions at once' })
+  @ApiResponse({ status: 200 })
+  async updateBulk(
+    @Param('accountId') accountId: string,
+    @Body() dto: BulkUpdateTransactionsDto,
+  ): Promise<void> {
+    await this.bulkUpdateTransactionsUseCase.execute({
+      accountId,
+      ids: dto.ids,
+      data: dto.data,
+    });
+  }
+
+  @Delete('bulk')
+  @ApiOperation({ summary: 'Delete multiple transactions at once' })
+  @ApiResponse({ status: 200 })
+  async deleteBulk(
+    @Param('accountId') accountId: string,
+    @Body() dto: BulkDeleteTransactionsDto,
+  ): Promise<void> {
+    await this.bulkDeleteTransactionsUseCase.execute({
+      accountId,
+      ids: dto.ids,
+    });
+  }
+
   @Patch(':id')
   @ApiOperation({ summary: 'Update a transaction partialy' })
   @ApiResponse({ status: 200, type: TransactionResponseDto })
@@ -433,33 +482,6 @@ export class TransactionsController {
       })),
     });
     return transactions.map((t) => this.mapToResponse(t));
-  }
-
-  @Patch('bulk')
-  @ApiOperation({ summary: 'Update multiple transactions at once' })
-  @ApiResponse({ status: 200 })
-  async updateBulk(
-    @Param('accountId') accountId: string,
-    @Body() dto: BulkUpdateTransactionsDto,
-  ): Promise<void> {
-    await this.bulkUpdateTransactionsUseCase.execute({
-      accountId,
-      ids: dto.ids,
-      data: dto.data,
-    });
-  }
-
-  @Delete('bulk')
-  @ApiOperation({ summary: 'Delete multiple transactions at once' })
-  @ApiResponse({ status: 200 })
-  async deleteBulk(
-    @Param('accountId') accountId: string,
-    @Body() dto: BulkDeleteTransactionsDto,
-  ): Promise<void> {
-    await this.bulkDeleteTransactionsUseCase.execute({
-      accountId,
-      ids: dto.ids,
-    });
   }
 
   @Post('transfer')
