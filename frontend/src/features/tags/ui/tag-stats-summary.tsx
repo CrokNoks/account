@@ -9,8 +9,10 @@ import { Badge } from '@/components/ui/badge';
 import { BarChart3, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { NoDataState } from '@/shared/ui/no-data-state';
+import { useTranslations } from 'next-intl';
 
 export function TagStatsSummary() {
+  const t = useTranslations('Tags');
   const { activeAccountId, activePeriodId } = useAccountStore();
   const setTagDetailId = useUiStore((state) => state.setTagDetailId);
   
@@ -22,7 +24,7 @@ export function TagStatsSummary() {
     <CardHeader className="pb-3 bg-muted/10 shrink-0">
       <CardTitle className="text-[10px] font-bold flex items-center gap-2 uppercase tracking-wider text-muted-foreground">
         <BarChart3 className="w-4 h-4 text-primary" />
-        Top Tags de la période
+        {t('top_title')}
       </CardTitle>
     </CardHeader>
   );
@@ -35,7 +37,7 @@ export function TagStatsSummary() {
       <Card className="border-2 shadow-sm h-full overflow-hidden flex flex-col">
         {header}
         <CardContent className="pt-2 flex-1 flex items-center justify-center min-h-[150px]">
-          <NoDataState title="Aucun tag" description="Pas d'activité de tag ce mois-ci" />
+          <NoDataState title={t('no_tag_title')} description={t('no_tag_desc')} />
         </CardContent>
       </Card>
     );
@@ -58,7 +60,7 @@ export function TagStatsSummary() {
               />
               <span className="text-sm font-medium truncate">{tag.name}</span>
               <Badge variant="secondary" className="h-4 px-1 text-[9px] font-normal opacity-70">
-                {tag.transactionCount} op.
+                {t('ops_short', { count: tag.transactionCount })}
               </Badge>
             </div>
             <div className="flex items-center gap-2">

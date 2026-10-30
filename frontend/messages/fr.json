@@ -227,7 +227,32 @@
       "color": "Couleur"
     },
     "empty": "Aucun tag configuré",
-    "delete_confirm": "Voulez-vous vraiment supprimer ce tag ?"
+    "delete_confirm": "Voulez-vous vraiment supprimer ce tag ?",
+    "edit_title": "Modifier le tag",
+    "view_details": "Voir les détails",
+    "name_placeholder": "Voyages, Santé, Cadeaux...",
+    "top_title": "Top Tags de la période",
+    "no_tag_title": "Aucun tag",
+    "no_tag_desc": "Pas d'activité de tag ce mois-ci",
+    "ops_short": "{count, plural, one {# op.} other {# op.}}",
+    "selector": {
+      "add": "Ajouter des tags...",
+      "search_placeholder": "Rechercher ou créer un tag...",
+      "create": "Créer le tag « #{name} »",
+      "created": "Tag #{name} créé",
+      "create_error": "Erreur lors de la création du tag"
+    },
+    "detail": {
+      "loading": "Chargement...",
+      "period_stats": "Statistiques pour la période actuelle",
+      "total_net": "TOTAL NET",
+      "operations": "OPÉRATIONS",
+      "by_category": "Répartition par catégorie",
+      "no_data": "Aucune donnée disponible",
+      "recent": "Dernières opérations",
+      "no_transactions": "Aucune transaction avec ce tag",
+      "load_error": "Erreur lors du chargement des données."
+    }
   },
   "Budgets": {
     "title": "Périodes Financières",

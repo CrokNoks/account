@@ -15,8 +15,10 @@ import { Progress } from '@/components/ui/progress';
 import { format } from 'date-fns';
 import { Receipt, BarChart3, List } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useTranslations } from 'next-intl';
 
 export function TagDetailDrawer() {
+  const t = useTranslations('Tags.detail');
   const { tagDetailId, setTagDetailId } = useUiStore();
   const { activeAccountId } = useAccountStore();
   const { data: periods } = usePeriods(activeAccountId);
@@ -44,11 +46,11 @@ export function TagDetailDrawer() {
               className="w-4 h-4 rounded-full shrink-0" 
               style={{ backgroundColor: details?.summary.color || '#94a3b8' }} 
             />
-            <SheetTitle className="text-2xl">{details?.summary.name || 'Chargement...'}</SheetTitle>
+            <SheetTitle className="text-2xl">{details?.summary.name || t('loading')}</SheetTitle>
           </div>
           {activePeriod && (
             <p className="text-sm text-muted-foreground">
-              Statistiques pour la période actuelle
+              {t('period_stats')}
             </p>
           )}
         </SheetHeader>
@@ -67,7 +69,7 @@ export function TagDetailDrawer() {
                 <div className="p-4 rounded-xl border bg-card shadow-sm space-y-1">
                   <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
                     <BarChart3 className="w-3 h-3" />
-                    TOTAL NET
+                    {t('total_net')}
                   </div>
                   <div className={cn(
                     "text-xl font-bold",
@@ -79,7 +81,7 @@ export function TagDetailDrawer() {
                 <div className="p-4 rounded-xl border bg-card shadow-sm space-y-1">
                   <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
                     <Receipt className="w-3 h-3" />
-                    OPÉRATIONS
+                    {t('operations')}
                   </div>
                   <div className="text-xl font-bold">
                     {details.summary.transactionCount}
@@ -92,12 +94,12 @@ export function TagDetailDrawer() {
                 <div className="flex items-center justify-between">
                   <h3 className="text-sm font-bold flex items-center gap-2 uppercase tracking-wider text-muted-foreground">
                     <BarChart3 className="w-4 h-4" />
-                    Répartition par catégorie
+                    {t('by_category')}
                   </h3>
                 </div>
                 <div className="space-y-4 p-4 rounded-xl border bg-muted/20">
                   {details.categoryBreakdown.length === 0 ? (
-                    <p className="text-xs text-muted-foreground text-center py-4">Aucune donnée disponible</p>
+                    <p className="text-xs text-muted-foreground text-center py-4">{t('no_data')}</p>
                   ) : (
                     details.categoryBreakdown.map((cat) => (
                       <div key={cat.categoryId || 'none'} className="space-y-1.5">
@@ -122,12 +124,12 @@ export function TagDetailDrawer() {
                 <div className="flex items-center justify-between">
                   <h3 className="text-sm font-bold flex items-center gap-2 uppercase tracking-wider text-muted-foreground">
                     <List className="w-4 h-4" />
-                    Dernières opérations
+                    {t('recent')}
                   </h3>
                 </div>
                 <div className="space-y-2">
                   {details.recentTransactions.length === 0 ? (
-                    <p className="text-xs text-muted-foreground text-center py-4">Aucune transaction avec ce tag</p>
+                    <p className="text-xs text-muted-foreground text-center py-4">{t('no_transactions')}</p>
                   ) : (
                     details.recentTransactions.map((tx) => (
                       <div key={tx.id} className="flex items-center justify-between p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors cursor-default">
@@ -151,7 +153,7 @@ export function TagDetailDrawer() {
             </>
           ) : (
             <div className="text-center py-12 text-muted-foreground">
-              Erreur lors du chargement des données.
+              {t('load_error')}
             </div>
           )}
         </div>

@@ -227,7 +227,32 @@
       "color": "Color"
     },
     "empty": "No tags configured",
-    "delete_confirm": "Do you really want to delete this tag?"
+    "delete_confirm": "Do you really want to delete this tag?",
+    "edit_title": "Edit tag",
+    "view_details": "View details",
+    "name_placeholder": "Travel, Health, Gifts...",
+    "top_title": "Top tags of the period",
+    "no_tag_title": "No tag",
+    "no_tag_desc": "No tag activity this month",
+    "ops_short": "{count, plural, one {# tx} other {# tx}}",
+    "selector": {
+      "add": "Add tags...",
+      "search_placeholder": "Search or create a tag...",
+      "create": "Create tag \"#{name}\"",
+      "created": "Tag #{name} created",
+      "create_error": "Error while creating the tag"
+    },
+    "detail": {
+      "loading": "Loading...",
+      "period_stats": "Statistics for the current period",
+      "total_net": "NET TOTAL",
+      "operations": "TRANSACTIONS",
+      "by_category": "Breakdown by category",
+      "no_data": "No data available",
+      "recent": "Latest transactions",
+      "no_transactions": "No transaction with this tag",
+      "load_error": "Error while loading the data."
+    }
   },
   "Budgets": {
     "title": "Financial Periods",

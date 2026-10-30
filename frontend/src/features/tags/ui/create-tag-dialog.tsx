@@ -60,7 +60,7 @@ export function CreateTagDialog() {
           <div className="flex-1 overflow-y-auto p-6 space-y-4">
             <div className="space-y-2">
               <label className="text-sm font-medium">{t('fields.name')}</label>
-              <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Voyages, Santé, Cadeaux..." required className="h-11" />
+              <Input value={name} onChange={(e) => setName(e.target.value)} placeholder={t('name_placeholder')} required className="h-11" />
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium">{t('fields.color')}</label>

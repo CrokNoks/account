@@ -21,6 +21,7 @@ import { Badge } from '@/components/ui/badge';
 import { useTags } from '../api/use-tags';
 import { useCreateTag } from '../api/use-create-tag';
 import { toast } from 'sonner';
+import { useTranslations } from 'next-intl';
 
 interface TagSelectorProps {
   accountId: string;
@@ -29,6 +30,7 @@ interface TagSelectorProps {
 }
 
 export function TagSelector({ accountId, selectedTagIds, onChange }: TagSelectorProps) {
+  const t = useTranslations('Tags.selector');
   const [open, setOpen] = React.useState(false);
   const [inputValue, setInputValue] = React.useState('');
   const { data: tags } = useTags(accountId);
@@ -56,10 +58,10 @@ export function TagSelector({ accountId, selectedTagIds, onChange }: TagSelector
       onSuccess: (newTag) => {
         onChange([...selectedTagIds, newTag.id]);
         setInputValue('');
-        toast.success(`Tag #${newTag.name} créé`);
+        toast.success(t('created', { name: newTag.name }));
       },
       onError: () => {
-        toast.error("Erreur lors de la création du tag");
+        toast.error(t('create_error'));
       }
     });
   };
@@ -99,7 +101,7 @@ export function TagSelector({ accountId, selectedTagIds, onChange }: TagSelector
                     </Badge>
                   ))
                 ) : (
-                  <span className="text-muted-foreground">Ajouter des tags...</span>
+                  <span className="text-muted-foreground">{t('add')}</span>
                 )}
               </div>
               <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
@@ -109,7 +111,7 @@ export function TagSelector({ accountId, selectedTagIds, onChange }: TagSelector
         <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
           <Command>
             <CommandInput 
-              placeholder="Rechercher ou créer un tag..." 
+              placeholder={t('search_placeholder')} 
               value={inputValue}
               onValueChange={setInputValue}
             />
@@ -120,7 +122,7 @@ export function TagSelector({ accountId, selectedTagIds, onChange }: TagSelector
                   className="w-full justify-start text-xs h-8 px-2"
                   onClick={handleCreateTag}
                 >
-                  Créer le tag &quot;#{inputValue}&quot;
+                  {t('create', { name: inputValue })}
                 </Button>
               </CommandEmpty>
               <CommandGroup>

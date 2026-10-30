@@ -68,7 +68,7 @@ export function TagList() {
                   size="icon-xs" 
                   className="h-6 w-6 hover:bg-background/50"
                   onClick={(e) => { e.stopPropagation(); setTagDetailId(tag.id); }}
-                  title="Voir les détails"
+                  title={t('view_details')}
                 >
                   <Eye className="w-3 h-3 text-muted-foreground" />
                 </Button>
@@ -77,7 +77,7 @@ export function TagList() {
                   size="icon-xs" 
                   className="h-6 w-6 hover:bg-background/50"
                   onClick={(e) => { e.stopPropagation(); setEditingTag(tag); }}
-                  title="Modifier"
+                  title={tc('edit')}
                 >
                   <Pencil className="w-3 h-3 text-muted-foreground" />
                 </Button>
@@ -86,7 +86,7 @@ export function TagList() {
                   size="icon-xs" 
                   className="h-6 w-6 hover:bg-background/50 text-muted-foreground hover:text-destructive"
                   onClick={(e) => { e.stopPropagation(); handleDelete(tag.id); }}
-                  title="Supprimer"
+                  title={tc('delete')}
                 >
                   <Trash2 className="w-3 h-3" />
                 </Button>
@@ -142,7 +142,7 @@ function EditTagDialog({ tag, open, onOpenChange }: { tag: Tag, open: boolean, o
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="right" className="flex flex-col gap-0 p-0">
         <SheetHeader className="p-6 border-b">
-          <SheetTitle>{tc('edit')} Tag</SheetTitle>
+          <SheetTitle>{t('edit_title')}</SheetTitle>
         </SheetHeader>
         <form onSubmit={handleSubmit} className="flex-1 flex flex-col min-h-0">
           <div className="flex-1 overflow-y-auto p-6 space-y-4">
