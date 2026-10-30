@@ -25,14 +25,14 @@ export class IgnoreAnomalyUseCase {
       );
     }
 
-    for (const tx of transactions) {
+    const updatedTransactions = transactions.map((tx) => {
       const metadata = (tx.metadata as Record<string, any>) || {};
       const ignoredAnomalies = new Set<string>(
         (metadata.ignoredAnomalies as string[]) || [],
       );
       ignoredAnomalies.add(type);
 
-      const updated = new Transaction({
+      return new Transaction({
         ...tx,
         metadata: {
           ...metadata,
@@ -40,8 +40,11 @@ export class IgnoreAnomalyUseCase {
         },
         updatedAt: new Date(),
       });
+    });
 
-      await this.transactionRepository.save(updated);
+    // Une seule écriture atomique : toutes les transactions sont marquées, ou aucune.
+    if (updatedTransactions.length > 0) {
+      await this.transactionRepository.updateMany(updatedTransactions);
     }
   }
 }

@@ -521,7 +521,7 @@ describe('Cross-account references (e2e)', () => {
       await send(['00000000-0000-4000-8000-000000000016']).expect(201, {
         success: true,
       });
-      expect(mocks.transactions.save).toHaveBeenCalledTimes(1);
+      expect(mocks.transactions.updateMany).toHaveBeenCalledTimes(1);
     });
 
     it('answers 404 without writing when a transaction is of another account', async () => {
@@ -545,13 +545,13 @@ describe('Cross-account references (e2e)', () => {
         '00000000-0000-4000-8000-000000000016',
         '00000000-0000-4000-8000-000000000018',
       ]).expect(404);
-      expect(mocks.transactions.save).not.toHaveBeenCalled();
+      expect(mocks.transactions.updateMany).not.toHaveBeenCalled();
     });
 
     it('answers 404 without writing for an unknown transaction', async () => {
       mocks.transactions.findById.mockResolvedValue(null);
       await send(['00000000-0000-4000-8000-000000000042']).expect(404);
-      expect(mocks.transactions.save).not.toHaveBeenCalled();
+      expect(mocks.transactions.updateMany).not.toHaveBeenCalled();
     });
   });
 });

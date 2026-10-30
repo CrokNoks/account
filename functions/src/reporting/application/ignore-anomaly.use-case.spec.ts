@@ -10,6 +10,7 @@ describe('IgnoreAnomalyUseCase', () => {
 
   const mockTransactionRepository = {
     findById: jest.fn(),
+    updateMany: jest.fn(),
     save: jest.fn(),
   };
 
@@ -53,7 +54,8 @@ describe('IgnoreAnomalyUseCase', () => {
 
     await useCase.execute(accountId, [transactionId], anomalyType);
 
-    expect(transactionRepository.save).toHaveBeenCalledWith(
+    expect(transactionRepository.updateMany).toHaveBeenCalledTimes(1);
+    expect(transactionRepository.updateMany).toHaveBeenCalledWith([
       expect.objectContaining({
         id: transactionId,
         // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
@@ -62,7 +64,8 @@ describe('IgnoreAnomalyUseCase', () => {
           ignoredAnomalies: [anomalyType],
         }),
       }),
-    );
+    ]);
+    expect(transactionRepository.save).not.toHaveBeenCalled();
   });
 
   it('refuses (404) a transaction of another account, without any write', async () => {
@@ -85,6 +88,7 @@ describe('IgnoreAnomalyUseCase', () => {
     await expect(
       useCase.execute(accountId, [transactionId], 'outlier'),
     ).rejects.toBeInstanceOf(NotFoundError);
+    expect(transactionRepository.updateMany).not.toHaveBeenCalled();
     expect(transactionRepository.save).not.toHaveBeenCalled();
   });
 
@@ -109,6 +113,7 @@ describe('IgnoreAnomalyUseCase', () => {
     await expect(
       useCase.execute('acc-1', ['tx-1', 'ghost'], 'outlier'),
     ).rejects.toBeInstanceOf(NotFoundError);
+    expect(transactionRepository.updateMany).not.toHaveBeenCalled();
     expect(transactionRepository.save).not.toHaveBeenCalled();
   });
 
@@ -133,6 +138,33 @@ describe('IgnoreAnomalyUseCase', () => {
 
     await useCase.execute(accountId, txIds, 'duplicate');
 
-    expect(transactionRepository.save).toHaveBeenCalledTimes(2);
+    expect(transactionRepository.updateMany).toHaveBeenCalledTimes(1);
+    expect(
+      transactionRepository.updateMany.mock.calls[0][0].map((t) => t.id),
+    ).toEqual(txIds);
+    expect(transactionRepository.save).not.toHaveBeenCalled();
+  });
+
+  it('propagates the error of the atomic call, nothing is saved separately', async () => {
+    transactionRepository.findById.mockImplementation((id) =>
+      Promise.resolve(
+        Transaction.create({
+          id,
+          accountId: 'acc-1',
+          categoryId: null,
+          date: new Date(),
+          description: 'Desc',
+          amount: BigInt(-1000),
+          reconciled: false,
+          pending: false,
+        }),
+      ),
+    );
+    transactionRepository.updateMany.mockRejectedValue(new Error('db down'));
+
+    await expect(
+      useCase.execute('acc-1', ['tx-1', 'tx-2'], 'duplicate'),
+    ).rejects.toThrow('db down');
+    expect(transactionRepository.save).not.toHaveBeenCalled();
   });
 });
