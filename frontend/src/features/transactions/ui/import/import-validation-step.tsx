@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
+import { useTranslations } from 'next-intl';
 import { X } from 'lucide-react';
 import { formatCurrency, toCents } from '@/shared/lib/format';
 import { ParsedTransaction } from '../../model/import-types';
@@ -27,22 +28,23 @@ export function ImportValidationStep({
   setParsedData,
   categories
 }: ImportValidationStepProps) {
+  const t = useTranslations('Import.validation');
   const invalidCount = parsedData.filter((row) => row.invalidReason).length;
 
   return (
     <div className="p-0">
       {invalidCount > 0 && (
         <div role="alert" className="px-8 py-3 text-sm font-medium text-destructive bg-destructive/10 border-b">
-          {invalidCount} {invalidCount > 1 ? 'lignes ignorées' : 'ligne ignorée'} (non envoyées à l&apos;import)
+          {t('skipped_banner', { count: invalidCount })}
         </div>
       )}
       <Table className="table-fixed w-full">
         <TableHeader>
           <TableRow className="bg-muted/30">
-            <TableHead className="w-[120px] pl-8 text-xs">Date</TableHead>
-            <TableHead className="min-w-[250px] text-xs">Description</TableHead>
-            <TableHead className="w-[150px] text-right text-xs">Montant</TableHead>
-            <TableHead className="w-[300px] text-xs">Catégorie</TableHead>
+            <TableHead className="w-[120px] pl-8 text-xs">{t('date')}</TableHead>
+            <TableHead className="min-w-[250px] text-xs">{t('description')}</TableHead>
+            <TableHead className="w-[150px] text-right text-xs">{t('amount')}</TableHead>
+            <TableHead className="w-[300px] text-xs">{t('category')}</TableHead>
             <TableHead className="w-[60px]"></TableHead>
           </TableRow>
         </TableHeader>
@@ -51,12 +53,12 @@ export function ImportValidationStep({
             <TableRow key={row.id} className={row.invalidReason ? 'bg-destructive/10' : undefined} data-invalid={row.invalidReason ? 'true' : undefined}>
               <TableCell className="pl-8 font-medium text-xs">
                 {row.date}
-                {row.invalidReason === 'date' && <span className="block text-destructive">date illisible</span>}
+                {row.invalidReason === 'date' && <span className="block text-destructive">{t('unreadable_date')}</span>}
               </TableCell>
               <TableCell className="truncate text-xs" title={row.description}>{row.description}</TableCell>
               <TableCell className={`text-right font-bold text-xs ${parseFloat(row.amount) < 0 ? 'text-red-500' : 'text-green-500'}`}>
                 {row.invalidReason === 'amount' ? (
-                  <span className="text-destructive">montant illisible</span>
+                  <span className="text-destructive">{t('unreadable_amount')}</span>
                 ) : (
                   formatCurrency(toCents(row.amount))
                 )}
@@ -72,11 +74,11 @@ export function ImportValidationStep({
                           <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: categories?.find(c => c.id === row.categoryId)?.color }} />
                           <span className="truncate">{categories?.find(c => c.id === row.categoryId)?.name}</span>
                         </div>
-                      ) : <span className="text-muted-foreground italic">Pas de catégorie</span>}
+                      ) : <span className="text-muted-foreground italic">{t('no_category')}</span>}
                     </SelectValue>
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="none">Non catégorisé</SelectItem>
+                    <SelectItem value="none">{t('uncategorized')}</SelectItem>
                     {categories?.map((cat) => (
                       <SelectItem key={cat.id} value={cat.id}>
                         <div className="flex items-center gap-2 text-xs">

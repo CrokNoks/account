@@ -10,6 +10,7 @@ import {
   TableCell, 
   TableRow 
 } from "@/components/ui/table";
+import { useTranslations } from 'next-intl';
 import { ImportMapping } from '../../model/import-types';
 
 interface ImportMappingStepProps {
@@ -33,6 +34,7 @@ export function ImportMappingStep({
   csvHeaders,
   rawRows
 }: ImportMappingStepProps) {
+  const t = useTranslations('Import.mapping');
   return (
     <div className="p-8 space-y-8">
       <div className="flex flex-col gap-6">
@@ -43,7 +45,7 @@ export function ImportMappingStep({
             onClick={() => setAmountMode('single')}
             className="h-8 text-xs px-4"
           >
-            Colonne Montant unique
+            {t('single_amount')}
           </Button>
           <Button 
             variant={amountMode === 'separate' ? 'secondary' : 'ghost'} 
@@ -51,72 +53,72 @@ export function ImportMappingStep({
             onClick={() => setAmountMode('separate')}
             className="h-8 text-xs px-4"
           >
-            Débit / Crédit séparés
+            {t('debit_credit')}
           </Button>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-5 gap-4 bg-muted/20 p-6 rounded-xl border">
           <div className="space-y-2">
-            <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Ligne d&apos;en-tête</label>
+            <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">{t('header_row')}</label>
             <Input type="number" min="0" value={headerRowIndex} onChange={(e) => handleHeaderRowChange(parseInt(e.target.value, 10) || 0)} className="h-10" />
           </div>
           <div className="space-y-2">
-            <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Colonne Date</label>
+            <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">{t('date_column')}</label>
             <Select value={mapping.date || ''} onValueChange={(v) => setMapping({...mapping, date: v || ''})}>
               <SelectTrigger className="h-10">
-                <SelectValue placeholder="Date">
-                  {mapping.date || "Date"}
+                <SelectValue placeholder={t('date')}>
+                  {mapping.date || t('date')}
                 </SelectValue>
               </SelectTrigger>
-              <SelectContent>{csvHeaders.map((h, i) => <SelectItem key={i} value={h}>{h || `Col ${i}`}</SelectItem>)}</SelectContent>
+              <SelectContent>{csvHeaders.map((h, i) => <SelectItem key={i} value={h}>{h || t('column_n', { index: i })}</SelectItem>)}</SelectContent>
             </Select>
           </div>
           <div className="space-y-2 md:col-span-1">
-            <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Colonne Description</label>
+            <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">{t('description_column')}</label>
             <Select value={mapping.description || ''} onValueChange={(v) => setMapping({...mapping, description: v || ''})}>
               <SelectTrigger className="h-10">
-                <SelectValue placeholder="Description">
-                  {mapping.description || "Description"}
+                <SelectValue placeholder={t('description')}>
+                  {mapping.description || t('description')}
                 </SelectValue>
               </SelectTrigger>
-              <SelectContent>{csvHeaders.map((h, i) => <SelectItem key={i} value={h}>{h || `Col ${i}`}</SelectItem>)}</SelectContent>
+              <SelectContent>{csvHeaders.map((h, i) => <SelectItem key={i} value={h}>{h || t('column_n', { index: i })}</SelectItem>)}</SelectContent>
             </Select>
           </div>
           
           {amountMode === 'single' ? (
             <div className="space-y-2 md:col-span-2 text-primary">
-              <label className="text-[10px] font-bold uppercase tracking-wider">Colonne Montant</label>
+              <label className="text-[10px] font-bold uppercase tracking-wider">{t('amount_column')}</label>
               <Select value={mapping.amount || ''} onValueChange={(v) => setMapping({...mapping, amount: v || ''})}>
                 <SelectTrigger className="h-10 border-primary/30">
-                  <SelectValue placeholder="Montant">
-                    {mapping.amount || "Montant"}
+                  <SelectValue placeholder={t('amount')}>
+                    {mapping.amount || t('amount')}
                   </SelectValue>
                 </SelectTrigger>
-                <SelectContent>{csvHeaders.map((h, i) => <SelectItem key={i} value={h}>{h || `Col ${i}`}</SelectItem>)}</SelectContent>
+                <SelectContent>{csvHeaders.map((h, i) => <SelectItem key={i} value={h}>{h || t('column_n', { index: i })}</SelectItem>)}</SelectContent>
               </Select>
             </div>
           ) : (
             <>
               <div className="space-y-2 text-red-500">
-                <label className="text-[10px] font-bold uppercase tracking-wider">Colonne Débit</label>
+                <label className="text-[10px] font-bold uppercase tracking-wider">{t('debit_column')}</label>
                 <Select value={mapping.debit || ''} onValueChange={(v) => setMapping({...mapping, debit: v || ''})}>
                   <SelectTrigger className="h-10 border-red-200">
-                    <SelectValue placeholder="Débit">
-                      {mapping.debit || "Débit"}
+                    <SelectValue placeholder={t('debit')}>
+                      {mapping.debit || t('debit')}
                     </SelectValue>
                   </SelectTrigger>
-                  <SelectContent>{csvHeaders.map((h, i) => <SelectItem key={i} value={h}>{h || `Col ${i}`}</SelectItem>)}</SelectContent>
+                  <SelectContent>{csvHeaders.map((h, i) => <SelectItem key={i} value={h}>{h || t('column_n', { index: i })}</SelectItem>)}</SelectContent>
                 </Select>
               </div>
               <div className="space-y-2 text-green-500">
-                <label className="text-[10px] font-bold uppercase tracking-wider">Colonne Crédit</label>
+                <label className="text-[10px] font-bold uppercase tracking-wider">{t('credit_column')}</label>
                 <Select value={mapping.credit || ''} onValueChange={(v) => setMapping({...mapping, credit: v || ''})}>
                   <SelectTrigger className="h-10 border-green-200">
-                    <SelectValue placeholder="Crédit">
-                      {mapping.credit || "Crédit"}
+                    <SelectValue placeholder={t('credit')}>
+                      {mapping.credit || t('credit')}
                     </SelectValue>
                   </SelectTrigger>
-                  <SelectContent>{csvHeaders.map((h, i) => <SelectItem key={i} value={h}>{h || `Col ${i}`}</SelectItem>)}</SelectContent>
+                  <SelectContent>{csvHeaders.map((h, i) => <SelectItem key={i} value={h}>{h || t('column_n', { index: i })}</SelectItem>)}</SelectContent>
                 </Select>
               </div>
             </>
@@ -126,8 +128,8 @@ export function ImportMappingStep({
 
       <div className="border rounded-lg overflow-hidden shadow-sm">
         <div className="bg-muted/50 px-4 py-2 text-[10px] font-bold uppercase tracking-widest border-b flex justify-between items-center">
-          <span>Aperçu du CSV</span>
-          <span className="text-[9px] font-normal text-muted-foreground">Colonnes actives surlignées</span>
+          <span>{t('preview')}</span>
+          <span className="text-[9px] font-normal text-muted-foreground">{t('active_columns')}</span>
         </div>
         <Table>
           <TableBody>

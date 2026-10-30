@@ -113,6 +113,55 @@
     "deleted": "Transaction deleted",
     "toggled": "Transaction updated"
   },
+  "Import": {
+    "title": "Import transactions",
+    "subtitle_upload": "Upload your bank statement (CSV)",
+    "subtitle_mapping": "Set the header row and map the columns",
+    "subtitle_validation": "{count, plural, =0 {No transaction to review} one {Review the transaction} other {Review the # transactions}}",
+    "confirm": "Confirm import",
+    "analyze": "Analyze data",
+    "analyzing_categories": "Analyzing categories...",
+    "parse_error": "Could not read the CSV file",
+    "success": "{imported, plural, one {# transaction imported} other {# transactions imported}}",
+    "success_with_skipped": "{imported, plural, one {# transaction imported} other {# transactions imported}}, {skipped, plural, one {# line skipped} other {# lines skipped}}",
+    "upload": {
+      "delimiter": "CSV separator",
+      "comma": "Comma ( , )",
+      "semicolon": "Semicolon ( ; )",
+      "select_file": "Select your file",
+      "select_file_hint": "The CSV file exported by your bank.",
+      "choose_file": "Choose file"
+    },
+    "mapping": {
+      "single_amount": "Single Amount column",
+      "debit_credit": "Separate Debit / Credit",
+      "header_row": "Header row",
+      "date_column": "Date column",
+      "description_column": "Description column",
+      "amount_column": "Amount column",
+      "debit_column": "Debit column",
+      "credit_column": "Credit column",
+      "date": "Date",
+      "description": "Description",
+      "amount": "Amount",
+      "debit": "Debit",
+      "credit": "Credit",
+      "column_n": "Col {index}",
+      "preview": "CSV preview",
+      "active_columns": "Active columns highlighted"
+    },
+    "validation": {
+      "skipped_banner": "{count, plural, one {# line skipped} other {# lines skipped}} (not sent to the import)",
+      "date": "Date",
+      "description": "Description",
+      "amount": "Amount",
+      "category": "Category",
+      "unreadable_date": "unreadable date",
+      "unreadable_amount": "unreadable amount",
+      "no_category": "No category",
+      "uncategorized": "Uncategorized"
+    }
+  },
   "Categories": {
     "title": "Categories",
     "description": "Organize your transactions with custom categories.",

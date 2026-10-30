@@ -10,6 +10,7 @@ import { usePeriods } from '@/features/budgets/api/use-periods';
 import { useBulkCreateTransactions } from '@/features/transactions/api/use-bulk-create-transactions';
 import { Loader2, ArrowRight, ArrowLeft, CheckCircle2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { useTranslations } from 'next-intl';
 import { apiClient } from '@/shared/api/api-client';
 import { useRouter } from '@/i18n/routing';
 import { toCents, parseAmountToCents, centsToDecimalString } from '@/shared/lib/format';
@@ -20,6 +21,7 @@ import { ImportMappingStep } from '@/features/transactions/ui/import/import-mapp
 import { ImportValidationStep } from '@/features/transactions/ui/import/import-validation-step';
 
 export default function ImportTransactionsPage() {
+  const t = useTranslations('Import');
   const router = useRouter();
   const { activeAccountId } = useAccountStore();
   const { data: categories } = useCategories(activeAccountId);
@@ -82,7 +84,7 @@ export default function ImportTransactionsPage() {
         setIsProcessing(false);
       },
       error: () => {
-        toast.error("Failed to parse CSV file");
+        toast.error(t('parse_error'));
         setIsProcessing(false);
       }
     });
@@ -156,7 +158,7 @@ export default function ImportTransactionsPage() {
     setStep('validation');
     
     if (activeAccountId && mappedData.some(r => !r.invalidReason)) {
-      toast.info(`Analyse des catégories en cours...`);
+      toast.info(t('analyzing_categories'));
       const updatedData = [...mappedData];
       for (let i = 0; i < updatedData.length; i++) {
         if (updatedData[i].invalidReason) continue;
@@ -199,8 +201,8 @@ export default function ImportTransactionsPage() {
       onSuccess: () => {
         toast.success(
           invalidCount > 0
-            ? `${validCount} transaction(s) importée(s), ${invalidCount} ligne(s) ignorée(s)`
-            : `${validCount} transaction(s) importée(s)`
+            ? t('success_with_skipped', { imported: validCount, skipped: invalidCount })
+            : t('success', { imported: validCount })
         );
         router.push('/transactions');
       }
@@ -215,18 +217,18 @@ export default function ImportTransactionsPage() {
             <ArrowLeft className="w-5 h-5" />
           </Button>
           <div>
-            <h2 className="text-3xl font-bold tracking-tight">Import Transactions</h2>
+            <h2 className="text-3xl font-bold tracking-tight">{t('title')}</h2>
             <p className="text-muted-foreground">
-              {step === 'upload' && "Chargez votre relevé bancaire (CSV)"}
-              {step === 'mapping' && "Configurez la ligne d&apos;en-tête et le mapping des colonnes"}
-              {step === 'validation' && `Validez les ${parsedData.length} transactions`}
+              {step === 'upload' && t('subtitle_upload')}
+              {step === 'mapping' && t('subtitle_mapping')}
+              {step === 'validation' && t('subtitle_validation', { count: parsedData.length })}
             </p>
           </div>
         </div>
         {step === 'validation' && (
           <Button onClick={handleImport} disabled={isPending || validCount === 0} size="lg" className="gap-2">
             {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
-            Confirmer l&apos;import
+            {t('confirm')}
           </Button>
         )}
       </div>
@@ -244,7 +246,7 @@ export default function ImportTransactionsPage() {
             {step === 'mapping' && (
               <Button onClick={processMapping} disabled={!mapping.date || !mapping.description || (amountMode === 'single' ? !mapping.amount : (!mapping.debit || !mapping.credit)) || isProcessing} className="gap-2 shadow-lg shadow-primary/20">
                 {isProcessing ? <Loader2 className="w-4 h-4 animate-spin" /> : <ArrowRight className="w-4 h-4" />}
-                Analyser les données
+                {t('analyze')}
               </Button>
             )}
           </div>

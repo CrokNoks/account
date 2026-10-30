@@ -1,4 +1,8 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { NextIntlClientProvider } from 'next-intl';
+import { toast } from 'sonner';
+import fr from '../../../../../../messages/fr.json';
+import en from '../../../../../../messages/en.json';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { apiClient } from '@/shared/api/api-client';
 import { useAccountStore } from '@/features/accounts/model/use-account-store';
@@ -37,8 +41,18 @@ type ImportedLine = {
   reconciled: boolean;
 };
 
+const catalogs = { fr, en };
+
+function renderPage(locale: 'fr' | 'en' = 'fr') {
+  return render(
+    <NextIntlClientProvider locale={locale} messages={catalogs[locale]}>
+      <ImportPage />
+    </NextIntlClientProvider>,
+  );
+}
+
 async function openValidation(csv: string, separate = false) {
-  const { container } = render(<ImportPage />);
+  const { container } = renderPage();
   const input = container.querySelector('input[type="file"]')!;
   fireEvent.change(input, {
     target: { files: [new File([csv], 'releve.csv', { type: 'text/csv' })] },
@@ -238,5 +252,48 @@ describe('CSV import page', () => {
     );
 
     expect(lines.map((l) => l.amount)).toEqual(['-123456', '200010', '20', '-505']);
+  });
+});
+
+describe('CSV import page i18n', () => {
+  beforeEach(() => {
+    bulkCreate.mockReset();
+    vi.mocked(toast.success).mockReset();
+    vi.mocked(toast.info).mockReset();
+    vi.mocked(apiClient.get).mockReset().mockResolvedValue({ data: {} });
+    useAccountStore.setState({ activeAccountId: 'acc-1' });
+  });
+
+  it('shows the English texts, reasons and banner with the en catalog', async () => {
+    const { container } = renderPage('en');
+    expect(screen.getByText('Upload your bank statement (CSV)')).toBeInTheDocument();
+    fireEvent.change(container.querySelector('input[type="file"]')!, {
+      target: {
+        files: [new File(['Date;Label;Amount\nnope;A;-1\n01/03/2026;B;x\n01/03/2026;C;-3'], 'a.csv')],
+      },
+    });
+    fireEvent.click(await screen.findByRole('button', { name: 'Analyze data' }));
+    await screen.findByRole('button', { name: 'Confirm import' });
+    expect(screen.getByText('unreadable date')).toBeInTheDocument();
+    expect(screen.getByText('unreadable amount')).toBeInTheDocument();
+    expect(screen.getByRole('alert')).toHaveTextContent('2 lines skipped');
+    expect(toast.info).toHaveBeenCalledWith('Analyzing categories...');
+  });
+
+  it.each([
+    ['fr', 'fr', '1 transaction importée, 1 ligne ignorée'],
+    ['en', 'en', '1 transaction imported, 1 line skipped'],
+  ] as const)('translates the success toast (%s)', async (locale, _l, expected) => {
+    const { container } = renderPage(locale);
+    fireEvent.change(container.querySelector('input[type="file"]')!, {
+      target: { files: [new File(['Date;Libellé;Montant\n01/03/2026;OK;-1\nnope;BAD;-2'], 'a.csv')] },
+    });
+    fireEvent.click(await screen.findByRole('button', { name: locale === 'fr' ? /Analyser/ : /Analyze/ }));
+    const confirm = await screen.findByRole('button', { name: locale === 'fr' ? /Confirmer/ : /Confirm/ });
+    await waitFor(() => expect(apiClient.get).toHaveBeenCalled());
+    await new Promise((r) => setTimeout(r, 0));
+    fireEvent.click(confirm);
+    bulkCreate.mock.calls[0][1].onSuccess();
+    expect(toast.success).toHaveBeenCalledWith(expected);
   });
 });

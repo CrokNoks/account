@@ -113,6 +113,55 @@
     "deleted": "Transaction supprimée",
     "toggled": "Transaction mise à jour"
   },
+  "Import": {
+    "title": "Import de transactions",
+    "subtitle_upload": "Chargez votre relevé bancaire (CSV)",
+    "subtitle_mapping": "Configurez la ligne d'en-tête et le mapping des colonnes",
+    "subtitle_validation": "{count, plural, =0 {Aucune transaction à valider} one {Validez la transaction} other {Validez les # transactions}}",
+    "confirm": "Confirmer l'import",
+    "analyze": "Analyser les données",
+    "analyzing_categories": "Analyse des catégories en cours...",
+    "parse_error": "Impossible de lire le fichier CSV",
+    "success": "{imported, plural, one {# transaction importée} other {# transactions importées}}",
+    "success_with_skipped": "{imported, plural, one {# transaction importée} other {# transactions importées}}, {skipped, plural, one {# ligne ignorée} other {# lignes ignorées}}",
+    "upload": {
+      "delimiter": "Séparateur CSV",
+      "comma": "Virgule ( , )",
+      "semicolon": "Point-virgule ( ; )",
+      "select_file": "Sélectionnez votre fichier",
+      "select_file_hint": "Le fichier CSV exporté par votre banque.",
+      "choose_file": "Choisir le fichier"
+    },
+    "mapping": {
+      "single_amount": "Colonne Montant unique",
+      "debit_credit": "Débit / Crédit séparés",
+      "header_row": "Ligne d'en-tête",
+      "date_column": "Colonne Date",
+      "description_column": "Colonne Description",
+      "amount_column": "Colonne Montant",
+      "debit_column": "Colonne Débit",
+      "credit_column": "Colonne Crédit",
+      "date": "Date",
+      "description": "Description",
+      "amount": "Montant",
+      "debit": "Débit",
+      "credit": "Crédit",
+      "column_n": "Col {index}",
+      "preview": "Aperçu du CSV",
+      "active_columns": "Colonnes actives surlignées"
+    },
+    "validation": {
+      "skipped_banner": "{count, plural, one {# ligne ignorée} other {# lignes ignorées}} (non envoyées à l'import)",
+      "date": "Date",
+      "description": "Description",
+      "amount": "Montant",
+      "category": "Catégorie",
+      "unreadable_date": "date illisible",
+      "unreadable_amount": "montant illisible",
+      "no_category": "Pas de catégorie",
+      "uncategorized": "Non catégorisé"
+    }
+  },
   "Categories": {
     "title": "Catégories",
     "description": "Organisez vos transactions avec des catégories personnalisées.",
