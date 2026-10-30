@@ -22,7 +22,7 @@ export default function TransactionsPage() {
           <Link href="/transactions/import">
             <Button variant="outline" size="sm" className="gap-2">
               <FileUp className="w-4 h-4" />
-              <span className="hidden sm:inline">Import CSV</span>
+              <span className="hidden sm:inline">{t('import_csv')}</span>
             </Button>
           </Link>
         }

@@ -51,22 +51,22 @@ export const WIDGET_COMPONENTS: Record<string, React.ComponentType> = {
 };
 
 export const ALL_AVAILABLE_WIDGETS = [
-  { id: 'stat-start', label: 'Solde initial' },
-  { id: 'stat-income', label: 'Revenus réels' },
-  { id: 'stat-expenses', label: 'Dépenses réelles' },
-  { id: 'stat-bank', label: 'Solde en banque' },
-  { id: 'stat-upcoming', label: 'Solde à venir' },
-  { id: 'stat-forecast', label: 'Solde prévisionnel' },
-  { id: 'net-worth', label: 'Patrimoine Net' },
-  { id: 'pulse', label: 'Le Pulse (vs M-1)' },
-  { id: 'anomalies', label: 'Anomalies' },
-  { id: 'insights', label: 'IA Insights' },
-  { id: 'breakdown', label: 'Répartition du budget' },
-  { id: 'top-expenses', label: 'Top Dépenses' },
-  { id: 'tags', label: 'Statistiques par Tags' },
-  { id: 'savings', label: 'Objectifs d\'épargne' },
-  { id: 'upcoming', label: 'Prochaines Échéances' },
-  { id: 'transactions', label: 'Dernières transactions' },
+  { id: 'stat-start' },
+  { id: 'stat-income' },
+  { id: 'stat-expenses' },
+  { id: 'stat-bank' },
+  { id: 'stat-upcoming' },
+  { id: 'stat-forecast' },
+  { id: 'net-worth' },
+  { id: 'pulse' },
+  { id: 'anomalies' },
+  { id: 'insights' },
+  { id: 'breakdown' },
+  { id: 'top-expenses' },
+  { id: 'tags' },
+  { id: 'savings' },
+  { id: 'upcoming' },
+  { id: 'transactions' },
 ];
 
 export const DEFAULT_WIDGETS = [

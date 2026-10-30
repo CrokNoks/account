@@ -13,7 +13,17 @@
     "recurring": "Recurring",
     "smart_rules": "Rules",
     "savings": "Savings",
-    "logout": "Logout"
+    "logout": "Logout",
+    "toggle_theme": "Toggle theme",
+    "command": {
+      "placeholder": "Type a command or search...",
+      "empty": "No results found.",
+      "group_navigation": "Navigation",
+      "group_actions": "Actions",
+      "group_settings": "Settings",
+      "import_csv": "Import CSV",
+      "manage_accounts": "Manage accounts"
+    }
   },
   "Auth": {
     "login_title": "Login",
@@ -29,7 +39,34 @@
   "Dashboard": {
     "title": "Dashboard",
     "welcome": "Welcome to your personal finance manager",
-    "stats": "Period Stats"
+    "stats": "Period Stats",
+    "select_period": "Select a period",
+    "active_suffix": "(Active)",
+    "customize": "Customize the dashboard",
+    "layout_title": "Dashboard layout (drag to reorder)",
+    "available_widgets": "Available widgets",
+    "hide_desktop": "Hide on desktop",
+    "show_desktop": "Show on desktop",
+    "hide_mobile": "Hide on mobile",
+    "show_mobile": "Show on mobile",
+    "widgets": {
+      "stat-start": "Starting balance",
+      "stat-income": "Actual income",
+      "stat-expenses": "Actual expenses",
+      "stat-bank": "Bank balance",
+      "stat-upcoming": "Upcoming balance",
+      "stat-forecast": "Forecast balance",
+      "net-worth": "Net worth",
+      "pulse": "The Pulse (vs M-1)",
+      "anomalies": "Anomalies",
+      "insights": "AI Insights",
+      "breakdown": "Budget breakdown",
+      "top-expenses": "Top expenses",
+      "tags": "Tag statistics",
+      "savings": "Savings goals",
+      "upcoming": "Upcoming deadlines",
+      "transactions": "Latest transactions"
+    }
   },
   "Reporting": {
     "breakdown": "Budget Breakdown",
@@ -271,7 +308,8 @@
     "mode_standard": "Standard",
     "mode_transfer": "Transfer",
     "edit_title": "Edit transaction",
-    "tag_fallback": "Tag"
+    "tag_fallback": "Tag",
+    "import_csv": "Import CSV"
   },
   "Import": {
     "title": "Import transactions",

@@ -13,7 +13,17 @@
     "recurring": "Récurrences",
     "smart_rules": "Règles",
     "savings": "Épargne",
-    "logout": "Déconnexion"
+    "logout": "Déconnexion",
+    "toggle_theme": "Changer de thème",
+    "command": {
+      "placeholder": "Tapez une commande ou recherchez...",
+      "empty": "Aucun résultat trouvé.",
+      "group_navigation": "Navigation",
+      "group_actions": "Actions",
+      "group_settings": "Paramètres",
+      "import_csv": "Importer un CSV",
+      "manage_accounts": "Gérer les comptes"
+    }
   },
   "Auth": {
     "login_title": "Connexion",
@@ -29,7 +39,34 @@
   "Dashboard": {
     "title": "Tableau de bord",
     "welcome": "Bienvenue sur votre gestionnaire de finances",
-    "stats": "Statistiques de la période"
+    "stats": "Statistiques de la période",
+    "select_period": "Sélectionner une période",
+    "active_suffix": "(Active)",
+    "customize": "Personnaliser le tableau de bord",
+    "layout_title": "Disposition du tableau de bord (glissez pour réorganiser)",
+    "available_widgets": "Widgets disponibles",
+    "hide_desktop": "Masquer sur ordinateur",
+    "show_desktop": "Afficher sur ordinateur",
+    "hide_mobile": "Masquer sur mobile",
+    "show_mobile": "Afficher sur mobile",
+    "widgets": {
+      "stat-start": "Solde initial",
+      "stat-income": "Revenus réels",
+      "stat-expenses": "Dépenses réelles",
+      "stat-bank": "Solde en banque",
+      "stat-upcoming": "Solde à venir",
+      "stat-forecast": "Solde prévisionnel",
+      "net-worth": "Patrimoine Net",
+      "pulse": "Le Pulse (vs M-1)",
+      "anomalies": "Anomalies",
+      "insights": "IA Insights",
+      "breakdown": "Répartition du budget",
+      "top-expenses": "Top Dépenses",
+      "tags": "Statistiques par Tags",
+      "savings": "Objectifs d'épargne",
+      "upcoming": "Prochaines Échéances",
+      "transactions": "Dernières transactions"
+    }
   },
   "Reporting": {
     "breakdown": "Répartition budgétaire",
@@ -271,7 +308,8 @@
     "mode_standard": "Standard",
     "mode_transfer": "Virement",
     "edit_title": "Modifier la transaction",
-    "tag_fallback": "Tag"
+    "tag_fallback": "Tag",
+    "import_csv": "Import CSV"
   },
   "Import": {
     "title": "Import de transactions",

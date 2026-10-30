@@ -30,6 +30,7 @@ export function CommandMenu() {
   const [open, setOpen] = React.useState(false);
   const router = useRouter();
   const tt = useTranslations('Transactions');
+  const tn = useTranslations('Navigation');
   
   const { setCreateTransactionDrawerOpen } = useUiStore();
 
@@ -52,55 +53,55 @@ export function CommandMenu() {
 
   return (
     <CommandDialog open={open} onOpenChange={setOpen}>
-      <CommandInput placeholder="Tapez une commande ou recherchez..." />
+      <CommandInput placeholder={tn('command.placeholder')} />
       <CommandList>
-        <CommandEmpty>Aucun résultat trouvé.</CommandEmpty>
-        <CommandGroup heading="Navigation">
+        <CommandEmpty>{tn('command.empty')}</CommandEmpty>
+        <CommandGroup heading={tn('command.group_navigation')}>
           <CommandItem onSelect={() => runCommand(() => router.push('/'))}>
             <LayoutDashboard className="mr-2 h-4 w-4" />
-            <span>Dashboard</span>
+            <span>{tn('dashboard')}</span>
           </CommandItem>
           <CommandItem onSelect={() => runCommand(() => router.push('/transactions'))}>
             <Receipt className="mr-2 h-4 w-4" />
-            <span>Transactions</span>
+            <span>{tn('transactions')}</span>
           </CommandItem>
           <CommandItem onSelect={() => runCommand(() => router.push('/budgets'))}>
             <Calculator className="mr-2 h-4 w-4" />
-            <span>Budgets</span>
+            <span>{tn('budgets')}</span>
           </CommandItem>
           <CommandItem onSelect={() => runCommand(() => router.push('/evolution'))}>
             <TrendingUp className="mr-2 h-4 w-4" />
-            <span>Évolution</span>
+            <span>{tn('evolution')}</span>
           </CommandItem>
           <CommandItem onSelect={() => runCommand(() => router.push('/calendar'))}>
             <Calendar className="mr-2 h-4 w-4" />
-            <span>Calendrier</span>
+            <span>{tn('calendar')}</span>
           </CommandItem>
           <CommandItem onSelect={() => runCommand(() => router.push('/categories'))}>
             <GitBranch className="mr-2 h-4 w-4" />
-            <span>Catégories</span>
+            <span>{tn('categories')}</span>
           </CommandItem>
           <CommandItem onSelect={() => runCommand(() => router.push('/tags'))}>
             <Tags className="mr-2 h-4 w-4" />
-            <span>Tags</span>
+            <span>{tn('tags')}</span>
           </CommandItem>
         </CommandGroup>
         <CommandSeparator />
-        <CommandGroup heading="Actions">
+        <CommandGroup heading={tn('command.group_actions')}>
           <CommandItem onSelect={() => runCommand(() => setCreateTransactionDrawerOpen(true))}>
             <Plus className="mr-2 h-4 w-4" />
             <span>{tt('add_transaction')}</span>
           </CommandItem>
           <CommandItem onSelect={() => runCommand(() => router.push('/transactions/import'))}>
             <Search className="mr-2 h-4 w-4" />
-            <span>Importer CSV</span>
+            <span>{tn('command.import_csv')}</span>
           </CommandItem>
         </CommandGroup>
         <CommandSeparator />
-        <CommandGroup heading="Paramètres">
+        <CommandGroup heading={tn('command.group_settings')}>
           <CommandItem onSelect={() => runCommand(() => router.push('/accounts'))}>
             <User className="mr-2 h-4 w-4" />
-            <span>Gérer les comptes</span>
+            <span>{tn('command.manage_accounts')}</span>
           </CommandItem>
         </CommandGroup>
       </CommandList>

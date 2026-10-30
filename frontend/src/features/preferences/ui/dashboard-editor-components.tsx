@@ -5,6 +5,7 @@ import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { Monitor, Smartphone, X, GripVertical } from 'lucide-react';
 import { cn } from "@/lib/utils";
+import { useTranslations } from 'next-intl';
 
 export function MiniWidget({ 
   id, label, width, desktopVisible, mobileVisible, onRemove, onWidthChange, onToggleDevice 
@@ -12,6 +13,8 @@ export function MiniWidget({
   id: string, label: string, width: number, desktopVisible: boolean, mobileVisible: boolean,
   onRemove: () => void, onWidthChange: (width: number) => void, onToggleDevice: (device: 'mobile' | 'desktop') => void
 }) {
+  const t = useTranslations('Dashboard');
+  const tc = useTranslations('Common');
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
   const style = { transform: CSS.Transform.toString(transform), transition, zIndex: isDragging ? 100 : 0 };
 
@@ -42,13 +45,13 @@ export function MiniWidget({
       {...listeners}
     >
       <div className="absolute top-2 right-2 flex gap-1 z-10">
-        <button onPointerDown={(e) => { e.stopPropagation(); onToggleDevice('desktop'); }} className={cn("p-1.5 rounded-full hover:bg-background/80 transition-colors", desktopVisible ? "text-primary" : "text-muted-foreground")} title={desktopVisible ? "Masquer sur Desktop" : "Afficher sur Desktop"}>
+        <button onPointerDown={(e) => { e.stopPropagation(); onToggleDevice('desktop'); }} className={cn("p-1.5 rounded-full hover:bg-background/80 transition-colors", desktopVisible ? "text-primary" : "text-muted-foreground")} title={desktopVisible ? t('hide_desktop') : t('show_desktop')}>
           <Monitor className="w-3.5 h-3.5" />
         </button>
-        <button onPointerDown={(e) => { e.stopPropagation(); onToggleDevice('mobile'); }} className={cn("p-1.5 rounded-full hover:bg-background/80 transition-colors", mobileVisible ? "text-primary" : "text-muted-foreground")} title={mobileVisible ? "Masquer sur Mobile" : "Afficher sur Mobile"}>
+        <button onPointerDown={(e) => { e.stopPropagation(); onToggleDevice('mobile'); }} className={cn("p-1.5 rounded-full hover:bg-background/80 transition-colors", mobileVisible ? "text-primary" : "text-muted-foreground")} title={mobileVisible ? t('hide_mobile') : t('show_mobile')}>
           <Smartphone className="w-3.5 h-3.5" />
         </button>
-        <button onPointerDown={(e) => { e.stopPropagation(); onRemove(); }} className="p-1.5 rounded-full text-destructive hover:bg-destructive/10 transition-colors" title="Supprimer">
+        <button onPointerDown={(e) => { e.stopPropagation(); onRemove(); }} className="p-1.5 rounded-full text-destructive hover:bg-destructive/10 transition-colors" title={tc('delete')}>
           <X className="w-3.5 h-3.5" />
         </button>
       </div>

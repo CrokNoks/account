@@ -48,6 +48,7 @@ import {
 
 export default function Home() {
   const t = useTranslations('Dashboard');
+  const tc = useTranslations('Common');
   const router = useRouter();
   const { activeAccountId, activePeriodId, setActivePeriodId } = useAccountStore();
   const { startTour, completedTours } = useUiStore();
@@ -66,13 +67,13 @@ export default function Home() {
   const activeWidgets = useMemo(() => {
     return layout.map(w => ({
       ...w,
-      label: ALL_AVAILABLE_WIDGETS.find(aw => aw.id === w.id)?.label || w.id
+      label: ALL_AVAILABLE_WIDGETS.some(aw => aw.id === w.id) ? t(`widgets.${w.id}`) : w.id
     }));
-  }, [layout]);
+  }, [layout, t]);
 
   const inactiveWidgets = useMemo(() => {
-    return ALL_AVAILABLE_WIDGETS.filter(aw => !layout.find(w => w.id === aw.id));
-  }, [layout]);
+    return ALL_AVAILABLE_WIDGETS.filter(aw => !layout.find(w => w.id === aw.id)).map(aw => ({ ...aw, label: t(`widgets.${aw.id}`) }));
+  }, [layout, t]);
 
   const handleStartEditing = () => {
     const currentWidgets = preferences?.dashboardLayout.widgets || DEFAULT_WIDGETS;
@@ -157,14 +158,14 @@ export default function Home() {
                 <SelectValue>
                   {currentPeriod 
                     ? `${format(new Date(currentPeriod.startDate), 'dd/MM/yyyy')} - ${format(new Date(currentPeriod.endDate), 'dd/MM/yyyy')}`
-                    : "Sélectionner une période"
+                    : t('select_period')
                   }
                 </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 {periods?.map((p) => (
                   <SelectItem key={p.id} value={p.id}>
-                    {format(new Date(p.startDate), 'dd/MM/yyyy')} - {format(new Date(p.endDate), 'dd/MM/yyyy')} {p.isActive && "(Active)"}
+                    {format(new Date(p.startDate), 'dd/MM/yyyy')} - {format(new Date(p.endDate), 'dd/MM/yyyy')} {p.isActive && t('active_suffix')}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -176,16 +177,16 @@ export default function Home() {
         </div>
         <div className="flex items-center gap-2">
           {!isEditing ? (
-            <Button variant="outline" size="icon" onClick={handleStartEditing} title="Personnaliser le dashboard" className="hidden lg:flex">
+            <Button variant="outline" size="icon" onClick={handleStartEditing} title={t('customize')} className="hidden lg:flex">
               <Settings2 className="w-4 h-4" />
             </Button>
           ) : (
             <div className="flex items-center gap-2 animate-in fade-in zoom-in duration-200">
               <Button variant="outline" size="sm" onClick={handleCancelEdit} className="gap-2">
-                <X className="w-4 h-4" /> Annuler
+                <X className="w-4 h-4" /> {tc('cancel')}
               </Button>
               <Button size="sm" onClick={handleSaveLayout} className="gap-2">
-                <Check className="w-4 h-4" /> Enregistrer
+                <Check className="w-4 h-4" /> {tc('save')}
               </Button>
             </div>
           )}
@@ -196,7 +197,7 @@ export default function Home() {
         <div className="p-8 bg-primary/5 border-2 border-primary/20 rounded-3xl animate-in slide-in-from-top-4 duration-300 space-y-8">
           <div>
             <h3 className="text-xs font-black uppercase tracking-widest mb-4 flex items-center gap-2 text-primary">
-              <Settings2 className="w-4 h-4" /> Disposition du Dashboard (Glissez pour réorganiser)
+              <Settings2 className="w-4 h-4" /> {t('layout_title')}
             </h3>
             <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
               <SortableContext items={layout.map(w => w.id)} strategy={rectSortingStrategy}>
@@ -221,7 +222,7 @@ export default function Home() {
 
           <div>
             <h3 className="text-xs font-black uppercase tracking-widest mb-4 flex items-center gap-2 text-muted-foreground">
-              <PlusCircle className="w-4 h-4" /> Widgets Disponibles
+              <PlusCircle className="w-4 h-4" /> {t('available_widgets')}
             </h3>
             <div className="flex flex-wrap gap-2">
               {inactiveWidgets.map((widget) => (
