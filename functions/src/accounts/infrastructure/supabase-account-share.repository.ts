@@ -48,11 +48,14 @@ export class SupabaseAccountShareRepository extends AccountShareRepository {
   }
 
   async save(share: AccountShare): Promise<void> {
-    const { error } = await this.supabase.from('account_shares').upsert({
-      account_id: share.accountId,
-      user_id: share.userId,
-      permission: share.permission,
-    });
+    const { error } = await this.supabase.from('account_shares').upsert(
+      {
+        account_id: share.accountId,
+        user_id: share.userId,
+        permission: share.permission,
+      },
+      { onConflict: 'account_id,user_id' },
+    );
 
     if (error) {
       throw new Error(`Failed to save share: ${error.message}`);

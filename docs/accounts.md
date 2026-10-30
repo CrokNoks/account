@@ -20,7 +20,7 @@ Mise à jour : 2026-10-30 · Commit : 157b272
 | Seul le propriétaire peut partager un compte | `application/share-account.use-case.ts:27` | ❌ |
 | On ne peut partager qu'avec un utilisateur existant (déjà connecté au moins une fois, trouvé par email dans `app_users`) | `share-account.use-case.ts:31-36` | ❌ |
 | On ne peut pas partager avec soi-même | `share-account.use-case.ts:38-42` | ❌ |
-| Repartager avec la même personne remplace sa permission (une seule ligne par compte+utilisateur) | `supabase-account-share.repository.ts:51` (upsert), contrainte `UNIQUE(account_id, user_id)` `20251221_schema_complete.sql:121` | ❌ |
+| Repartager avec la même personne remplace sa permission (une seule ligne par compte+utilisateur) | `supabase-account-share.repository.ts:51` (upsert avec `onConflict: 'account_id,user_id'`, sans quoi la base refusait le doublon : 500), contrainte `UNIQUE(account_id, user_id)` `20251221_schema_complete.sql:121` | ❌ |
 | Seul le propriétaire peut retirer un partage | `accounts.controller.ts:128-137` | ❌ |
 | Modifier un compte : réservé au propriétaire (403 sinon, 404 si le compte est inconnu ou invisible) ; seuls les champs fournis changent (nom, description, solde initial) | `accounts.controller.ts` (`update`, `assertOwner`) | ✅ e2e `cross-account-references.e2e-spec.ts` |
 | En base : voir un compte = propriétaire ou partagé ; créer = être propriétaire du compte créé ; modifier/supprimer = propriétaire | `supabase/migrations/20251221_schema_complete.sql:168-186` | ❌ |
