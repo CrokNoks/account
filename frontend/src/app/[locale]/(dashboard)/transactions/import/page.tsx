@@ -14,6 +14,7 @@ import { apiClient } from '@/shared/api/api-client';
 import { useRouter } from '@/i18n/routing';
 import { toCents, parseAmountToCents, centsToDecimalString } from '@/shared/lib/format';
 import { ParsedTransaction, ImportStep, ImportMapping } from '@/features/transactions/model/import-types';
+import { parseImportDate } from '@/features/transactions/model/parse-import-date';
 import { ImportUploadStep } from '@/features/transactions/ui/import/import-upload-step';
 import { ImportMappingStep } from '@/features/transactions/ui/import/import-mapping-step';
 import { ImportValidationStep } from '@/features/transactions/ui/import/import-validation-step';
@@ -118,36 +119,34 @@ export default function ImportTransactionsPage() {
       const dateVal = rowArr[dateIdx];
       const descVal = rowArr[descIdx];
       
-      let cents: bigint | null;
-      if (amountMode === 'single') {
-        cents = parseAmountToCents((rowArr[amountIdx] || '0').toString());
-      } else {
-        const dv = parseAmountToCents((rowArr[debitIdx] || '0').toString()) ?? BigInt(0);
-        const cv = parseAmountToCents((rowArr[creditIdx] || '0').toString()) ?? BigInt(0);
-        cents = cv - (dv < BigInt(0) ? -dv : dv);
-      }
-
       if (!dateVal || !descVal) continue;
 
-      const cleanAmount = centsToDecimalString(cents ?? BigInt(0));
-      
-      let isoDate = new Date().toISOString().split('T')[0];
-      try {
-        if (dateVal.includes('/')) {
-          const [d, m, y] = dateVal.split('/');
-          isoDate = `${y.length === 2 ? '20' + y : y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`;
-        } else {
-          isoDate = new Date(dateVal).toISOString().split('T')[0];
-        }
-      } catch {
-        // Ignore date parsing error
+      let cents: bigint | null;
+      if (amountMode === 'single') {
+        const raw = (rowArr[amountIdx] ?? '').toString();
+        cents = raw.trim() === '' ? null : parseAmountToCents(raw);
+      } else {
+        const rawDebit = (rowArr[debitIdx] ?? '').toString();
+        const rawCredit = (rowArr[creditIdx] ?? '').toString();
+        const dv = rawDebit.trim() === '' ? BigInt(0) : parseAmountToCents(rawDebit);
+        const cv = rawCredit.trim() === '' ? BigInt(0) : parseAmountToCents(rawCredit);
+        // both cells empty or one unreadable: the line has no usable amount
+        cents =
+          dv === null || cv === null || (rawDebit.trim() === '' && rawCredit.trim() === '')
+            ? null
+            : cv - (dv < BigInt(0) ? -dv : dv);
       }
+
+      const isoDate = parseImportDate(dateVal.toString());
+      const invalidReason: ParsedTransaction['invalidReason'] =
+        cents === null ? 'amount' : isoDate === null ? 'date' : undefined;
 
       mappedData.push({
         id: `row-${i}`,
-        date: isoDate,
+        date: isoDate ?? dateVal.toString(),
         description: descVal.toString(),
-        amount: cleanAmount,
+        amount: cents === null ? '' : centsToDecimalString(cents),
+        invalidReason,
         categoryId: null,
         predicted: false,
       });
@@ -156,10 +155,11 @@ export default function ImportTransactionsPage() {
     setParsedData(mappedData);
     setStep('validation');
     
-    if (activeAccountId && mappedData.length > 0) {
+    if (activeAccountId && mappedData.some(r => !r.invalidReason)) {
       toast.info(`Analyse des catégories en cours...`);
       const updatedData = [...mappedData];
       for (let i = 0; i < updatedData.length; i++) {
+        if (updatedData[i].invalidReason) continue;
         try {
           const { data } = await apiClient.get(`/${activeAccountId}/transactions/predict-category`, {
             params: { description: updatedData[i].description }
@@ -177,10 +177,13 @@ export default function ImportTransactionsPage() {
     setIsProcessing(false);
   };
 
-  const handleImport = () => {
-    if (!activeAccountId || parsedData.length === 0) return;
+  const invalidCount = parsedData.filter(item => item.invalidReason).length;
+  const validCount = parsedData.length - invalidCount;
 
-    const payload = parsedData.map(item => ({
+  const handleImport = () => {
+    if (!activeAccountId || validCount === 0) return;
+
+    const payload = parsedData.filter(item => !item.invalidReason).map(item => ({
       date: item.date,
       description: item.description,
       amount: toCents(item.amount),
@@ -194,6 +197,11 @@ export default function ImportTransactionsPage() {
       transactions: payload,
     }, {
       onSuccess: () => {
+        toast.success(
+          invalidCount > 0
+            ? `${validCount} transaction(s) importée(s), ${invalidCount} ligne(s) ignorée(s)`
+            : `${validCount} transaction(s) importée(s)`
+        );
         router.push('/transactions');
       }
     });
@@ -216,7 +224,7 @@ export default function ImportTransactionsPage() {
           </div>
         </div>
         {step === 'validation' && (
-          <Button onClick={handleImport} disabled={isPending || parsedData.length === 0} size="lg" className="gap-2">
+          <Button onClick={handleImport} disabled={isPending || validCount === 0} size="lg" className="gap-2">
             {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
             Confirmer l&apos;import
           </Button>

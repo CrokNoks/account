@@ -27,8 +27,15 @@ export function ImportValidationStep({
   setParsedData,
   categories
 }: ImportValidationStepProps) {
+  const invalidCount = parsedData.filter((row) => row.invalidReason).length;
+
   return (
     <div className="p-0">
+      {invalidCount > 0 && (
+        <div role="alert" className="px-8 py-3 text-sm font-medium text-destructive bg-destructive/10 border-b">
+          {invalidCount} {invalidCount > 1 ? 'lignes ignorées' : 'ligne ignorée'} (non envoyées à l&apos;import)
+        </div>
+      )}
       <Table className="table-fixed w-full">
         <TableHeader>
           <TableRow className="bg-muted/30">
@@ -41,14 +48,21 @@ export function ImportValidationStep({
         </TableHeader>
         <TableBody>
           {parsedData.map((row) => (
-            <TableRow key={row.id}>
-              <TableCell className="pl-8 font-medium text-xs">{row.date}</TableCell>
+            <TableRow key={row.id} className={row.invalidReason ? 'bg-destructive/10' : undefined} data-invalid={row.invalidReason ? 'true' : undefined}>
+              <TableCell className="pl-8 font-medium text-xs">
+                {row.date}
+                {row.invalidReason === 'date' && <span className="block text-destructive">date illisible</span>}
+              </TableCell>
               <TableCell className="truncate text-xs" title={row.description}>{row.description}</TableCell>
               <TableCell className={`text-right font-bold text-xs ${parseFloat(row.amount) < 0 ? 'text-red-500' : 'text-green-500'}`}>
-                {formatCurrency(toCents(row.amount))}
+                {row.invalidReason === 'amount' ? (
+                  <span className="text-destructive">montant illisible</span>
+                ) : (
+                  formatCurrency(toCents(row.amount))
+                )}
               </TableCell>
               <TableCell>
-                <Select value={row.categoryId || 'none'} onValueChange={(v) => {
+                <Select disabled={!!row.invalidReason} value={row.categoryId || 'none'} onValueChange={(v) => {
                   setParsedData(prev => prev.map(item => item.id === row.id ? { ...item, categoryId: v === 'none' ? null : v, predicted: false } : item));
                 }}>
                   <SelectTrigger className="h-9 text-xs">

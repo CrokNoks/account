@@ -37,7 +37,7 @@ type ImportedLine = {
   reconciled: boolean;
 };
 
-async function importCsv(csv: string, separate = false): Promise<ImportedLine[]> {
+async function openValidation(csv: string, separate = false) {
   const { container } = render(<ImportPage />);
   const input = container.querySelector('input[type="file"]')!;
   fireEvent.change(input, {
@@ -47,10 +47,14 @@ async function importCsv(csv: string, separate = false): Promise<ImportedLine[]>
   if (separate) fireEvent.click(await screen.findByRole('button', { name: /Débit \/ Crédit/ }));
   fireEvent.click(await screen.findByRole('button', { name: /Analyser les données/ }));
   const confirm = await screen.findByRole('button', { name: /Confirmer l.import/ });
-  await waitFor(() => expect(confirm).toBeEnabled());
   // Attendre la fin des prédictions de catégorie (une par ligne).
   await waitFor(() => expect(screen.queryByRole('button', { name: /Analyser/ })).toBeNull());
   await new Promise((r) => setTimeout(r, 0));
+  return confirm;
+}
+
+async function importCsv(csv: string, separate = false): Promise<ImportedLine[]> {
+  const confirm = await openValidation(csv, separate);
   fireEvent.click(confirm);
 
   expect(bulkCreate).toHaveBeenCalledTimes(1);
@@ -151,12 +155,74 @@ describe('CSV import page', () => {
         '01/03/2026;A;"-42,50 EUR"',
         '01/03/2026;B;"1 234,56 €"',
         '01/03/2026;C;USD 10.00',
-        '01/03/2026;D;12abc',
       ].join('\n'),
     );
 
-    // an unreadable cell ("12abc") stays imported as 0 (existing behaviour), never as 1200
-    expect(lines.map((l) => l.amount)).toEqual(['-4250', '123456', '1000', '0']);
+    expect(lines.map((l) => l.amount)).toEqual(['-4250', '123456', '1000']);
+  });
+
+  it.each([['12abc'], ['abc'], ['']])('does not import a row whose amount is unreadable (%j)', async (cell) => {
+    const lines = await importCsv(
+      ['Date;Libellé;Montant', `01/03/2026;BAD;${cell}`, '01/03/2026;GOOD;-3'].join('\n'),
+    );
+
+    expect(lines.map((l) => l.description)).toEqual(['GOOD']);
+    expect(screen.getByText('montant illisible')).toBeInTheDocument();
+    expect(screen.getByRole('alert')).toHaveTextContent('1 ligne ignorée');
+  });
+
+  it.each([['pas une date'], ['31/02/2026'], ['13/13/2026'], ['2026-02-30']])(
+    'does not import a row whose date is unreadable (%j)',
+    async (cell) => {
+      const lines = await importCsv(
+        ['Date;Libellé;Montant', `${cell};BAD;-1`, '01/03/2026;GOOD;-3'].join('\n'),
+      );
+
+      expect(lines.map((l) => l.description)).toEqual(['GOOD']);
+      expect(screen.getByText('date illisible')).toBeInTheDocument();
+    },
+  );
+
+  it('sends only the valid rows of a mixed file and counts the ignored ones', async () => {
+    const lines = await importCsv(
+      [
+        'Date;Libellé;Montant',
+        '01/03/2026;OK1;-1',
+        '01/03/2026;BAD AMOUNT;x',
+        'nope;BAD DATE;-2',
+        '2026-03-06;OK2;5',
+      ].join('\n'),
+    );
+
+    expect(lines.map((l) => l.description)).toEqual(['OK1', 'OK2']);
+    expect(screen.getByRole('alert')).toHaveTextContent('2 lignes ignorées');
+    // no category prediction for invalid rows
+    expect(apiClient.get).toHaveBeenCalledTimes(2);
+  });
+
+  it('disables the confirm button when every row is invalid', async () => {
+    const confirm = await openValidation(
+      ['Date;Libellé;Montant', '01/03/2026;A;x', 'nope;B;-2'].join('\n'),
+    );
+
+    expect(confirm).toBeDisabled();
+    expect(apiClient.get).not.toHaveBeenCalled();
+    fireEvent.click(confirm);
+    expect(bulkCreate).not.toHaveBeenCalled();
+  });
+
+  it('treats an unreadable debit/credit cell or two empty cells as an unreadable amount', async () => {
+    const lines = await importCsv(
+      [
+        'Date;Libellé;Debit;Credit',
+        '01/03/2026;OK;5,00;',
+        '01/03/2026;BAD1;abc;',
+        '01/03/2026;BAD2;;',
+      ].join('\n'),
+      true,
+    );
+
+    expect(lines.map((l) => l.description)).toEqual(['OK']);
   });
 
   it('computes debit/credit columns in integer cents (no float drift)', async () => {

@@ -5,6 +5,8 @@ export interface ParsedTransaction {
   amount: string;
   categoryId: string | null;
   predicted?: boolean;
+  /** Set when the row cannot be imported (it is highlighted and never sent). */
+  invalidReason?: 'amount' | 'date';
 }
 
 export type ImportStep = 'upload' | 'mapping' | 'validation';
