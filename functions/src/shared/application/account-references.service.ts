@@ -2,16 +2,18 @@ import { Inject, Injectable } from '@nestjs/common';
 import { CategoryRepository } from '../../categories/domain/category.repository.interface';
 import { TagRepository } from '../../tags/domain/tag.repository.interface';
 import type { SavingsGoalRepository } from '../../savings-goals/domain/savings-goal.repository.interface';
+import { PeriodRepository } from '../../periods/domain/period.repository.interface';
 import { DomainValidationError } from '../domain/errors';
 
 export interface AccountReferences {
   categoryId?: string | null;
   tagIds?: string[] | null;
   savingsGoalId?: string | null;
+  periodId?: string | null;
 }
 
 /**
- * Règle unique : une catégorie, une étiquette ou un objectif d'épargne
+ * Règle unique : une catégorie, une étiquette, un objectif d'épargne ou une période
  * référencé par un élément d'un compte doit appartenir à CE compte (400 sinon,
  * avant toute écriture). Une catégorie globale (sans compte) est refusée : la
  * base ne l'expose à personne (RLS `has_account_access(account_id)`), le front
@@ -26,6 +28,8 @@ export class AccountReferencesService {
     private readonly tags: TagRepository,
     @Inject('SavingsGoalRepository')
     private readonly savingsGoals: SavingsGoalRepository,
+    @Inject(PeriodRepository)
+    private readonly periods: PeriodRepository,
   ) {}
 
   async ensureCategories(
@@ -68,6 +72,17 @@ export class AccountReferencesService {
     }
   }
 
+  async ensurePeriod(
+    accountId: string,
+    periodId: string | null | undefined,
+  ): Promise<void> {
+    if (!periodId) return;
+    const period = await this.periods.findById(periodId);
+    if (!period || period.accountId !== accountId) {
+      throw new DomainValidationError('Period does not belong to this account');
+    }
+  }
+
   async ensureReferences(
     accountId: string,
     refs: AccountReferences,
@@ -75,5 +90,6 @@ export class AccountReferencesService {
     await this.ensureCategories(accountId, [refs.categoryId]);
     await this.ensureTags(accountId, refs.tagIds);
     await this.ensureSavingsGoal(accountId, refs.savingsGoalId);
+    await this.ensurePeriod(accountId, refs.periodId);
   }
 }

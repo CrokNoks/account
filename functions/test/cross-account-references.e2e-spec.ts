@@ -309,6 +309,73 @@ describe('Cross-account references (e2e)', () => {
     }
   });
 
+  describe('periodId of a transaction', () => {
+    const periodRoutes: Array<{
+      name: string;
+      method: 'post' | 'patch';
+      url: string;
+      body: (periodId: string | null) => object;
+      okStatus: number;
+    }> = [
+      {
+        name: 'POST transactions',
+        method: 'post',
+        url: '/acc-1/transactions',
+        body: (periodId) => ({ ...txBody({}), periodId }),
+        okStatus: 201,
+      },
+      {
+        name: 'PATCH transactions/:id',
+        method: 'patch',
+        url: '/acc-1/transactions/t1',
+        body: (periodId) => ({ periodId }),
+        okStatus: 200,
+      },
+      {
+        name: 'POST transactions/bulk',
+        method: 'post',
+        url: '/acc-1/transactions/bulk',
+        body: (periodId) => ({
+          transactions: [txBody({}), { ...txBody({}), periodId }],
+        }),
+        okStatus: 201,
+      },
+    ];
+
+    beforeEach(() => {
+      mocks.periods.findById.mockImplementation((id: string) =>
+        Promise.resolve(
+          id === 'per-own'
+            ? { id, accountId: 'acc-1' }
+            : id === 'per-foreign'
+              ? { id, accountId: 'acc-other' }
+              : null,
+        ),
+      );
+    });
+
+    describe.each(periodRoutes)('$name', (r) => {
+      const send = (periodId: string | null) =>
+        http()[r.method](r.url).set(auth()).send(r.body(periodId));
+
+      it('accepts a period of the account, or no period', async () => {
+        await send('per-own').expect(r.okStatus);
+        await send(null).expect(r.okStatus);
+      });
+
+      it.each([
+        ['a period of another account', 'per-foreign'],
+        ['an unknown period', 'per-ghost'],
+      ])('answers 400 without writing for %s', async (_label, periodId) => {
+        const res = await send(periodId).expect(400);
+        expect((res.body as { message: string }).message).toBe(
+          'Period does not belong to this account',
+        );
+        expect(mocks.transactions.save).not.toHaveBeenCalled();
+      });
+    });
+  });
+
   describe('PATCH /accounts/:id', () => {
     const account = (ownerId: string) =>
       new Account({

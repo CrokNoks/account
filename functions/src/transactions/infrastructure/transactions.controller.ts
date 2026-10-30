@@ -451,6 +451,7 @@ export class TransactionsController {
       categoryId: dto.categoryId,
       tagIds: dto.tagIds,
       savingsGoalId: dto.savingsGoalId,
+      periodId: dto.periodId,
     });
 
     // Pointer sort de l'attente (règle partagée avec la modification en lot)
