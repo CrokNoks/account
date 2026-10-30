@@ -2,6 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { CheckCircle2, Trash2, X } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 
 interface BulkActionsBarProps {
   selectedCount: number;
@@ -16,6 +17,8 @@ export function BulkActionsBar({
   onBulkDelete,
   onBulkReconcile
 }: BulkActionsBarProps) {
+  const t = useTranslations('Transactions');
+
   if (selectedCount === 0) return null;
 
   return (
@@ -23,7 +26,7 @@ export function BulkActionsBar({
       <div className="bg-primary text-primary-foreground px-4 py-2 rounded-2xl shadow-2xl flex items-center gap-4 border border-primary-foreground/20 ring-4 ring-primary/10">
         <div className="flex items-center gap-2 px-2 border-r border-primary-foreground/20 mr-2">
           <span className="text-sm font-black tabular-nums">{selectedCount}</span>
-          <span className="text-[10px] font-bold uppercase tracking-wider opacity-80">Sélectionnés</span>
+          <span className="text-[10px] font-bold uppercase tracking-wider opacity-80">{t('bulk.selected')}</span>
         </div>
         
         <div className="flex items-center gap-1">
@@ -34,7 +37,7 @@ export function BulkActionsBar({
             onClick={onBulkDelete}
           >
             <Trash2 className="w-4 h-4" />
-            <span className="text-xs font-bold text-red-200">Supprimer</span>
+            <span className="text-xs font-bold text-red-200">{t('bulk.delete')}</span>
           </Button>
 
           <Button 
@@ -44,7 +47,7 @@ export function BulkActionsBar({
             onClick={onBulkReconcile}
           >
             <CheckCircle2 className="w-4 h-4" />
-            <span className="text-xs font-bold">Pointer</span>
+            <span className="text-xs font-bold">{t('bulk.reconcile')}</span>
           </Button>
 
           <div className="w-px h-6 bg-primary-foreground/20 mx-2" />

@@ -67,7 +67,7 @@
       "balance": "Solde initial",
       "description": "Objectif / Pitch",
       "description_hint": "Décrivez l'utilité de ce compte pour aider l'IA à personnaliser ses analyses."
-      },
+    },
     "select_account": "Sélectionner un compte",
     "share": "Partager",
     "share_title": "Partager le compte",
@@ -111,7 +111,46 @@
     "budget_period": "Période budgétaire",
     "delete_confirm": "Êtes-vous sûr de vouloir supprimer cette transaction ?",
     "deleted": "Transaction supprimée",
-    "toggled": "Transaction mise à jour"
+    "toggled": "Transaction mise à jour",
+    "bulk": {
+      "selected": "Sélectionnées",
+      "delete": "Supprimer",
+      "reconcile": "Pointer",
+      "delete_confirm": "{count, plural, one {Supprimer # transaction ?} other {Supprimer # transactions ?}}",
+      "deleted": "{count, plural, one {# transaction supprimée} other {# transactions supprimées}}",
+      "reconciled": "{count, plural, one {# transaction pointée} other {# transactions pointées}}"
+    },
+    "pending_short": "Attente",
+    "make_recurring": "Rendre récurrente",
+    "filters": {
+      "tags": "Tags",
+      "min": "Min",
+      "max": "Max",
+      "date_to": "au",
+      "apply": "Appliquer les filtres"
+    },
+    "suggested_category": "Catégorie suggérée automatiquement",
+    "form": {
+      "description_placeholder_transfer": "Virement épargne, Loyer partagé...",
+      "description_placeholder_standard": "Loyer, Courses, Salaire...",
+      "link_goal": "Lier à un objectif d'épargne (optionnel)",
+      "no_goal": "Aucun objectif lié",
+      "destination_account": "Compte de destination",
+      "select_destination": "Sélectionner le compte de destination...",
+      "no_other_account": "Aucun autre compte disponible",
+      "excluded_from_forecast": "Exclu du solde à venir"
+    },
+    "scan": {
+      "button": "Scanner",
+      "success": "Ticket analysé avec succès !",
+      "error": "Erreur lors de l'analyse du ticket."
+    },
+    "transfer_created": "Virement « {description} » créé",
+    "transaction_added": "Opération « {description} » ajoutée",
+    "new_transfer_title": "Nouveau virement",
+    "mode_shortcut": "Mode :",
+    "mode_standard": "Standard",
+    "mode_transfer": "Virement"
   },
   "Import": {
     "title": "Import de transactions",

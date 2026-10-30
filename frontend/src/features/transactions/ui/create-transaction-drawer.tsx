@@ -83,10 +83,10 @@ export function CreateTransactionDrawer() {
               amount: data.amount?.toString() || prev.amount,
               description: data.description || prev.description,
             }));
-            toast.success("Ticket analysé avec succès !");
+            toast.success(t('scan.success'));
           },
           onError: () => {
-            toast.error("Erreur lors de l'analyse du ticket.");
+            toast.error(t('scan.error'));
           }
         });
       };
@@ -120,7 +120,7 @@ export function CreateTransactionDrawer() {
         description: values.description,
       }, {
         onSuccess: () => {
-          toast.success(`Transfer "${values.description}" created`);
+          toast.success(t('transfer_created', { description: values.description }));
           setInitialValues({});
           if (!addAnother) setCreateTransactionDrawerOpen(false);
         }
@@ -137,7 +137,7 @@ export function CreateTransactionDrawer() {
         tagIds: values.tagIds,
       }, {
         onSuccess: () => {
-          toast.success(`Transaction "${values.description}" added`);
+          toast.success(t('transaction_added', { description: values.description }));
           setInitialValues({});
           if (!addAnother) setCreateTransactionDrawerOpen(false);
         }
@@ -150,7 +150,7 @@ export function CreateTransactionDrawer() {
       <SheetContent side="right" className="flex flex-col gap-0 p-0">
         <SheetHeader className="p-6 border-b space-y-4">
           <div className="flex items-center justify-between">
-            <SheetTitle>{mode === 'standard' ? t('new_transaction_title') : 'Nouveau transfert'}</SheetTitle>
+            <SheetTitle>{mode === 'standard' ? t('new_transaction_title') : t('new_transfer_title')}</SheetTitle>
             
             <div className="lg:hidden">
               <input 
@@ -169,12 +169,12 @@ export function CreateTransactionDrawer() {
                 disabled={isScanning}
               >
                 {isScanning ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Camera className="w-3.5 h-3.5" />}
-                <span>Scanner</span>
+                <span>{t('scan.button')}</span>
               </Button>
             </div>
 
             <div className="hidden lg:flex items-center gap-1 text-[10px] text-muted-foreground font-medium bg-muted/50 px-1.5 py-0.5 rounded border">
-              <span className="opacity-70 mr-0.5 text-[9px] uppercase tracking-wider">Mode:</span>
+              <span className="opacity-70 mr-0.5 text-[9px] uppercase tracking-wider">{t('mode_shortcut')}</span>
               <kbd className="font-mono">⇧</kbd>
               <span>+</span>
               <kbd className="font-mono">Tab</kbd>
@@ -183,10 +183,10 @@ export function CreateTransactionDrawer() {
           <Tabs value={mode} onValueChange={(v) => setMode(v as SetStateAction<'standard' | 'transfer'>)} className="w-full">
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="standard" className="gap-2">
-                <Receipt className="w-4 h-4" /> Standard
+                <Receipt className="w-4 h-4" /> {t('mode_standard')}
               </TabsTrigger>
               <TabsTrigger value="transfer" className="gap-2">
-                <ArrowRightLeft className="w-4 h-4" /> Transfert
+                <ArrowRightLeft className="w-4 h-4" /> {t('mode_transfer')}
               </TabsTrigger>
             </TabsList>
           </Tabs>

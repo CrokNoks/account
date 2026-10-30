@@ -76,7 +76,7 @@ export function TransactionForm({
             if (data.categoryId) {
               setCategoryId(data.categoryId);
               toast.info(t('new_transaction_title'), {
-                description: "Catégorie suggérée automatiquement",
+                description: t('suggested_category'),
                 icon: <Sparkles className="w-4 h-4 text-yellow-500" />
               });
             }
@@ -122,7 +122,7 @@ export function TransactionForm({
       <div className="space-y-2">
         <label className="text-sm font-medium">{t('fields.description')}</label>
         <Input 
-          placeholder={mode === 'transfer' ? "Virement épargne, Loyer partagé..." : "Rent, Groceries, Salary..."} 
+          placeholder={mode === 'transfer' ? t('form.description_placeholder_transfer') : t('form.description_placeholder_standard')} 
           value={description}
           onChange={(e) => handleDescriptionChange(e.target.value)}
           required
@@ -143,7 +143,7 @@ export function TransactionForm({
           </div>
 
           <div className="space-y-2 flex flex-col">
-            <label className="text-sm font-medium">Tags</label>
+            <label className="text-sm font-medium">{t('filters.tags')}</label>
             {accountId && (
               <TagSelector 
                 accountId={accountId} 
@@ -154,21 +154,21 @@ export function TransactionForm({
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-medium">Lier à un objectif d&apos;épargne (optionnel)</label>
+            <label className="text-sm font-medium">{t('form.link_goal')}</label>
             <Select value={savingsGoalId || 'none'} onValueChange={(v) => setSavingsGoalId(v === 'none' ? '' : (v || ''))}>
               <SelectTrigger className="h-11 bg-background">
-                <SelectValue placeholder="Aucun objectif lié">
+                <SelectValue placeholder={t('form.no_goal')}>
                   {savingsGoalId && savingsGoals?.find(g => g.id === savingsGoalId) ? (
                     <div className="flex items-center gap-2">
                       <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: savingsGoals.find(g => g.id === savingsGoalId)?.color }} />
                       <span className="truncate">{savingsGoals.find(g => g.id === savingsGoalId)?.name}</span>
                     </div>
-                  ) : <span className="text-muted-foreground">Aucun objectif lié</span>}
+                  ) : <span className="text-muted-foreground">{t('form.no_goal')}</span>}
                 </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="none">
-                  <span className="text-muted-foreground italic">Aucun objectif lié</span>
+                  <span className="text-muted-foreground italic">{t('form.no_goal')}</span>
                 </SelectItem>
                 {savingsGoals?.map((goal) => (
                   <SelectItem key={goal.id} value={goal.id}>
@@ -186,16 +186,16 @@ export function TransactionForm({
 
       {mode === 'transfer' && (
         <div className="space-y-2">
-          <label className="text-sm font-medium">Compte de destination</label>
+          <label className="text-sm font-medium">{t('form.destination_account')}</label>
           <Select value={destinationAccountId} onValueChange={(v) => setDestinationAccountId(v || '')}>
             <SelectTrigger className="h-11">
-              <SelectValue placeholder="Sélectionner le compte de destination...">
-                {destinationAccountId ? availableDestinations.find(a => a.id === destinationAccountId)?.name : "Sélectionner le compte de destination..."}
+              <SelectValue placeholder={t('form.select_destination')}>
+                {destinationAccountId ? availableDestinations.find(a => a.id === destinationAccountId)?.name : t('form.select_destination')}
               </SelectValue>
             </SelectTrigger>
             <SelectContent>
               {availableDestinations.length === 0 ? (
-                <div className="p-2 text-sm text-muted-foreground text-center">Aucun autre compte disponible</div>
+                <div className="p-2 text-sm text-muted-foreground text-center">{t('form.no_other_account')}</div>
               ) : (
                 availableDestinations.map((acc) => (
                   <SelectItem key={acc.id} value={acc.id}>{acc.name}</SelectItem>
@@ -235,7 +235,7 @@ export function TransactionForm({
           <label htmlFor="pending-field" className="text-sm font-medium cursor-pointer select-none flex-1">
             {t('fields.pending')}
           </label>
-          <p className="text-[10px] text-muted-foreground">Exclu du solde à venir</p>
+          <p className="text-[10px] text-muted-foreground">{t('form.excluded_from_forecast')}</p>
         </div>
       )}
 

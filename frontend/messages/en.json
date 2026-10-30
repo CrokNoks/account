@@ -67,7 +67,7 @@
       "balance": "Initial Balance",
       "description": "Purpose / Pitch",
       "description_hint": "Describe the purpose of this account to help the AI personalize its analysis."
-      },
+    },
     "select_account": "Select an account",
     "share": "Share",
     "share_title": "Share account",
@@ -111,7 +111,46 @@
     "budget_period": "Budget period",
     "delete_confirm": "Are you sure you want to delete this transaction ?",
     "deleted": "Transaction deleted",
-    "toggled": "Transaction updated"
+    "toggled": "Transaction updated",
+    "bulk": {
+      "selected": "Selected",
+      "delete": "Delete",
+      "reconcile": "Reconcile",
+      "delete_confirm": "{count, plural, one {Delete # transaction?} other {Delete # transactions?}}",
+      "deleted": "{count, plural, one {# transaction deleted} other {# transactions deleted}}",
+      "reconciled": "{count, plural, one {# transaction reconciled} other {# transactions reconciled}}"
+    },
+    "pending_short": "Pending",
+    "make_recurring": "Make recurring",
+    "filters": {
+      "tags": "Tags",
+      "min": "Min",
+      "max": "Max",
+      "date_to": "to",
+      "apply": "Apply filters"
+    },
+    "suggested_category": "Category suggested automatically",
+    "form": {
+      "description_placeholder_transfer": "Savings transfer, Shared rent...",
+      "description_placeholder_standard": "Rent, Groceries, Salary...",
+      "link_goal": "Link to a savings goal (optional)",
+      "no_goal": "No linked goal",
+      "destination_account": "Destination account",
+      "select_destination": "Select the destination account...",
+      "no_other_account": "No other account available",
+      "excluded_from_forecast": "Excluded from upcoming balance"
+    },
+    "scan": {
+      "button": "Scan",
+      "success": "Receipt analyzed successfully!",
+      "error": "Error while analyzing the receipt."
+    },
+    "transfer_created": "Transfer \"{description}\" created",
+    "transaction_added": "Transaction \"{description}\" added",
+    "new_transfer_title": "New transfer",
+    "mode_shortcut": "Mode:",
+    "mode_standard": "Standard",
+    "mode_transfer": "Transfer"
   },
   "Import": {
     "title": "Import transactions",

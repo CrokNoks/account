@@ -215,10 +215,10 @@ export function TransactionList({
   }, [activeAccountId, deleteTransaction, t]);
 
   const handleBulkDelete = () => {
-    if (!activeAccountId || bulkIds.length === 0 || !confirm(`Supprimer ${bulkIds.length} transactions ?`)) return;
+    if (!activeAccountId || bulkIds.length === 0 || !confirm(t('bulk.delete_confirm', { count: bulkIds.length }))) return;
     bulkDelete({ accountId: activeAccountId, ids: bulkIds }, {
       onSuccess: () => {
-        toast.success(`${bulkIds.length} transactions supprimées`);
+        toast.success(t('bulk.deleted', { count: bulkIds.length }));
         setSelectedIds([]);
       },
       onError: (err) => toast.error(bulkErrorMessage(err)),
@@ -235,7 +235,7 @@ export function TransactionList({
       }
     }, {
       onSuccess: () => {
-        toast.success(`${bulkIds.length} transactions pointées`);
+        toast.success(t('bulk.reconciled', { count: bulkIds.length }));
         setSelectedIds([]);
       },
       onError: (err) => toast.error(bulkErrorMessage(err)),

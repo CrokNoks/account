@@ -128,7 +128,7 @@ export function TransactionFilters({
 
             {/* Tags */}
             <div className="space-y-1.5">
-              <label className="text-[10px] font-bold uppercase text-muted-foreground px-1">Tags</label>
+              <label className="text-[10px] font-bold uppercase text-muted-foreground px-1">{t('filters.tags')}</label>
               {activeAccountId && (
                 <TagSelector 
                   accountId={activeAccountId} 
@@ -161,7 +161,7 @@ export function TransactionFilters({
               <div className="flex items-center gap-2">
                 <Input 
                   type="number" 
-                  placeholder="Min" 
+                  placeholder={t('filters.min')} 
                   className="h-10 bg-background" 
                   value={minAmount}
                   onChange={(e) => setMinAmount(e.target.value)}
@@ -169,7 +169,7 @@ export function TransactionFilters({
                 <span className="text-muted-foreground">-</span>
                 <Input 
                   type="number" 
-                  placeholder="Max" 
+                  placeholder={t('filters.max')} 
                   className="h-10 bg-background" 
                   value={maxAmount}
                   onChange={(e) => setMaxAmount(e.target.value)}
@@ -189,7 +189,7 @@ export function TransactionFilters({
                       value={startDate}
                       onChange={(e) => setStartDate(e.target.value)}
                     />
-                    <span className="text-muted-foreground text-xs">au</span>
+                    <span className="text-muted-foreground text-xs">{t('filters.date_to')}</span>
                     <Input 
                       type="date" 
                       className="h-10 bg-background" 
@@ -243,7 +243,7 @@ export function TransactionFilters({
               onClick={onApply}
             >
               <Filter className="w-3 h-3" />
-              Appliquer les filtres
+              {t('filters.apply')}
             </Button>
           </div>
         </div>

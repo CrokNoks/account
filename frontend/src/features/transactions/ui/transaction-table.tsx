@@ -168,14 +168,14 @@ export function TransactionTable({
                   <div className="flex flex-col items-end gap-0.5">
                     {formatCurrency(transaction.amount)}
                     {transaction.pending && (
-                      <span className="text-[8px] uppercase tracking-widest text-orange-500 font-bold bg-orange-500/10 px-1 rounded">Attente</span>
+                      <span className="text-[8px] uppercase tracking-widest text-orange-500 font-bold bg-orange-500/10 px-1 rounded">{t('pending_short')}</span>
                     )}
                   </div>
                 </TableCell>
                 <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
                   <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                     {!compact && onMakeRecurring && (
-                      <Button variant="ghost" size="icon-xs" onClick={() => onMakeRecurring(transaction)} title="Rendre récurrente">
+                      <Button variant="ghost" size="icon-xs" onClick={() => onMakeRecurring(transaction)} title={t('make_recurring')}>
                         <Repeat className="w-3.5 h-3.5" />
                       </Button>
                     )}
