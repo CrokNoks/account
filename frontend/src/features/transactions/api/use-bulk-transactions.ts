@@ -15,6 +15,7 @@ export function useBulkUpdateTransactions() {
   const queryClient = useQueryClient();
 
   return useMutation({
+    meta: { skipGlobalErrorToast: true }, // the caller handles the error
     mutationFn: async ({ accountId, command }: { accountId: string, command: BulkUpdateCommand }) => {
       await apiClient.patch(`/${accountId}/transactions/bulk`, command);
     },
@@ -28,6 +29,7 @@ export function useBulkDeleteTransactions() {
   const queryClient = useQueryClient();
 
   return useMutation({
+    meta: { skipGlobalErrorToast: true }, // the caller handles the error
     mutationFn: async ({ accountId, ids }: { accountId: string, ids: string[] }) => {
       await apiClient.delete(`/${accountId}/transactions/bulk`, { data: { ids } });
     },

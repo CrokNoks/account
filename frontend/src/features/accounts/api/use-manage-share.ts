@@ -5,6 +5,7 @@ export function useManageShare() {
   const queryClient = useQueryClient();
 
   const shareMutation = useMutation({
+    meta: { skipGlobalErrorToast: true }, // the caller handles the error
     mutationFn: async ({ accountId, email, permission }: { accountId: string, email: string, permission: 'read' | 'write' }) => {
       await apiClient.post(`/accounts/${accountId}/shares`, { email, permission });
     },

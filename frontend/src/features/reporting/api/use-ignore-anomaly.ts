@@ -11,6 +11,7 @@ export function useIgnoreAnomaly(periodId?: string | null) {
   const queryClient = useQueryClient();
 
   return useMutation({
+    meta: { skipGlobalErrorToast: true }, // the caller handles the error
     mutationFn: async ({ accountId, transactionIds, type }: IgnoreAnomalyPayload) => {
       const { data } = await apiClient.post(
         `/${accountId}/reporting/anomalies/ignore`,

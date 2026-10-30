@@ -11,6 +11,7 @@ export function useCreateTag() {
   const queryClient = useQueryClient();
 
   return useMutation({
+    meta: { skipGlobalErrorToast: true }, // the caller handles the error
     mutationFn: async (command: CreateTagCommand) => {
       const { accountId, ...body } = command;
       const { data } = await apiClient.post(`/${accountId}/tags`, body);

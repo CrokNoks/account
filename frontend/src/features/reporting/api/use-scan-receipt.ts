@@ -4,6 +4,7 @@ import { ScanReceiptResponse } from '../model/types';
 
 export function useScanReceipt() {
   return useMutation({
+    meta: { skipGlobalErrorToast: true }, // the caller handles the error
     mutationFn: async ({ accountId, base64Image, mimeType }: { accountId: string, base64Image: string, mimeType: string }) => {
       const { data } = await apiClient.post<ScanReceiptResponse>(`/${accountId}/reporting/scan-receipt`, {
         base64Image,
