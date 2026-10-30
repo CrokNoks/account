@@ -54,10 +54,11 @@ export class ScanReceiptUseCase {
       const result = JSON.parse(jsonString) as RawScanResult;
 
       return {
-        date: result.date || null,
-        amount: result.amount || null,
-        description: result.description || null,
-        type: result.type || null,
+        // `??` : un montant de 0 reste 0 ; une chaîne vide devient null (texte)
+        date: result.date ? result.date : null,
+        amount: result.amount ?? null,
+        description: result.description ? result.description : null,
+        type: result.type ? result.type : null,
       };
     } catch (error) {
       console.error(

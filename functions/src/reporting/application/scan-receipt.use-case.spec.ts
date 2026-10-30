@@ -55,11 +55,18 @@ describe('ScanReceiptUseCase', () => {
     });
   });
 
-  // Comportement actuel : un montant de 0 est rendu comme illisible (null).
-  it('returns null for an amount of 0', async () => {
+  it('keeps an amount of 0 as 0', async () => {
     gemini.analyzeImage.mockResolvedValue('{"amount":0}');
 
-    expect((await useCase.execute('x', 'image/png')).amount).toBeNull();
+    expect((await useCase.execute('x', 'image/png')).amount).toBe(0);
+  });
+
+  it('turns empty text fields and a null amount into null', async () => {
+    gemini.analyzeImage.mockResolvedValue(
+      '{"date":"","amount":null,"description":"","type":""}',
+    );
+
+    expect(await useCase.execute('x', 'image/png')).toEqual(empty);
   });
 
   // Comportement actuel documenté (docs/reporting.md) : une erreur renvoie
