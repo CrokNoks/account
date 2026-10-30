@@ -81,12 +81,23 @@
     "rootDir": "src",
     "testRegex": ".*\\.spec\\.ts$",
     "transform": {
+      "node_modules/(afinn-165[^/]*|uuid)/.+\\.js$": [
+        "ts-jest",
+        {
+          "tsconfig": {
+            "allowJs": true
+          }
+        }
+      ],
       "^.+\\.(t|j)s$": "ts-jest"
     },
     "collectCoverageFrom": [
       "**/*.(t|j)s"
     ],
     "coverageDirectory": "../coverage",
-    "testEnvironment": "node"
+    "testEnvironment": "node",
+    "transformIgnorePatterns": [
+      "/node_modules/(?!(afinn-165[^/]*|uuid)/)"
+    ]
   }
 }
