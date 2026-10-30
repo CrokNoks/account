@@ -82,7 +82,7 @@ export function CreateSavingsGoalDialog() {
             <div className="space-y-2">
               <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">{t('fields.name')}</label>
               <Input 
-                placeholder="Ex: Vacances d'été, Apport maison..." 
+                placeholder={t('name_placeholder')} 
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 className="h-11 font-medium"

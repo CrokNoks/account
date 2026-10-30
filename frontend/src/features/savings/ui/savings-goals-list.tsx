@@ -54,7 +54,7 @@ export function SavingsGoalsList() {
       data: { currentAmount: (current + added).toString() }
     }, {
       onSuccess: () => {
-        toast.success('Contribution enregistrée');
+        toast.success(t('contributed'));
         setContributingGoal(null);
         setContributionAmount('');
       }
@@ -82,10 +82,10 @@ export function SavingsGoalsList() {
                     <CardTitle className="text-lg font-bold">{goal.name}</CardTitle>
                   </div>
                   <div className="flex items-center gap-1">
-                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setEditingGoal(goal)} title="Modifier l'objectif">
+                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setEditingGoal(goal)} title={t('edit_goal')}>
                       <Pencil className="w-4 h-4" />
                     </Button>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => handleDelete(goal.id)} title="Supprimer">
+                    <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => handleDelete(goal.id)} title={tc('delete')}>
                       <Trash2 className="w-4 h-4" />
                     </Button>
                   </div>
@@ -96,7 +96,7 @@ export function SavingsGoalsList() {
                       <div className="space-y-1">
                         <p className="text-2xl font-black">{formatCurrency(goal.currentAmount)}</p>
                         <p className="text-xs text-muted-foreground uppercase font-bold tracking-wider">
-                          sur {formatCurrency(goal.targetAmount)}
+                          {t('of_target', { amount: formatCurrency(goal.targetAmount) })}
                         </p>
                       </div>
                       <div className="text-right">
@@ -110,12 +110,12 @@ export function SavingsGoalsList() {
                     <div className="flex items-center gap-2 text-muted-foreground">
                       <Calendar className="w-4 h-4" />
                       <span className="text-xs font-medium">
-                        {goal.deadline ? format(new Date(goal.deadline), 'dd MMM yyyy') : 'Pas d\'échéance'}
+                        {goal.deadline ? format(new Date(goal.deadline), 'dd MMM yyyy') : t('no_deadline')}
                       </span>
                     </div>
                     <Button size="sm" variant="outline" className="h-8 gap-2 font-bold" onClick={() => setContributingGoal(goal)}>
                       <ArrowUpRight className="w-3.5 h-3.5" />
-                      Épargner
+                      {t('contribute')}
                     </Button>
                   </div>
                 </CardContent>
@@ -128,11 +128,11 @@ export function SavingsGoalsList() {
       <Sheet open={!!contributingGoal} onOpenChange={(o) => !o && setContributingGoal(null)}>
         <SheetContent side="right" className="flex flex-col gap-0 p-0">
           <SheetHeader className="p-6 border-b">
-            <SheetTitle>Contribuer à : {contributingGoal?.name}</SheetTitle>
+            <SheetTitle>{t('contribute_to', { name: contributingGoal?.name ?? '' })}</SheetTitle>
           </SheetHeader>
           <div className="flex-1 overflow-y-auto p-6 space-y-6">
             <div className="space-y-2">
-              <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Montant à ajouter</label>
+              <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">{t('amount_to_add')}</label>
               <div className="relative">
                 <Input 
                   type="text" 
@@ -146,13 +146,13 @@ export function SavingsGoalsList() {
                 <span className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground font-bold text-lg">€</span>
               </div>
               <p className="text-[10px] text-muted-foreground italic">
-                Ce montant sera ajouté au solde actuel de l&apos;objectif.
+                {t('amount_hint')}
               </p>
             </div>
           </div>
           <SheetFooter className="p-6 border-t bg-muted/20">
             <Button className="w-full h-11 text-base font-bold" onClick={() => contributingGoal && handleContribute(contributingGoal)} disabled={!contributionAmount}>
-              Enregistrer la contribution
+              {t('save_contribution')}
             </Button>
           </SheetFooter>
         </SheetContent>
@@ -211,7 +211,7 @@ function EditSavingsGoalSheet({ goal, open, onOpenChange }: { goal: SavingsGoal,
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="right" className="flex flex-col gap-0 p-0">
         <SheetHeader className="p-6 border-b">
-          <SheetTitle>{tc('edit')} Objectif d&apos;épargne</SheetTitle>
+          <SheetTitle>{t('edit_title')}</SheetTitle>
         </SheetHeader>
         
         <form onSubmit={handleSubmit} className="flex-1 flex flex-col min-h-0">
@@ -219,7 +219,7 @@ function EditSavingsGoalSheet({ goal, open, onOpenChange }: { goal: SavingsGoal,
             <div className="space-y-2">
               <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">{t('fields.name')}</label>
               <Input 
-                placeholder="Ex: Vacances d'été, Apport maison..." 
+                placeholder={t('name_placeholder')} 
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 className="h-11 font-medium"

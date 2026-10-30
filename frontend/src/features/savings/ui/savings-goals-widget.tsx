@@ -6,9 +6,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { formatCurrency } from '@/shared/lib/format';
 import { Target } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { NoDataState } from '@/shared/ui/no-data-state';
 
 export function SavingsGoalsWidget() {
+  const t = useTranslations('Savings');
   const { activeAccountId } = useAccountStore();
   const { data: goals, isLoading } = useSavingsGoals(activeAccountId);
 
@@ -18,7 +20,7 @@ export function SavingsGoalsWidget() {
     <CardHeader className="pb-3 bg-muted/10 shrink-0">
       <CardTitle className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
         <Target className="w-4 h-4 text-primary" />
-        Objectifs d&apos;épargne
+        {t('widget_title')}
       </CardTitle>
     </CardHeader>
   );
@@ -28,7 +30,7 @@ export function SavingsGoalsWidget() {
       <Card className="border-2 shadow-sm overflow-hidden h-full flex flex-col">
         {header}
         <CardContent className="pt-2 flex-1 flex items-center justify-center min-h-[150px]">
-          <NoDataState title="Aucun objectif" description="Définissez vos objectifs d'épargne" icon={Target} />
+          <NoDataState title={t('widget_empty_title')} description={t('widget_empty_desc')} icon={Target} />
         </CardContent>
       </Card>
     );

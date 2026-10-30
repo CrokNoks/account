@@ -1,6 +1,8 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { NextIntlClientProvider } from 'next-intl';
 import { toast } from 'sonner';
+import fr from '../../../../messages/fr.json';
 import { SavingsGoalsList } from './savings-goals-list';
 
 const updateGoal = vi.fn();
@@ -9,7 +11,6 @@ const goal = {
   color: '#3b82f6', deadline: null,
 };
 
-vi.mock('next-intl', () => ({ useTranslations: () => (key: string) => key }));
 vi.mock('sonner', () => ({ toast: { error: vi.fn(), success: vi.fn() } }));
 vi.mock('@/features/accounts/model/use-account-store', () => ({
   useAccountStore: () => ({ activeAccountId: 'acc-1' }),
@@ -21,7 +22,11 @@ vi.mock('../api/use-savings-goals', () => ({
 }));
 
 function contribute(value: string) {
-  render(<SavingsGoalsList />);
+  render(
+    <NextIntlClientProvider locale="fr" messages={fr}>
+      <SavingsGoalsList />
+    </NextIntlClientProvider>,
+  );
   fireEvent.click(screen.getByRole('button', { name: /Épargner/ }));
   fireEvent.change(screen.getByPlaceholderText('0.00'), { target: { value } });
   fireEvent.click(screen.getByRole('button', { name: /Enregistrer la contribution/ }));
@@ -36,7 +41,7 @@ describe('SavingsGoalsList contribution', () => {
   it('refuses an unreadable amount instead of contributing 0', () => {
     contribute('abc');
     expect(updateGoal).not.toHaveBeenCalled();
-    expect(toast.error).toHaveBeenCalledWith('invalid_amount');
+    expect(toast.error).toHaveBeenCalledWith(fr.Common.invalid_amount);
   });
 
   it('adds a readable amount to the current amount', () => {

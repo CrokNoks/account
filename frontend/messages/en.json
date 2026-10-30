@@ -324,7 +324,21 @@
     },
     "empty": "No goals configured",
     "delete_confirm": "Do you really want to delete this goal?",
-    "deleted": "Goal deleted"
+    "deleted": "Goal deleted",
+    "contributed": "Contribution saved",
+    "edit_goal": "Edit goal",
+    "of_target": "of {amount}",
+    "no_deadline": "No deadline",
+    "contribute": "Save",
+    "contribute_to": "Contribute to: {name}",
+    "amount_to_add": "Amount to add",
+    "amount_hint": "This amount will be added to the goal's current balance.",
+    "save_contribution": "Save contribution",
+    "edit_title": "Edit savings goal",
+    "name_placeholder": "E.g. Summer holidays, House deposit...",
+    "widget_title": "Savings goals",
+    "widget_empty_title": "No goal",
+    "widget_empty_desc": "Set your savings goals"
   },
   "Common": {
     "add": "Add",
