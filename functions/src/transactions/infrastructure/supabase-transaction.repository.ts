@@ -249,6 +249,18 @@ export class SupabaseTransactionRepository implements TransactionRepository {
     if (error) throw new Error(error.message);
   }
 
+  async deleteMany(ids: string[]): Promise<void> {
+    if (ids.length === 0) return;
+
+    // Un seul DELETE ... WHERE id IN (...) : une instruction SQL est atomique.
+    const { error } = await this.supabase
+      .from('transactions')
+      .delete()
+      .in('id', ids);
+
+    if (error) throw new Error(error.message);
+  }
+
   private mapToDomain(row: TransactionRow): Transaction {
     const tagIds = row.transaction_tags
       ? row.transaction_tags.map((tt) => tt.tag_id)

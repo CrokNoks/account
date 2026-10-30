@@ -16,6 +16,16 @@ const tx = (
     ...overrides,
   });
 
+const deleteChain = (error: { message: string } | null) => {
+  const inFn = jest.fn().mockResolvedValue({ error });
+  const del = jest.fn().mockReturnValue({ in: inFn });
+  const from = jest.fn().mockReturnValue({ delete: del });
+  const repository = new SupabaseTransactionRepository({
+    from,
+  } as unknown as SupabaseClient);
+  return { repository, from, inFn };
+};
+
 const repoWith = (error: { code?: string; message: string } | null) => {
   const rpc = jest
     .fn<Promise<unknown>, [string, Record<string, Record<string, unknown>>]>()
@@ -151,6 +161,33 @@ describe('SupabaseTransactionRepository atomic writes', () => {
       await expect(repository.updateMany([tx()])).rejects.toThrow(
         'transaction not found',
       );
+    });
+  });
+
+  describe('deleteMany', () => {
+    it('deletes every id with a single DELETE ... IN request', async () => {
+      const { repository, from, inFn } = deleteChain(null);
+
+      await repository.deleteMany(['t1', 't2']);
+
+      expect(from).toHaveBeenCalledTimes(1);
+      expect(from).toHaveBeenCalledWith('transactions');
+      expect(inFn).toHaveBeenCalledTimes(1);
+      expect(inFn).toHaveBeenCalledWith('id', ['t1', 't2']);
+    });
+
+    it('sends nothing for an empty list', async () => {
+      const { repository, from } = deleteChain(null);
+
+      await repository.deleteMany([]);
+
+      expect(from).not.toHaveBeenCalled();
+    });
+
+    it('throws the database error', async () => {
+      const { repository } = deleteChain({ message: 'boom' });
+
+      await expect(repository.deleteMany(['t1'])).rejects.toThrow('boom');
     });
   });
 });

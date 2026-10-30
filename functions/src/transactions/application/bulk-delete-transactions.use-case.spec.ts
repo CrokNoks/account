@@ -4,7 +4,11 @@ import { NotFoundError } from '../../shared/domain/errors';
 import { Transaction } from '../domain/transaction.entity';
 
 describe('BulkDeleteTransactionsUseCase', () => {
-  let repository: { findAllByAccountUnpaginated: jest.Mock; delete: jest.Mock };
+  let repository: {
+    findAllByAccountUnpaginated: jest.Mock;
+    deleteMany: jest.Mock;
+    delete: jest.Mock;
+  };
   let useCase: BulkDeleteTransactionsUseCase;
 
   const tx = (id: string) =>
@@ -24,7 +28,8 @@ describe('BulkDeleteTransactionsUseCase', () => {
       findAllByAccountUnpaginated: jest
         .fn()
         .mockResolvedValue([tx('t1'), tx('t2')]),
-      delete: jest.fn().mockResolvedValue(undefined),
+      deleteMany: jest.fn().mockResolvedValue(undefined),
+      delete: jest.fn(),
     };
     useCase = new BulkDeleteTransactionsUseCase(
       repository as unknown as TransactionRepository,
@@ -37,7 +42,8 @@ describe('BulkDeleteTransactionsUseCase', () => {
     expect(repository.findAllByAccountUnpaginated).toHaveBeenCalledWith(
       'acc-1',
     );
-    expect(repository.delete.mock.calls).toEqual([['t1'], ['t2']]);
+    expect(repository.deleteMany.mock.calls).toEqual([[['t1', 't2']]]);
+    expect(repository.delete).not.toHaveBeenCalled();
   });
 
   it('answers 404 and deletes nothing when an id does not belong to the account', async () => {
@@ -48,6 +54,7 @@ describe('BulkDeleteTransactionsUseCase', () => {
 
     await expect(result).rejects.toBeInstanceOf(NotFoundError);
     await expect(result).rejects.toThrow('Transaction not found');
+    expect(repository.deleteMany).not.toHaveBeenCalled();
     expect(repository.delete).not.toHaveBeenCalled();
   });
 
@@ -55,12 +62,13 @@ describe('BulkDeleteTransactionsUseCase', () => {
     await expect(
       useCase.execute({ accountId: 'acc-1', ids: ['foreign'] }),
     ).rejects.toBeInstanceOf(NotFoundError);
+    expect(repository.deleteMany).not.toHaveBeenCalled();
     expect(repository.delete).not.toHaveBeenCalled();
   });
 
   it('deletes a duplicated id only once', async () => {
     await useCase.execute({ accountId: 'acc-1', ids: ['t1', 't1'] });
 
-    expect(repository.delete.mock.calls).toEqual([['t1']]);
+    expect(repository.deleteMany.mock.calls).toEqual([[['t1']]]);
   });
 });

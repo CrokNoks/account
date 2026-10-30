@@ -24,8 +24,7 @@ export class BulkDeleteTransactionsUseCase {
       throw new NotFoundError('Transaction not found');
     }
 
-    for (const id of ids) {
-      await this.transactionRepository.delete(id);
-    }
+    // Une seule requête : toutes les transactions sont supprimées, ou aucune.
+    await this.transactionRepository.deleteMany(ids);
   }
 }

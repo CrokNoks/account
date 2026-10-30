@@ -422,10 +422,15 @@ describe('Transactions routes (e2e)', () => {
         })
         .expect(200);
 
-      expect(mocks.transactions.delete.mock.calls).toEqual([
-        ['00000000-0000-4000-8000-000000000016'],
-        ['00000000-0000-4000-8000-000000000017'],
+      expect(mocks.transactions.deleteMany.mock.calls).toEqual([
+        [
+          [
+            '00000000-0000-4000-8000-000000000016',
+            '00000000-0000-4000-8000-000000000017',
+          ],
+        ],
       ]);
+      expect(mocks.transactions.delete).not.toHaveBeenCalled();
     });
 
     it('DELETE /bulk answers 404 without deleting anything when an id is unknown or foreign', async () => {
@@ -440,7 +445,7 @@ describe('Transactions routes (e2e)', () => {
         })
         .expect(404);
 
-      expect(mocks.transactions.delete).not.toHaveBeenCalled();
+      expect(mocks.transactions.deleteMany).not.toHaveBeenCalled();
     });
 
     it('PATCH /bulk answers 404 without saving anything when an id is unknown or foreign', async () => {
@@ -466,7 +471,7 @@ describe('Transactions routes (e2e)', () => {
         .send({})
         .expect(400);
 
-      expect(mocks.transactions.delete).not.toHaveBeenCalled();
+      expect(mocks.transactions.deleteMany).not.toHaveBeenCalled();
     });
   });
 

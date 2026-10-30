@@ -52,6 +52,11 @@ export abstract class TransactionRepository {
    */
   abstract updateMany(transactions: Transaction[]): Promise<void>;
   abstract delete(id: string): Promise<void>;
+  /**
+   * Supprime plusieurs transactions en une seule requête (donc atomique : toutes
+   * ou aucune ; la RLS et les triggers s'appliquent ligne par ligne).
+   */
+  abstract deleteMany(ids: string[]): Promise<void>;
   abstract sumAmountByAccountBeforeDate(
     accountId: string,
     date: Date,
