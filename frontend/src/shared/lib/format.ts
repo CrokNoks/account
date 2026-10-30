@@ -6,9 +6,13 @@ export function formatCurrency(amountCents: string | number): string {
   }).format(amount / 100);
 }
 
+const CURRENCY_WORDS = /(?<!\p{L})(?:eur|euros?|usd|gbp|chf|cad|jpy|aud)(?!\p{L})/giu;
+
 /**
  * Parses a user-typed amount into integer cents, without floating point.
- * - spaces (including U+00A0 / U+202F), currency symbols and letters are ignored;
+ * - spaces (including U+00A0 / U+202F), currency symbols (€ $ £ ...) and usual currency
+ *   codes/words (EUR, USD, GBP, CHF, CAD, JPY, AUD, euro(s), any case) are ignored;
+ * - any other letter makes the input unreadable ("12abc", "1e5" -> null);
  * - a leading or trailing "-" makes the amount negative;
  * - if both "." and "," appear, the LAST one is the decimal separator and the other
  *   one a thousands separator;
@@ -18,7 +22,9 @@ export function formatCurrency(amountCents: string | number): string {
  * Returns null when the input holds no valid amount.
  */
 export function parseAmountToCents(input: string): bigint | null {
-  const kept = input.replace(/\u2212/g, '-').replace(/[^\d.,-]/g, '');
+  const withoutCurrency = input.replace(CURRENCY_WORDS, ' ');
+  if (/\p{L}/u.test(withoutCurrency)) return null;
+  const kept = withoutCurrency.replace(/\u2212/g, '-').replace(/[^\d.,-]/g, '');
   const negative = kept.startsWith('-') || kept.endsWith('-');
   const body = kept.replace(/^-/, '').replace(/-$/, '');
   if (!/\d/.test(body) || /[^\d.,]/.test(body)) return null;

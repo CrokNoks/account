@@ -144,6 +144,21 @@ describe('CSV import page', () => {
     expect(lines.map((l) => l.amount)).toEqual(['1234567', '-4250']);
   });
 
+  it('keeps reading amounts exported with a currency symbol or code', async () => {
+    const lines = await importCsv(
+      [
+        'Date;Libellé;Montant',
+        '01/03/2026;A;"-42,50 EUR"',
+        '01/03/2026;B;"1 234,56 €"',
+        '01/03/2026;C;USD 10.00',
+        '01/03/2026;D;12abc',
+      ].join('\n'),
+    );
+
+    // an unreadable cell ("12abc") stays imported as 0 (existing behaviour), never as 1200
+    expect(lines.map((l) => l.amount)).toEqual(['-4250', '123456', '1000', '0']);
+  });
+
   it('computes debit/credit columns in integer cents (no float drift)', async () => {
     const lines = await importCsv(
       [

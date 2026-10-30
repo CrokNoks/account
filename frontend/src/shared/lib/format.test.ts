@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formatCurrency, fromCents, isUnreadableAmount, toAbsCents, toCents, toOptionalCents } from './format';
+import { formatCurrency, parseAmountToCents, fromCents, isUnreadableAmount, toAbsCents, toCents, toOptionalCents } from './format';
 
 // Intl insère des espaces insécables : on les normalise pour comparer.
 const plain = (s: string) => s.replace(/[  ]/g, ' ');
@@ -62,6 +62,25 @@ describe('toCents', () => {
     ])('converts %j to %s cents', (amount, expected) => {
       expect(toCents(amount)).toBe(expected);
     });
+  });
+
+  it.each(['12abc', '1e5', '1e-5', '12 foo', 'x12', '1,5k'])('refuses %j (letters that are not a currency)', (amount) => {
+    expect(parseAmountToCents(amount)).toBeNull();
+    expect(toCents(amount)).toBe('0');
+    expect(isUnreadableAmount(amount)).toBe(true);
+  });
+
+  it.each([
+    ['12 EUR', BigInt(1200)],
+    ['12 eur', BigInt(1200)],
+    ['EUR 12,50', BigInt(1250)],
+    ['12,50 euros', BigInt(1250)],
+    ['$12.50', BigInt(1250)],
+    ['£ 1,234.50', BigInt(123450)],
+    ['-12 USD', BigInt(-1200)],
+    ['12.50CHF', BigInt(1250)],
+  ])('keeps reading %j (currency symbol or code)', (amount, expected) => {
+    expect(parseAmountToCents(amount)).toBe(expected);
   });
 
   it('rounds half-up on the string, without floating point', () => {
