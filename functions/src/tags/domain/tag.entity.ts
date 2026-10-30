@@ -1,3 +1,5 @@
+import { DomainValidationError } from '../../shared/domain/errors';
+
 export interface TagProps {
   id: string;
   accountId: string;
@@ -27,13 +29,13 @@ export class Tag {
 
   private validate() {
     if (!this.name || this.name.trim().length === 0) {
-      throw new Error('Tag name is required');
+      throw new DomainValidationError('Tag name is required');
     }
     if (this.color && !/^#[0-9A-Fa-f]{6}$/.test(this.color)) {
-      throw new Error('Invalid color format (hex required)');
+      throw new DomainValidationError('Invalid color format (hex required)');
     }
     if (!this.accountId) {
-      throw new Error('Account ID is required');
+      throw new DomainValidationError('Account ID is required');
     }
   }
 

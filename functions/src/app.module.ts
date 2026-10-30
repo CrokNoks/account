@@ -1,4 +1,6 @@
 import { Module } from '@nestjs/common';
+import { APP_FILTER } from '@nestjs/core';
+import { DomainExceptionFilter } from './shared/infrastructure/domain-exception.filter';
 import { ConfigModule } from '@nestjs/config';
 import { AppController } from './app.controller';
 import { SupabaseModule } from './supabase/supabase.module';
@@ -35,5 +37,6 @@ import { SavingsGoalsModule } from './savings-goals/savings-goals.module';
     SavingsGoalsModule,
   ],
   controllers: [AppController],
+  providers: [{ provide: APP_FILTER, useClass: DomainExceptionFilter }],
 })
 export class AppModule {}

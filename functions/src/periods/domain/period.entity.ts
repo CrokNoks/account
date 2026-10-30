@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto';
+import { DomainValidationError } from '../../shared/domain/errors';
 
 export interface PeriodProps {
   id: string;
@@ -31,9 +32,10 @@ export class Period {
   }
 
   private validate() {
-    if (!this.accountId) throw new Error('Account ID is required');
+    if (!this.accountId)
+      throw new DomainValidationError('Account ID is required');
     if (this.endDate && this.endDate < this.startDate) {
-      throw new Error('End date must be after start date');
+      throw new DomainValidationError('End date must be after start date');
     }
   }
 

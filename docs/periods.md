@@ -58,5 +58,5 @@ Active / inactive (`is_active`). Création : la nouvelle est active, les autres 
 - Réactiver une période laisse-t-il volontairement plusieurs périodes actives ? Non traité.
 - Pourquoi le montant 0 est filtré au remplacement mais pas à la création : inconnu.
 - La date du jour du brouillon est calculée côté serveur avec son fuseau ; l'effet sur les dates n'est pas précisé.
-- Les erreurs « Period not found » sont des erreurs génériques (`periods.controller.ts:184`), pas des 404.
+- Les erreurs « Period not found » sont des `NotFoundError` (`periods.controller.ts:184`) → 404.
 - Le comportement du trigger `assign_period_id` (condition exacte de choix de la période) se lit dans la migration ; la prise en compte de la date de la transaction n'y figure pas (commentaire d'hésitation, lignes 22-24).

@@ -1,3 +1,4 @@
+import { NotFoundError } from '../../shared/domain/errors';
 import { CreateRecurringTransactionUseCase } from './create-recurring-transaction.use-case';
 import { DeleteRecurringTransactionUseCase } from './delete-recurring-transaction.use-case';
 import { GetRecurringTransactionsUseCase } from './get-recurring-transactions.use-case';
@@ -100,6 +101,9 @@ describe('Recurring transactions use cases', () => {
 
       await expect(useCase().execute('nope', {})).rejects.toThrow(
         'Recurring transaction not found',
+      );
+      await expect(useCase().execute('nope', {})).rejects.toBeInstanceOf(
+        NotFoundError,
       );
       expect(repository.save).not.toHaveBeenCalled();
     });

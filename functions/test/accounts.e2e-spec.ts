@@ -82,15 +82,54 @@ describe('Accounts and sharing routes (e2e)', () => {
       });
     });
 
-    // Comportement actuel : les refus métier sont des Error simples → 500.
-    it('answers 500 when the authenticated user is not the owner', async () => {
+    it('answers 403 when the authenticated user is not the owner', async () => {
       mocks.accounts.findById.mockResolvedValue(account('someone-else'));
 
       await http()
         .post('/accounts/acc-1/shares')
         .set(auth())
         .send({ email: 'guest@example.com', permission: 'read' })
-        .expect(500);
+        .expect(403, {
+          statusCode: 403,
+          message: 'Only the account owner can manage shares',
+          error: 'Forbidden',
+        });
+      expect(mocks.shares.save).not.toHaveBeenCalled();
+    });
+
+    it('answers 404 for an unknown account', async () => {
+      mocks.accounts.findById.mockResolvedValue(null);
+
+      await http()
+        .post('/accounts/nope/shares')
+        .set(auth())
+        .send({ email: 'guest@example.com', permission: 'read' })
+        .expect(404);
+      expect(mocks.shares.save).not.toHaveBeenCalled();
+    });
+
+    it('answers 404 for an unknown email', async () => {
+      mocks.users.findByEmail.mockResolvedValue(null);
+
+      await http()
+        .post('/accounts/acc-1/shares')
+        .set(auth())
+        .send({ email: 'ghost@example.com', permission: 'read' })
+        .expect(404);
+      expect(mocks.shares.save).not.toHaveBeenCalled();
+    });
+
+    it('answers 400 when sharing with oneself', async () => {
+      mocks.users.findByEmail.mockResolvedValue({
+        id: USER.id,
+        email: USER.email,
+      });
+
+      await http()
+        .post('/accounts/acc-1/shares')
+        .set(auth())
+        .send({ email: USER.email, permission: 'read' })
+        .expect(400);
       expect(mocks.shares.save).not.toHaveBeenCalled();
     });
   });
@@ -105,13 +144,13 @@ describe('Accounts and sharing routes (e2e)', () => {
       expect(mocks.shares.delete).toHaveBeenCalledWith('acc-1', 'guest-1');
     });
 
-    it('refuses (500) when the authenticated user is not the owner', async () => {
+    it('refuses (403) when the authenticated user is not the owner', async () => {
       mocks.accounts.findById.mockResolvedValue(account('someone-else'));
 
       await http()
         .delete('/accounts/acc-1/shares/guest-1')
         .set(auth())
-        .expect(500);
+        .expect(403);
       expect(mocks.shares.delete).not.toHaveBeenCalled();
     });
   });

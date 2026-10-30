@@ -1,4 +1,5 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
+import { NotFoundError } from '../../shared/domain/errors';
 import { TagRepository } from '../domain/tag.repository.interface';
 import { Tag } from '../domain/tag.entity';
 
@@ -15,7 +16,7 @@ export class UpdateTagUseCase {
   async execute(command: UpdateTagCommand): Promise<Tag> {
     const existing = await this.tagRepository.findById(command.id);
     if (!existing) {
-      throw new NotFoundException(`Tag with ID ${command.id} not found`);
+      throw new NotFoundError(`Tag with ID ${command.id} not found`);
     }
 
     const updated = new Tag({

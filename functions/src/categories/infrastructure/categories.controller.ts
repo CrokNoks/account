@@ -28,6 +28,7 @@ import {
   IsNumberString,
 } from 'class-validator';
 import { CategoryRepository } from '../domain/category.repository.interface';
+import { NotFoundError } from '../../shared/domain/errors';
 
 export class CreateCategoryDto {
   @IsString()
@@ -123,7 +124,7 @@ export class CategoriesController {
     @Body() dto: UpdateCategoryDto,
   ): Promise<CategoryResponseDto> {
     const existing = await this.categoryRepository.findById(id);
-    if (!existing) throw new Error('Category not found');
+    if (!existing) throw new NotFoundError('Category not found');
 
     const updated = new Category({
       id: existing.id,

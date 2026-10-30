@@ -1,3 +1,4 @@
+import { ForbiddenError, NotFoundError } from '../../shared/domain/errors';
 import {
   Controller,
   Post,
@@ -131,9 +132,9 @@ export class AccountsController {
     @Request() req: AuthenticatedRequest,
   ) {
     const account = await this.accountRepository.findById(id);
-    if (!account) throw new Error('Account not found');
+    if (!account) throw new NotFoundError('Account not found');
     if (account.ownerId !== req.user.id)
-      throw new Error('Only owner can remove shares');
+      throw new ForbiddenError('Only owner can remove shares');
 
     await this.accountShareRepository.delete(id, userId);
     return { success: true };
@@ -144,7 +145,7 @@ export class AccountsController {
   @ApiResponse({ status: 200 })
   async update(@Param('id') id: string, @Body() dto: UpdateAccountDto) {
     const existing = await this.accountRepository.findById(id);
-    if (!existing) throw new Error('Account not found');
+    if (!existing) throw new NotFoundError('Account not found');
 
     const updated = new Account({
       id: existing.id,

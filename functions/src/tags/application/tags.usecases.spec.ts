@@ -1,4 +1,4 @@
-import { NotFoundException } from '@nestjs/common';
+import { NotFoundError } from '../../shared/domain/errors';
 import { CreateTagUseCase } from './create-tag.usecase';
 import { DeleteTagUseCase } from './delete-tag.usecase';
 import { FindAccountTagsUseCase } from './find-account-tags.usecase';
@@ -106,12 +106,12 @@ describe('Tags use cases', () => {
       expect(updated).toMatchObject({ name: 'Vacances', color: '#111111' });
     });
 
-    it('throws NotFoundException for an unknown tag', async () => {
+    it('throws NotFoundError for an unknown tag', async () => {
       repository.findById.mockResolvedValue(null);
 
       await expect(
         new UpdateTagUseCase(repository).execute({ id: 'nope' }),
-      ).rejects.toBeInstanceOf(NotFoundException);
+      ).rejects.toBeInstanceOf(NotFoundError);
       expect(repository.save).not.toHaveBeenCalled();
     });
   });

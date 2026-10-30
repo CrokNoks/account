@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { TransactionRepository } from '../domain/transaction.repository.interface';
 import { Transaction } from '../domain/transaction.entity';
 import * as crypto from 'crypto';
+import { DomainValidationError } from '../../shared/domain/errors';
 
 export interface CreateTransferCommand {
   sourceAccountId: string;
@@ -19,10 +20,14 @@ export class CreateTransferUseCase {
     command: CreateTransferCommand,
   ): Promise<[Transaction, Transaction]> {
     if (command.amount <= BigInt(0)) {
-      throw new Error('Transfer amount must be strictly positive');
+      throw new DomainValidationError(
+        'Transfer amount must be strictly positive',
+      );
     }
     if (command.sourceAccountId === command.destinationAccountId) {
-      throw new Error('Source and destination accounts must be different');
+      throw new DomainValidationError(
+        'Source and destination accounts must be different',
+      );
     }
 
     const transferId = crypto.randomUUID();

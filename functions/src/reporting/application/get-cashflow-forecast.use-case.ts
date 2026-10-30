@@ -3,6 +3,7 @@ import { AccountRepository } from '../../accounts/domain/account.repository.inte
 import { TransactionRepository } from '../../transactions/domain/transaction.repository.interface';
 import { RecurringTransactionRepository } from '../../recurring/domain/recurring-transaction.repository.interface';
 import { addDays, getDate, startOfDay } from 'date-fns';
+import { NotFoundError } from '../../shared/domain/errors';
 
 export interface CashflowEvent {
   date: string;
@@ -30,7 +31,7 @@ export class GetCashflowForecastUseCase {
     days: number = 90,
   ): Promise<CashflowForecastResponse> {
     const account = await this.accountRepository.findById(accountId);
-    if (!account) throw new Error('Account not found');
+    if (!account) throw new NotFoundError('Account not found');
 
     // 1. Get current balance (up to today inclusive)
     const tomorrow = startOfDay(addDays(new Date(), 1));

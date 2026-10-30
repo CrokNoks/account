@@ -4,6 +4,7 @@ import { PeriodRepository } from '../../periods/domain/period.repository.interfa
 import { TransactionRepository } from '../../transactions/domain/transaction.repository.interface';
 import { CategoryRepository } from '../../categories/domain/category.repository.interface';
 import { CategoryType } from '../../categories/domain/category.entity';
+import { NotFoundError } from '../../shared/domain/errors';
 
 export interface EvolutionDataPoint {
   periodId: string;
@@ -31,7 +32,7 @@ export class GetEvolutionUseCase {
     onlyClosed: boolean = false,
   ): Promise<EvolutionDataPoint[]> {
     const account = await this.accountRepository.findById(accountId);
-    if (!account) throw new Error('Account not found');
+    if (!account) throw new NotFoundError('Account not found');
 
     let periods = await this.periodRepository.findAllByAccount(accountId);
 

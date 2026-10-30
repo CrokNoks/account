@@ -52,6 +52,6 @@ Il n'y a pas de route pour supprimer un compte (la base l'autoriserait au propri
 ## Zones d'ombre
 - Un compte n'a ni type ni devise : ces colonnes n'existent pas en base et l'API rejette ces champs (400, `forbidNonWhitelisted`). Le front ne les envoie plus à la création (`create-account-dialog.tsx`) : le formulaire ne demande que nom, solde initial et description, et la liste des comptes n'affiche plus de type ni de devise.
 - Le type front `AccountShare` dans `model/types.ts` (rôles owner/viewer/editor) diffère de celui de `use-account-shares.ts` (read/write) ; le second correspond à l'API.
-- Erreurs métier levées en `Error` simple (pas d'exception HTTP typée) : le code HTTP renvoyé n'est pas déterminé par le code lu.
+- Erreurs métier typées (`functions/src/shared/domain/errors.ts`), traduites par `DomainExceptionFilter` : compte ou utilisateur (email) introuvable → 404, partage/suppression de partage par un non-propriétaire → 403, partage avec soi-même → 400. Les erreurs techniques (repositories Supabase) restent des 500 « Internal server error ».
 - Le PATCH met à jour avec `dto.description ?? existant` : impossible d'effacer une description.
 - `balance` apparaît dans le type front `Account` mais n'est jamais renvoyé par ces routes ; d'où il vient n'est pas dans ce module.

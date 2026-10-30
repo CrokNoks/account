@@ -1,6 +1,7 @@
 import { Injectable, Inject } from '@nestjs/common';
 import type { SavingsGoalRepository } from '../domain/savings-goal.repository.interface';
 import { SavingsGoal } from '../domain/savings-goal.entity';
+import { NotFoundError } from '../../shared/domain/errors';
 
 @Injectable()
 export class GetSavingsGoalsUseCase {
@@ -61,7 +62,7 @@ export class UpdateSavingsGoalUseCase {
 
   async execute(command: UpdateSavingsGoalCommand): Promise<SavingsGoal> {
     const existing = await this.repository.findById(command.id);
-    if (!existing) throw new Error('Savings goal not found');
+    if (!existing) throw new NotFoundError('Savings goal not found');
 
     const updated = new SavingsGoal({
       ...existing,

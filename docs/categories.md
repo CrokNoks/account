@@ -47,5 +47,5 @@ Pas de cycle de vie.
 - Le nom n'est pas unique : le code et la base lus (création) n'empêchent pas deux catégories de même nom dans un compte.
 - Pourquoi une catégorie n'est pas supprimable depuis l'application : inconnu (route absente). Effet d'une suppression directe en base sur les transactions : à voir dans le module transactions (hors périmètre).
 - Le budget de catégorie : le code ne montre pas où il est consommé dans ce module (aucun calcul ici).
-- Une catégorie introuvable à la modification lève une erreur générique (`new Error`), pas un 404 (`categories.controller.ts:122`).
+- Une catégorie introuvable à la modification renvoie 404 (`NotFoundError`, `categories.controller.ts:122`).
 - `accountId` de l'URL non rapproché de celui de la catégorie modifiée.

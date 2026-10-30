@@ -42,6 +42,7 @@ import {
 import { Type, Transform } from 'class-transformer';
 import { PeriodRepository } from '../../periods/domain/period.repository.interface';
 import { Inject, NotFoundException } from '@nestjs/common';
+import { NotFoundError } from '../../shared/domain/errors';
 
 export class CreateTransactionDto {
   @IsOptional()
@@ -431,7 +432,7 @@ export class TransactionsController {
     @Body() dto: UpdateTransactionDto,
   ): Promise<TransactionResponseDto> {
     const existing = await this.transactionRepository.findById(id);
-    if (!existing) throw new Error('Transaction not found');
+    if (!existing) throw new NotFoundError('Transaction not found');
 
     // If reconciling, auto-clear pending
     const pending =

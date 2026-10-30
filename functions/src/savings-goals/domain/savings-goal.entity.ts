@@ -1,3 +1,5 @@
+import { DomainValidationError } from '../../shared/domain/errors';
+
 export interface SavingsGoalProps {
   id: string;
   accountId: string;
@@ -35,12 +37,13 @@ export class SavingsGoal {
   }
 
   private validate() {
-    if (!this.accountId) throw new Error('Account ID is required');
+    if (!this.accountId)
+      throw new DomainValidationError('Account ID is required');
     if (!this.name || this.name.trim().length === 0) {
-      throw new Error('Name is required');
+      throw new DomainValidationError('Name is required');
     }
     if (this.targetAmount <= BigInt(0)) {
-      throw new Error('Target amount must be positive');
+      throw new DomainValidationError('Target amount must be positive');
     }
   }
 

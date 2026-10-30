@@ -4,6 +4,7 @@ import { TagRepository } from '../../tags/domain/tag.repository.interface';
 import { PeriodRepository } from '../../periods/domain/period.repository.interface';
 import { CategoryRepository } from '../../categories/domain/category.repository.interface';
 import { TagSummary } from './get-tags-summary.use-case';
+import { NotFoundError } from '../../shared/domain/errors';
 
 export interface TagCategoryBreakdown {
   categoryId: string | null;
@@ -40,7 +41,8 @@ export class GetTagDetailsUseCase {
     periodId?: string,
   ): Promise<TagDetails> {
     const tag = await this.tagRepository.findById(tagId);
-    if (!tag || tag.accountId !== accountId) throw new Error('Tag not found');
+    if (!tag || tag.accountId !== accountId)
+      throw new NotFoundError('Tag not found');
 
     let startDate: Date | undefined;
     let endDate: Date | undefined;

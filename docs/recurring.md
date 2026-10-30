@@ -18,7 +18,7 @@ Mise à jour : 2026-10-30 · Commit : 157b272
 | Le montant est reçu en texte, arrondi puis converti en entier (centimes) ; signe libre | `recurring.controller.ts:121,140` | ✅ e2e `validation.e2e-spec.ts` |
 | Modification partielle : seuls les champs envoyés changent (le contrôleur ne transmet que les champs fournis) et l'entité est revalidée ; sans `amount`, le montant existant est conservé | `recurring.controller.ts:126-145`, `update-recurring-transaction.use-case.ts:18-22` | ✅ e2e `validation.e2e-spec.ts` |
 | Le corps de la modification est validé par `UpdateRecurringTransactionDto` (champs facultatifs : catégorie, description, montant en texte numérique, jour 1-31) ; tout autre champ, dont `accountId`, est refusé en 400 : une récurrente ne change jamais de compte | `recurring.controller.ts:54-76` | ✅ e2e `validation.e2e-spec.ts` |
-| Modifier une récurrente inexistante lève une erreur générique | `update-recurring-transaction.use-case.ts:16` | ❌ |
+| Modifier une récurrente inexistante renvoie 404 (`NotFoundError`) | `update-recurring-transaction.use-case.ts:16` | ❌ |
 | Injection dans une période (jour calculé, transactions « en attente ») | `functions/src/periods/application/create-period-with-budgets.use-case.ts:62-98` | ❌ (voir `docs/periods.md`) |
 | Elles servent aussi à calculer le montant par défaut d'une catégorie dans le brouillon de période | `functions/src/periods/application/get-period-draft.use-case.ts:64-70` | ✅ (spec des périodes) |
 | Supprimer un compte supprime ses récurrentes ; accès en base selon l'accès au compte | `20260309000000_create_recurring_transactions.sql:4,17-31` | ❌ |
@@ -46,4 +46,4 @@ Pas de cycle de vie.
 - Une récurrente n'a ni date de début/fin ni état actif : le code ne permet pas de la suspendre.
 - Rien ne les injecte automatiquement chaque mois : seule la création d'une période avec `injectRecurring` le fait.
 - Le signe attendu du montant (dépense négative ?) n'est pas imposé.
-- Erreur « not found » = erreur générique, pas 404.
+- Erreur « not found » = `NotFoundError`, traduite en 404 par le filtre global.

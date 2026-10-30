@@ -1,3 +1,5 @@
+import { DomainValidationError } from '../../shared/domain/errors';
+
 export interface RecurringTransactionProps {
   id: string;
   accountId: string;
@@ -32,12 +34,13 @@ export class RecurringTransaction {
   }
 
   private validate() {
-    if (!this.accountId) throw new Error('Account ID is required');
+    if (!this.accountId)
+      throw new DomainValidationError('Account ID is required');
     if (!this.description || this.description.trim().length === 0) {
-      throw new Error('Description is required');
+      throw new DomainValidationError('Description is required');
     }
     if (this.dayOfMonth < 1 || this.dayOfMonth > 31) {
-      throw new Error('Day of month must be between 1 and 31');
+      throw new DomainValidationError('Day of month must be between 1 and 31');
     }
   }
 

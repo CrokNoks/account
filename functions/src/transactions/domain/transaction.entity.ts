@@ -1,3 +1,5 @@
+import { DomainValidationError } from '../../shared/domain/errors';
+
 export interface TransactionProps {
   id: string;
   accountId: string;
@@ -56,12 +58,13 @@ export class Transaction {
   }
 
   private validate() {
-    if (!this.accountId) throw new Error('Account ID is required');
+    if (!this.accountId)
+      throw new DomainValidationError('Account ID is required');
     if (!this.description || this.description.trim().length === 0) {
-      throw new Error('Description is required');
+      throw new DomainValidationError('Description is required');
     }
     if (this.amount === undefined || this.amount === null) {
-      throw new Error('Amount is required');
+      throw new DomainValidationError('Amount is required');
     }
   }
 

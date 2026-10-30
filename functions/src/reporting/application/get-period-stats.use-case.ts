@@ -5,6 +5,7 @@ import { TransactionRepository } from '../../transactions/domain/transaction.rep
 import { BudgetRepository } from '../../budgets/domain/budget.repository.interface';
 import { CategoryRepository } from '../../categories/domain/category.repository.interface';
 import { CategoryType } from '../../categories/domain/category.entity';
+import { NotFoundError } from '../../shared/domain/errors';
 
 export interface PeriodStatsResponse {
   startBalance: string;
@@ -33,7 +34,8 @@ export class GetPeriodStatsUseCase {
   ): Promise<PeriodStatsResponse> {
     const account = await this.accountRepository.findById(accountId);
     const period = await this.periodRepository.findById(periodId);
-    if (!account || !period) throw new Error('Account or Period not found');
+    if (!account || !period)
+      throw new NotFoundError('Account or Period not found');
 
     const categories =
       await this.categoryRepository.findAllByAccount(accountId);

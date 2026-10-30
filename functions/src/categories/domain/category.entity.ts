@@ -1,3 +1,5 @@
+import { DomainValidationError } from '../../shared/domain/errors';
+
 export enum CategoryType {
   EXPENSE = 'expense',
   INCOME = 'income',
@@ -43,13 +45,13 @@ export class Category {
 
   private validate() {
     if (!this.name || this.name.trim().length === 0) {
-      throw new Error('Category name is required');
+      throw new DomainValidationError('Category name is required');
     }
     if (!Object.values(CategoryType).includes(this.type)) {
-      throw new Error('Invalid category type');
+      throw new DomainValidationError('Invalid category type');
     }
     if (this.color && !/^#[0-9A-Fa-f]{6}$/.test(this.color)) {
-      throw new Error('Invalid color format (hex required)');
+      throw new DomainValidationError('Invalid color format (hex required)');
     }
   }
 

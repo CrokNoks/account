@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { RecurringTransactionRepository } from '../domain/recurring-transaction.repository.interface';
 import { RecurringTransaction } from '../domain/recurring-transaction.entity';
+import { NotFoundError } from '../../shared/domain/errors';
 
 @Injectable()
 export class UpdateRecurringTransactionUseCase {
@@ -13,7 +14,7 @@ export class UpdateRecurringTransactionUseCase {
     >,
   ): Promise<RecurringTransaction> {
     const existing = await this.repository.findById(id);
-    if (!existing) throw new Error('Recurring transaction not found');
+    if (!existing) throw new NotFoundError('Recurring transaction not found');
 
     const updated = new RecurringTransaction({
       ...existing,

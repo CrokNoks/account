@@ -36,6 +36,7 @@ import {
   IsBoolean,
 } from 'class-validator';
 import { Type } from 'class-transformer';
+import { NotFoundError } from '../../shared/domain/errors';
 
 export class BudgetInitDto {
   @IsString()
@@ -181,7 +182,7 @@ export class PeriodsController {
     @Body() dto: UpdatePeriodDto,
   ) {
     const existing = await this.periodRepository.findById(id);
-    if (!existing) throw new Error('Period not found');
+    if (!existing) throw new NotFoundError('Period not found');
 
     const updated = new Period({
       id: existing.id,

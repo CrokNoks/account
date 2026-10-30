@@ -1,3 +1,5 @@
+import { DomainValidationError } from '../../shared/domain/errors';
+
 export interface BudgetInstanceProps {
   id: string;
   periodId: string;
@@ -26,10 +28,12 @@ export class BudgetInstance {
   }
 
   private validate() {
-    if (!this.periodId) throw new Error('Period ID is required');
-    if (!this.categoryId) throw new Error('Category ID is required');
+    if (!this.periodId)
+      throw new DomainValidationError('Period ID is required');
+    if (!this.categoryId)
+      throw new DomainValidationError('Category ID is required');
     if (this.amountAllocated === undefined || this.amountAllocated === null) {
-      throw new Error('Allocated amount is required');
+      throw new DomainValidationError('Allocated amount is required');
     }
   }
 

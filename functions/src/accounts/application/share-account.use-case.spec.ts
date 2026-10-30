@@ -1,3 +1,8 @@
+import {
+  DomainValidationError,
+  ForbiddenError,
+  NotFoundError,
+} from '../../shared/domain/errors';
 import { ShareAccountUseCase } from './share-account.use-case';
 import { AccountRepository } from '../domain/account.repository.interface';
 import { AccountShareRepository } from '../domain/account-share.repository.interface';
@@ -59,6 +64,7 @@ describe('ShareAccountUseCase', () => {
     accounts.findById.mockResolvedValue(null);
 
     await expect(useCase.execute(input)).rejects.toThrow('Account not found');
+    await expect(useCase.execute(input)).rejects.toBeInstanceOf(NotFoundError);
     expect(shares.save).not.toHaveBeenCalled();
   });
 
@@ -66,6 +72,9 @@ describe('ShareAccountUseCase', () => {
     await expect(
       useCase.execute({ ...input, initiatorId: 'someone-else' }),
     ).rejects.toThrow('Only the account owner can manage shares');
+    await expect(
+      useCase.execute({ ...input, initiatorId: 'someone-else' }),
+    ).rejects.toBeInstanceOf(ForbiddenError);
     expect(users.findByEmail).not.toHaveBeenCalled();
     expect(shares.save).not.toHaveBeenCalled();
   });
@@ -87,6 +96,9 @@ describe('ShareAccountUseCase', () => {
 
     await expect(useCase.execute(input)).rejects.toThrow(
       'You cannot share an account with yourself',
+    );
+    await expect(useCase.execute(input)).rejects.toBeInstanceOf(
+      DomainValidationError,
     );
     expect(shares.save).not.toHaveBeenCalled();
   });

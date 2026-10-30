@@ -101,12 +101,16 @@ describe('Transactions routes (e2e)', () => {
           .send({ ...body, categoryId: null, pending: false, tagIds: [] })
           .expect(201));
 
-      it('answers 500 without saving for a blank description (entity rule)', async () => {
+      it('answers 400 without saving for a blank description (entity rule)', async () => {
         await http()
           .post('/acc-1/transactions')
           .set(auth())
           .send({ ...body, description: '   ' })
-          .expect(500);
+          .expect(400, {
+            statusCode: 400,
+            message: 'Description is required',
+            error: 'Bad Request',
+          });
         expect(mocks.transactions.save).not.toHaveBeenCalled();
       });
     });
@@ -183,7 +187,7 @@ describe('Transactions routes (e2e)', () => {
       ]);
     });
 
-    it('answers 500 for a transfer to the same account', () =>
+    it('answers 400 for a transfer to the same account', () =>
       http()
         .post('/acc-1/transactions/transfer')
         .set(auth())
@@ -193,7 +197,7 @@ describe('Transactions routes (e2e)', () => {
           description: 'x',
           amount: '100',
         })
-        .expect(500));
+        .expect(400));
   });
 
   describe('POST /:accountId/transactions/bulk', () => {
@@ -236,14 +240,14 @@ describe('Transactions routes (e2e)', () => {
       expect(res.body).toMatchObject({ reconciled: true, pending: false });
     });
 
-    it('answers 500 for an unknown transaction', async () => {
+    it('answers 404 for an unknown transaction', async () => {
       mocks.transactions.findById.mockResolvedValue(null);
 
       await http()
         .patch('/acc-1/transactions/nope')
         .set(auth())
         .send({ notes: 'x' })
-        .expect(500);
+        .expect(404);
     });
 
     it('refuses unknown fields and an accountId in the body, without saving', async () => {

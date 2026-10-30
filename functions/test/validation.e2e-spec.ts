@@ -138,6 +138,17 @@ describe('Request body validation (e2e)', () => {
   });
 
   describe('PATCH /:accountId/recurring/:id', () => {
+    it('answers 404 for an unknown recurring transaction', async () => {
+      mocks.recurring.findById.mockResolvedValue(null);
+
+      await http()
+        .patch('/acc-1/recurring/nope')
+        .set(auth())
+        .send({ description: 'x' })
+        .expect(404);
+      expect(mocks.recurring.save).not.toHaveBeenCalled();
+    });
+
     it('keeps the existing amount when the body has no amount', async () => {
       const res = await http()
         .patch('/acc-1/recurring/r1')

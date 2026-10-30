@@ -1,3 +1,8 @@
+import {
+  DomainValidationError,
+  ForbiddenError,
+  NotFoundError,
+} from '../../shared/domain/errors';
 import { Injectable } from '@nestjs/common';
 import { AccountShareRepository } from '../domain/account-share.repository.interface';
 import { AccountRepository } from '../domain/account.repository.interface';
@@ -21,22 +26,22 @@ export class ShareAccountUseCase {
 
   async execute(input: ShareAccountInput): Promise<void> {
     const account = await this.accountRepository.findById(input.accountId);
-    if (!account) throw new Error('Account not found');
+    if (!account) throw new NotFoundError('Account not found');
 
     // Only owner can share
     if (account.ownerId !== input.initiatorId) {
-      throw new Error('Only the account owner can manage shares');
+      throw new ForbiddenError('Only the account owner can manage shares');
     }
 
     const targetUser = await this.userRepository.findByEmail(input.email);
     if (!targetUser) {
-      throw new Error(
+      throw new NotFoundError(
         `User with email ${input.email} not found. They must have logged in at least once.`,
       );
     }
 
     if (targetUser.id === account.ownerId) {
-      throw new Error(
+      throw new DomainValidationError(
         'You cannot share an account with yourself (you are the owner)',
       );
     }
