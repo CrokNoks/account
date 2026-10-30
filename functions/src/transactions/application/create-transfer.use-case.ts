@@ -2,9 +2,17 @@ import { Injectable } from '@nestjs/common';
 import { TransactionRepository } from '../domain/transaction.repository.interface';
 import { Transaction } from '../domain/transaction.entity';
 import * as crypto from 'crypto';
-import { DomainValidationError } from '../../shared/domain/errors';
+import {
+  DomainValidationError,
+  ForbiddenError,
+  NotFoundError,
+} from '../../shared/domain/errors';
+import { AccountRepository } from '../../accounts/domain/account.repository.interface';
+import { AccountShareRepository } from '../../accounts/domain/account-share.repository.interface';
 
 export interface CreateTransferCommand {
+  /** Utilisateur qui fait le virement. */
+  userId: string;
   sourceAccountId: string;
   destinationAccountId: string;
   amount: bigint; // positive amount in cents
@@ -14,7 +22,11 @@ export interface CreateTransferCommand {
 
 @Injectable()
 export class CreateTransferUseCase {
-  constructor(private readonly transactionRepository: TransactionRepository) {}
+  constructor(
+    private readonly transactionRepository: TransactionRepository,
+    private readonly accountRepository: AccountRepository,
+    private readonly accountShareRepository: AccountShareRepository,
+  ) {}
 
   async execute(
     command: CreateTransferCommand,
@@ -29,6 +41,8 @@ export class CreateTransferUseCase {
         'Source and destination accounts must be different',
       );
     }
+
+    await this.ensureCanWriteTo(command.destinationAccountId, command.userId);
 
     const transferId = crypto.randomUUID();
 
@@ -66,5 +80,29 @@ export class CreateTransferUseCase {
     await this.transactionRepository.save(destinationTransaction);
 
     return [sourceTransaction, destinationTransaction];
+  }
+
+  /**
+   * Le compte de destination doit être accessible (la lecture passe par la RLS :
+   * introuvable = 404) et en écriture : propriétaire, ou partage « write ».
+   * Un utilisateur peut lire sa propre ligne de partage (policy
+   * « Owners can view shares for their accounts », `user_id = auth.uid()`).
+   */
+  private async ensureCanWriteTo(
+    accountId: string,
+    userId: string,
+  ): Promise<void> {
+    const account = await this.accountRepository.findById(accountId);
+    if (!account) throw new NotFoundError('Destination account not found');
+    if (account.ownerId === userId) return;
+
+    const shares =
+      await this.accountShareRepository.findAllByAccount(accountId);
+    const mine = shares.find((s) => s.userId === userId);
+    if (mine?.permission !== 'write') {
+      throw new ForbiddenError(
+        'Write access to the destination account is required',
+      );
+    }
   }
 }

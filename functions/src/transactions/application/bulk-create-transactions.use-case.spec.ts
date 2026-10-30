@@ -1,11 +1,14 @@
 import { BulkCreateTransactionsUseCase } from './bulk-create-transactions.use-case';
 import { TransactionRepository } from '../domain/transaction.repository.interface';
 import { MatchSmartRulesUseCase } from '../../smart-rules/application/match-smart-rules.use-case';
+import { AccountReferencesService } from '../../shared/application/account-references.service';
+import { DomainValidationError } from '../../shared/domain/errors';
 
 describe('BulkCreateTransactionsUseCase', () => {
   let repository: { save: jest.Mock };
   let matchRules: { execute: jest.Mock };
   let useCase: BulkCreateTransactionsUseCase;
+  let refs: jest.Mocked<AccountReferencesService>;
 
   const line = (overrides: Record<string, unknown> = {}) => ({
     categoryId: null as string | null,
@@ -20,9 +23,13 @@ describe('BulkCreateTransactionsUseCase', () => {
     matchRules = {
       execute: jest.fn().mockResolvedValue({ categoryId: null, tagIds: [] }),
     };
+    refs = {
+      ensureReferences: jest.fn().mockResolvedValue(undefined),
+    } as unknown as jest.Mocked<AccountReferencesService>;
     useCase = new BulkCreateTransactionsUseCase(
       repository as unknown as TransactionRepository,
       matchRules as unknown as MatchSmartRulesUseCase,
+      refs,
     );
   });
 
@@ -35,6 +42,22 @@ describe('BulkCreateTransactionsUseCase', () => {
     expect(result).toHaveLength(2);
     expect(result.every((t) => t.accountId === 'acc-1')).toBe(true);
     expect(repository.save).toHaveBeenCalledTimes(2);
+  });
+
+  it('refuses the whole import, before any write, when a later line references another account', async () => {
+    refs.ensureReferences
+      .mockResolvedValueOnce(undefined)
+      .mockRejectedValueOnce(
+        new DomainValidationError('Category does not belong to this account'),
+      );
+
+    await expect(
+      useCase.execute({
+        accountId: 'acc-1',
+        transactions: [line(), line({ categoryId: 'cat-foreign' })],
+      }),
+    ).rejects.toBeInstanceOf(DomainValidationError);
+    expect(repository.save).not.toHaveBeenCalled();
   });
 
   it('applies smart rules to lines without category', async () => {

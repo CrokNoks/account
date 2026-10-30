@@ -1,11 +1,15 @@
 import { Injectable } from '@nestjs/common';
 import { RecurringTransactionRepository } from '../domain/recurring-transaction.repository.interface';
 import { RecurringTransaction } from '../domain/recurring-transaction.entity';
+import { AccountReferencesService } from '../../shared/application/account-references.service';
 import { ensureBelongsToAccount } from '../../shared/domain/account-ownership';
 
 @Injectable()
 export class UpdateRecurringTransactionUseCase {
-  constructor(private readonly repository: RecurringTransactionRepository) {}
+  constructor(
+    private readonly repository: RecurringTransactionRepository,
+    private readonly references: AccountReferencesService,
+  ) {}
 
   async execute(
     accountId: string,
@@ -19,6 +23,8 @@ export class UpdateRecurringTransactionUseCase {
       accountId,
       'Recurring transaction',
     );
+
+    await this.references.ensureCategories(accountId, [data.categoryId]);
 
     const updated = new RecurringTransaction({
       ...existing,

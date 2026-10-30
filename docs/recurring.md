@@ -14,6 +14,7 @@ Mise à jour : 2026-10-30 · Commit : 157b272
 | Le compte est obligatoire | `functions/src/recurring/domain/recurring-transaction.entity.ts:35` | ❌ |
 | La description est obligatoire (pas vide ni que des espaces) | `recurring-transaction.entity.ts:36-38` | ❌ |
 | Le jour du mois est entre 1 et 31 | `recurring-transaction.entity.ts:39` ; DTO `recurring.controller.ts:47-49` ; base `supabase/migrations/20260309000000_create_recurring_transactions.sql:8` (CHECK) | ❌ |
+| À la création et à la modification, la catégorie citée doit appartenir au compte de l'URL, sinon 400 « Category does not belong to this account » sans écriture (`AccountReferencesService`) | `create-/update-recurring-transaction.use-case.ts` | ✅ `recurring-transactions.use-cases.spec.ts`, e2e `cross-account-references.e2e-spec.ts` |
 | La catégorie est facultative ; si la catégorie est supprimée, la récurrente reste avec catégorie vide | `20260309000000_create_recurring_transactions.sql:5` (ON DELETE SET NULL) | ❌ |
 | Le montant est reçu en texte, arrondi puis converti en entier (centimes) ; signe libre | `recurring.controller.ts:121,140` | ✅ e2e `validation.e2e-spec.ts` |
 | Modification partielle : seuls les champs envoyés changent (le contrôleur ne transmet que les champs fournis) et l'entité est revalidée ; sans `amount`, le montant existant est conservé | `recurring.controller.ts:126-145`, `update-recurring-transaction.use-case.ts:18-22` | ✅ e2e `validation.e2e-spec.ts` |

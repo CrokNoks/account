@@ -1,11 +1,14 @@
 import { UpdatePeriodBudgetsUseCase } from './update-period-budgets.use-case';
 import { BudgetRepository } from '../../budgets/domain/budget.repository.interface';
 import { BudgetInstance } from '../../budgets/domain/budget-instance.entity';
+import { AccountReferencesService } from '../../shared/application/account-references.service';
+import { DomainValidationError } from '../../shared/domain/errors';
 
 describe('UpdatePeriodBudgetsUseCase', () => {
   let repository: { deleteAllByPeriod: jest.Mock; saveBulk: jest.Mock };
   let useCase: UpdatePeriodBudgetsUseCase;
   let calls: string[];
+  let refs: { ensureCategories: jest.Mock };
 
   beforeEach(() => {
     calls = [];
@@ -19,13 +22,16 @@ describe('UpdatePeriodBudgetsUseCase', () => {
         return Promise.resolve();
       }),
     };
+    refs = { ensureCategories: jest.fn().mockResolvedValue(undefined) };
     useCase = new UpdatePeriodBudgetsUseCase(
       repository as unknown as BudgetRepository,
+      refs as unknown as AccountReferencesService,
     );
   });
 
   it('replaces the budgets of the period: delete all, then save the new ones', async () => {
     const result = await useCase.execute({
+      accountId: 'acc-1',
       periodId: 'per-1',
       budgets: [
         { categoryId: 'cat-courses', amountAllocated: BigInt(-40000) },
@@ -43,6 +49,7 @@ describe('UpdatePeriodBudgetsUseCase', () => {
 
   it('drops budgets allocated to 0', async () => {
     const result = await useCase.execute({
+      accountId: 'acc-1',
       periodId: 'per-1',
       budgets: [
         { categoryId: 'cat-a', amountAllocated: BigInt(0) },
@@ -55,6 +62,7 @@ describe('UpdatePeriodBudgetsUseCase', () => {
 
   it('only deletes when every budget is 0 or the list is empty', async () => {
     const result = await useCase.execute({
+      accountId: 'acc-1',
       periodId: 'per-1',
       budgets: [{ categoryId: 'cat-a', amountAllocated: BigInt(0) }],
     });
@@ -70,10 +78,30 @@ describe('UpdatePeriodBudgetsUseCase', () => {
 
     await expect(
       useCase.execute({
+        accountId: 'acc-1',
         periodId: 'per-1',
         budgets: [{ categoryId: 'cat-a', amountAllocated: BigInt(-100) }],
       }),
     ).rejects.toThrow('db down');
     expect(repository.deleteAllByPeriod).toHaveBeenCalled();
+  });
+
+  it('refuses a category of another account before deleting anything', async () => {
+    refs.ensureCategories.mockRejectedValue(
+      new DomainValidationError('Category does not belong to this account'),
+    );
+
+    await expect(
+      useCase.execute({
+        accountId: 'acc-1',
+        periodId: 'per-1',
+        budgets: [{ categoryId: 'cat-foreign', amountAllocated: BigInt(-100) }],
+      }),
+    ).rejects.toBeInstanceOf(DomainValidationError);
+    expect(refs.ensureCategories).toHaveBeenCalledWith('acc-1', [
+      'cat-foreign',
+    ]);
+    expect(repository.deleteAllByPeriod).not.toHaveBeenCalled();
+    expect(repository.saveBulk).not.toHaveBeenCalled();
   });
 });

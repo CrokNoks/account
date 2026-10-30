@@ -14,6 +14,7 @@ import {
   ApiBearerAuth,
   ApiProperty,
 } from '@nestjs/swagger';
+import { AccountReferencesService } from '../../shared/application/account-references.service';
 import { ensureBelongsToAccount } from '../../shared/domain/account-ownership';
 import { SupabaseAuthGuard } from '../../auth/supabase-auth.guard';
 import type { SmartRuleRepository } from '../domain/smart-rule.repository.interface';
@@ -74,6 +75,7 @@ export class SmartRulesController {
   constructor(
     @Inject('SmartRuleRepository')
     private readonly repository: SmartRuleRepository,
+    private readonly references: AccountReferencesService,
   ) {}
 
   @Get()
@@ -89,6 +91,11 @@ export class SmartRulesController {
     @Param('accountId') accountId: string,
     @Body() dto: CreateSmartRuleDto,
   ) {
+    await this.references.ensureReferences(accountId, {
+      categoryId: dto.categoryId,
+      tagIds: dto.tagIds,
+    });
+
     const rule = SmartRule.create({
       accountId,
       pattern: dto.pattern,
@@ -113,6 +120,11 @@ export class SmartRulesController {
       accountId,
       'Smart rule',
     );
+
+    await this.references.ensureReferences(accountId, {
+      categoryId: dto.categoryId,
+      tagIds: dto.tagIds,
+    });
 
     if (dto.pattern !== undefined) rule.updatePattern(dto.pattern);
     if (dto.categoryId !== undefined) rule.updateCategory(dto.categoryId);

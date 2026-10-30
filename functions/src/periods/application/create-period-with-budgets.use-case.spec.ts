@@ -4,13 +4,17 @@ import { PeriodRepository } from '../domain/period.repository.interface';
 import { BudgetRepository } from '../../budgets/domain/budget.repository.interface';
 import { TransactionRepository } from '../../transactions/domain/transaction.repository.interface';
 import { RecurringTransactionRepository } from '../../recurring/domain/recurring-transaction.repository.interface';
+import { AccountReferencesService } from '../../shared/application/account-references.service';
+import { DomainValidationError } from '../../shared/domain/errors';
 
 describe('CreatePeriodWithBudgetsUseCase', () => {
   let useCase: CreatePeriodWithBudgetsUseCase;
   let periodRepo: PeriodRepository;
   let budgetRepo: BudgetRepository;
+  let refs: { ensureCategories: jest.Mock };
 
   beforeEach(async () => {
+    refs = { ensureCategories: jest.fn().mockResolvedValue(undefined) };
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         CreatePeriodWithBudgetsUseCase,
@@ -27,6 +31,7 @@ describe('CreatePeriodWithBudgetsUseCase', () => {
           useValue: { findAllByAccount: jest.fn().mockResolvedValue([]) },
         },
         { provide: TransactionRepository, useValue: { save: jest.fn() } },
+        { provide: AccountReferencesService, useValue: refs },
       ],
     }).compile();
 
@@ -54,5 +59,22 @@ describe('CreatePeriodWithBudgetsUseCase', () => {
     expect(result.budgets).toHaveLength(2);
     expect(periodRepo.save).toHaveBeenCalled();
     expect(budgetRepo.saveBulk).toHaveBeenCalled();
+  });
+
+  it('refuses a budget category of another account without any write', async () => {
+    refs.ensureCategories.mockRejectedValue(
+      new DomainValidationError('Category does not belong to this account'),
+    );
+
+    await expect(
+      useCase.execute({
+        accountId: 'acc-1',
+        startDate: new Date('2026-03-01'),
+        endDate: new Date('2026-03-10'),
+        budgets: [{ categoryId: 'cat-foreign', amountAllocated: BigInt(-1) }],
+      }),
+    ).rejects.toBeInstanceOf(DomainValidationError);
+    expect(periodRepo.save).not.toHaveBeenCalled();
+    expect(budgetRepo.saveBulk).not.toHaveBeenCalled();
   });
 });

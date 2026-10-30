@@ -47,6 +47,6 @@ Pas de cycle de vie.
 ## Zones d'ombre
 - Deux règles de même priorité : l'ordre entre elles dépend de l'ordre renvoyé par la base (tri stable non garanti par le code).
 - Quand une règle donne une catégorie vide mais des étiquettes, la prédiction de catégorie renvoie quand même un résultat (voir `predict-category.use-case.ts:26`) ; l'intention n'est pas documentée.
-- Aucune vérification que la catégorie ou les étiquettes citées appartiennent au même compte que la règle (côté code lu).
+- À la création et à la modification, la catégorie et les étiquettes citées doivent appartenir au compte de l'URL : sinon 400 sans écriture (`AccountReferencesService`, `smart-rules.controller.ts`) ; e2e `cross-account-references.e2e-spec.ts`.
 - Les règles ne sont pas rejouées sur les transactions déjà existantes (aucun code trouvé).
 - « Regex plus tard » : commentaire du code (`smart-rule.entity.ts:61`), pas de décision confirmée.

@@ -16,11 +16,13 @@ import {
 } from "@/components/ui/sheet";
 import { toast } from 'sonner';
 import { useTranslations } from 'next-intl';
+import { useCurrentUserId } from '@/features/auth/api/use-current-user-id';
 import { ShareAccountDialog } from './share-account-dialog';
 import { AccountForm, AccountFormValues } from './account-form';
 
 export function AccountList() {
   const { data: accounts, isLoading } = useAccounts();
+  const currentUserId = useCurrentUserId();
   const [editingAccount, setEditingAccount] = useState<Account | null>(null);
   const [sharingAccount, setSharingAccount] = useState<Account | null>(null);
 
@@ -36,27 +38,35 @@ export function AccountList() {
     <>
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {accounts?.map((account) => {
+          // Modifier et partager sont réservés au propriétaire (l'API répond 403 sinon).
+          const isOwner = !!currentUserId && account.ownerId === currentUserId;
           return (
             <Card key={account.id} className="group hover:border-primary/50 transition-colors relative">
               <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
                 <CardTitle className="text-sm font-medium">{account.name}</CardTitle>
                 <div className="flex items-center gap-1">
-                  <Button 
-                    variant="ghost" 
-                    size="icon-sm" 
-                    className="opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8"
-                    onClick={() => setSharingAccount(account)}
-                  >
-                    <Share2 className="w-3.5 h-3.5" />
-                  </Button>
-                  <Button 
-                    variant="ghost" 
-                    size="icon-sm" 
-                    className="opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8"
-                    onClick={() => setEditingAccount(account)}
-                  >
-                    <Pencil className="w-3.5 h-3.5" />
-                  </Button>
+                  {isOwner && (
+                    <>
+                      <Button 
+                        variant="ghost" 
+                        size="icon-sm" 
+                        aria-label="share-account"
+                        className="opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8"
+                        onClick={() => setSharingAccount(account)}
+                      >
+                        <Share2 className="w-3.5 h-3.5" />
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        size="icon-sm" 
+                        aria-label="edit-account"
+                        className="opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8"
+                        onClick={() => setEditingAccount(account)}
+                      >
+                        <Pencil className="w-3.5 h-3.5" />
+                      </Button>
+                    </>
+                  )}
                   <Landmark className="w-4 h-4 text-muted-foreground ml-1" />
                 </div>
               </CardHeader>

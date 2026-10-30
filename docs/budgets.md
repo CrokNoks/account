@@ -16,6 +16,7 @@ Ce module n'a **aucun point d'entrée API propre** : il est utilisé par le modu
 | --- | --- | --- |
 | Un budget exige une période et une catégorie | `functions/src/budgets/domain/budget-instance.entity.ts:29-30` | ✅ `budget-instance.entity.spec.ts` (2 cas « should throw if … missing ») |
 | Le montant doit être présent (0 est accepté par l'entité) | `budget-instance.entity.ts:31` | ❌ |
+| Les catégories des budgets (création de période, `PUT /:accountId/periods/:id/budgets`) doivent appartenir au compte de l'URL, sinon 400 « Category does not belong to this account » avant toute écriture (les anciens budgets ne sont pas effacés) | `create-period-with-budgets.use-case.ts`, `update-period-budgets.use-case.ts` | ✅ specs + e2e `cross-account-references.e2e-spec.ts` |
 | Un seul budget par couple (période, catégorie) | base : `supabase/migrations/20251229112000_create_budget_instances_table.sql:8` (UNIQUE) | ❌ |
 | Supprimer une période ou une catégorie supprime ses budgets | `20251229112000_create_budget_instances_table.sql:3-4` (ON DELETE CASCADE) | ❌ |
 | Montants stockés en centimes entiers (BIGINT) | `20260307000000_migrate_to_v2.sql:62-63` | ❌ |

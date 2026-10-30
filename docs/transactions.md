@@ -22,6 +22,8 @@ Mise à jour : 2026-10-30 · Commit : 157b272
 | Import en lot : si aucune catégorie n'est donnée, les règles intelligentes du compte sont appliquées et leurs tags s'ajoutent à ceux fournis | `application/bulk-create-transactions.use-case.ts:27-39` | ❌ |
 | Import en lot : traité ligne par ligne, sans transaction globale (un échec laisse les lignes déjà créées) | `bulk-create-transactions.use-case.ts:25-52` | ❌ |
 | Virement : montant strictement positif ; comptes source et destination différents | `application/create-transfer.use-case.ts:20-25` | ❌ |
+| Virement : le compte de destination doit être visible de l'appelant (introuvable ou invisible par la RLS → 404) et en écriture : propriétaire, ou partage `write` (partage `read` ou aucun → 403) ; rien n'est écrit en cas de refus. La permission se lit dans la ligne de partage de l'appelant (visible de lui par la RLS `user_id = auth.uid()`) | `create-transfer.use-case.ts` (`ensureCanWriteTo`) | ✅ `create-transfer.use-case.spec.ts`, e2e `cross-account-references.e2e-spec.ts` |
+| Catégorie, tags et objectif d'épargne envoyés (création simple, modification simple, import en lot, modification en lot) doivent appartenir au compte de l'URL, sinon 400 (« Category/Tag/Savings goal does not belong to this account ») sans aucune écriture ; l'import en lot est vérifié en entier avant la première écriture. Une catégorie globale (sans compte) ou inconnue est refusée : aucune n'est exposée par la RLS ni utilisée par le front. Règle unique dans `AccountReferencesService` | `shared/application/account-references.service.ts` | ✅ specs des cas d'usage, e2e `cross-account-references.e2e-spec.ts` |
 | Virement : sortie = montant négatif, entrée = montant positif, sans catégorie, metadata `transferId`, `type` (`transfer_out`/`transfer_in`), `relatedAccountId` ; les deux lignes sont enregistrées l'une après l'autre (pas atomique) | `create-transfer.use-case.ts:27-58` | ❌ |
 | Modification : si `reconciled` passe à vrai, `pending` est remis à faux | `infrastructure/transactions.controller.ts:436-438` | ✅ e2e `transactions.e2e-spec.ts` |
 | Modification : seuls les champs fournis changent (tags, objectif d'épargne, date, montant conservés sinon) ; montant arrondi à l'entier | `transactions.controller.ts:440-459` | ✅ e2e `transactions.e2e-spec.ts` |
@@ -53,7 +55,7 @@ Toutes les routes sont préfixées par l'identifiant du compte : `/:accountId/tr
 | Prédire la catégorie | `GET /:accountId/transactions/predict-category?description=` | connecté | `categoryId` (+ `tagIds` si règle) | `:344` |
 | Créer | `POST /:accountId/transactions` | connecté + RLS (`write`) | transaction créée | `:504` |
 | Créer en lot (import) | `POST /:accountId/transactions/bulk` | idem | transactions créées | `:469` |
-| Virement | `POST /:accountId/transactions/transfer` | idem (`write` sur le compte source ; destination non vérifiée par le code) | 2 transactions | `:487` |
+| Virement | `POST /:accountId/transactions/transfer` | idem (`write` sur le compte source ; destination : voir règles, 404/403 sans écriture) | 2 transactions | `:487` |
 | Modifier | `PATCH /:accountId/transactions/:id` | idem ; le compte de l'URL n'est pas comparé à celui de la transaction | transaction mise à jour | `:426` |
 | Supprimer | `DELETE /:accountId/transactions/:id` (204) | idem ; idem | supprimée | `:462` |
 | Modifier en lot | `PATCH /:accountId/transactions/bulk` | idem, compte contrôlé | voir règles | `:399` |
@@ -66,7 +68,8 @@ Front (`frontend/src/features/transactions/`) : `transaction-list` (liste, filtr
 
 ## Zones d'ombre
 - Ordre des routes : `PATCH bulk` (399) et `DELETE bulk` (413) doivent rester déclarées avant `PATCH :id` (426) et `DELETE :id` (462), sinon Express les capte comme un `:id` (id = « bulk ») et la modification/suppression en lot devient inutilisable. Verrouillé par les tests e2e (`bulk routes`). Les champs de `data` en modification en lot sont validés (`BulkUpdateTransactionsDataDto`). Codes de retour : `DELETE :id` 204, `DELETE bulk` et `PATCH bulk` 200.
-- Le code ne vérifie pas que le compte de destination d'un virement est accessible ; seule la base (RLS) bloque.
+- Limite : la période (`periodId`) envoyée à la création d'une transaction n'est pas encore comparée au compte de l'URL.
+- Les listes `GET /:accountId/...` ne vérifient pas l'accès au compte : pour un compte inaccessible, la RLS renvoie simplement une liste vide (comportement conservé).
 - Dans le virement, le montant est lu avec `Math.round(Number(...))` : le comportement pour de très grands montants (précision) n'est pas défini.
 - Le virement ne porte pas de catégorie et sa catégorie « transfer » (type de catégorie, `20260307000000`) n'est pas utilisée ici : le code ne dit pas le lien voulu.
 - Le trigger d'objectif d'épargne s'applique aussi aux modifications de montant ; son comportement quand le montant et l'objectif changent ensemble n'est pas testé.

@@ -1,11 +1,19 @@
 import { CreateTransferUseCase } from './create-transfer.use-case';
 import { TransactionRepository } from '../domain/transaction.repository.interface';
+import { AccountRepository } from '../../accounts/domain/account.repository.interface';
+import { AccountShareRepository } from '../../accounts/domain/account-share.repository.interface';
+import { Account } from '../../accounts/domain/account.entity';
+import { AccountShare } from '../../accounts/domain/account-share.entity';
+import { ForbiddenError, NotFoundError } from '../../shared/domain/errors';
 
 describe('CreateTransferUseCase', () => {
   let repository: jest.Mocked<Pick<TransactionRepository, 'save'>>;
+  let accounts: { findById: jest.Mock };
+  let shares: { findAllByAccount: jest.Mock };
   let useCase: CreateTransferUseCase;
 
   const command = {
+    userId: 'user-1',
     sourceAccountId: 'acc-src',
     destinationAccountId: 'acc-dst',
     amount: BigInt(15000),
@@ -15,8 +23,18 @@ describe('CreateTransferUseCase', () => {
 
   beforeEach(() => {
     repository = { save: jest.fn().mockResolvedValue(undefined) };
+    accounts = {
+      findById: jest
+        .fn()
+        .mockResolvedValue(
+          new Account({ id: 'acc-dst', name: 'D', ownerId: 'user-1' }),
+        ),
+    };
+    shares = { findAllByAccount: jest.fn().mockResolvedValue([]) };
     useCase = new CreateTransferUseCase(
       repository as unknown as TransactionRepository,
+      accounts as unknown as AccountRepository,
+      shares as unknown as AccountShareRepository,
     );
   });
 
@@ -80,6 +98,52 @@ describe('CreateTransferUseCase', () => {
       useCase.execute({ ...command, destinationAccountId: 'acc-src' }),
     ).rejects.toThrow('Source and destination accounts must be different');
     expect(repository.save).not.toHaveBeenCalled();
+  });
+
+  describe('destination account access', () => {
+    const foreign = () =>
+      accounts.findById.mockResolvedValue(
+        new Account({ id: 'acc-dst', name: 'D', ownerId: 'someone-else' }),
+      );
+    const share = (userId: string, permission: 'read' | 'write') =>
+      new AccountShare({ accountId: 'acc-dst', userId, permission });
+
+    it('refuses (404) an unknown or inaccessible destination, without saving', async () => {
+      accounts.findById.mockResolvedValue(null);
+
+      await expect(useCase.execute(command)).rejects.toBeInstanceOf(
+        NotFoundError,
+      );
+      expect(repository.save).not.toHaveBeenCalled();
+    });
+
+    it('refuses (403) a destination shared in read only, without saving', async () => {
+      foreign();
+      shares.findAllByAccount.mockResolvedValue([share('user-1', 'read')]);
+
+      await expect(useCase.execute(command)).rejects.toBeInstanceOf(
+        ForbiddenError,
+      );
+      expect(repository.save).not.toHaveBeenCalled();
+    });
+
+    it('refuses (403) when no share belongs to the caller', async () => {
+      foreign();
+      shares.findAllByAccount.mockResolvedValue([share('other', 'write')]);
+
+      await expect(useCase.execute(command)).rejects.toBeInstanceOf(
+        ForbiddenError,
+      );
+      expect(repository.save).not.toHaveBeenCalled();
+    });
+
+    it('accepts a destination shared in write', async () => {
+      foreign();
+      shares.findAllByAccount.mockResolvedValue([share('user-1', 'write')]);
+
+      await useCase.execute(command);
+      expect(repository.save).toHaveBeenCalledTimes(2);
+    });
   });
 
   // Comportement actuel documenté (docs/transactions.md) : le virement n'est pas atomique.

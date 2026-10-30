@@ -124,6 +124,10 @@ describe('Request body validation (e2e)', () => {
 
     it('POST /:accountId/periods accepts the front payload', () => {
       mocks.recurring.findAllByAccount.mockResolvedValue([]);
+      mocks.categories.findById.mockResolvedValue({
+        id: 'c1',
+        accountId: 'acc-1',
+      });
       return http()
         .post('/acc-1/periods')
         .set(auth())

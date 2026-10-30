@@ -158,6 +158,7 @@ export class PeriodsController {
   ) {
     await this.getOwnedPeriod(accountId, id);
     const result = await this.updatePeriodBudgetsUseCase.execute({
+      accountId,
       periodId: id,
       budgets: dto.budgets.map((b) => ({
         categoryId: b.categoryId,

@@ -6,10 +6,11 @@ import { GetRecurringTransactionsUseCase } from './application/get-recurring-tra
 import { CreateRecurringTransactionUseCase } from './application/create-recurring-transaction.use-case';
 import { UpdateRecurringTransactionUseCase } from './application/update-recurring-transaction.use-case';
 import { DeleteRecurringTransactionUseCase } from './application/delete-recurring-transaction.use-case';
+import { AccountReferencesModule } from '../shared/account-references.module';
 import { RecurringController } from './infrastructure/recurring.controller';
 
 @Module({
-  imports: [SupabaseModule],
+  imports: [SupabaseModule, AccountReferencesModule],
   controllers: [RecurringController],
   providers: [
     {

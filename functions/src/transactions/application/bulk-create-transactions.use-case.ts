@@ -3,6 +3,7 @@ import { TransactionRepository } from '../domain/transaction.repository.interfac
 import { Transaction } from '../domain/transaction.entity';
 import { MatchSmartRulesUseCase } from '../../smart-rules/application/match-smart-rules.use-case';
 import { CreateTransactionCommand } from './create-transaction.use-case';
+import { AccountReferencesService } from '../../shared/application/account-references.service';
 
 export interface BulkCreateTransactionsCommand {
   accountId: string;
@@ -14,6 +15,7 @@ export class BulkCreateTransactionsUseCase {
   constructor(
     private readonly transactionRepository: TransactionRepository,
     private readonly matchRulesUseCase: MatchSmartRulesUseCase,
+    private readonly references: AccountReferencesService,
   ) {}
 
   async execute(
@@ -21,6 +23,11 @@ export class BulkCreateTransactionsUseCase {
   ): Promise<Transaction[]> {
     const { accountId, transactions } = command;
     const createdTransactions: Transaction[] = [];
+
+    // Tout est vérifié avant la première écriture (l'import n'est pas atomique).
+    for (const dto of transactions) {
+      await this.references.ensureReferences(accountId, dto);
+    }
 
     for (const dto of transactions) {
       let categoryId = dto.categoryId;

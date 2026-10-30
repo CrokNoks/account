@@ -1,4 +1,6 @@
 import { NotFoundError } from '../../shared/domain/errors';
+import { AccountReferencesService } from '../../shared/application/account-references.service';
+import { DomainValidationError } from '../../shared/domain/errors';
 import { CreateRecurringTransactionUseCase } from './create-recurring-transaction.use-case';
 import { DeleteRecurringTransactionUseCase } from './delete-recurring-transaction.use-case';
 import { GetRecurringTransactionsUseCase } from './get-recurring-transactions.use-case';
@@ -8,6 +10,7 @@ import { RecurringTransaction } from '../domain/recurring-transaction.entity';
 
 describe('Recurring transactions use cases', () => {
   let repository: jest.Mocked<RecurringTransactionRepository>;
+  let refs: jest.Mocked<AccountReferencesService>;
 
   const existing = RecurringTransaction.create({
     id: 'rec-1',
@@ -26,11 +29,15 @@ describe('Recurring transactions use cases', () => {
       save: jest.fn().mockResolvedValue(undefined),
       delete: jest.fn().mockResolvedValue(undefined),
     };
+    refs = {
+      ensureCategories: jest.fn().mockResolvedValue(undefined),
+    } as unknown as jest.Mocked<AccountReferencesService>;
   });
 
   it('creates and saves a recurring transaction', async () => {
     const created = await new CreateRecurringTransactionUseCase(
       repository,
+      refs,
     ).execute({
       accountId: 'acc-1',
       categoryId: null,
@@ -48,9 +55,26 @@ describe('Recurring transactions use cases', () => {
     expect(repository.save).toHaveBeenCalledWith(created);
   });
 
+  it('refuses a category of another account without saving', async () => {
+    refs.ensureCategories.mockRejectedValue(
+      new DomainValidationError('Category does not belong to this account'),
+    );
+
+    await expect(
+      new CreateRecurringTransactionUseCase(repository, refs).execute({
+        accountId: 'acc-1',
+        categoryId: 'cat-foreign',
+        description: 'Netflix',
+        amount: BigInt(-1399),
+        dayOfMonth: 12,
+      }),
+    ).rejects.toBeInstanceOf(DomainValidationError);
+    expect(repository.save).not.toHaveBeenCalled();
+  });
+
   it('does not save an invalid recurring transaction', async () => {
     await expect(
-      new CreateRecurringTransactionUseCase(repository).execute({
+      new CreateRecurringTransactionUseCase(repository, refs).execute({
         accountId: 'acc-1',
         categoryId: null,
         description: 'Netflix',
@@ -96,7 +120,8 @@ describe('Recurring transactions use cases', () => {
   });
 
   describe('UpdateRecurringTransactionUseCase', () => {
-    const useCase = () => new UpdateRecurringTransactionUseCase(repository);
+    const useCase = () =>
+      new UpdateRecurringTransactionUseCase(repository, refs);
 
     it('merges the provided fields and keeps identity', async () => {
       const updated = await useCase().execute('acc-1', 'rec-1', {
@@ -113,6 +138,20 @@ describe('Recurring transactions use cases', () => {
         createdAt: new Date('2026-01-01'),
       });
       expect(repository.save).toHaveBeenCalledWith(updated);
+    });
+
+    it('rejects a category of another account without saving', async () => {
+      refs.ensureCategories.mockRejectedValue(
+        new DomainValidationError('Category does not belong to this account'),
+      );
+
+      await expect(
+        useCase().execute('acc-1', 'rec-1', { categoryId: 'cat-foreign' }),
+      ).rejects.toBeInstanceOf(DomainValidationError);
+      expect(refs.ensureCategories).toHaveBeenCalledWith('acc-1', [
+        'cat-foreign',
+      ]);
+      expect(repository.save).not.toHaveBeenCalled();
     });
 
     it('rejects an unknown recurring transaction', async () => {

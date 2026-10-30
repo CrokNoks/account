@@ -144,9 +144,16 @@ export class AccountsController {
   @Patch(':id')
   @ApiOperation({ summary: 'Update an account' })
   @ApiResponse({ status: 200 })
-  async update(@Param('id') id: string, @Body() dto: UpdateAccountDto) {
-    const existing = await this.accountRepository.findById(id);
-    if (!existing) throw new NotFoundError('Account not found');
+  async update(
+    @Param('id') id: string,
+    @Body() dto: UpdateAccountDto,
+    @Request() req: AuthenticatedRequest,
+  ) {
+    const existing = await this.assertOwner(
+      id,
+      req.user.id,
+      'Only owner can update the account',
+    );
 
     const updated = new Account({
       id: existing.id,
@@ -176,10 +183,11 @@ export class AccountsController {
     accountId: string,
     userId: string,
     message: string,
-  ): Promise<void> {
+  ): Promise<Account> {
     const account = await this.accountRepository.findById(accountId);
     if (!account) throw new NotFoundError('Account not found');
     if (account.ownerId !== userId) throw new ForbiddenError(message);
+    return account;
   }
 
   @Post()

@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { TransactionRepository } from '../domain/transaction.repository.interface';
+import { AccountReferencesService } from '../../shared/application/account-references.service';
 
 export interface BulkUpdateTransactionsCommand {
   accountId: string;
@@ -14,10 +15,15 @@ export interface BulkUpdateTransactionsCommand {
 
 @Injectable()
 export class BulkUpdateTransactionsUseCase {
-  constructor(private readonly transactionRepository: TransactionRepository) {}
+  constructor(
+    private readonly transactionRepository: TransactionRepository,
+    private readonly references: AccountReferencesService,
+  ) {}
 
   async execute(command: BulkUpdateTransactionsCommand): Promise<void> {
     const { accountId, ids, data } = command;
+
+    await this.references.ensureReferences(accountId, data);
 
     // We fetch them all to ensure they belong to the account (security)
     // In a real high-perf system, we might use a direct update with a where clause on account_id

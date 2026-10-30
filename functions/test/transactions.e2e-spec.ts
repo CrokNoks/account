@@ -3,6 +3,7 @@ import request from 'supertest';
 import { App } from 'supertest/types';
 import { auth, createE2EApp, Mocks } from './e2e-app';
 import { Transaction } from '../src/transactions/domain/transaction.entity';
+import { Account } from '../src/accounts/domain/account.entity';
 
 const tx = (id: string, overrides: Partial<Transaction> = {}) =>
   Transaction.create({
@@ -38,6 +39,13 @@ describe('Transactions routes (e2e)', () => {
       tx('t2'),
     ]);
     mocks.smartRules.findAllByAccount.mockResolvedValue([]);
+    mocks.categories.findById.mockResolvedValue({
+      id: 'cat-2',
+      accountId: 'acc-1',
+    });
+    mocks.accounts.findById.mockResolvedValue(
+      new Account({ id: 'acc-2', name: 'Épargne', ownerId: 'user-1' }),
+    );
   });
 
   describe('POST /:accountId/transactions', () => {

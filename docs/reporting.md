@@ -37,7 +37,7 @@ Montants en centimes (texte dans les réponses), sauf Sankey (euros, nombre) et 
 | Anomalie « doublon » : plusieurs dépenses le même jour avec le même montant ; ignore revenus et dépenses de moins de 5 € (montant > −500 centimes). | `get-anomalies.use-case.ts:80-88` | ✅ `get-anomalies.use-case.spec.ts` (doublons, petits montants) |
 | Anomalie « dépense inhabituelle » : dépense catégorisée plus de 3 fois supérieure à la moyenne des 6 mois précédents de sa catégorie, avec au moins 3 transactions d'historique. | `get-anomalies.use-case.ts:118-141` | ✅ idem (« outlier > 3x ») |
 | Période d'analyse des anomalies : la période donnée, sinon le mois en cours ; historique = 6 mois avant le début. | `get-anomalies.use-case.ts:28-47` | ❌ |
-| Ignorer une anomalie : ajoute le type dans les métadonnées de chaque transaction listée ; une transaction d'un autre compte ou inconnue est silencieusement sautée. Les anomalies ignorées ne ressortent plus. | `ignore-anomaly.use-case.ts:12-34` | ✅ `ignore-anomaly.use-case.spec.ts` (3 cas) ; « ignorées » ✅ `get-anomalies...spec` |
+| Ignorer une anomalie : ajoute le type dans les métadonnées de chaque transaction listée ; une transaction inconnue ou d'un autre compte → 404 identique pour toute la requête, vérifié avant la première écriture (rien n'est marqué). Les anomalies ignorées ne ressortent plus. | `ignore-anomaly.use-case.ts:12-34` | ✅ `ignore-anomaly.use-case.spec.ts`, e2e `cross-account-references.e2e-spec.ts` ; « ignorées » ✅ `get-anomalies...spec` |
 | Le type « spike » est accepté à l'ignorance mais aucune détection ne le produit. | `reporting.controller.ts:81`, `get-anomalies.use-case.ts:8` | ❌ |
 | Analyse IA de période : envoie à Gemini revenus/dépenses réels et prévus, solde prévisionnel, 8 premières dépenses, épargne, description du compte ; réponse ≤ 150 mots en français ou anglais (`locale`, français par défaut). | `get-ai-insights.use-case.ts:17-62` | ❌ |
 | Analyse IA d'évolution : 6 dernières périodes clôturées ; si aucune, message « pas assez de données ». | `get-evolution-ai-insights.use-case.ts:15-57` | ❌ |
@@ -68,7 +68,7 @@ Identité : toutes les routes sont sous `SupabaseAuthGuard` (jeton Supabase exig
 | Calendrier | `GET /reporting/calendar?year=&month=` | connecté | événements du mois | l.369 |
 | Anomalies | `GET /reporting/anomalies?periodId=` | connecté | liste | l.384 |
 | Ignorer des anomalies | `POST /reporting/anomalies/ignore` (`transactionIds`, `type` ∈ duplicate/spike/outlier) | connecté | écrit les métadonnées | l.216 |
-| Patrimoine net (tous comptes) | `GET /reporting/net-worth` | connecté ; l'`accountId` de l'URL est ignoré, résultat = tous les comptes accessibles via la RLS | total + 30 jours | l.231 |
+| Patrimoine net (tous comptes) | `GET /reporting/net-worth` | connecté ; **l'`accountId` de l'URL est volontairement ignoré** : le patrimoine net est global (tous les comptes accessibles via la RLS, possédés + partagés), jamais celui d'un seul compte | total + 30 jours | l.231 |
 
 Front : un hook par route dans `api/` (clés React Query dédiées) ; écrans `ui/` : cartes de stats (`dashboard-stats.tsx`), répartition (`budget-breakdown.tsx`), évolution (`evolution-chart.tsx`), comparaison, Sankey, calendrier (`financial-calendar.tsx` + `calendar/`), trésorerie (`cashflow-forecast.tsx`), anomalies, patrimoine net, pulse, top dépenses, échéances, cartes IA (`base-ai-insights-card.tsx`, rendu Markdown). Les widgets du tableau de bord sont déclarés dans `features/preferences/config/dashboard-widgets.tsx`. Types : `model/types.ts`.
 

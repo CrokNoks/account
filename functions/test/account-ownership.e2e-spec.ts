@@ -240,6 +240,11 @@ describe('Account ownership of :id routes (e2e)', () => {
       }
     }
     mocks.budgets.findAllByPeriod.mockResolvedValue([]);
+    // Catégorie référencée par le PUT budgets : celle du compte de l'URL.
+    mocks.categories.findById.mockResolvedValue({
+      id: 'c',
+      accountId: 'acc-1',
+    });
   });
 
   const send = (r: Route) => {

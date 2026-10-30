@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { TransactionRepository } from '../../transactions/domain/transaction.repository.interface';
+import { ensureBelongsToAccount } from '../../shared/domain/account-ownership';
 import { Transaction } from '../../transactions/domain/transaction.entity';
 
 @Injectable()
@@ -11,10 +12,20 @@ export class IgnoreAnomalyUseCase {
     transactionIds: string[],
     type: string,
   ): Promise<void> {
+    // Tout est vérifié avant la première écriture : 404 identique pour une
+    // transaction inconnue et pour celle d'un autre compte.
+    const transactions: Transaction[] = [];
     for (const id of transactionIds) {
-      const tx = await this.transactionRepository.findById(id);
-      if (!tx || tx.accountId !== accountId) continue;
+      transactions.push(
+        ensureBelongsToAccount(
+          await this.transactionRepository.findById(id),
+          accountId,
+          'Transaction',
+        ),
+      );
+    }
 
+    for (const tx of transactions) {
       const metadata = (tx.metadata as Record<string, any>) || {};
       const ignoredAnomalies = new Set<string>(
         (metadata.ignoredAnomalies as string[]) || [],

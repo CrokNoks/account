@@ -1,8 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { BudgetRepository } from '../../budgets/domain/budget.repository.interface';
 import { BudgetInstance } from '../../budgets/domain/budget-instance.entity';
+import { AccountReferencesService } from '../../shared/application/account-references.service';
 
 export interface UpdatePeriodBudgetsCommand {
+  accountId: string;
   periodId: string;
   budgets: Array<{
     categoryId: string;
@@ -12,11 +14,19 @@ export interface UpdatePeriodBudgetsCommand {
 
 @Injectable()
 export class UpdatePeriodBudgetsUseCase {
-  constructor(private readonly budgetRepository: BudgetRepository) {}
+  constructor(
+    private readonly budgetRepository: BudgetRepository,
+    private readonly references: AccountReferencesService,
+  ) {}
 
   async execute(
     command: UpdatePeriodBudgetsCommand,
   ): Promise<BudgetInstance[]> {
+    await this.references.ensureCategories(
+      command.accountId,
+      command.budgets.map((b) => b.categoryId),
+    );
+
     // 1. Delete existing budgets for the period
     await this.budgetRepository.deleteAllByPeriod(command.periodId);
 

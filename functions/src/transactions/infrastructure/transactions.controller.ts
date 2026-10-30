@@ -9,6 +9,7 @@ import {
   HttpCode,
   Query,
   Patch,
+  Request,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -19,6 +20,8 @@ import {
   OmitType,
   PartialType,
 } from '@nestjs/swagger';
+import type { AuthenticatedRequest } from '../../auth/authenticated-request.interface';
+import { AccountReferencesService } from '../../shared/application/account-references.service';
 import { ensureBelongsToAccount } from '../../shared/domain/account-ownership';
 import { SupabaseAuthGuard } from '../../auth/supabase-auth.guard';
 import { GetTransactionsByAccountUseCase } from '../application/get-transactions-by-account.use-case';
@@ -340,6 +343,7 @@ export class TransactionsController {
     private readonly transactionRepository: TransactionRepository,
     @Inject(PeriodRepository)
     private readonly periodRepository: PeriodRepository,
+    private readonly references: AccountReferencesService,
   ) {}
 
   @Get('predict-category')
@@ -441,6 +445,13 @@ export class TransactionsController {
       'Transaction',
     );
 
+    // Seules les références réellement fournies sont vérifiées.
+    await this.references.ensureReferences(accountId, {
+      categoryId: dto.categoryId,
+      tagIds: dto.tagIds,
+      savingsGoalId: dto.savingsGoalId,
+    });
+
     // If reconciling, auto-clear pending
     const pending =
       dto.reconciled === true ? false : (dto.pending ?? existing.pending);
@@ -506,8 +517,10 @@ export class TransactionsController {
   async createTransfer(
     @Param('accountId') accountId: string,
     @Body() dto: CreateTransferDto,
+    @Request() req: AuthenticatedRequest,
   ): Promise<TransactionResponseDto[]> {
     const [sourceTx, destTx] = await this.createTransferUseCase.execute({
+      userId: req.user.id,
       sourceAccountId: accountId,
       destinationAccountId: dto.destinationAccountId,
       amount: BigInt(Math.round(Number(dto.amount))),

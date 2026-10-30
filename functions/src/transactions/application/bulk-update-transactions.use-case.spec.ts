@@ -1,10 +1,13 @@
 import { BulkUpdateTransactionsUseCase } from './bulk-update-transactions.use-case';
 import { TransactionRepository } from '../domain/transaction.repository.interface';
 import { Transaction } from '../domain/transaction.entity';
+import { AccountReferencesService } from '../../shared/application/account-references.service';
+import { DomainValidationError } from '../../shared/domain/errors';
 
 describe('BulkUpdateTransactionsUseCase', () => {
   let repository: { findAllByAccountUnpaginated: jest.Mock; save: jest.Mock };
   let useCase: BulkUpdateTransactionsUseCase;
+  let refs: jest.Mocked<AccountReferencesService>;
 
   const tx = (id: string, overrides: Partial<Transaction> = {}) =>
     Transaction.create({
@@ -30,8 +33,12 @@ describe('BulkUpdateTransactionsUseCase', () => {
         .mockResolvedValue([tx('t1'), tx('t2'), tx('t3')]),
       save: jest.fn().mockResolvedValue(undefined),
     };
+    refs = {
+      ensureReferences: jest.fn().mockResolvedValue(undefined),
+    } as unknown as jest.Mocked<AccountReferencesService>;
     useCase = new BulkUpdateTransactionsUseCase(
       repository as unknown as TransactionRepository,
+      refs,
     );
   });
 
@@ -47,6 +54,25 @@ describe('BulkUpdateTransactionsUseCase', () => {
     );
     expect(saved().map((t) => t.id)).toEqual(['t1', 't3']);
     expect(saved().every((t) => t.categoryId === 'cat-new')).toBe(true);
+  });
+
+  it('refuses a category or tags of another account without saving', async () => {
+    refs.ensureReferences.mockRejectedValue(
+      new DomainValidationError('Category does not belong to this account'),
+    );
+
+    await expect(
+      useCase.execute({
+        accountId: 'acc-1',
+        ids: ['t1'],
+        data: { categoryId: 'cat-foreign', tagIds: ['tag-foreign'] },
+      }),
+    ).rejects.toBeInstanceOf(DomainValidationError);
+    expect(refs.ensureReferences).toHaveBeenCalledWith('acc-1', {
+      categoryId: 'cat-foreign',
+      tagIds: ['tag-foreign'],
+    });
+    expect(repository.save).not.toHaveBeenCalled();
   });
 
   it('ignores ids that do not belong to the account', async () => {

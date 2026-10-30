@@ -10,11 +10,19 @@ import { BulkUpdateTransactionsUseCase } from './application/bulk-update-transac
 import { BulkDeleteTransactionsUseCase } from './application/bulk-delete-transactions.use-case';
 import { CreateTransferUseCase } from './application/create-transfer.use-case';
 import { TransactionsController } from './infrastructure/transactions.controller';
+import { AccountReferencesModule } from '../shared/account-references.module';
+import { AccountsModule } from '../accounts/accounts.module';
 import { PeriodsModule } from '../periods/periods.module';
 import { SmartRulesModule } from '../smart-rules/smart-rules.module';
 
 @Module({
-  imports: [SupabaseModule, forwardRef(() => PeriodsModule), SmartRulesModule],
+  imports: [
+    SupabaseModule,
+    forwardRef(() => PeriodsModule),
+    SmartRulesModule,
+    AccountsModule,
+    AccountReferencesModule,
+  ],
   controllers: [TransactionsController],
   providers: [
     {

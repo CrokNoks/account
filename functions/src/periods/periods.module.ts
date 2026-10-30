@@ -9,6 +9,7 @@ import { SupabasePeriodRepository } from './infrastructure/supabase-period.repos
 import { GetPeriodDraftUseCase } from './application/get-period-draft.use-case';
 import { CreatePeriodWithBudgetsUseCase } from './application/create-period-with-budgets.use-case';
 import { UpdatePeriodBudgetsUseCase } from './application/update-period-budgets.use-case';
+import { AccountReferencesModule } from '../shared/account-references.module';
 import { PeriodsController } from './infrastructure/periods.controller';
 
 @Module({
@@ -18,6 +19,7 @@ import { PeriodsController } from './infrastructure/periods.controller';
     BudgetsModule,
     forwardRef(() => TransactionsModule),
     RecurringModule,
+    AccountReferencesModule,
   ],
   controllers: [PeriodsController],
   providers: [

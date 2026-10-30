@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { IgnoreAnomalyUseCase } from './ignore-anomaly.use-case';
 import { TransactionRepository } from '../../transactions/domain/transaction.repository.interface';
+import { NotFoundError } from '../../shared/domain/errors';
 import { Transaction } from '../../transactions/domain/transaction.entity';
 
 describe('IgnoreAnomalyUseCase', () => {
@@ -64,7 +65,7 @@ describe('IgnoreAnomalyUseCase', () => {
     );
   });
 
-  it('should not update if transaction belongs to another account', async () => {
+  it('refuses (404) a transaction of another account, without any write', async () => {
     const accountId = 'acc-1';
     const transactionId = 'tx-1';
 
@@ -81,8 +82,33 @@ describe('IgnoreAnomalyUseCase', () => {
 
     transactionRepository.findById.mockResolvedValue(existingTx);
 
-    await useCase.execute(accountId, [transactionId], 'outlier');
+    await expect(
+      useCase.execute(accountId, [transactionId], 'outlier'),
+    ).rejects.toBeInstanceOf(NotFoundError);
+    expect(transactionRepository.save).not.toHaveBeenCalled();
+  });
 
+  it('refuses the whole request when one id is unknown, before writing the valid ones', async () => {
+    transactionRepository.findById.mockImplementation((id) =>
+      Promise.resolve(
+        id === 'tx-1'
+          ? Transaction.create({
+              id,
+              accountId: 'acc-1',
+              categoryId: 'cat-1',
+              date: new Date(),
+              description: 'Desc',
+              amount: BigInt(-1000),
+              reconciled: false,
+              pending: false,
+            })
+          : null,
+      ),
+    );
+
+    await expect(
+      useCase.execute('acc-1', ['tx-1', 'ghost'], 'outlier'),
+    ).rejects.toBeInstanceOf(NotFoundError);
     expect(transactionRepository.save).not.toHaveBeenCalled();
   });
 

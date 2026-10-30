@@ -6,6 +6,7 @@ import { BudgetInstance } from '../../budgets/domain/budget-instance.entity';
 import { RecurringTransactionRepository } from '../../recurring/domain/recurring-transaction.repository.interface';
 import { TransactionRepository } from '../../transactions/domain/transaction.repository.interface';
 import { Transaction } from '../../transactions/domain/transaction.entity';
+import { AccountReferencesService } from '../../shared/application/account-references.service';
 
 export interface CreatePeriodWithBudgetsCommand {
   accountId: string;
@@ -25,11 +26,17 @@ export class CreatePeriodWithBudgetsUseCase {
     private readonly budgetRepository: BudgetRepository,
     private readonly recurringRepository: RecurringTransactionRepository,
     private readonly transactionRepository: TransactionRepository,
+    private readonly references: AccountReferencesService,
   ) {}
 
   async execute(
     command: CreatePeriodWithBudgetsCommand,
   ): Promise<{ period: Period; budgets: BudgetInstance[] }> {
+    await this.references.ensureCategories(
+      command.accountId,
+      command.budgets.map((b) => b.categoryId),
+    );
+
     // 0. Deactivate existing active periods for this account
     const existingPeriods = await this.periodRepository.findAllByAccount(
       command.accountId,
