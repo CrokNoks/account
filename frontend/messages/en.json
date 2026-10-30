@@ -22,7 +22,9 @@
       "group_actions": "Actions",
       "group_settings": "Settings",
       "import_csv": "Import CSV",
-      "manage_accounts": "Manage accounts"
+      "manage_accounts": "Manage accounts",
+      "title": "Command palette",
+      "description": "Search for a command to run..."
     }
   },
   "Auth": {
@@ -309,7 +311,9 @@
     "mode_transfer": "Transfer",
     "edit_title": "Edit transaction",
     "tag_fallback": "Tag",
-    "import_csv": "Import CSV"
+    "import_csv": "Import CSV",
+    "more_pages": "More pages",
+    "pagination": "Pagination"
   },
   "Import": {
     "title": "Import transactions",

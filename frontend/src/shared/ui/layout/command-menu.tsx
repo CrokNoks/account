@@ -52,7 +52,7 @@ export function CommandMenu() {
   };
 
   return (
-    <CommandDialog open={open} onOpenChange={setOpen}>
+    <CommandDialog open={open} onOpenChange={setOpen} title={tn('command.title')} description={tn('command.description')}>
       <CommandInput placeholder={tn('command.placeholder')} />
       <CommandList>
         <CommandEmpty>{tn('command.empty')}</CommandEmpty>

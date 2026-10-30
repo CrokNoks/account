@@ -346,17 +346,18 @@ export function TransactionList({
             {/* Limit Selector could be extracted too but it's small */}
           </div>
 
-          <Pagination className="mx-0 w-auto">
+          <Pagination aria-label={t('pagination')} className="mx-0 w-auto">
             <PaginationContent>
               <PaginationItem>
                 <PaginationPrevious 
+                  label={tc('back')}
                   className={cn("h-8 text-[10px] font-bold uppercase tracking-widest cursor-pointer", transactions.meta.page === 1 && "pointer-events-none opacity-50")}
                   onClick={(e) => { e.preventDefault(); setPage(p => Math.max(1, p - 1)); }}
                 />
               </PaginationItem>
               {generatePageNumbers().map((p, i) => (
                 <PaginationItem key={i}>
-                  {p === 'ellipsis' ? <PaginationEllipsis /> : (
+                  {p === 'ellipsis' ? <PaginationEllipsis label={t('more_pages')} /> : (
                     <PaginationLink 
                       className="h-8 w-8 text-xs font-bold cursor-pointer"
                       isActive={p === transactions.meta.page}
@@ -369,6 +370,7 @@ export function TransactionList({
               ))}
               <PaginationItem>
                 <PaginationNext 
+                  label={tc('next')}
                   className={cn("h-8 text-[10px] font-bold uppercase tracking-widest cursor-pointer", (transactions.meta.page === transactions.meta.totalPages || transactions.meta.totalPages === 0) && "pointer-events-none opacity-50")}
                   onClick={(e) => { e.preventDefault(); setPage(p => Math.min(transactions.meta.totalPages, p + 1)); }}
                 />

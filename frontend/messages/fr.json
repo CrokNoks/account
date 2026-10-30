@@ -22,7 +22,9 @@
       "group_actions": "Actions",
       "group_settings": "Paramètres",
       "import_csv": "Importer un CSV",
-      "manage_accounts": "Gérer les comptes"
+      "manage_accounts": "Gérer les comptes",
+      "title": "Palette de commandes",
+      "description": "Recherchez une commande à exécuter..."
     }
   },
   "Auth": {
@@ -309,7 +311,9 @@
     "mode_transfer": "Virement",
     "edit_title": "Modifier la transaction",
     "tag_fallback": "Tag",
-    "import_csv": "Import CSV"
+    "import_csv": "Import CSV",
+    "more_pages": "Plus de pages",
+    "pagination": "Pagination"
   },
   "Import": {
     "title": "Import de transactions",
