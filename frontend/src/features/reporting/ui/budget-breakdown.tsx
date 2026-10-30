@@ -87,9 +87,10 @@ function BudgetGroup({ title, items, isExpense }: { title: string, items: Budget
           const remaining = parseInt(item.remaining, 10);
           const percentage = Math.min(Math.abs(item.percentage), 100);
           
-          // Simplify logic: if real is "worse" than budget
+          // Expense real is negative and budget positive: compare absolute values.
+          // Red only when the budget is exceeded.
           const variant = isExpense 
-            ? (parseInt(item.real, 10) < parseInt(item.budget, 10) ? "bg-red-500" : "bg-green-500")
+            ? (Math.abs(parseInt(item.real, 10)) > Math.abs(parseInt(item.budget, 10)) ? "bg-red-500" : "bg-green-500")
             : (parseInt(item.real, 10) >= parseInt(item.budget, 10) ? "bg-green-500" : "bg-yellow-500");
 
           return (
@@ -102,6 +103,7 @@ function BudgetGroup({ title, items, isExpense }: { title: string, items: Budget
               </div>
               <div className="relative h-2 w-full overflow-hidden rounded-full bg-secondary">
                  <div 
+                    data-testid="budget-bar"
                     className={`h-full transition-all ${variant}`} 
                     style={{ width: `${percentage}%` }}
                  />

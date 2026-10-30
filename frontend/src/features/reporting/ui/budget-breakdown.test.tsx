@@ -36,6 +36,13 @@ describe('BudgetBreakdown overrun', () => {
     expect(screen.getByText(/remaining/).textContent).toContain('70,00');
   });
 
+  it('colours an expense bar red only when the budget is exceeded', () => {
+    render(<BudgetBreakdown />);
+    const bars = screen.getAllByTestId('budget-bar');
+    expect(bars[0].className).toContain('bg-red-500'); // Courses: 600 spent on 500
+    expect(bars[1].className).toContain('bg-green-500'); // Loisirs: 30 spent on 100
+  });
+
   it('shows an income above its budget as beyond budget', () => {
     render(<BudgetBreakdown />);
     const tab = screen.getByRole('tab', { name: 'income' });
