@@ -38,10 +38,10 @@ export class BulkUpdateTransactionsUseCase {
       throw new NotFoundError('Transaction not found');
     }
 
-    for (const tx of targets) {
-      if (!tx) continue;
+    const updatedTransactions = targets.flatMap((tx) => {
+      if (!tx) return [];
 
-      const updated = tx.update({
+      return tx.update({
         categoryId:
           data.categoryId !== undefined ? data.categoryId : tx.categoryId,
         tagIds: data.tagIds !== undefined ? data.tagIds : tx.tagIds,
@@ -49,8 +49,11 @@ export class BulkUpdateTransactionsUseCase {
           data.reconciled !== undefined ? data.reconciled : tx.reconciled,
         pending: resolvePending(data.reconciled, data.pending, tx.pending),
       });
+    });
 
-      await this.transactionRepository.save(updated);
+    // Une seule écriture atomique : toutes les transactions sont modifiées, ou aucune.
+    if (updatedTransactions.length > 0) {
+      await this.transactionRepository.updateMany(updatedTransactions);
     }
   }
 }

@@ -91,7 +91,7 @@ const routes: Route[] = [
         ...(tags && { tagIds: tags }),
       },
     }),
-    writes: ['transactions.save'],
+    writes: ['transactions.updateMany'],
     okStatus: 200,
     supports: ['category', 'tags'],
   },
@@ -395,6 +395,7 @@ describe('Cross-account references (e2e)', () => {
         );
         expect(mocks.transactions.save).not.toHaveBeenCalled();
         expect(mocks.transactions.saveMany).not.toHaveBeenCalled();
+        expect(mocks.transactions.updateMany).not.toHaveBeenCalled();
       });
     });
   });

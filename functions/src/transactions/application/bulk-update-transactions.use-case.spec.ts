@@ -8,7 +8,11 @@ import {
 } from '../../shared/domain/errors';
 
 describe('BulkUpdateTransactionsUseCase', () => {
-  let repository: { findAllByAccountUnpaginated: jest.Mock; save: jest.Mock };
+  let repository: {
+    findAllByAccountUnpaginated: jest.Mock;
+    updateMany: jest.Mock;
+    save: jest.Mock;
+  };
   let useCase: BulkUpdateTransactionsUseCase;
   let refs: jest.Mocked<AccountReferencesService>;
 
@@ -27,14 +31,17 @@ describe('BulkUpdateTransactionsUseCase', () => {
     });
 
   const saved = () =>
-    (repository.save.mock.calls as [Transaction][]).map(([t]) => t);
+    (repository.updateMany.mock.calls as [Transaction[]][]).flatMap(
+      ([list]) => list,
+    );
 
   beforeEach(() => {
     repository = {
       findAllByAccountUnpaginated: jest
         .fn()
         .mockResolvedValue([tx('t1'), tx('t2'), tx('t3')]),
-      save: jest.fn().mockResolvedValue(undefined),
+      updateMany: jest.fn().mockResolvedValue(undefined),
+      save: jest.fn(),
     };
     refs = {
       ensureReferences: jest.fn().mockResolvedValue(undefined),
@@ -75,6 +82,7 @@ describe('BulkUpdateTransactionsUseCase', () => {
       categoryId: 'cat-foreign',
       tagIds: ['tag-foreign'],
     });
+    expect(repository.updateMany).not.toHaveBeenCalled();
     expect(repository.save).not.toHaveBeenCalled();
   });
 
@@ -87,6 +95,7 @@ describe('BulkUpdateTransactionsUseCase', () => {
 
     await expect(result).rejects.toBeInstanceOf(NotFoundError);
     await expect(result).rejects.toThrow('Transaction not found');
+    expect(repository.updateMany).not.toHaveBeenCalled();
     expect(repository.save).not.toHaveBeenCalled();
   });
 
@@ -98,6 +107,7 @@ describe('BulkUpdateTransactionsUseCase', () => {
         data: { reconciled: true },
       }),
     ).rejects.toBeInstanceOf(NotFoundError);
+    expect(repository.updateMany).not.toHaveBeenCalled();
     expect(repository.save).not.toHaveBeenCalled();
   });
 
@@ -180,5 +190,30 @@ describe('BulkUpdateTransactionsUseCase', () => {
     });
 
     expect(saved()[0].pending).toBe(true);
+  });
+
+  it('modifies every target in one atomic call', async () => {
+    await useCase.execute({
+      accountId: 'acc-1',
+      ids: ['t1', 't3'],
+      data: { categoryId: 'cat-new' },
+    });
+
+    expect(repository.updateMany).toHaveBeenCalledTimes(1);
+    expect(repository.save).not.toHaveBeenCalled();
+  });
+
+  it('propagates the error of the atomic call; no transaction is saved separately', async () => {
+    repository.updateMany.mockRejectedValue(new Error('db down'));
+
+    await expect(
+      useCase.execute({
+        accountId: 'acc-1',
+        ids: ['t1', 't3'],
+        data: { categoryId: 'cat-new' },
+      }),
+    ).rejects.toThrow('db down');
+    expect(repository.updateMany).toHaveBeenCalledTimes(1);
+    expect(repository.save).not.toHaveBeenCalled();
   });
 });

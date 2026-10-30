@@ -45,6 +45,12 @@ export abstract class TransactionRepository {
    * transaction base de données : toutes sont écrites, ou aucune.
    */
   abstract saveMany(transactions: Transaction[]): Promise<void>;
+  /**
+   * Modifie plusieurs transactions existantes (et remplace leurs tags) dans une
+   * seule transaction base de données : toutes sont modifiées, ou aucune. Une
+   * transaction inexistante fait tout échouer (aucune n'est créée).
+   */
+  abstract updateMany(transactions: Transaction[]): Promise<void>;
   abstract delete(id: string): Promise<void>;
   abstract sumAmountByAccountBeforeDate(
     accountId: string,

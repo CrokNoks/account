@@ -369,8 +369,10 @@ describe('Transactions routes (e2e)', () => {
         })
         .expect(200);
 
-      const [[saved]] = mocks.transactions.save.mock.calls as [Transaction][];
-      expect(mocks.transactions.save).toHaveBeenCalledTimes(1);
+      const [[[saved]]] = mocks.transactions.updateMany.mock.calls as [
+        Transaction[],
+      ][];
+      expect(mocks.transactions.updateMany).toHaveBeenCalledTimes(1);
       expect(saved.id).toBe('00000000-0000-4000-8000-000000000016');
       expect(saved.categoryId).toBe('00000000-0000-4000-8000-000000000013');
       expect(saved.pending).toBe(true);
@@ -389,7 +391,7 @@ describe('Transactions routes (e2e)', () => {
         .send({ ids: ['00000000-0000-4000-8000-000000000016'], data })
         .expect(400);
 
-      expect(mocks.transactions.save).not.toHaveBeenCalled();
+      expect(mocks.transactions.updateMany).not.toHaveBeenCalled();
     });
 
     it('PATCH /bulk accepts a null categoryId', async () => {
@@ -402,7 +404,9 @@ describe('Transactions routes (e2e)', () => {
         })
         .expect(200);
 
-      const [[saved]] = mocks.transactions.save.mock.calls as [Transaction][];
+      const [[[saved]]] = mocks.transactions.updateMany.mock.calls as [
+        Transaction[],
+      ][];
       expect(saved.categoryId).toBeNull();
     });
 
@@ -452,7 +456,7 @@ describe('Transactions routes (e2e)', () => {
         })
         .expect(404);
 
-      expect(mocks.transactions.save).not.toHaveBeenCalled();
+      expect(mocks.transactions.updateMany).not.toHaveBeenCalled();
     });
 
     it('DELETE /bulk answers 400 without deleting when ids is missing', async () => {

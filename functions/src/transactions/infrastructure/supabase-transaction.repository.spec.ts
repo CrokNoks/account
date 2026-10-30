@@ -126,4 +126,31 @@ describe('SupabaseTransactionRepository atomic writes', () => {
       await expect(repository.save(tx())).rejects.toThrow('row-level security');
     });
   });
+
+  describe('updateMany', () => {
+    it('calls update_transactions once with every transaction and its tags', async () => {
+      const { repository, rpc, from } = repoWith(null);
+      const a = tx({ tagIds: ['tag-1'] });
+      const b = tx({ description: 'B' });
+
+      await repository.updateMany([a, b]);
+
+      expect(rpc).toHaveBeenCalledTimes(1);
+      expect(rpc.mock.calls[0][0]).toBe('update_transactions');
+      const lines = rpc.mock.calls[0][1].p_transactions as unknown as Array<
+        Record<string, unknown>
+      >;
+      expect(lines.map((l) => l.id)).toEqual([a.id, b.id]);
+      expect(lines[0].tag_ids).toEqual(['tag-1']);
+      expect(from).not.toHaveBeenCalled();
+    });
+
+    it('throws the database error', async () => {
+      const { repository } = repoWith({ message: 'transaction not found' });
+
+      await expect(repository.updateMany([tx()])).rejects.toThrow(
+        'transaction not found',
+      );
+    });
+  });
 });
