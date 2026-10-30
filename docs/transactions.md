@@ -1,0 +1,74 @@
+# Transactions — saisir, retrouver, corriger, importer et déplacer l'argent d'un compte
+
+Mise à jour : 2026-10-30 · Commit : 157b272
+
+## Vocabulaire
+| Mot | Ce que ça veut dire ici |
+| --- | --- |
+| Transaction | Une ligne d'argent sur un compte. Montant en centimes entiers : négatif = dépense, positif = revenu (le formulaire front indique la convention, `expense_hint`) |
+| Rapprochée (`reconciled`) | Ligne pointée comme vérifiée contre le relevé bancaire |
+| En attente (`pending`) | Ligne pré-autorisée, à ne pas compter dans le solde « validé » (commentaire SQL `20260309100000`) |
+| Virement | Deux transactions liées (sortie sur le compte source, entrée sur la destination) partageant un `transferId` |
+| Période | Découpage du temps d'un compte (module `periods`, hors périmètre) |
+| Règle intelligente | Règle qui propose catégorie/tags d'après la description (module `smart-rules`, hors périmètre) |
+| Objectif d'épargne | Cible d'épargne (module `savings-goals`) à laquelle une transaction peut être rattachée |
+
+## Règles métier
+| Règle | Source | Testée |
+| --- | --- | --- |
+| Une transaction exige un compte, une description non vide et un montant | `functions/src/transactions/domain/transaction.entity.ts:42-50` | ✅ `transaction.entity.spec.ts` (description vide, compte manquant) |
+| `reconciled` et `pending` valent faux par défaut | `transaction.entity.ts:96-97` | ✅ `transaction.entity.spec.ts` |
+| Création : une transaction est enregistrée telle quelle (aucune règle intelligente appliquée) | `application/create-transaction.use-case.ts` | ✅ `create-transaction.use-case.spec.ts` |
+| Import en lot : si aucune catégorie n'est donnée, les règles intelligentes du compte sont appliquées et leurs tags s'ajoutent à ceux fournis | `application/bulk-create-transactions.use-case.ts:27-39` | ❌ |
+| Import en lot : traité ligne par ligne, sans transaction globale (un échec laisse les lignes déjà créées) | `bulk-create-transactions.use-case.ts:25-52` | ❌ |
+| Virement : montant strictement positif ; comptes source et destination différents | `application/create-transfer.use-case.ts:20-25` | ❌ |
+| Virement : sortie = montant négatif, entrée = montant positif, sans catégorie, metadata `transferId`, `type` (`transfer_out`/`transfer_in`), `relatedAccountId` ; les deux lignes sont enregistrées l'une après l'autre (pas atomique) | `create-transfer.use-case.ts:27-58` | ❌ |
+| Modification : si `reconciled` passe à vrai, `pending` est remis à faux | `infrastructure/transactions.controller.ts:380-382` | ❌ |
+| Modification : tags et objectif d'épargne conservés si non fournis ; montant arrondi à l'entier | `transactions.controller.ts:384-398` | ❌ |
+| Modification/suppression en lot : seules les transactions réellement dans le compte de l'URL sont touchées, les autres identifiants sont ignorés silencieusement | `bulk-update-transactions.use-case.ts:24-30`, `bulk-delete-transactions.use-case.ts:15-22` | ❌ |
+| Modification en lot : seuls catégorie, tags, rapprochée, en attente sont modifiables ; ici `reconciled=true` ne remet PAS `pending` à faux | `bulk-update-transactions.use-case.ts:34-44` | ❌ |
+| Prédiction de catégorie : description de moins de 3 caractères → aucune ; sinon règles intelligentes d'abord, puis classifieur statistique (Bayes) entraîné sur les transactions déjà catégorisées du compte | `application/predict-category.use-case.ts:21-62` | ❌ |
+| Liste : tri par date décroissante ; pagination page 1, 1000 par page par défaut | `infrastructure/supabase-transaction.repository.ts:81-88` | ✅ partielle : `get-transactions-by-account.use-case.spec.ts` (options transmises, repo simulé) |
+| Liste : filtres date de début/fin (inclusifs, au jour), texte (description OU notes, insensible à la casse), catégorie, tags (au moins un des tags), montant min/max, rapprochée | `supabase-transaction.repository.ts:54-79` | ❌ |
+| Liste avec `periodId` : les dates de la période remplacent `startDate`/`endDate` ; période inconnue → 404 | `transactions.controller.ts:338-343` | ❌ |
+| Enregistrer une transaction remplace entièrement ses tags (suppression puis réinsertion) | `supabase-transaction.repository.ts:225-244` | ❌ |
+| Solde cumulé avant une date : somme des montants des transactions strictement antérieures (appel SQL) ; en cas d'erreur renvoie 0 | `supabase-transaction.repository.ts:157-176`, `supabase/migrations/20260308100000_add_sum_transactions_func.sql` | ❌ |
+| En base : à l'insertion, si aucune période n'est donnée, la période active du compte est affectée | `supabase/migrations/20251229111000_add_period_id_to_expenses.sql:9-37` (trigger renommé `set_transactions_period_id`, `20260307000000_migrate_to_v2.sql`) | ❌ |
+| En base : lire = accès `read` au compte, créer/modifier/supprimer = accès `write` (propriétaire, ou partagé en `write`) | `supabase/migrations/20260307000000_migrate_to_v2.sql:72-86` | ❌ |
+| En base : rattacher une transaction à un objectif d'épargne met à jour son montant courant : ajout = objectif − montant (une dépense de 50 € augmente l'objectif de 50 €), suppression ou changement d'objectif = annulation | `supabase/migrations/20260318143724_sync_savings_goals_trigger.sql` (trigger `trg_sync_savings_goal_on_transaction`) | ❌ |
+| En base : suppression d'un objectif d'épargne → `savings_goal_id` de la transaction mis à vide | `20260318131922_link_transactions_to_savings.sql` | ❌ |
+| Front : le montant saisi (virgule ou point) est converti en centimes ; pour un virement la valeur absolue est envoyée | `frontend/src/shared/lib/format.ts:22-26`, `features/transactions/ui/create-transaction-drawer.tsx:114,130` | ❌ |
+| Front : la catégorie est suggérée après saisie de la description (délai anti-rafale) | `features/transactions/ui/transaction-form.tsx:69-90` | ❌ |
+
+## Ce qu'on stocke
+Transaction (`transactions`) : id, compte, catégorie (optionnelle), période (optionnelle), date (jour), description, montant (centimes, BIGINT), rapprochée, en attente, moyen de paiement, notes, metadata (JSON libre, contient `transferId` pour les virements), objectif d'épargne (optionnel), dates de création/modification. Table de liaison `transaction_tags` (transaction, tag) ; supprimée avec la transaction. L'API renvoie les montants en texte.
+
+## Ce qu'on peut faire
+Toutes les routes sont préfixées par l'identifiant du compte : `/:accountId/transactions`. Qui : connecté (token exigé, `@UseGuards(SupabaseAuthGuard)`, `transactions.controller.ts:297`), pas de middleware ni de décorateur d'identité ; l'identité n'est pas lue. Le contrôle propriétaire/partage n'est fait que par la base (RLS) via le token transmis ; le code ne vérifie pas que l'utilisateur a accès à `:accountId`.
+
+| Action | Point d'entrée | Qui | Effet | Source |
+| --- | --- | --- | --- | --- |
+| Lister (filtres, pages) | `GET /:accountId/transactions` | connecté + RLS | `{data, meta}` | `transactions.controller.ts:325` |
+| Prédire la catégorie | `GET /:accountId/transactions/predict-category?description=` | connecté | `categoryId` (+ `tagIds` si règle) | `:313` |
+| Créer | `POST /:accountId/transactions` | connecté + RLS (`write`) | transaction créée | `:473` |
+| Créer en lot (import) | `POST /:accountId/transactions/bulk` | idem | transactions créées | `:411` |
+| Virement | `POST /:accountId/transactions/transfer` | idem (`write` sur le compte source ; destination non vérifiée par le code) | 2 transactions | `:456` |
+| Modifier | `PATCH /:accountId/transactions/:id` | idem ; le compte de l'URL n'est pas comparé à celui de la transaction | transaction mise à jour | `:366` |
+| Supprimer | `DELETE /:accountId/transactions/:id` (204) | idem ; idem | supprimée | `:404` |
+| Modifier en lot | `PATCH /:accountId/transactions/bulk` | idem, compte contrôlé | voir règles | `:429` |
+| Supprimer en lot | `DELETE /:accountId/transactions/bulk` (corps `ids`) | idem, compte contrôlé | voir règles | `:443` |
+
+Front (`frontend/src/features/transactions/`) : `transaction-list` (liste, filtres, sélection, création de récurrente), `transaction-table` / `transaction-mobile-list`, `transaction-filters`, `create-transaction-drawer` + `transaction-form` (mode standard ou virement), `bulk-actions-bar`, import en 3 étapes (`import/import-upload-step`, `import-mapping-step` : montant unique ou colonnes débit/crédit, `import-validation-step`). Hooks : `use-transactions`, `use-create-transaction`, `use-update-transaction`, `use-delete-transaction`, `use-create-transfer`, `use-bulk-transactions`, `use-bulk-create-transactions`, `use-predict-category`.
+
+## Statuts et transitions
+`pending` (en attente) et `reconciled` (rapprochée) sont deux booléens indépendants. Marquer rapprochée une transaction via la modification simple la sort de l'attente (`transactions.controller.ts:380-382`) ; via la modification en lot, non. Aucune transition n'est interdite par le code.
+
+## Zones d'ombre
+- Ordre des routes : `PATCH :id` (ligne 366) et `DELETE :id` (404) sont déclarées avant `PATCH bulk` (429) et `DELETE bulk` (443). Le code ne montre pas si `bulk` est capté comme un `:id` ; à vérifier à l'exécution.
+- Le code ne vérifie pas que la transaction modifiée/supprimée appartient au compte de l'URL, ni que le compte de destination d'un virement est accessible ; seule la base (RLS) bloque.
+- Dans le virement, le montant est lu avec `Math.round(Number(...))` : le comportement pour de très grands montants (précision) n'est pas défini.
+- Le virement ne porte pas de catégorie et sa catégorie « transfer » (type de catégorie, `20260307000000`) n'est pas utilisée ici : le code ne dit pas le lien voulu.
+- Le trigger d'objectif d'épargne s'applique aussi aux modifications de montant ; son comportement quand le montant et l'objectif changent ensemble n'est pas testé.
+- Le « solde » d'un compte n'est calculé dans aucun fichier de ce module (seule la somme avant une date existe) ; `pending` est décrit comme « non compté » en SQL mais aucune règle de ce module ne l'exclut d'un calcul.
+- Les filtres texte insèrent la saisie telle quelle dans le filtre PostgREST (`search`) : comportement avec virgules/caractères spéciaux non défini.
+- Les erreurs « Transaction not found » sont des `Error` simples : code HTTP non déterminé par le code.

@@ -1,0 +1,46 @@
+# Tags — étiquettes libres, propres à chaque compte, pour regrouper des transactions
+
+Mise à jour : 2026-10-30 · Commit : 157b272
+
+## Vocabulaire
+| Mot | Ce que ça veut dire ici |
+| --- | --- |
+| Tag | Étiquette (nom + couleur) créée sur un compte et posée sur des transactions, en plus de la catégorie |
+| Récapitulatif de tags | Pour chaque tag : nombre de transactions et total (calculé par le module `reporting`) |
+
+## Règles métier
+| Règle | Source | Testée |
+| --- | --- | --- |
+| Un tag exige un nom non vide et un compte | `functions/src/tags/domain/tag.entity.ts:28-38` | ❌ |
+| La couleur, si présente, est au format hexadécimal `#RRGGBB` (contrôlé aussi à l'entrée de l'API) | `tag.entity.ts:32`, `infrastructure/tags.controller.ts:31` | ❌ |
+| A la création, la couleur est obligatoire côté API | `tags.controller.ts:31-32` | ❌ |
+| Un nom de tag est unique dans un compte | `supabase/migrations/20260313092403_create_tags_tables.sql:9` (`UNIQUE(account_id, name)`) | ❌ |
+| Modifier : seuls nom et couleur changent ; tag inconnu → 404 | `application/update-tag.usecase.ts:15-28` | ❌ |
+| Supprimer un tag le retire de toutes les transactions (liaison en cascade) | `20260313092403_create_tags_tables.sql:13-17` | ❌ |
+| En base : lire les tags = accès `read` au compte ; créer/modifier/supprimer = accès `write` (propriétaire ou partagé `write`) | `20260313092403_create_tags_tables.sql:25-39` | ❌ |
+| En base : mêmes droits pour la liaison transaction-tag, via le compte de la transaction | `20260313092403_create_tags_tables.sql:43-79` | ❌ |
+| Poser des tags sur une transaction : voir `transactions.md` (remplacement complet à chaque enregistrement) | `supabase-transaction.repository.ts:225-244` | ❌ |
+
+## Ce qu'on stocke
+Tag (`tags`) : id, compte, nom (50 caractères max), couleur (7 caractères, `#RRGGBB`), dates de création/modification (mise à jour automatique par trigger `set_tags_updated_at`). Liaison `transaction_tags` (transaction, tag).
+
+## Ce qu'on peut faire
+Qui : connecté (token exigé, `@UseGuards(SupabaseAuthGuard)`, `tags.controller.ts:59`) ; pas de middleware ni de décorateur d'identité, l'identité n'est pas lue. Les droits sur le compte sont appliqués uniquement par la base (RLS) ; le code ne vérifie pas l'accès à `:accountId`.
+
+| Action | Point d'entrée | Qui | Effet | Source |
+| --- | --- | --- | --- | --- |
+| Lister les tags d'un compte | `GET /:accountId/tags` | connecté + RLS | liste | `tags.controller.ts:69` |
+| Créer | `POST /:accountId/tags` (nom, couleur) | connecté + RLS (`write`) | tag créé | `:79` |
+| Modifier | `PATCH /:accountId/tags/:id` | idem ; le compte de l'URL n'est pas comparé à celui du tag | tag mis à jour | `:93` |
+| Supprimer | `DELETE /:accountId/tags/:id` | idem | tag supprimé | `:107` |
+| Récapitulatif par tag | `GET /:accountId/reporting/tags-summary?periodId=` | module `reporting` (hors périmètre) | utilisé par le front | `frontend/src/features/tags/api/use-tags-summary.ts` |
+| Détail d'un tag | `GET /:accountId/reporting/tags/:tagId?periodId=` | idem | idem | `use-tag-details.ts` |
+
+Front (`frontend/src/features/tags/`) : `tag-list`, `create-tag-dialog`, `tag-detail-drawer`, `tag-stats-summary`, `tag-selector` (choix de tags dans un formulaire, avec création à la volée du tag saisi) ; hooks `use-tags`, `use-create-tag`, `use-update-tag`, `use-delete-tag`, `use-tags-summary`, `use-tag-details`.
+
+## Zones d'ombre
+- Le `tag-selector` crée un tag avec seulement un nom (`tag-selector.tsx:52-55`), alors que l'API exige une couleur (`tags.controller.ts:31`) et rejette les champs inconnus. Le code ne montre pas de couleur par défaut ajoutée ailleurs ; la création à la volée pourrait être refusée.
+- Aucun test ne couvre le module tags.
+- Le nom unique par compte est une contrainte base : la violation remonte en `Error` simple (code HTTP non déterminé).
+- Rien n'empêche, dans le code, un nom composé d'espaces seulement côté API (`IsString` seul) ; l'entité le refuse ensuite.
+- Le calcul des récapitulatifs vit dans `reporting`, non lu ici.
