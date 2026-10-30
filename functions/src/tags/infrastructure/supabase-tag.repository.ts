@@ -1,6 +1,7 @@
 import { Injectable, Inject } from '@nestjs/common';
 import { SupabaseClient } from '@supabase/supabase-js';
 import { Tag } from '../domain/tag.entity';
+import { ConflictError } from '../../shared/domain/errors';
 import { TagRepository } from '../domain/tag.repository.interface';
 
 interface TagRow {
@@ -11,6 +12,9 @@ interface TagRow {
   created_at: string;
   updated_at: string;
 }
+
+/** Code Postgres d'une violation de contrainte d'unicité. */
+const UNIQUE_VIOLATION = '23505';
 
 @Injectable()
 export class SupabaseTagRepository implements TagRepository {
@@ -54,6 +58,10 @@ export class SupabaseTagRepository implements TagRepository {
       updated_at: tag.updatedAt.toISOString(),
     });
 
+    // UNIQUE(account_id, name) : tags_account_id_name_key
+    if (error?.code === UNIQUE_VIOLATION) {
+      throw new ConflictError('A tag with this name already exists');
+    }
     if (error) throw new Error(error.message);
   }
 

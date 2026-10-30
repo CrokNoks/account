@@ -4,6 +4,7 @@ import {
   BudgetRepository,
   CategoryStats,
 } from '../domain/budget.repository.interface';
+import { ConflictError } from '../../shared/domain/errors';
 import { BudgetInstance } from '../domain/budget-instance.entity';
 
 interface BudgetInstanceRow {
@@ -21,6 +22,12 @@ interface CategoryStatsRow {
   max_real: string;
   avg_real: number;
 }
+
+/** Code Postgres d'une violation de contrainte d'unicité. */
+const UNIQUE_VIOLATION = '23505';
+
+const DUPLICATE_BUDGET =
+  'A budget already exists for this category in this period';
 
 @Injectable()
 export class SupabaseBudgetRepository implements BudgetRepository {
@@ -64,6 +71,9 @@ export class SupabaseBudgetRepository implements BudgetRepository {
       updated_at: instance.updatedAt.toISOString(),
     });
 
+    // UNIQUE(period_id, category_id) : budget_instances_period_id_category_id_key
+    if (error?.code === UNIQUE_VIOLATION)
+      throw new ConflictError(DUPLICATE_BUDGET);
     if (error) throw new Error(error.message);
   }
 
@@ -79,6 +89,8 @@ export class SupabaseBudgetRepository implements BudgetRepository {
       })),
     );
 
+    if (error?.code === UNIQUE_VIOLATION)
+      throw new ConflictError(DUPLICATE_BUDGET);
     if (error) throw new Error(error.message);
   }
 

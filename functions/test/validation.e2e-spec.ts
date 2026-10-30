@@ -2,6 +2,7 @@ import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { App } from 'supertest/types';
 import { auth, createE2EApp, Mocks } from './e2e-app';
+import { ConflictError } from '../src/shared/domain/errors';
 import { RecurringTransaction } from '../src/recurring/domain/recurring-transaction.entity';
 
 describe('Request body validation (e2e)', () => {
@@ -285,6 +286,21 @@ describe('Request body validation (e2e)', () => {
         .query({ periodId: bad })
         .set(auth())
         .expect(400);
+    });
+  });
+  describe('unique violation raised by the repository', () => {
+    it('POST /:accountId/tags answers 409 when the name already exists', async () => {
+      mocks.tags.save.mockRejectedValue(
+        new ConflictError('A tag with this name already exists'),
+      );
+      const res = await http()
+        .post('/acc-1/tags')
+        .set(auth())
+        .send({ name: 'Vacances', color: '#ff0000' })
+        .expect(409);
+      expect((res.body as { message: string }).message).toBe(
+        'A tag with this name already exists',
+      );
     });
   });
 });
