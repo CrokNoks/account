@@ -22,7 +22,8 @@ describe('Request body validation (e2e)', () => {
       mocks[repo].save.mockResolvedValue(undefined);
     }
     mocks.periods.findAllByAccount.mockResolvedValue([]);
-    mocks.budgets.saveBulk.mockResolvedValue(undefined);
+    mocks.budgets.replaceForPeriod.mockResolvedValue(undefined);
+    mocks.periods.createWithBudgets.mockResolvedValue(undefined);
     mocks.recurring.findById.mockResolvedValue(
       RecurringTransaction.create({
         id: '00000000-0000-4000-8000-000000000114',

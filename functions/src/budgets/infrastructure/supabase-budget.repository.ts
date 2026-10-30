@@ -78,37 +78,11 @@ export class SupabaseBudgetRepository implements BudgetRepository {
     if (error) throw new Error(error.message);
   }
 
-  async saveBulk(instances: BudgetInstance[]): Promise<void> {
-    const { error } = await this.supabase.from('budget_instances').insert(
-      instances.map((i) => ({
-        id: i.id,
-        period_id: i.periodId,
-        category_id: i.categoryId,
-        amount_allocated: i.amountAllocated.toString(),
-        created_at: i.createdAt.toISOString(),
-        updated_at: i.updatedAt.toISOString(),
-      })),
-    );
-
-    if (error?.code === UNIQUE_VIOLATION)
-      throw new ConflictError(DUPLICATE_BUDGET);
-    if (error) throw new Error(error.message);
-  }
-
   async delete(id: string): Promise<void> {
     const { error } = await this.supabase
       .from('budget_instances')
       .delete()
       .eq('id', id);
-
-    if (error) throw new Error(error.message);
-  }
-
-  async deleteAllByPeriod(periodId: string): Promise<void> {
-    const { error } = await this.supabase
-      .from('budget_instances')
-      .delete()
-      .eq('period_id', periodId);
 
     if (error) throw new Error(error.message);
   }

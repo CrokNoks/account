@@ -7,8 +7,6 @@ import { DomainValidationError } from '../../shared/domain/errors';
 describe('UpdatePeriodBudgetsUseCase', () => {
   let repository: {
     replaceForPeriod: jest.Mock;
-    deleteAllByPeriod: jest.Mock;
-    saveBulk: jest.Mock;
   };
   let useCase: UpdatePeriodBudgetsUseCase;
   let refs: { ensureCategories: jest.Mock };
@@ -16,8 +14,6 @@ describe('UpdatePeriodBudgetsUseCase', () => {
   beforeEach(() => {
     repository = {
       replaceForPeriod: jest.fn().mockResolvedValue(undefined),
-      deleteAllByPeriod: jest.fn(),
-      saveBulk: jest.fn(),
     };
     refs = { ensureCategories: jest.fn().mockResolvedValue(undefined) };
     useCase = new UpdatePeriodBudgetsUseCase(
@@ -38,8 +34,6 @@ describe('UpdatePeriodBudgetsUseCase', () => {
 
     expect(repository.replaceForPeriod).toHaveBeenCalledTimes(1);
     expect(repository.replaceForPeriod).toHaveBeenCalledWith('per-1', result);
-    expect(repository.deleteAllByPeriod).not.toHaveBeenCalled();
-    expect(repository.saveBulk).not.toHaveBeenCalled();
     expect(result).toHaveLength(2);
     expect(result.every((b) => b instanceof BudgetInstance)).toBe(true);
     expect(result.every((b) => b.periodId === 'per-1')).toBe(true);
@@ -81,8 +75,6 @@ describe('UpdatePeriodBudgetsUseCase', () => {
       }),
     ).rejects.toThrow('db down');
     expect(repository.replaceForPeriod).toHaveBeenCalledTimes(1);
-    expect(repository.deleteAllByPeriod).not.toHaveBeenCalled();
-    expect(repository.saveBulk).not.toHaveBeenCalled();
   });
 
   it('refuses a category of another account before deleting anything', async () => {

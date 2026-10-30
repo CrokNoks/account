@@ -17,13 +17,13 @@ Ce module n'a **aucun point d'entrée API propre** : il est utilisé par le modu
 | Un budget exige une période et une catégorie | `functions/src/budgets/domain/budget-instance.entity.ts:29-30` | ✅ `budget-instance.entity.spec.ts` (2 cas « should throw if … missing ») |
 | Le montant doit être présent (0 est accepté par l'entité) | `budget-instance.entity.ts:31` | ❌ |
 | Les catégories des budgets (création de période, `PUT /:accountId/periods/:id/budgets`) doivent appartenir au compte de l'URL, sinon 400 « Category does not belong to this account » avant toute écriture (les anciens budgets ne sont pas effacés) | `create-period-with-budgets.use-case.ts`, `update-period-budgets.use-case.ts` | ✅ specs + e2e `cross-account-references.e2e-spec.ts` |
-| Un seul budget par couple (période, catégorie) | base : `supabase/migrations/20251229112000_create_budget_instances_table.sql:8` (UNIQUE) ; violation (23505) traduite en 409 « A budget already exists for this category in this period » par `supabase-budget.repository.ts` (`save`, `saveBulk`, `replaceForPeriod`) ; même traduction pour `createWithBudgets` côté périodes | ✅ `supabase-budget.repository.spec.ts`, `supabase-period.repository.spec.ts` |
+| Un seul budget par couple (période, catégorie) | base : `supabase/migrations/20251229112000_create_budget_instances_table.sql:8` (UNIQUE) ; violation (23505) traduite en 409 « A budget already exists for this category in this period » par `supabase-budget.repository.ts` (`save`, `replaceForPeriod`) ; même traduction pour `createWithBudgets` côté périodes | ✅ `supabase-budget.repository.spec.ts`, `supabase-period.repository.spec.ts` |
 | Supprimer une période ou une catégorie supprime ses budgets | `20251229112000_create_budget_instances_table.sql:3-4` (ON DELETE CASCADE) | ❌ |
 | Montants stockés en centimes entiers (BIGINT) | `20260307000000_migrate_to_v2.sql:62-63` | ❌ |
 | Accès en base : lecture/écriture selon l'accès au compte de la période (propriétaire ou partage) | `20251229112000_create_budget_instances_table.sql:21-59` | ❌ |
 | Statistiques : total des transactions par (catégorie, période), puis min/max/moyenne par catégorie ; seules les transactions ayant catégorie ET période sont comptées ; tous types de transaction confondus | `20260307120000_create_budget_stats_func.sql:4-27` | ❌ |
 | Si le calcul des statistiques échoue, on renvoie une liste vide sans erreur (simple avertissement dans les logs) ; la moyenne est arrondie | `functions/src/budgets/infrastructure/supabase-budget.repository.ts:114-129` | ❌ |
-| `saveBulk` insère (n écrase pas) ; `save` écrase (upsert) | `supabase-budget.repository.ts:58,71` | ❌ |
+| `save` écrase (upsert) ; l'écriture de plusieurs budgets passe par `replaceForPeriod` ou `createWithBudgets` (fonctions SQL atomiques) | `supabase-budget.repository.ts` | ❌ |
 
 ## Ce qu'on stocke
 Budget (table `budget_instances`) : id ; période (`period_id`) ; catégorie (`category_id`) ; montant alloué (centimes) ; dates de création/modification (trigger `updated_at`, `20251229112000...sql:62`).

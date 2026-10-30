@@ -242,7 +242,16 @@ describe('Account ownership of :id routes (e2e)', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     for (const m of Object.values(mocks)) {
-      for (const fn of ['save', 'delete', 'saveBulk', 'deleteAllByPeriod']) {
+      for (const fn of [
+        'save',
+        'delete',
+        'replaceForPeriod',
+        'createWithBudgets',
+        'saveTransfer',
+        'saveMany',
+        'updateMany',
+        'deleteMany',
+      ]) {
         m[fn].mockResolvedValue(undefined);
       }
     }

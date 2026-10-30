@@ -23,22 +23,14 @@ const repoWith = (error: { code?: string; message: string } | null) => {
 };
 
 describe('SupabaseBudgetRepository unique violation', () => {
-  it.each(['save', 'saveBulk'] as const)(
-    '%s turns 23505 into a ConflictError',
-    async (method) => {
-      const repository = repoWith(duplicate);
-      const result =
-        method === 'save'
-          ? repository.save(instance)
-          : repository.saveBulk([instance, instance]);
-      await expect(result).rejects.toBeInstanceOf(ConflictError);
-    },
-  );
+  it('save turns 23505 into a ConflictError', async () => {
+    await expect(repoWith(duplicate).save(instance)).rejects.toBeInstanceOf(
+      ConflictError,
+    );
+  });
 
   it('keeps any other database error as is', async () => {
-    const result = repoWith({ code: '42P01', message: 'boom' }).saveBulk([
-      instance,
-    ]);
+    const result = repoWith({ code: '42P01', message: 'boom' }).save(instance);
     await expect(result).rejects.not.toBeInstanceOf(ConflictError);
     await expect(result).rejects.toThrow('boom');
   });
