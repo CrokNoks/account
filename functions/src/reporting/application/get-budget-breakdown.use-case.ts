@@ -73,7 +73,13 @@ export class GetBudgetBreakdownUseCase {
       const budgetInstance = budgets.find((b) => b.categoryId === cat.id);
       const budget = budgetInstance?.amountAllocated || BigInt(0);
 
-      const remaining = budget + real; // be careful with signs, expenses are negative
+      // Dépenses et épargne : budget positif, réel négatif => budget + réel.
+      // Revenus et virements (comptés comme des revenus, cf. docs/reporting.md) :
+      // budget et réel positifs => reste à percevoir = budget - réel.
+      const remaining =
+        cat.type === CategoryType.INCOME || cat.type === CategoryType.TRANSFER
+          ? budget - real
+          : budget + real;
       let percentage = 0;
       if (budget !== BigInt(0)) {
         percentage = roundedPercentage(real, budget);

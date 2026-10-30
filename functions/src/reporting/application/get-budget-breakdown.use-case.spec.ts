@@ -150,17 +150,32 @@ describe('GetBudgetBreakdownUseCase', () => {
     });
   });
 
-  // Comportement actuel : remaining = budget + real quel que soit le type, donc
-  // un revenu reçu en totalité affiche le double du budget en « restant ».
-  it('computes income percentage and remaining with the same formula', async () => {
+  // Un revenu reçu en totalité n'a plus rien à percevoir : remaining = budget - real.
+  it('computes income remaining as what is left to receive', async () => {
     const { income } = await useCase.execute('acc-1', 'per-1');
 
     expect(income[0]).toMatchObject({
       real: '250000',
       budget: '250000',
-      remaining: '500000',
+      remaining: '0',
       percentage: 100,
     });
+  });
+
+  it('computes the remaining of a partially received income and of a transfer like an income', async () => {
+    budgets.findAllByPeriod.mockResolvedValue([
+      budget('salaire', 300000),
+      budget('virement', 10000),
+    ]);
+    transactions.findAllByAccountUnpaginated.mockResolvedValue([
+      tx(250000, 'salaire'),
+      tx(4000, 'virement'),
+    ]);
+
+    const { income, transfers } = await useCase.execute('acc-1', 'per-1');
+
+    expect(income[0].remaining).toBe('50000');
+    expect(transfers[0].remaining).toBe('6000');
   });
 
   it('rejects a period of another account like an unknown one', async () => {
