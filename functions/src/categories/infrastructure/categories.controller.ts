@@ -28,7 +28,7 @@ import {
   IsNumberString,
 } from 'class-validator';
 import { CategoryRepository } from '../domain/category.repository.interface';
-import { NotFoundError } from '../../shared/domain/errors';
+import { ensureBelongsToAccount } from '../../shared/domain/account-ownership';
 
 export class CreateCategoryDto {
   @IsString()
@@ -120,11 +120,17 @@ export class CategoriesController {
   @ApiOperation({ summary: 'Update a category' })
   @ApiResponse({ status: 200, type: CategoryResponseDto })
   async update(
+    @Param('accountId') accountId: string,
     @Param('id') id: string,
     @Body() dto: UpdateCategoryDto,
   ): Promise<CategoryResponseDto> {
-    const existing = await this.categoryRepository.findById(id);
-    if (!existing) throw new NotFoundError('Category not found');
+    // Une catégorie globale (accountId null) n'appartient à aucun compte :
+    // elle n'est pas modifiable depuis un compte (404).
+    const existing = ensureBelongsToAccount(
+      await this.categoryRepository.findById(id),
+      accountId,
+      'Category',
+    );
 
     const updated = new Category({
       id: existing.id,

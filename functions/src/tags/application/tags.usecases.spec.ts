@@ -71,15 +71,30 @@ describe('Tags use cases', () => {
     expect(repository.findAllByAccount).toHaveBeenCalledWith('acc-1');
   });
 
-  it('deletes a tag by id', async () => {
-    await new DeleteTagUseCase(repository).execute('tag-1');
+  describe('DeleteTagUseCase', () => {
+    it('deletes a tag of the account', async () => {
+      await new DeleteTagUseCase(repository).execute('acc-1', 'tag-1');
 
-    expect(repository.delete).toHaveBeenCalledWith('tag-1');
+      expect(repository.delete).toHaveBeenCalledWith('tag-1');
+    });
+
+    it.each([
+      ['a tag of another account', existing],
+      ['an unknown tag', null],
+    ])('throws NotFoundError without deleting for %s', async (_, found) => {
+      repository.findById.mockResolvedValue(found);
+
+      await expect(
+        new DeleteTagUseCase(repository).execute('acc-other', 'tag-1'),
+      ).rejects.toBeInstanceOf(NotFoundError);
+      expect(repository.delete).not.toHaveBeenCalled();
+    });
   });
 
   describe('UpdateTagUseCase', () => {
     it('updates name and color, keeping id, account and creation date', async () => {
       const updated = await new UpdateTagUseCase(repository).execute({
+        accountId: 'acc-1',
         id: 'tag-1',
         name: 'Voyages',
         color: '#222222',
@@ -100,6 +115,7 @@ describe('Tags use cases', () => {
 
     it('keeps fields that are not provided', async () => {
       const updated = await new UpdateTagUseCase(repository).execute({
+        accountId: 'acc-1',
         id: 'tag-1',
       });
 
@@ -110,8 +126,22 @@ describe('Tags use cases', () => {
       repository.findById.mockResolvedValue(null);
 
       await expect(
-        new UpdateTagUseCase(repository).execute({ id: 'nope' }),
+        new UpdateTagUseCase(repository).execute({
+          accountId: 'acc-1',
+          id: 'nope',
+        }),
       ).rejects.toBeInstanceOf(NotFoundError);
+      expect(repository.save).not.toHaveBeenCalled();
+    });
+
+    it('throws the same NotFoundError for a tag of another account, without saving', async () => {
+      await expect(
+        new UpdateTagUseCase(repository).execute({
+          accountId: 'acc-other',
+          id: 'tag-1',
+          name: 'x',
+        }),
+      ).rejects.toThrow('Tag not found');
       expect(repository.save).not.toHaveBeenCalled();
     });
   });

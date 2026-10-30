@@ -104,7 +104,11 @@ export class AccountsController {
 
   @Get(':id/shares')
   @ApiOperation({ summary: 'Get all shares for an account' })
-  async getShares(@Param('id') id: string) {
+  async getShares(
+    @Param('id') id: string,
+    @Request() req: AuthenticatedRequest,
+  ) {
+    await this.assertOwner(id, req.user.id, 'Only owner can list shares');
     return this.accountShareRepository.findAllByAccount(id);
   }
 
@@ -131,10 +135,7 @@ export class AccountsController {
     @Param('userId') userId: string,
     @Request() req: AuthenticatedRequest,
   ) {
-    const account = await this.accountRepository.findById(id);
-    if (!account) throw new NotFoundError('Account not found');
-    if (account.ownerId !== req.user.id)
-      throw new ForbiddenError('Only owner can remove shares');
+    await this.assertOwner(id, req.user.id, 'Only owner can remove shares');
 
     await this.accountShareRepository.delete(id, userId);
     return { success: true };
@@ -169,6 +170,16 @@ export class AccountsController {
       createdAt: updated.createdAt.toISOString(),
       updatedAt: updated.updatedAt.toISOString(),
     };
+  }
+
+  private async assertOwner(
+    accountId: string,
+    userId: string,
+    message: string,
+  ): Promise<void> {
+    const account = await this.accountRepository.findById(accountId);
+    if (!account) throw new NotFoundError('Account not found');
+    if (account.ownerId !== userId) throw new ForbiddenError(message);
   }
 
   @Post()

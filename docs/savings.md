@@ -37,7 +37,7 @@ Table `transactions` : colonne `savings_goal_id` (lien facultatif, indexé).
 Réponse API : montants renvoyés en texte, dates en ISO.
 
 ## Ce qu'on peut faire
-Toutes les routes sont derrière `SupabaseAuthGuard` (jeton Supabase valide exigé ; l'identité est `{id, email}` lue dans le jeton). Aucun middleware, et le code ne vérifie jamais que l'`accountId` ou l'`id` de l'URL appartient à l'utilisateur : seule la RLS de la base protège, car le client base de données est créé par requête avec l'en-tête `Authorization` de l'appelant (`functions/src/supabase/supabase.module.ts`).
+Toutes les routes sont derrière `SupabaseAuthGuard` (jeton Supabase valide exigé ; l'identité est `{id, email}` lue dans le jeton). Aucun middleware, et le code ne vérifie pas que l'`accountId` de l'URL appartient à l'utilisateur (c'est la RLS de la base, ci-dessous) ; en revanche, en modification/suppression, l'objectif doit appartenir à `:accountId` (`account-ownership.ts`) : inexistant ou d'un autre compte = 404 identique, sans écriture. La RLS s'applique car le client base de données est créé par requête avec l'en-tête `Authorization` de l'appelant (`functions/src/supabase/supabase.module.ts`).
 
 | Action | Point d'entrée | Qui | Effet | Source |
 | --- | --- | --- | --- | --- |
@@ -56,4 +56,4 @@ Pas de statut. Un objectif atteint (≥ 100 %) reste modifiable ; rien ne l'arch
 - Où et comment une transaction est liée à un objectif (`savings_goal_id`) : le lien existe en base, mais ce périmètre ne l'expose pas.
 - Le trigger ne tient pas compte de `pending` / `reconciled` : toute transaction liée compte.
 - Pourquoi la lecture exige le droit « écriture » : un compte partagé en lecture seule ne verrait aucun objectif ; intention inconnue.
-- Les objectifs supprimés ne sont pas recontrôlés côté back (propriété du compte) ; dépend uniquement de la RLS.
+- Suppression et modification d'un objectif : la propriété du compte est contrôlée côté back (404 sinon).

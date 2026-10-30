@@ -3,6 +3,8 @@ import { TransactionRepository } from '../../transactions/domain/transaction.rep
 import { TagRepository } from '../../tags/domain/tag.repository.interface';
 import { PeriodRepository } from '../../periods/domain/period.repository.interface';
 
+import { ensureBelongsToAccount } from '../../shared/domain/account-ownership';
+
 export interface TagSummary {
   tagId: string;
   name: string;
@@ -24,11 +26,13 @@ export class GetTagsSummaryUseCase {
     let endDate: Date | undefined;
 
     if (periodId) {
-      const period = await this.periodRepository.findById(periodId);
-      if (period) {
-        startDate = period.startDate;
-        endDate = period.endDate || undefined;
-      }
+      const period = ensureBelongsToAccount(
+        await this.periodRepository.findById(periodId),
+        accountId,
+        'Period',
+      );
+      startDate = period.startDate;
+      endDate = period.endDate || undefined;
     }
 
     const transactions =

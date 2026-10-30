@@ -1,7 +1,7 @@
 import { Injectable, Inject } from '@nestjs/common';
 import type { SavingsGoalRepository } from '../domain/savings-goal.repository.interface';
 import { SavingsGoal } from '../domain/savings-goal.entity';
-import { NotFoundError } from '../../shared/domain/errors';
+import { ensureBelongsToAccount } from '../../shared/domain/account-ownership';
 
 @Injectable()
 export class GetSavingsGoalsUseCase {
@@ -45,6 +45,7 @@ export class CreateSavingsGoalUseCase {
 }
 
 export interface UpdateSavingsGoalCommand {
+  accountId: string;
   id: string;
   name?: string;
   targetAmount?: string;
@@ -61,8 +62,11 @@ export class UpdateSavingsGoalUseCase {
   ) {}
 
   async execute(command: UpdateSavingsGoalCommand): Promise<SavingsGoal> {
-    const existing = await this.repository.findById(command.id);
-    if (!existing) throw new NotFoundError('Savings goal not found');
+    const existing = ensureBelongsToAccount(
+      await this.repository.findById(command.id),
+      command.accountId,
+      'Savings goal',
+    );
 
     const updated = new SavingsGoal({
       ...existing,
@@ -85,5 +89,22 @@ export class UpdateSavingsGoalUseCase {
 
     await this.repository.save(updated);
     return updated;
+  }
+}
+
+@Injectable()
+export class DeleteSavingsGoalUseCase {
+  constructor(
+    @Inject('SavingsGoalRepository')
+    private readonly repository: SavingsGoalRepository,
+  ) {}
+
+  async execute(accountId: string, id: string): Promise<void> {
+    ensureBelongsToAccount(
+      await this.repository.findById(id),
+      accountId,
+      'Savings goal',
+    );
+    await this.repository.delete(id);
   }
 }

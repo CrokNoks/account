@@ -42,7 +42,7 @@ Toutes les routes : connecté (token exigé via `@UseGuards` sur le contrôleur,
 | Lister mes comptes | `GET /accounts` | connecté ; filtrage par la base (RLS) | comptes possédés + partagés | `accounts.controller.ts:210` |
 | Créer un compte | `POST /accounts` | connecté, devient propriétaire | compte créé | `accounts.controller.ts:180` |
 | Modifier un compte | `PATCH /accounts/:id` | connecté ; aucun contrôle propriétaire dans le code, seule la base (UPDATE réservé au propriétaire) | compte mis à jour | `accounts.controller.ts:145` |
-| Voir les partages | `GET /accounts/:id/shares` | connecté ; aucun contrôle dans le code, la base limite aux partages visibles | liste avec email | `accounts.controller.ts:106` |
+| Voir les partages | `GET /accounts/:id/shares` | connecté + propriétaire contrôlé (403 sinon, 404 si le compte n'existe pas) | liste avec email | `accounts.controller.ts:105` |
 | Partager | `POST /accounts/:id/shares` (email, permission) | connecté + propriétaire contrôlé | partage créé/mis à jour | `share-account.use-case.ts` |
 | Retirer un partage | `DELETE /accounts/:id/shares/:userId` | connecté + propriétaire contrôlé | partage supprimé | `accounts.controller.ts:128` |
 | Écrans front | `account-list`, `account-form`, `create-account-dialog`, `share-account-dialog`, `account-selector` ; hooks `use-accounts`, `use-create-account`, `use-update-account`, `use-account-shares`, `use-manage-share` | | | `frontend/src/features/accounts/` |
@@ -51,6 +51,7 @@ Il n'y a pas de route pour supprimer un compte (la base l'autoriserait au propri
 
 ## Zones d'ombre
 - Un compte n'a ni type ni devise : ces colonnes n'existent pas en base et l'API rejette ces champs (400, `forbidNonWhitelisted`). Le front ne les envoie plus à la création (`create-account-dialog.tsx`) : le formulaire ne demande que nom, solde initial et description, et la liste des comptes n'affiche plus de type ni de devise.
+- Le front affiche le bouton « partager » sur tous les comptes, y compris ceux partagés avec soi : pour un non-propriétaire, la liste des partages répond maintenant 403 et l'écran s'ouvre sans liste.
 - Le type front `AccountShare` dans `model/types.ts` (rôles owner/viewer/editor) diffère de celui de `use-account-shares.ts` (read/write) ; le second correspond à l'API.
 - Erreurs métier typées (`functions/src/shared/domain/errors.ts`), traduites par `DomainExceptionFilter` : compte ou utilisateur (email) introuvable → 404, partage/suppression de partage par un non-propriétaire → 403, partage avec soi-même → 400. Les erreurs techniques (repositories Supabase) restent des 500 « Internal server error ».
 - Le PATCH met à jour avec `dto.description ?? existant` : impossible d'effacer une description.

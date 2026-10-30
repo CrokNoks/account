@@ -155,13 +155,18 @@ describe('Accounts and sharing routes (e2e)', () => {
     });
   });
 
-  // Comportement actuel documenté (docs/accounts.md) : la liste des partages
-  // n'est pas réservée au propriétaire dans le code (seule la RLS protège).
-  it('GET /accounts/:id/shares does not check ownership in the code', async () => {
-    mocks.accounts.findById.mockResolvedValue(account('someone-else'));
-    mocks.shares.findAllByAccount.mockResolvedValue([]);
+  describe('GET /accounts/:id/shares', () => {
+    it('lists the shares for the owner', async () => {
+      mocks.shares.findAllByAccount.mockResolvedValue([]);
 
-    await http().get('/accounts/acc-1/shares').set(auth()).expect(200);
-    expect(mocks.accounts.findById).not.toHaveBeenCalled();
+      await http().get('/accounts/acc-1/shares').set(auth()).expect(200, []);
+    });
+
+    it('refuses (403) when the authenticated user is not the owner', async () => {
+      mocks.accounts.findById.mockResolvedValue(account('someone-else'));
+
+      await http().get('/accounts/acc-1/shares').set(auth()).expect(403);
+      expect(mocks.shares.findAllByAccount).not.toHaveBeenCalled();
+    });
   });
 });

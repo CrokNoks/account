@@ -45,7 +45,7 @@ Mise à jour : 2026-10-30 · Commit : 157b272
 Transaction (`transactions`) : id, compte, catégorie (optionnelle), période (optionnelle), date (jour), description, montant (centimes, BIGINT), rapprochée, en attente, moyen de paiement, notes, metadata (JSON libre, contient `transferId` pour les virements), objectif d'épargne (optionnel), dates de création/modification. Table de liaison `transaction_tags` (transaction, tag) ; supprimée avec la transaction. L'API renvoie les montants en texte.
 
 ## Ce qu'on peut faire
-Toutes les routes sont préfixées par l'identifiant du compte : `/:accountId/transactions`. Qui : connecté (token exigé, `@UseGuards(SupabaseAuthGuard)`, `transactions.controller.ts:308`), pas de middleware ni de décorateur d'identité ; l'identité n'est pas lue. Le contrôle propriétaire/partage n'est fait que par la base (RLS) via le token transmis ; le code ne vérifie pas que l'utilisateur a accès à `:accountId`.
+Toutes les routes sont préfixées par l'identifiant du compte : `/:accountId/transactions`. Qui : connecté (token exigé, `@UseGuards(SupabaseAuthGuard)`, `transactions.controller.ts:308`), pas de middleware ni de décorateur d'identité ; l'identité n'est pas lue. Le contrôle propriétaire/partage n'est fait que par la base (RLS) via le token transmis ; le code ne vérifie pas que l'utilisateur a accès à `:accountId`. En revanche, la modification/suppression par `:id` et le filtre `periodId` exigent que la transaction / la période appartienne à `:accountId` : sinon 404 identique à « inexistant », sans écriture (`functions/src/shared/domain/account-ownership.ts`).
 
 | Action | Point d'entrée | Qui | Effet | Source |
 | --- | --- | --- | --- | --- |
@@ -66,7 +66,7 @@ Front (`frontend/src/features/transactions/`) : `transaction-list` (liste, filtr
 
 ## Zones d'ombre
 - Ordre des routes : `PATCH bulk` (399) et `DELETE bulk` (413) doivent rester déclarées avant `PATCH :id` (426) et `DELETE :id` (462), sinon Express les capte comme un `:id` (id = « bulk ») et la modification/suppression en lot devient inutilisable. Verrouillé par les tests e2e (`bulk routes`). Les champs de `data` en modification en lot sont validés (`BulkUpdateTransactionsDataDto`). Codes de retour : `DELETE :id` 204, `DELETE bulk` et `PATCH bulk` 200.
-- Le code ne vérifie pas que la transaction modifiée/supprimée appartient au compte de l'URL, ni que le compte de destination d'un virement est accessible ; seule la base (RLS) bloque.
+- Le code ne vérifie pas que le compte de destination d'un virement est accessible ; seule la base (RLS) bloque.
 - Dans le virement, le montant est lu avec `Math.round(Number(...))` : le comportement pour de très grands montants (précision) n'est pas défini.
 - Le virement ne porte pas de catégorie et sa catégorie « transfer » (type de catégorie, `20260307000000`) n'est pas utilisée ici : le code ne dit pas le lien voulu.
 - Le trigger d'objectif d'épargne s'applique aussi aux modifications de montant ; son comportement quand le montant et l'objectif changent ensemble n'est pas testé.

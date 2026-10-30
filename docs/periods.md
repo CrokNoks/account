@@ -35,7 +35,7 @@ Mise à jour : 2026-10-30 · Commit : 157b272
 Période (table `periods`) : id ; compte ; date de début ; date de fin (peut être vide) ; `estimated_end_date` (colonne présente en base, non utilisée par le code) ; active oui/non ; dates de création/modification. Dates enregistrées sans heure (`YYYY-MM-DD`, `supabase-period.repository.ts:69`). Budgets : voir `docs/budgets.md`.
 
 ## Ce qu'on peut faire
-Qui : toutes les routes exigent un token de connexion valide (`@UseGuards(SupabaseAuthGuard)`, `periods.controller.ts:107` ; stratégie JWT `functions/src/auth/supabase.strategy.ts:61`). Pas de middleware global ni de décorateur d'identité : le contrôleur ne lit pas l'utilisateur. Les droits sont contrôlés uniquement en base (RLS) car le client Supabase porte le token de l'utilisateur (`functions/src/supabase/supabase.module.ts:25-38`). Le contrôleur ne vérifie pas que `:id` appartient à `:accountId`.
+Qui : toutes les routes exigent un token de connexion valide (`@UseGuards(SupabaseAuthGuard)`, `periods.controller.ts:107` ; stratégie JWT `functions/src/auth/supabase.strategy.ts:61`). Pas de middleware global ni de décorateur d'identité : le contrôleur ne lit pas l'utilisateur. Les droits sont contrôlés uniquement en base (RLS) car le client Supabase porte le token de l'utilisateur (`functions/src/supabase/supabase.module.ts:25-38`). Les routes `GET/PATCH/DELETE :id` et `GET/PUT :id/budgets` vérifient que la période appartient à `:accountId` (`account-ownership.ts`) : inexistante ou d'un autre compte = 404 identique, sans écriture.
 
 | Action | Point d'entrée | Effet | Source |
 | --- | --- | --- | --- |

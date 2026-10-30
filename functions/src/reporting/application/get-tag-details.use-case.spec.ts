@@ -172,6 +172,14 @@ describe('GetTagDetailsUseCase', () => {
     expect(transactions.findAllByAccountUnpaginated).not.toHaveBeenCalled();
   });
 
+  it('rejects a period of another account', async () => {
+    periods.findById.mockResolvedValue({ ...period, accountId: 'acc-2' });
+    await expect(useCase.execute('acc-1', 'vacances', 'per-1')).rejects.toThrow(
+      'Period not found',
+    );
+    expect(transactions.findAllByAccountUnpaginated).not.toHaveBeenCalled();
+  });
+
   it('returns empty details for a tag without transactions', async () => {
     transactions.findAllByAccountUnpaginated.mockResolvedValue([]);
 

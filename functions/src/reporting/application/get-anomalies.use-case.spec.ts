@@ -42,6 +42,27 @@ describe('GetAnomaliesUseCase', () => {
     jest.useRealTimers();
   });
 
+  it('rejects a period of another account without reading transactions', async () => {
+    const periods = (
+      useCase as unknown as {
+        periodRepository: { findById: jest.Mock };
+      }
+    ).periodRepository;
+    periods.findById.mockResolvedValue({
+      id: 'per-1',
+      accountId: 'acc-other',
+      startDate: new Date(2026, 5, 1),
+      endDate: null,
+    });
+
+    await expect(useCase.execute(accountId, 'per-1')).rejects.toThrow(
+      'Period not found',
+    );
+    expect(
+      transactionRepository.findAllByAccountUnpaginated,
+    ).not.toHaveBeenCalled();
+  });
+
   it('should detect duplicate transactions on the same day', async () => {
     const tx1 = Transaction.create({
       id: 'tx-1',

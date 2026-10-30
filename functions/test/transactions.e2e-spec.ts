@@ -300,20 +300,18 @@ describe('Transactions routes (e2e)', () => {
       expect(saved.accountId).toBe(existing.accountId);
     });
 
-    // Comportement actuel documenté : rien ne vérifie que la transaction
-    // appartient au compte de l'URL (seule la RLS protège).
-    it('updates a transaction of another account reached through any accountId', async () => {
+    // Le détail de toutes les routes `:id` est dans account-ownership.e2e-spec.ts.
+    it('answers 404 without saving for a transaction of another account', async () => {
       mocks.transactions.findById.mockResolvedValue(
         tx('t9', { accountId: 'acc-other' }),
       );
 
-      const res = await http()
+      await http()
         .patch('/acc-1/transactions/t9')
         .set(auth())
         .send({ notes: 'x' })
-        .expect(200);
-
-      expect((res.body as Record<string, unknown>).accountId).toBe('acc-other');
+        .expect(404);
+      expect(mocks.transactions.save).not.toHaveBeenCalled();
     });
   });
 

@@ -163,6 +163,13 @@ describe('GetBudgetBreakdownUseCase', () => {
     });
   });
 
+  it('rejects a period of another account like an unknown one', async () => {
+    await expect(useCase.execute('acc-other', 'per-1')).rejects.toThrow(
+      'Period not found',
+    );
+    expect(transactions.findAllByAccountUnpaginated).not.toHaveBeenCalled();
+  });
+
   it('rejects an unknown period', async () => {
     periods.findById.mockResolvedValue(null);
 

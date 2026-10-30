@@ -127,6 +127,7 @@ export class RecurringController {
   @ApiOperation({ summary: 'Update a recurring transaction' })
   @ApiResponse({ status: 200, type: RecurringTransactionResponseDto })
   async update(
+    @Param('accountId') accountId: string,
     @Param('id') id: string,
     @Body() dto: UpdateRecurringTransactionDto,
   ): Promise<RecurringTransactionResponseDto> {
@@ -140,15 +141,22 @@ export class RecurringController {
         amount: BigInt(Math.round(Number(dto.amount))),
       }),
     };
-    const transaction = await this.updateRecurringUseCase.execute(id, data);
+    const transaction = await this.updateRecurringUseCase.execute(
+      accountId,
+      id,
+      data,
+    );
     return this.mapToResponse(transaction);
   }
 
   @Delete(':id')
   @ApiOperation({ summary: 'Delete a recurring transaction' })
   @ApiResponse({ status: 204 })
-  async delete(@Param('id') id: string): Promise<void> {
-    await this.deleteRecurringUseCase.execute(id);
+  async delete(
+    @Param('accountId') accountId: string,
+    @Param('id') id: string,
+  ): Promise<void> {
+    await this.deleteRecurringUseCase.execute(accountId, id);
   }
 
   private mapToResponse(

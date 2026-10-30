@@ -5,6 +5,7 @@ import { PeriodRepository } from '../../periods/domain/period.repository.interfa
 import { CategoryRepository } from '../../categories/domain/category.repository.interface';
 import { TagSummary } from './get-tags-summary.use-case';
 import { NotFoundError } from '../../shared/domain/errors';
+import { ensureBelongsToAccount } from '../../shared/domain/account-ownership';
 
 export interface TagCategoryBreakdown {
   categoryId: string | null;
@@ -48,11 +49,13 @@ export class GetTagDetailsUseCase {
     let endDate: Date | undefined;
 
     if (periodId) {
-      const period = await this.periodRepository.findById(periodId);
-      if (period) {
-        startDate = period.startDate;
-        endDate = period.endDate || undefined;
-      }
+      const period = ensureBelongsToAccount(
+        await this.periodRepository.findById(periodId),
+        accountId,
+        'Period',
+      );
+      startDate = period.startDate;
+      endDate = period.endDate || undefined;
     }
 
     const allTransactions =

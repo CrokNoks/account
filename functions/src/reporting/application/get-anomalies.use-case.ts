@@ -3,7 +3,7 @@ import { TransactionRepository } from '../../transactions/domain/transaction.rep
 import { PeriodRepository } from '../../periods/domain/period.repository.interface';
 import { Transaction } from '../../transactions/domain/transaction.entity';
 import { startOfMonth, subMonths, endOfDay, format } from 'date-fns';
-import { NotFoundError } from '../../shared/domain/errors';
+import { ensureBelongsToAccount } from '../../shared/domain/account-ownership';
 
 export interface Anomaly {
   id: string;
@@ -26,8 +26,11 @@ export class GetAnomaliesUseCase {
     let targetEndDate: Date;
 
     if (periodId) {
-      const period = await this.periodRepository.findById(periodId);
-      if (!period) throw new NotFoundError('Period not found');
+      const period = ensureBelongsToAccount(
+        await this.periodRepository.findById(periodId),
+        accountId,
+        'Period',
+      );
       targetStartDate = period.startDate;
       targetEndDate = period.endDate || new Date();
     } else {

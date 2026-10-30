@@ -6,6 +6,7 @@ import {
   GetSavingsGoalsUseCase,
   CreateSavingsGoalUseCase,
   UpdateSavingsGoalUseCase,
+  DeleteSavingsGoalUseCase,
 } from './application/savings-goals.use-cases';
 
 @Module({
@@ -19,6 +20,7 @@ import {
     GetSavingsGoalsUseCase,
     CreateSavingsGoalUseCase,
     UpdateSavingsGoalUseCase,
+    DeleteSavingsGoalUseCase,
   ],
   exports: ['SavingsGoalRepository'],
 })

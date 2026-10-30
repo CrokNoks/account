@@ -4,7 +4,7 @@ import { TransactionRepository } from '../../transactions/domain/transaction.rep
 import { BudgetRepository } from '../../budgets/domain/budget.repository.interface';
 import { PeriodRepository } from '../../periods/domain/period.repository.interface';
 import { CategoryType } from '../../categories/domain/category.entity';
-import { NotFoundError } from '../../shared/domain/errors';
+import { ensureBelongsToAccount } from '../../shared/domain/account-ownership';
 
 export interface BudgetCategoryBreakdown {
   categoryId: string;
@@ -35,8 +35,11 @@ export class GetBudgetBreakdownUseCase {
     accountId: string,
     periodId: string,
   ): Promise<BudgetBreakdownResponse> {
-    const period = await this.periodRepository.findById(periodId);
-    if (!period) throw new NotFoundError('Period not found');
+    const period = ensureBelongsToAccount(
+      await this.periodRepository.findById(periodId),
+      accountId,
+      'Period',
+    );
 
     const categories =
       await this.categoryRepository.findAllByAccount(accountId);

@@ -98,10 +98,12 @@ export class TagsController {
   @ApiOperation({ summary: 'Update a tag' })
   @ApiResponse({ status: 200, type: TagResponseDto })
   async update(
+    @Param('accountId') accountId: string,
     @Param('id') id: string,
     @Body() dto: UpdateTagDto,
   ): Promise<TagResponseDto> {
     const tag = await this.updateTagUseCase.execute({
+      accountId,
       id,
       ...dto,
     });
@@ -111,8 +113,11 @@ export class TagsController {
   @Delete(':id')
   @ApiOperation({ summary: 'Delete a tag' })
   @ApiResponse({ status: 204 })
-  async delete(@Param('id') id: string): Promise<void> {
-    await this.deleteTagUseCase.execute(id);
+  async delete(
+    @Param('accountId') accountId: string,
+    @Param('id') id: string,
+  ): Promise<void> {
+    await this.deleteTagUseCase.execute(accountId, id);
   }
 
   private mapToResponse(t: Tag): TagResponseDto {

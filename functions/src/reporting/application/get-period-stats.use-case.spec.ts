@@ -193,6 +193,15 @@ describe('GetPeriodStatsUseCase', () => {
     });
   });
 
+  it('rejects a period of another account like an unknown one', async () => {
+    await expect(useCase.execute('acc-1', 'per-1')).resolves.toBeDefined();
+    accounts.findById.mockResolvedValue({ id: 'acc-other' });
+
+    await expect(useCase.execute('acc-other', 'per-1')).rejects.toThrow(
+      'Account or Period not found',
+    );
+  });
+
   it.each([
     ['account', 'accounts'],
     ['period', 'periods'],

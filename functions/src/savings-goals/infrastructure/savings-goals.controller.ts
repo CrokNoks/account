@@ -19,8 +19,8 @@ import {
   GetSavingsGoalsUseCase,
   CreateSavingsGoalUseCase,
   UpdateSavingsGoalUseCase,
+  DeleteSavingsGoalUseCase,
 } from '../application/savings-goals.use-cases';
-import type { SavingsGoalRepository } from '../domain/savings-goal.repository.interface';
 import { SavingsGoal } from '../domain/savings-goal.entity';
 import {
   IsString,
@@ -28,7 +28,6 @@ import {
   IsDateString,
   IsNumberString,
 } from 'class-validator';
-import { Inject } from '@nestjs/common';
 
 class CreateSavingsGoalDto {
   @IsString()
@@ -75,8 +74,7 @@ export class SavingsGoalsController {
     private readonly getSavingsGoalsUseCase: GetSavingsGoalsUseCase,
     private readonly createSavingsGoalUseCase: CreateSavingsGoalUseCase,
     private readonly updateSavingsGoalUseCase: UpdateSavingsGoalUseCase,
-    @Inject('SavingsGoalRepository')
-    private readonly repository: SavingsGoalRepository,
+    private readonly deleteSavingsGoalUseCase: DeleteSavingsGoalUseCase,
   ) {}
 
   @Get()
@@ -101,15 +99,23 @@ export class SavingsGoalsController {
 
   @Patch(':id')
   @ApiOperation({ summary: 'Update a savings goal' })
-  async update(@Param('id') id: string, @Body() dto: UpdateSavingsGoalDto) {
-    const goal = await this.updateSavingsGoalUseCase.execute({ ...dto, id });
+  async update(
+    @Param('accountId') accountId: string,
+    @Param('id') id: string,
+    @Body() dto: UpdateSavingsGoalDto,
+  ) {
+    const goal = await this.updateSavingsGoalUseCase.execute({
+      ...dto,
+      accountId,
+      id,
+    });
     return this.mapToResponse(goal);
   }
 
   @Delete(':id')
   @ApiOperation({ summary: 'Delete a savings goal' })
-  async remove(@Param('id') id: string) {
-    await this.repository.delete(id);
+  async remove(@Param('accountId') accountId: string, @Param('id') id: string) {
+    await this.deleteSavingsGoalUseCase.execute(accountId, id);
   }
 
   private mapToResponse(g: SavingsGoal) {

@@ -70,17 +70,36 @@ describe('Recurring transactions use cases', () => {
     expect(repository.findAllByAccount).toHaveBeenCalledWith('acc-1');
   });
 
-  it('deletes by id', async () => {
-    await new DeleteRecurringTransactionUseCase(repository).execute('rec-1');
+  describe('DeleteRecurringTransactionUseCase', () => {
+    const useCase = () => new DeleteRecurringTransactionUseCase(repository);
 
-    expect(repository.delete).toHaveBeenCalledWith('rec-1');
+    it('deletes a recurring transaction of the account', async () => {
+      await useCase().execute('acc-1', 'rec-1');
+
+      expect(repository.delete).toHaveBeenCalledWith('rec-1');
+    });
+
+    it.each([
+      ['another account', existing],
+      ['nobody', null],
+    ])(
+      'throws NotFoundError without deleting when it belongs to %s',
+      async (_, found) => {
+        repository.findById.mockResolvedValue(found);
+
+        await expect(
+          useCase().execute('acc-other', 'rec-1'),
+        ).rejects.toBeInstanceOf(NotFoundError);
+        expect(repository.delete).not.toHaveBeenCalled();
+      },
+    );
   });
 
   describe('UpdateRecurringTransactionUseCase', () => {
     const useCase = () => new UpdateRecurringTransactionUseCase(repository);
 
     it('merges the provided fields and keeps identity', async () => {
-      const updated = await useCase().execute('rec-1', {
+      const updated = await useCase().execute('acc-1', 'rec-1', {
         amount: BigInt(-90000),
         dayOfMonth: 1,
       });
@@ -99,18 +118,25 @@ describe('Recurring transactions use cases', () => {
     it('rejects an unknown recurring transaction', async () => {
       repository.findById.mockResolvedValue(null);
 
-      await expect(useCase().execute('nope', {})).rejects.toThrow(
+      await expect(useCase().execute('acc-1', 'nope', {})).rejects.toThrow(
         'Recurring transaction not found',
       );
-      await expect(useCase().execute('nope', {})).rejects.toBeInstanceOf(
-        NotFoundError,
-      );
+      await expect(
+        useCase().execute('acc-1', 'nope', {}),
+      ).rejects.toBeInstanceOf(NotFoundError);
+      expect(repository.save).not.toHaveBeenCalled();
+    });
+
+    it('rejects a recurring transaction of another account without saving', async () => {
+      await expect(
+        useCase().execute('acc-other', 'rec-1', { dayOfMonth: 1 }),
+      ).rejects.toThrow('Recurring transaction not found');
       expect(repository.save).not.toHaveBeenCalled();
     });
 
     it('validates the merged result', async () => {
       await expect(
-        useCase().execute('rec-1', { dayOfMonth: 40 }),
+        useCase().execute('acc-1', 'rec-1', { dayOfMonth: 40 }),
       ).rejects.toThrow('Day of month must be between 1 and 31');
       expect(repository.save).not.toHaveBeenCalled();
     });

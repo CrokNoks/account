@@ -50,7 +50,7 @@ Montants en centimes (texte dans les réponses), sauf Sankey (euros, nombre) et 
 Rien en propre (tables lues : transactions, catégories, budgets, périodes, récurrentes, tags, comptes). Seule écriture : l'ignorance d'anomalie ajoute `ignoredAnomalies` (liste de types) dans les métadonnées d'une transaction. Le cache IA est en mémoire du serveur (perdu au redémarrage, non partagé entre instances).
 
 ## Ce qu'on peut faire
-Identité : toutes les routes sont sous `SupabaseAuthGuard` (jeton Supabase exigé ; identité `{id,email}` dans le jeton). Pas de middleware. Aucun cas d'usage ne vérifie que `accountId` appartient à l'utilisateur : la protection repose sur la RLS de la base (client créé avec l'en-tête `Authorization` de l'appelant, `functions/src/supabase/supabase.module.ts`).
+Identité : toutes les routes sont sous `SupabaseAuthGuard` (jeton Supabase exigé ; identité `{id,email}` dans le jeton). Pas de middleware. Aucun cas d'usage ne vérifie que `accountId` appartient à l'utilisateur : la protection repose sur la RLS de la base (client créé avec l'en-tête `Authorization` de l'appelant, `functions/src/supabase/supabase.module.ts`). En revanche, toute période (`:periodId` ou `?periodId=`) et tout tag doivent appartenir à `:accountId` : sinon 404 identique à « inexistant » (`account-ownership.ts`). Une période inconnue donne désormais 404 aussi pour le résumé et le détail des tags (avant : ignorée, stats globales).
 
 | Action | Point d'entrée (préfixe `/:accountId`) | Qui | Effet | Source (`reporting.controller.ts`) |
 | --- | --- | --- | --- | --- |

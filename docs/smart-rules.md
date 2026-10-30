@@ -29,7 +29,7 @@ Mise à jour : 2026-10-30 · Commit : 157b272
 Table `smart_rules` : id ; compte ; motif (texte) ; catégorie (peut être vide) ; étiquettes (liste d'identifiants, vide par défaut) ; priorité (entier, 0 par défaut) ; dates de création/modification (trigger `updated_at`, ligne 44). Aucun montant.
 
 ## Ce qu'on peut faire
-Qui : toutes les routes exigent un token de connexion valide (`@UseGuards(SupabaseAuthGuard)`, `smart-rules.controller.ts:71`). Pas de middleware ni de décorateur d'identité : le contrôleur ne lit pas l'utilisateur. Droits contrôlés uniquement en base (RLS), le client Supabase portant le token de l'utilisateur (`functions/src/supabase/supabase.module.ts:25-38`). `:accountId` n'est pas rapproché de `:id` en modification/suppression.
+Qui : toutes les routes exigent un token de connexion valide (`@UseGuards(SupabaseAuthGuard)`, `smart-rules.controller.ts:71`). Pas de middleware ni de décorateur d'identité : le contrôleur ne lit pas l'utilisateur. Droits contrôlés uniquement en base (RLS), le client Supabase portant le token de l'utilisateur (`functions/src/supabase/supabase.module.ts:25-38`). En modification/suppression, la règle doit appartenir à `:accountId` (`account-ownership.ts`) : inexistante ou d'un autre compte = 404 identique, sans écriture.
 
 | Action | Point d'entrée | Effet | Source |
 | --- | --- | --- | --- |

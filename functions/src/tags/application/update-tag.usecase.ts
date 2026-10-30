@@ -1,9 +1,10 @@
 import { Injectable } from '@nestjs/common';
-import { NotFoundError } from '../../shared/domain/errors';
+import { ensureBelongsToAccount } from '../../shared/domain/account-ownership';
 import { TagRepository } from '../domain/tag.repository.interface';
 import { Tag } from '../domain/tag.entity';
 
 export interface UpdateTagCommand {
+  accountId: string;
   id: string;
   name?: string;
   color?: string;
@@ -14,10 +15,11 @@ export class UpdateTagUseCase {
   constructor(private readonly tagRepository: TagRepository) {}
 
   async execute(command: UpdateTagCommand): Promise<Tag> {
-    const existing = await this.tagRepository.findById(command.id);
-    if (!existing) {
-      throw new NotFoundError(`Tag with ID ${command.id} not found`);
-    }
+    const existing = ensureBelongsToAccount(
+      await this.tagRepository.findById(command.id),
+      command.accountId,
+      'Tag',
+    );
 
     const updated = new Tag({
       id: existing.id,

@@ -25,7 +25,7 @@ Mise à jour : 2026-10-30 · Commit : 157b272
 Tag (`tags`) : id, compte, nom (50 caractères max), couleur (7 caractères, `#RRGGBB`), dates de création/modification (mise à jour automatique par trigger `set_tags_updated_at`). Liaison `transaction_tags` (transaction, tag).
 
 ## Ce qu'on peut faire
-Qui : connecté (token exigé, `@UseGuards(SupabaseAuthGuard)`, `tags.controller.ts:59`) ; pas de middleware ni de décorateur d'identité, l'identité n'est pas lue. Les droits sur le compte sont appliqués uniquement par la base (RLS) ; le code ne vérifie pas l'accès à `:accountId`.
+Qui : connecté (token exigé, `@UseGuards(SupabaseAuthGuard)`, `tags.controller.ts:59`) ; pas de middleware ni de décorateur d'identité, l'identité n'est pas lue. Les droits sur le compte sont appliqués uniquement par la base (RLS) ; le code ne vérifie pas l'accès à `:accountId`. En modification/suppression, le tag doit appartenir à `:accountId` (`account-ownership.ts`) : inexistant ou d'un autre compte = 404 identique, sans écriture.
 
 | Action | Point d'entrée | Qui | Effet | Source |
 | --- | --- | --- | --- | --- |

@@ -28,7 +28,7 @@ Ce module n'a **aucun point d'entrée API propre** : il est utilisé par le modu
 Budget (table `budget_instances`) : id ; période (`period_id`) ; catégorie (`category_id`) ; montant alloué (centimes) ; dates de création/modification (trigger `updated_at`, `20251229112000...sql:62`).
 
 ## Ce qu'on peut faire
-Qui : voir `docs/periods.md` (les routes sont dans `periods.controller.ts`, connectées via token, droits par RLS).
+Qui : voir `docs/periods.md` (les routes sont dans `periods.controller.ts`, connectées via token, droits par RLS ; la période doit appartenir à `:accountId`, 404 sinon).
 
 | Action | Point d'entrée | Source |
 | --- | --- | --- |

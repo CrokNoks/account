@@ -7,7 +7,6 @@ import {
   Param,
   UseGuards,
   Delete,
-  NotFoundException,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -15,6 +14,7 @@ import {
   ApiBearerAuth,
   ApiProperty,
 } from '@nestjs/swagger';
+import { ensureBelongsToAccount } from '../../shared/domain/account-ownership';
 import { SupabaseAuthGuard } from '../../auth/supabase-auth.guard';
 import type { SmartRuleRepository } from '../domain/smart-rule.repository.interface';
 import { SmartRule } from '../domain/smart-rule.entity';
@@ -103,9 +103,16 @@ export class SmartRulesController {
 
   @Patch(':id')
   @ApiOperation({ summary: 'Update a smart rule' })
-  async update(@Param('id') id: string, @Body() dto: UpdateSmartRuleDto) {
-    const rule = await this.repository.findById(id);
-    if (!rule) throw new NotFoundException('Smart rule not found');
+  async update(
+    @Param('accountId') accountId: string,
+    @Param('id') id: string,
+    @Body() dto: UpdateSmartRuleDto,
+  ) {
+    const rule = ensureBelongsToAccount(
+      await this.repository.findById(id),
+      accountId,
+      'Smart rule',
+    );
 
     if (dto.pattern !== undefined) rule.updatePattern(dto.pattern);
     if (dto.categoryId !== undefined) rule.updateCategory(dto.categoryId);
@@ -118,7 +125,12 @@ export class SmartRulesController {
 
   @Delete(':id')
   @ApiOperation({ summary: 'Delete a smart rule' })
-  async remove(@Param('id') id: string) {
+  async remove(@Param('accountId') accountId: string, @Param('id') id: string) {
+    ensureBelongsToAccount(
+      await this.repository.findById(id),
+      accountId,
+      'Smart rule',
+    );
     await this.repository.delete(id);
   }
 

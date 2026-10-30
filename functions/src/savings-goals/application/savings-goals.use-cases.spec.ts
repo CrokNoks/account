@@ -2,6 +2,7 @@ import {
   CreateSavingsGoalUseCase,
   GetSavingsGoalsUseCase,
   UpdateSavingsGoalUseCase,
+  DeleteSavingsGoalUseCase,
 } from './savings-goals.use-cases';
 import { SavingsGoal } from '../domain/savings-goal.entity';
 import type { SavingsGoalRepository } from '../domain/savings-goal.repository.interface';
@@ -91,14 +92,21 @@ describe('Savings goals use cases', () => {
     it('rejects an unknown goal', async () => {
       repository.findById.mockResolvedValue(null);
 
-      await expect(useCase().execute({ id: 'nope' })).rejects.toThrow(
-        'Savings goal not found',
-      );
+      await expect(
+        useCase().execute({ accountId: 'acc-1', id: 'nope' }),
+      ).rejects.toThrow('Savings goal not found');
+      expect(repository.save).not.toHaveBeenCalled();
+    });
+
+    it('rejects a goal of another account without saving', async () => {
+      await expect(
+        useCase().execute({ accountId: 'acc-other', id: 'goal-1', name: 'x' }),
+      ).rejects.toThrow('Savings goal not found');
       expect(repository.save).not.toHaveBeenCalled();
     });
 
     it('keeps every field when nothing is provided', async () => {
-      await useCase().execute({ id: 'goal-1' });
+      await useCase().execute({ accountId: 'acc-1', id: 'goal-1' });
 
       expect(lastSaved()).toMatchObject({
         id: 'goal-1',
@@ -113,6 +121,7 @@ describe('Savings goals use cases', () => {
 
     it('updates the provided fields', async () => {
       const updated = await useCase().execute({
+        accountId: 'acc-1',
         id: 'goal-1',
         name: 'Japon',
         targetAmount: '300000',
@@ -130,7 +139,11 @@ describe('Savings goals use cases', () => {
     });
 
     it('removes the deadline when null is sent', async () => {
-      await useCase().execute({ id: 'goal-1', deadline: null });
+      await useCase().execute({
+        accountId: 'acc-1',
+        id: 'goal-1',
+        deadline: null,
+      });
 
       expect(lastSaved().deadline).toBeNull();
     });
@@ -139,22 +152,56 @@ describe('Savings goals use cases', () => {
     // current_amount directement, alors que le trigger SQL le recalcule depuis
     // les transactions liées.
     it('overwrites currentAmount directly, without creating a transaction', async () => {
-      await useCase().execute({ id: 'goal-1', currentAmount: '12000' });
+      await useCase().execute({
+        accountId: 'acc-1',
+        id: 'goal-1',
+        currentAmount: '12000',
+      });
 
       expect(lastSaved().currentAmount).toBe(BigInt(12000));
     });
 
     it('can reset currentAmount to 0', async () => {
-      await useCase().execute({ id: 'goal-1', currentAmount: '0' });
+      await useCase().execute({
+        accountId: 'acc-1',
+        id: 'goal-1',
+        currentAmount: '0',
+      });
 
       expect(lastSaved().currentAmount).toBe(BigInt(0));
     });
 
     it('rejects a target set to 0', async () => {
       await expect(
-        useCase().execute({ id: 'goal-1', targetAmount: '0' }),
+        useCase().execute({
+          accountId: 'acc-1',
+          id: 'goal-1',
+          targetAmount: '0',
+        }),
       ).rejects.toThrow('Target amount must be positive');
       expect(repository.save).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('DeleteSavingsGoalUseCase', () => {
+    const useCase = () => new DeleteSavingsGoalUseCase(repository);
+
+    it('deletes a goal of the account', async () => {
+      await useCase().execute('acc-1', 'goal-1');
+
+      expect(repository.delete).toHaveBeenCalledWith('goal-1');
+    });
+
+    it.each([
+      ['another account', existing()],
+      ['nobody', null],
+    ])('rejects without deleting when it belongs to %s', async (_, found) => {
+      repository.findById.mockResolvedValue(found);
+
+      await expect(useCase().execute('acc-other', 'goal-1')).rejects.toThrow(
+        'Savings goal not found',
+      );
+      expect(repository.delete).not.toHaveBeenCalled();
     });
   });
 });

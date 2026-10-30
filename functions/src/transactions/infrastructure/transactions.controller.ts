@@ -19,6 +19,7 @@ import {
   OmitType,
   PartialType,
 } from '@nestjs/swagger';
+import { ensureBelongsToAccount } from '../../shared/domain/account-ownership';
 import { SupabaseAuthGuard } from '../../auth/supabase-auth.guard';
 import { GetTransactionsByAccountUseCase } from '../application/get-transactions-by-account.use-case';
 import { CreateTransactionUseCase } from '../application/create-transaction.use-case';
@@ -41,8 +42,7 @@ import {
 } from 'class-validator';
 import { Type, Transform } from 'class-transformer';
 import { PeriodRepository } from '../../periods/domain/period.repository.interface';
-import { Inject, NotFoundException } from '@nestjs/common';
-import { NotFoundError } from '../../shared/domain/errors';
+import { Inject } from '@nestjs/common';
 
 export class CreateTransactionDto {
   @IsOptional()
@@ -368,8 +368,11 @@ export class TransactionsController {
     let endDate = query.endDate ? new Date(query.endDate) : undefined;
 
     if (query.periodId) {
-      const period = await this.periodRepository.findById(query.periodId);
-      if (!period) throw new NotFoundException('Period not found');
+      const period = ensureBelongsToAccount(
+        await this.periodRepository.findById(query.periodId),
+        accountId,
+        'Period',
+      );
       startDate = period.startDate;
       endDate = period.endDate || undefined;
     }
@@ -428,11 +431,15 @@ export class TransactionsController {
   @ApiOperation({ summary: 'Update a transaction partialy' })
   @ApiResponse({ status: 200, type: TransactionResponseDto })
   async update(
+    @Param('accountId') accountId: string,
     @Param('id') id: string,
     @Body() dto: UpdateTransactionDto,
   ): Promise<TransactionResponseDto> {
-    const existing = await this.transactionRepository.findById(id);
-    if (!existing) throw new NotFoundError('Transaction not found');
+    const existing = ensureBelongsToAccount(
+      await this.transactionRepository.findById(id),
+      accountId,
+      'Transaction',
+    );
 
     // If reconciling, auto-clear pending
     const pending =
@@ -463,7 +470,15 @@ export class TransactionsController {
   @Delete(':id')
   @HttpCode(204)
   @ApiOperation({ summary: 'Delete a transaction' })
-  async delete(@Param('id') id: string): Promise<void> {
+  async delete(
+    @Param('accountId') accountId: string,
+    @Param('id') id: string,
+  ): Promise<void> {
+    ensureBelongsToAccount(
+      await this.transactionRepository.findById(id),
+      accountId,
+      'Transaction',
+    );
     await this.transactionRepository.delete(id);
   }
 

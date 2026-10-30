@@ -34,7 +34,7 @@ export class GetPeriodStatsUseCase {
   ): Promise<PeriodStatsResponse> {
     const account = await this.accountRepository.findById(accountId);
     const period = await this.periodRepository.findById(periodId);
-    if (!account || !period)
+    if (!account || !period || period.accountId !== accountId)
       throw new NotFoundError('Account or Period not found');
 
     const categories =

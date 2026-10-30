@@ -36,7 +36,7 @@ import {
   IsBoolean,
 } from 'class-validator';
 import { Type } from 'class-transformer';
-import { NotFoundError } from '../../shared/domain/errors';
+import { ensureBelongsToAccount } from '../../shared/domain/account-ownership';
 
 export class BudgetInitDto {
   @IsString()
@@ -135,7 +135,11 @@ export class PeriodsController {
   @Get(':id/budgets')
   @ApiOperation({ summary: 'Get budgets for a period' })
   @ApiResponse({ status: 200 })
-  async getBudgets(@Param('id') id: string) {
+  async getBudgets(
+    @Param('accountId') accountId: string,
+    @Param('id') id: string,
+  ) {
+    await this.getOwnedPeriod(accountId, id);
     const budgets = await this.budgetRepository.findAllByPeriod(id);
     return budgets.map((b) => ({
       id: b.id,
@@ -147,7 +151,12 @@ export class PeriodsController {
   @Put(':id/budgets')
   @ApiOperation({ summary: 'Update budgets for a period' })
   @ApiResponse({ status: 200 })
-  async updateBudgets(@Param('id') id: string, @Body() dto: UpdateBudgetsDto) {
+  async updateBudgets(
+    @Param('accountId') accountId: string,
+    @Param('id') id: string,
+    @Body() dto: UpdateBudgetsDto,
+  ) {
+    await this.getOwnedPeriod(accountId, id);
     const result = await this.updatePeriodBudgetsUseCase.execute({
       periodId: id,
       budgets: dto.budgets.map((b) => ({
@@ -170,7 +179,7 @@ export class PeriodsController {
     @Param('accountId') accountId: string,
     @Param('id') id: string,
   ) {
-    return this.periodRepository.findById(id);
+    return this.getOwnedPeriod(accountId, id);
   }
 
   @Patch(':id')
@@ -181,8 +190,7 @@ export class PeriodsController {
     @Param('id') id: string,
     @Body() dto: UpdatePeriodDto,
   ) {
-    const existing = await this.periodRepository.findById(id);
-    if (!existing) throw new NotFoundError('Period not found');
+    const existing = await this.getOwnedPeriod(accountId, id);
 
     const updated = new Period({
       id: existing.id,
@@ -207,7 +215,16 @@ export class PeriodsController {
   @ApiOperation({ summary: 'Delete a period' })
   @ApiResponse({ status: 200 })
   async remove(@Param('accountId') accountId: string, @Param('id') id: string) {
+    await this.getOwnedPeriod(accountId, id);
     return this.periodRepository.delete(id);
+  }
+
+  private async getOwnedPeriod(accountId: string, id: string): Promise<Period> {
+    return ensureBelongsToAccount(
+      await this.periodRepository.findById(id),
+      accountId,
+      'Period',
+    );
   }
 
   @Post()

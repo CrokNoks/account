@@ -106,15 +106,23 @@ describe('GetTagsSummaryUseCase', () => {
     );
   });
 
-  it('uses every transaction when no period is given or the period is unknown', async () => {
-    periods.findById.mockResolvedValue(null);
-
+  it('uses every transaction when no period is given', async () => {
     await useCase.execute('acc-1');
-    await useCase.execute('acc-1', 'unknown');
 
     expect(transactions.findAllByAccountUnpaginated.mock.calls).toEqual([
       ['acc-1', { startDate: undefined, endDate: undefined }],
-      ['acc-1', { startDate: undefined, endDate: undefined }],
     ]);
+  });
+
+  it('rejects an unknown period or a period of another account, without reading transactions', async () => {
+    periods.findById.mockResolvedValueOnce(null);
+    await expect(useCase.execute('acc-1', 'unknown')).rejects.toThrow(
+      'Period not found',
+    );
+
+    await expect(useCase.execute('acc-other', 'per-1')).rejects.toThrow(
+      'Period not found',
+    );
+    expect(transactions.findAllByAccountUnpaginated).not.toHaveBeenCalled();
   });
 });

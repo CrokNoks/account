@@ -29,7 +29,7 @@ Mise à jour : 2026-10-30 · Commit : 157b272
 Catégorie (table `categories`) : id ; nom ; description (texte, peut être vide) ; couleur (`#RRGGBB`) ; type ; compte propriétaire (`account_id`, supprimée avec le compte) ; budget (centimes, peut être vide) ; dates de création et modification. (`functions/src/categories/domain/category.entity.ts`, `supabase-category.repository.ts:6`)
 
 ## Ce qu'on peut faire
-Qui : Toutes les routes exigent un token de connexion valide (`@UseGuards(SupabaseAuthGuard)`, stratégie JWT : `functions/src/auth/supabase.strategy.ts:61`). Il n'y a pas de middleware global ni de décorateur d'identité dans ce module : l'identité n'est pas lue par le contrôleur. Le contrôle des droits se fait en base : le client Supabase est créé par requête avec le token de l'utilisateur (`functions/src/supabase/supabase.module.ts:25-38`), donc les règles RLS s'appliquent (propriétaire du compte ou compte partagé, via `has_account_access`, `supabase/migrations/20251221_schema_complete.sql:140`). Le contrôleur ne vérifie jamais que `:accountId` ou `:id` appartient à l'utilisateur.
+Qui : Toutes les routes exigent un token de connexion valide (`@UseGuards(SupabaseAuthGuard)`, stratégie JWT : `functions/src/auth/supabase.strategy.ts:61`). Il n'y a pas de middleware global ni de décorateur d'identité dans ce module : l'identité n'est pas lue par le contrôleur. Le contrôle des droits se fait en base : le client Supabase est créé par requête avec le token de l'utilisateur (`functions/src/supabase/supabase.module.ts:25-38`), donc les règles RLS s'appliquent (propriétaire du compte ou compte partagé, via `has_account_access`, `supabase/migrations/20251221_schema_complete.sql:140`). Le contrôleur ne vérifie pas que `:accountId` appartient à l'utilisateur, mais `PATCH :id` exige que la catégorie appartienne à `:accountId` : inexistante, d'un autre compte ou globale (`accountId` nul) = 404 identique, sans écriture (`account-ownership.ts`).
 
 | Action | Point d'entrée | Effet | Source |
 | --- | --- | --- | --- |
@@ -48,4 +48,3 @@ Pas de cycle de vie.
 - Pourquoi une catégorie n'est pas supprimable depuis l'application : inconnu (route absente). Effet d'une suppression directe en base sur les transactions : à voir dans le module transactions (hors périmètre).
 - Le budget de catégorie : le code ne montre pas où il est consommé dans ce module (aucun calcul ici).
 - Une catégorie introuvable à la modification renvoie 404 (`NotFoundError`, `categories.controller.ts:122`).
-- `accountId` de l'URL non rapproché de celui de la catégorie modifiée.
