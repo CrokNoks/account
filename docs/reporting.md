@@ -11,7 +11,7 @@ Code : back `functions/src/reporting/` ; front `frontend/src/features/reporting/
 | Réel / prévu | Réel = somme des transactions de la période ; prévu = budget alloué à la catégorie pour la période. |
 | Solde en banque | Solde de départ + transactions rapprochées (`reconciled`, pointées avec le relevé). |
 | Solde à venir | Solde de départ + transactions non « en attente » (`pending`). |
-| Solde prévisionnel | Voir règles. |
+| Solde prévisionnel | Deux formules volontairement distinctes, ne pas les confondre : **stats** (cartes, analyse IA) = départ + max(revenus réels, prévus) − max(\|dépenses réelles\|, \|prévues\|) (projection de fin de période) ; **évolution** (graphique par période) = départ + toutes les transactions de la période (réalisé, y compris à venir). |
 | Anomalie | Transaction suspecte : doublon ou dépense inhabituelle. |
 | Récurrente | Opération répétée chaque mois à un jour fixe. |
 | Gemini | Service d'IA de Google, utilisé pour les analyses et le scan. |
