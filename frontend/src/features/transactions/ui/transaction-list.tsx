@@ -62,7 +62,7 @@ export function TransactionList({
   
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
   const [transactionToMakeRecurring, setTransactionToMakeRecurring] = useState<Transaction | null>(null);
-  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [selection, setSelection] = useState<{ scope: string; ids: string[] }>({ scope: '', ids: [] });
   
   const [page, setPage] = useState(1);
   const [limit] = useState(25);
@@ -156,6 +156,23 @@ export function TransactionList({
   }, [appliedFilters]);
 
   const { data: transactions, isLoading } = useTransactions(activeAccountId, filterOptions);
+
+  // La sélection appartient à un « scope » (compte, page, période, filtres, recherche) :
+  // dès que le scope change elle est vidée (réinitialisation pendant le rendu, comme
+  // le recommande React), donc jamais de sélection invisible, même en revenant en arrière.
+  const selectionScope = useMemo(() => JSON.stringify([activeAccountId, filterOptions]), [activeAccountId, filterOptions]);
+  if (selection.scope !== selectionScope) {
+    setSelection({ scope: selectionScope, ids: [] });
+  }
+  const selectedIds = useMemo(
+    () => (selection.scope === selectionScope ? selection.ids : []),
+    [selection, selectionScope],
+  );
+  const setSelectedIds = (update: string[] | ((prev: string[]) => string[])) =>
+    setSelection(prev => ({
+      scope: selectionScope,
+      ids: typeof update === 'function' ? update(prev.scope === selectionScope ? prev.ids : []) : update,
+    }));
 
   // Seuls les ids de la liste affichée (compte courant, page et filtres courants)
   // sont envoyés aux actions en lot : l'API répond 404 pour tout id inconnu du compte.

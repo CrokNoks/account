@@ -32,9 +32,20 @@ vi.mock('../api/use-bulk-transactions', () => ({
 }));
 vi.mock('@/features/recurring/ui/create-recurring-dialog', () => ({ CreateRecurringDialog: () => null }));
 vi.mock('./transaction-form', () => ({ TransactionForm: () => null }));
-vi.mock('./transaction-table', () => ({ TransactionTable: () => null }));
+vi.mock('./transaction-table', () => ({
+  TransactionTable: (p: { transactions: { id: string }[]; onToggleSelect: (id: string) => void }) => (
+    <div>
+      {p.transactions.map(tx => (
+        <button key={tx.id} onClick={() => p.onToggleSelect(tx.id)}>{`select ${tx.id}`}</button>
+      ))}
+    </div>
+  ),
+}));
 vi.mock('./transaction-mobile-list', () => ({ TransactionMobileList: () => null }));
-vi.mock('./bulk-actions-bar', () => ({ BulkActionsBar: () => null }));
+vi.mock('./bulk-actions-bar', () => ({
+  BulkActionsBar: ({ selectedCount }: { selectedCount: number }) =>
+    selectedCount > 0 ? <div data-testid="bulk-bar">{`count:${selectedCount}`}</div> : null,
+}));
 vi.mock('./transaction-filters', () => ({
   TransactionFilters: (p: {
     setMinAmount: (v: string) => void;
@@ -78,5 +89,50 @@ describe('TransactionList amount filters', () => {
 
     expect(lastOptions().minAmount).toBe('1050');
     expect(lastOptions().maxAmount).toBe('2000');
+  });
+});
+
+describe('TransactionList selection', () => {
+  beforeEach(() => {
+    useTransactions.mockReset();
+    useTransactions.mockImplementation((_account: string, o: { page: number }) => ({
+      data: {
+        data: o.page === 1 ? [{ id: 'a' }, { id: 'b' }] : [{ id: 'c' }],
+        meta: { page: o.page, totalPages: 2, total: 3, limit: 25 },
+      },
+      isLoading: false,
+    }));
+  });
+
+  it('empties the selection and hides the bulk bar when the page changes', () => {
+    render(<TransactionList />);
+    fireEvent.click(screen.getByText('select a'));
+    fireEvent.click(screen.getByText('select b'));
+    expect(screen.getByTestId('bulk-bar').textContent).toBe('count:2');
+
+    fireEvent.click(screen.getByText('2'));
+    expect(screen.queryByTestId('bulk-bar')).toBeNull();
+
+    // coming back to page 1 does not resurrect the old selection
+    fireEvent.click(screen.getByText('1'));
+    expect(screen.queryByTestId('bulk-bar')).toBeNull();
+  });
+
+  it('empties the selection when the filters change', () => {
+    render(<TransactionList />);
+    fireEvent.click(screen.getByText('select a'));
+    expect(screen.getByTestId('bulk-bar')).toBeTruthy();
+
+    fireEvent.change(screen.getByLabelText('min'), { target: { value: '10' } });
+    fireEvent.click(screen.getByText('apply'));
+    expect(screen.queryByTestId('bulk-bar')).toBeNull();
+  });
+
+  it('keeps the selection while nothing changes', () => {
+    render(<TransactionList />);
+    fireEvent.click(screen.getByText('select a'));
+    fireEvent.click(screen.getByText('select b'));
+    fireEvent.click(screen.getByText('select b'));
+    expect(screen.getByTestId('bulk-bar').textContent).toBe('count:1');
   });
 });
