@@ -55,7 +55,122 @@
     "evolution_title": "Évolution",
     "evolution_desc": "Suivez l'évolution de votre solde et de vos revenus/dépenses au fil du temps.",
     "balance_evolution": "Évolution du solde en banque",
-    "income_vs_expenses": "Revenus vs Dépenses"
+    "income_vs_expenses": "Revenus vs Dépenses",
+    "calendar": {
+      "page_title": "Calendrier Financier",
+      "page_desc": "Visualisez vos flux de trésorerie passés et prévus.",
+      "forecast_title": "Calendrier financier prévisionnel",
+      "week_of": "Semaine du {date}",
+      "received": "Reçu",
+      "spent": "Dépensé",
+      "net": "Net",
+      "month": "Mois",
+      "week": "Semaine",
+      "today": "Aujourd'hui",
+      "day_balance": "Bilan Journée",
+      "operations": "Opérations",
+      "movements_detail": "Détail des mouvements",
+      "no_movement": "Aucun mouvement pour cette journée",
+      "forecast": "Prévision",
+      "real": "Réel",
+      "no_category": "Sans catégorie",
+      "forecast_note": "Les prévisions sont basées sur vos opérations récurrentes. Elles disparaissent automatiquement une fois l'opération réelle détectée.",
+      "others": "autres",
+      "legend_real": "Opération réelle",
+      "legend_recurring": "Prévision récurrente",
+      "weekdays": {
+        "mon": "lun",
+        "tue": "mar",
+        "wed": "mer",
+        "thu": "jeu",
+        "fri": "ven",
+        "sat": "sam",
+        "sun": "dim"
+      }
+    },
+    "evolution_no_data": "Aucune donnée d'évolution disponible",
+    "category_breakdown_title": "Répartition des dépenses par catégorie",
+    "no_data_title": "Aucune donnée",
+    "no_data_desc": "Aucune donnée budgétaire pour cette période",
+    "no_data_for": "Aucune donnée pour {title}",
+    "cashflow": {
+      "page_title": "Prévisions de trésorerie",
+      "page_desc": "Projection de votre solde sur les 90 prochains jours basée sur vos opérations récurrentes.",
+      "today": "Aujourd'hui",
+      "tomorrow": "Demain",
+      "current_balance": "Solde Actuel",
+      "projection_90": "Projection à 90j",
+      "schedule_title": "Échéancier de trésorerie",
+      "no_recurring": "Aucune opération récurrente configurée pour les prévisions.",
+      "estimated_balance": "Solde estimé"
+    },
+    "flux": {
+      "title": "Flux de trésorerie",
+      "desc": "Visualisation des entrées et sorties d'argent pour la période sélectionnée."
+    },
+    "evolution": {
+      "filters": "Filtres",
+      "select_all": "Tout sélectionner",
+      "deselect_all": "Tout désélectionner"
+    },
+    "pulse": {
+      "title": "Le Pulse (vs mois dernier)",
+      "unavailable": "Indisponible",
+      "need_two_periods": "Besoin de deux périodes pour comparer",
+      "total_expenses": "Dépenses totales",
+      "saving": "Économie",
+      "surplus": "Surplus"
+    },
+    "net_worth": {
+      "title": "Patrimoine Net (Tous comptes)",
+      "no_data": "Aucune donnée",
+      "history_unavailable": "Historique de solde indisponible"
+    },
+    "comparison": {
+      "title": "Comparaison de périodes",
+      "base": "Base (A) :",
+      "target": "Cible (B) :",
+      "period_a": "Période A",
+      "period_b": "Période B",
+      "period_a_placeholder": "Période A...",
+      "period_b_placeholder": "Période B...",
+      "period_a_label": "Période A :",
+      "period_b_label": "Période B :",
+      "current_suffix": "(Actuelle)",
+      "select_two": "Sélectionnez deux périodes pour comparer les résultats.",
+      "gap": "Écart"
+    },
+    "sankey": {
+      "title": "Flux de trésorerie (Sankey)",
+      "no_data": "Pas assez de données pour générer le diagramme.",
+      "amount": "Montant"
+    },
+    "top_expenses": {
+      "title": "Top Dépenses",
+      "none_title": "Aucune dépense",
+      "none_desc": "Pas de dépenses pour cette période"
+    },
+    "deadlines": {
+      "title": "Prochaines Échéances (7j)",
+      "none": "Rien de prévu cette semaine",
+      "recurring": "Récurrent",
+      "planned": "Prévu"
+    },
+    "anomalies": {
+      "all_good": "Tout est en ordre",
+      "none_detected": "Aucune anomalie détectée pour cette période.",
+      "detected": "Anomalies détectées ({count})",
+      "ignore": "Ignorer cette alerte",
+      "update_error": "Erreur lors de la mise à jour de l'anomalie"
+    },
+    "ai": {
+      "title": "Analyse IA",
+      "trend_title": "Analyse des Tendances IA",
+      "loading": "Génération de l'analyse en cours...",
+      "trend_loading": "Analyse des données historiques en cours...",
+      "error": "Impossible de charger les analyses IA pour le moment.",
+      "none": "Aucune analyse disponible pour le moment."
+    }
   },
   "Accounts": {
     "title": "Mes Comptes",

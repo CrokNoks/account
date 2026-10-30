@@ -19,13 +19,14 @@ import { Card, CardContent } from '@/components/ui/card';
 import { useAccountStore } from '@/features/accounts/model/use-account-store';
 import { useCalendarData } from '../api/use-calendar-data';
 import { useCategories } from '@/features/categories/api/use-categories';
-import { useLocale } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { CalendarHeader } from './calendar/calendar-header';
 import { CalendarGrid } from './calendar/calendar-grid';
 import { CalendarDayDetail } from './calendar/calendar-day-detail';
 import { CalendarEvent } from '../model/types';
 
 export function FinancialCalendar() {
+  const t = useTranslations('Reporting.calendar');
   const localeStr = useLocale();
   const dateLocale = localeStr === 'fr' ? fr : enUS;
   const { activeAccountId } = useAccountStore();
@@ -125,15 +126,15 @@ export function FinancialCalendar() {
       <div className="flex items-center gap-6 text-xs text-muted-foreground px-2">
         <div className="flex items-center gap-2">
           <div className="w-3 h-3 rounded-sm border bg-card shadow-sm" />
-          <span>Opération réelle</span>
+          <span>{t('legend_real')}</span>
         </div>
         <div className="flex items-center gap-2">
           <div className="w-3 h-3 rounded-sm border border-dashed bg-muted/30" />
-          <span>Prévision récurrente</span>
+          <span>{t('legend_recurring')}</span>
         </div>
         <div className="flex items-center gap-2">
           <div className="w-2 h-2 rounded-full bg-primary" />
-          <span>Aujourd&apos;hui</span>
+          <span>{t('today')}</span>
         </div>
       </div>
 

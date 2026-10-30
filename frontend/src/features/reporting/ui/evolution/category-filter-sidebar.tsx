@@ -4,6 +4,7 @@ import React from 'react';
 import { Checkbox } from "@/components/ui/checkbox";
 import { formatCurrency } from "@/shared/lib/format";
 import { Category } from "@/features/categories/model/types";
+import { useTranslations } from 'next-intl';
 
 interface CategoryFilterSidebarProps {
   categories: (Category & { variance?: number })[];
@@ -20,15 +21,16 @@ export function CategoryFilterSidebar({
   onToggleAll,
   isAllSelected
 }: CategoryFilterSidebarProps) {
+  const t = useTranslations('Reporting.evolution');
   return (
     <div className="w-full md:w-64 space-y-4">
       <div className="flex items-center justify-between border-b pb-2">
-        <span className="text-sm font-semibold">Filtres</span>
+        <span className="text-sm font-semibold">{t('filters')}</span>
         <button 
           onClick={onToggleAll}
           className="text-[10px] text-primary hover:underline font-medium"
         >
-          {isAllSelected ? 'Tout désélectionner' : 'Tout sélectionner'}
+          {isAllSelected ? t('deselect_all') : t('select_all')}
         </button>
       </div>
       <div className="space-y-2 max-h-[400px] overflow-y-auto pr-2">

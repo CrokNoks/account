@@ -10,8 +10,10 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useState } from 'react';
 import { toast } from 'sonner';
+import { useTranslations } from 'next-intl';
 
 export function AnomaliesWidget() {
+  const t = useTranslations('Reporting.anomalies');
   const { activeAccountId, activePeriodId } = useAccountStore();
   const { data: anomalies, isLoading } = useAnomalies(activeAccountId, activePeriodId);
   const { mutate: ignoreAnomaly } = useIgnoreAnomaly(activePeriodId);
@@ -30,10 +32,10 @@ export function AnomaliesWidget() {
           <CheckCircle2 className="w-8 h-8" />
         </div>
         <CardTitle className="text-sm font-black uppercase tracking-widest text-emerald-700 dark:text-emerald-400">
-          Tout est en ordre
+          {t('all_good')}
         </CardTitle>
         <p className="text-xs text-emerald-600/70 mt-2 text-center font-medium">
-          Aucune anomalie détectée pour cette période.
+          {t('none_detected')}
         </p>
       </Card>
     );
@@ -63,7 +65,7 @@ export function AnomaliesWidget() {
             next.delete(anomaly.id);
             return next;
           });
-          toast.error("Erreur lors de la mise à jour de l'anomalie");
+          toast.error(t('update_error'));
         }
       }
     );
@@ -83,7 +85,7 @@ export function AnomaliesWidget() {
       <CardHeader className="pb-3 flex flex-row items-center justify-start gap-2 space-y-0 bg-transparent shrink-0">
         <AlertCircle className="w-5 h-5 text-orange-500" />
         <CardTitle className="text-[10px] font-bold text-orange-600 dark:text-orange-400 uppercase tracking-wider">
-          Anomalies détectées ({activeAnomalies.length})
+          {t('detected', { count: activeAnomalies.length })}
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-3 pt-2 bg-transparent overflow-y-auto flex-1 min-h-0">
@@ -109,7 +111,7 @@ export function AnomaliesWidget() {
               size="icon-xs" 
               className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
               onClick={() => dismiss(anomaly)}
-              title="Ignorer cette alerte"
+              title={t('ignore')}
             >
               <X className="w-3.5 h-3.5" />
             </Button>

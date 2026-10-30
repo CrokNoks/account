@@ -10,6 +10,8 @@ import { formatCurrency } from '@/shared/lib/format';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Loader2, ArrowUpRight, ArrowDownRight, Minus, Scale } from 'lucide-react';
 import { format } from 'date-fns';
+import { fr, enUS } from 'date-fns/locale';
+import { useLocale, useTranslations } from 'next-intl';
 import { cn } from '@/lib/utils';
 
 interface PeriodComparisonProps {
@@ -18,6 +20,9 @@ interface PeriodComparisonProps {
 }
 
 export function PeriodComparison({ accountId, periodId }: PeriodComparisonProps) {
+  const t = useTranslations('Reporting.comparison');
+  const tr = useTranslations('Reporting');
+  const dateLocale = useLocale() === 'fr' ? fr : enUS;
   const { data: periods } = usePeriods(accountId);
   const [periodAId, setPeriodAId] = useState<string | null>(null);
   const [periodBId, setPeriodBId] = useState<string | null>(periodId);
@@ -27,30 +32,30 @@ export function PeriodComparison({ accountId, periodId }: PeriodComparisonProps)
   const periodA = periods?.find(p => p.id === periodAId);
   const periodB = periods?.find(p => p.id === periodBId);
 
-  const labelA = periodA ? format(new Date(periodA.startDate), 'MMM yy') : 'Période A';
-  const labelB = periodB ? format(new Date(periodB.startDate), 'MMM yy') : 'Période B';
+  const labelA = periodA ? format(new Date(periodA.startDate), 'MMM yy', { locale: dateLocale }) : t('period_a');
+  const labelB = periodB ? format(new Date(periodB.startDate), 'MMM yy', { locale: dateLocale }) : t('period_b');
 
   return (
     <Card>
       <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6">
         <CardTitle className="text-sm font-semibold flex items-center gap-2">
           <Scale className="w-4 h-4 text-primary" />
-          Comparaison de périodes
+          {t('title')}
         </CardTitle>
         
         <div className="flex flex-wrap items-center gap-4">
           <div className="flex items-center gap-2">
-            <span className="text-[10px] font-bold uppercase text-muted-foreground italic">Base (A) :</span>
+            <span className="text-[10px] font-bold uppercase text-muted-foreground italic">{t('base')}</span>
             <Select value={periodAId || ''} onValueChange={setPeriodAId}>
               <SelectTrigger className="w-[160px] h-8 text-xs font-medium bg-muted/30">
-                <SelectValue placeholder="Période A...">
-                  {periodA ? format(new Date(periodA.startDate), 'MMMM yyyy') : undefined}
+                <SelectValue placeholder={t('period_a_placeholder')}>
+                  {periodA ? format(new Date(periodA.startDate), 'MMMM yyyy', { locale: dateLocale }) : undefined}
                 </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 {periods?.map(p => (
                   <SelectItem key={p.id} value={p.id}>
-                    {format(new Date(p.startDate), 'MMMM yyyy')}
+                    {format(new Date(p.startDate), 'MMMM yyyy', { locale: dateLocale })}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -58,17 +63,17 @@ export function PeriodComparison({ accountId, periodId }: PeriodComparisonProps)
           </div>
 
           <div className="flex items-center gap-2">
-            <span className="text-[10px] font-bold uppercase text-muted-foreground italic">Cible (B) :</span>
+            <span className="text-[10px] font-bold uppercase text-muted-foreground italic">{t('target')}</span>
             <Select value={periodBId || ''} onValueChange={setPeriodBId}>
               <SelectTrigger className="w-[160px] h-8 text-xs font-medium bg-primary/5 border-primary/20">
-                <SelectValue placeholder="Période B...">
-                  {periodB ? format(new Date(periodB.startDate), 'MMMM yyyy') : undefined}
+                <SelectValue placeholder={t('period_b_placeholder')}>
+                  {periodB ? format(new Date(periodB.startDate), 'MMMM yyyy', { locale: dateLocale }) : undefined}
                 </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 {periods?.map(p => (
                   <SelectItem key={p.id} value={p.id}>
-                    {format(new Date(p.startDate), 'MMMM yyyy')} {p.id === periodId && "(Actuelle)"}
+                    {format(new Date(p.startDate), 'MMMM yyyy', { locale: dateLocale })} {p.id === periodId && t('current_suffix')}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -79,7 +84,7 @@ export function PeriodComparison({ accountId, periodId }: PeriodComparisonProps)
       <CardContent>
         {!periodAId || !periodBId ? (
           <div className="h-32 flex items-center justify-center text-sm text-muted-foreground border-2 border-dashed rounded-lg bg-muted/10">
-            Sélectionnez deux périodes pour comparer les résultats.
+            {t('select_two')}
           </div>
         ) : isLoading ? (
           <div className="h-32 flex items-center justify-center">
@@ -90,16 +95,16 @@ export function PeriodComparison({ accountId, periodId }: PeriodComparisonProps)
             <div className="flex flex-col sm:flex-row gap-4 p-3 bg-primary/5 rounded-lg border border-primary/10 text-[10px] sm:text-xs">
               <div className="flex items-center gap-2">
                 <div className="w-2 h-2 rounded-full bg-muted-foreground" />
-                <span className="font-semibold text-muted-foreground uppercase">Période A :</span> {periodA ? `${format(new Date(periodA.startDate), 'dd/MM/yy')} - ${format(new Date(periodA.endDate), 'dd/MM/yy')}` : ''}
+                <span className="font-semibold text-muted-foreground uppercase">{t('period_a_label')}</span> {periodA ? `${format(new Date(periodA.startDate), 'dd/MM/yy')} - ${format(new Date(periodA.endDate), 'dd/MM/yy')}` : ''}
               </div>
               <div className="flex items-center gap-2">
                 <div className="w-2 h-2 rounded-full bg-primary" />
-                <span className="font-semibold text-primary uppercase">Période B :</span> {periodB ? `${format(new Date(periodB.startDate), 'dd/MM/yy')} - ${format(new Date(periodB.endDate), 'dd/MM/yy')}` : ''}
+                <span className="font-semibold text-primary uppercase">{t('period_b_label')}</span> {periodB ? `${format(new Date(periodB.startDate), 'dd/MM/yy')} - ${format(new Date(periodB.endDate), 'dd/MM/yy')}` : ''}
               </div>
             </div>
 
-            <ComparisonTable title="Dépenses" data={comparison?.expenses || []} labelA={labelA} labelB={labelB} isExpense />
-            <ComparisonTable title="Revenus" data={comparison?.income || []} labelA={labelA} labelB={labelB} />
+            <ComparisonTable title={tr('expenses')} data={comparison?.expenses || []} labelA={labelA} labelB={labelB} isExpense />
+            <ComparisonTable title={tr('income')} data={comparison?.income || []} labelA={labelA} labelB={labelB} />
           </div>
         )}
       </CardContent>
@@ -108,6 +113,8 @@ export function PeriodComparison({ accountId, periodId }: PeriodComparisonProps)
 }
 
 function ComparisonTable({ title, data, labelA, labelB, isExpense }: { title: string, data: ComparisonPoint[], labelA: string, labelB: string, isExpense?: boolean }) {
+  const t = useTranslations('Reporting.comparison');
+  const tr = useTranslations('Reporting');
   if (data.length === 0) return null;
 
   return (
@@ -119,10 +126,10 @@ function ComparisonTable({ title, data, labelA, labelB, isExpense }: { title: st
       <Table>
         <TableHeader>
           <TableRow className="hover:bg-transparent border-none">
-            <TableHead className="h-8 text-xs">Catégorie</TableHead>
+            <TableHead className="h-8 text-xs">{tr('category')}</TableHead>
             <TableHead className="h-8 text-right text-xs">{labelA}</TableHead>
             <TableHead className="h-8 text-right text-xs font-bold text-foreground underline decoration-primary/30 underline-offset-4">{labelB}</TableHead>
-            <TableHead className="h-8 text-right text-xs">Écart</TableHead>
+            <TableHead className="h-8 text-right text-xs">{t('gap')}</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>

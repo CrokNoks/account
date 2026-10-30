@@ -4,6 +4,7 @@ import { useSankeyData } from '../api/use-sankey-data';
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Sankey, Tooltip, ResponsiveContainer, Layer, Rectangle, SankeyData } from 'recharts';
 import { Loader2, GitBranch } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 
 interface SankeyChartProps {
   accountId: string | null;
@@ -41,6 +42,7 @@ const CustomNode = ({ x, y, width, height, index, payload, containerWidth }: any
 };
 
 export function SankeyChart({ accountId, periodId }: SankeyChartProps) {
+  const t = useTranslations('Reporting.sankey');
   const { data, isLoading } = useSankeyData(accountId, periodId);
 
   if (!accountId || !periodId) return null;
@@ -50,7 +52,7 @@ export function SankeyChart({ accountId, periodId }: SankeyChartProps) {
       <CardHeader className="pb-2">
         <CardTitle className="text-sm font-semibold flex items-center gap-2">
           <GitBranch className="w-4 h-4 text-primary" />
-          Flux de trésorerie (Sankey)
+          {t('title')}
         </CardTitle>
       </CardHeader>
       <CardContent className="h-[420px]">
@@ -60,7 +62,7 @@ export function SankeyChart({ accountId, periodId }: SankeyChartProps) {
           </div>
         ) : !data || data.links.length === 0 ? (
           <div className="h-full flex items-center justify-center text-sm text-muted-foreground">
-            Pas assez de données pour générer le diagramme.
+            {t('no_data')}
           </div>
         ) : (
           <ResponsiveContainer width="100%" height="100%">
@@ -72,7 +74,7 @@ export function SankeyChart({ accountId, periodId }: SankeyChartProps) {
               margin={{ top: 20, right: 120, bottom: 20, left: 120 }}
             >
               <Tooltip 
-                formatter={(value: unknown) => [`${value as string}€`, 'Montant']}
+                formatter={(value: unknown) => [`${value as string}€`, t('amount')]}
               />
             </Sankey>
           </ResponsiveContainer>

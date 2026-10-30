@@ -1,18 +1,20 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { SankeyChart } from "@/features/reporting/ui/sankey-chart";
 import { PeriodComparison } from "@/features/reporting/ui/period-comparison";
 import { useAccountStore } from "@/features/accounts/model/use-account-store";
 
 export default function FluxPage() {
+  const t = useTranslations('Reporting.flux');
   const { activeAccountId, activePeriodId } = useAccountStore();
 
   return (
     <div className="flex flex-col gap-12">
       <div className="flex flex-col gap-2">
-        <h2 className="text-3xl font-bold tracking-tight">Flux de trésorerie</h2>
+        <h2 className="text-3xl font-bold tracking-tight">{t('title')}</h2>
         <p className="text-muted-foreground">
-          Visualisation des entrées et sorties d&apos;argent pour la période sélectionnée.
+          {t('desc')}
         </p>
       </div>
 

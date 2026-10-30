@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Loader2, RefreshCw } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { cn } from "@/lib/utils";
+import { useTranslations } from 'next-intl';
 
 interface BaseAIInsightsCardProps {
   title: string;
@@ -28,11 +29,12 @@ export function BaseAIInsightsCard({
   isError,
   isFetching,
   onRefetch,
-  loadingMessage = "Génération de l'analyse en cours...",
-  errorMessage = "Impossible de charger les analyses IA pour le moment.",
+  loadingMessage,
+  errorMessage,
   className,
   headerClassName,
 }: BaseAIInsightsCardProps) {
+  const t = useTranslations('Reporting.ai');
   return (
     <Card className={cn("border-2 border-border shadow-sm relative group overflow-hidden flex flex-col", className)}>
       <CardHeader className={cn("pb-3 flex flex-row items-center justify-between space-y-0 bg-muted/10 shrink-0", headerClassName)}>
@@ -56,15 +58,15 @@ export function BaseAIInsightsCard({
         {isLoading ? (
           <div className="flex items-center gap-2 text-sm text-muted-foreground py-4">
             <Loader2 className="w-4 h-4 animate-spin" />
-            {loadingMessage}
+            {loadingMessage ?? t('loading')}
           </div>
         ) : isError ? (
           <p className="text-sm text-muted-foreground italic">
-            {errorMessage}
+            {errorMessage ?? t('error')}
           </p>
         ) : !insights ? (
           <p className="text-sm text-muted-foreground italic py-4 text-center">
-            Aucune analyse disponible pour le moment.
+            {t('none')}
           </p>
         ) : (
           <div className="prose prose-sm dark:prose-invert max-w-none prose-headings:font-semibold prose-p:leading-relaxed prose-li:my-0">

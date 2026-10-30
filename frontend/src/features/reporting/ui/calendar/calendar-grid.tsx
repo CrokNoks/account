@@ -4,6 +4,7 @@ import * as React from 'react';
 import { format, isSameDay, isSameMonth, isToday } from 'date-fns';
 import { formatCurrency } from '@/shared/lib/format';
 import { cn } from '@/lib/utils';
+import { useTranslations } from 'next-intl';
 import { CalendarEvent } from '../../model/types';
 import { Category } from '@/features/categories/model/types';
 
@@ -28,12 +29,13 @@ export function CalendarGrid({
   getDayTotal,
   categories
 }: CalendarGridProps) {
+  const t = useTranslations('Reporting.calendar');
   return (
     <>
       <div className="grid grid-cols-7 border-b bg-muted/5">
-        {['lun', 'mar', 'mer', 'jeu', 'ven', 'sam', 'dim'].map((day) => (
+        {(['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as const).map((day) => (
           <div key={day} className="py-3 text-center text-[10px] font-black uppercase tracking-widest text-muted-foreground">
-            {day}
+            {t(`weekdays.${day}`)}
           </div>
         ))}
       </div>
@@ -106,7 +108,7 @@ export function CalendarGrid({
                 ))}
                 {dayEvents.length > (view === 'week' ? 15 : 3) && (
                   <div className="text-[8px] text-center text-muted-foreground font-bold italic py-1">
-                    + {dayEvents.length - (view === 'week' ? 15 : 3)} autres
+                    + {dayEvents.length - (view === 'week' ? 15 : 3)} {t('others')}
                   </div>
                 )}
               </div>

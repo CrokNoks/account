@@ -102,7 +102,7 @@ export function EvolutionChart() {
   if (isLoadingEvolution || isLoadingCategories) return <div className="h-96 bg-muted animate-pulse rounded-xl" />;
   
   if (!evolutionData || evolutionData.length === 0) {
-    return <div className="h-64 flex items-center justify-center border-2 border-dashed rounded-xl text-muted-foreground italic">Aucune donnée d&apos;évolution disponible</div>;
+    return <div className="h-64 flex items-center justify-center border-2 border-dashed rounded-xl text-muted-foreground italic">{t('evolution_no_data')}</div>;
   }
 
   const chartData: Array<Record<string, string | number>> = evolutionData.map(d => {
@@ -220,7 +220,7 @@ export function EvolutionChart() {
       <div className="hidden lg:block">
         <Card>
           <CardHeader>
-            <CardTitle>Répartition des dépenses par catégorie</CardTitle>
+            <CardTitle>{t('category_breakdown_title')}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex flex-col md:flex-row gap-8">

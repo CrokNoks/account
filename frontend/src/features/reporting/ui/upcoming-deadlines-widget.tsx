@@ -6,10 +6,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { formatCurrency } from '@/shared/lib/format';
 import { Clock, CalendarDays } from 'lucide-react';
 import { format, isAfter, startOfDay, addDays, parseISO } from 'date-fns';
-import { fr } from 'date-fns/locale';
+import { fr, enUS } from 'date-fns/locale';
+import { useLocale, useTranslations } from 'next-intl';
 import { cn } from '@/lib/utils';
 
 export function UpcomingDeadlinesWidget() {
+  const t = useTranslations('Reporting.deadlines');
+  const dateLocale = useLocale() === 'fr' ? fr : enUS;
   const { activeAccountId } = useAccountStore();
   
   const today = new Date();
@@ -37,7 +40,7 @@ export function UpcomingDeadlinesWidget() {
       <CardHeader className="pb-3 bg-muted/10 shrink-0">
         <CardTitle className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
           <Clock className="w-4 h-4 text-primary" />
-          Prochaines Échéances (7j)
+          {t('title')}
         </CardTitle>
       </CardHeader>
       <CardContent className="pt-2 flex-1 overflow-y-auto min-h-0">
@@ -45,20 +48,20 @@ export function UpcomingDeadlinesWidget() {
           {!upcoming || upcoming.length === 0 ? (
             <div className="h-24 flex flex-col items-center justify-center text-muted-foreground gap-2">
               <CalendarDays className="w-8 h-8 opacity-20" />
-              <p className="text-xs italic">Rien de prévu cette semaine</p>
+              <p className="text-xs italic">{t('none')}</p>
             </div>
           ) : (
             upcoming.map((event) => (
               <div key={event.id} className="flex items-center justify-between gap-4 p-2 rounded-lg hover:bg-muted/50 transition-colors border border-transparent hover:border-border">
                 <div className="flex items-center gap-3 min-w-0">
                   <div className="flex flex-col items-center justify-center w-10 h-10 rounded-xl bg-primary/10 text-primary shrink-0">
-                    <span className="text-[10px] uppercase font-bold">{format(parseISO(event.date), 'EEE', { locale: fr })}</span>
+                    <span className="text-[10px] uppercase font-bold">{format(parseISO(event.date), 'EEE', { locale: dateLocale })}</span>
                     <span className="text-sm font-black leading-none">{format(parseISO(event.date), 'd')}</span>
                   </div>
                   <div className="flex flex-col min-w-0">
                     <span className="text-xs font-bold truncate">{event.description}</span>
                     <span className="text-[10px] text-muted-foreground uppercase tracking-widest font-medium">
-                      {event.type === 'recurring' ? 'Récurrent' : 'Prévu'}
+                      {event.type === 'recurring' ? t('recurring') : t('planned')}
                     </span>
                   </div>
                 </div>

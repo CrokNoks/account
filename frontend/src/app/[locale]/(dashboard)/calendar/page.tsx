@@ -1,14 +1,17 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { FinancialCalendar } from "@/features/reporting/ui/financial-calendar";
 
 export default function CalendarPage() {
+  const t = useTranslations('Reporting.calendar');
+
   return (
     <div className="flex flex-col gap-8">
       <div className="flex flex-col gap-2">
-        <h2 className="text-3xl font-bold tracking-tight">Calendrier Financier</h2>
+        <h2 className="text-3xl font-bold tracking-tight">{t('page_title')}</h2>
         <p className="text-muted-foreground">
-          Visualisez vos flux de trésorerie passés et prévus.
+          {t('page_desc')}
         </p>
       </div>
 

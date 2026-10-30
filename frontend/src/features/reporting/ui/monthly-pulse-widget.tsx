@@ -9,8 +9,10 @@ import { formatCurrency } from '@/shared/lib/format';
 import { expensePulsePercentage } from '@/shared/lib/percentage';
 import { cn } from '@/lib/utils';
 import { NoDataState } from '@/shared/ui/no-data-state';
+import { useTranslations } from 'next-intl';
 
 export function MonthlyPulseWidget() {
+  const t = useTranslations('Reporting.pulse');
   const { activeAccountId, activePeriodId } = useAccountStore();
   const { data: periods } = usePeriods(activeAccountId);
   
@@ -31,7 +33,7 @@ export function MonthlyPulseWidget() {
     <CardHeader className="pb-3 bg-muted/10">
       <CardTitle className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
         <Activity className="w-4 h-4 text-primary" />
-        Le Pulse (vs mois dernier)
+        {t('title')}
       </CardTitle>
     </CardHeader>
   );
@@ -41,7 +43,7 @@ export function MonthlyPulseWidget() {
       <Card className="h-full border-2 shadow-sm overflow-hidden">
         {header}
         <CardContent className="pt-2 flex items-center justify-center min-h-[80px]">
-          <NoDataState title="Indisponible" description="Besoin de deux périodes pour comparer" className="p-4" />
+          <NoDataState title={t('unavailable')} description={t('need_two_periods')} className="p-4" />
         </CardContent>
       </Card>
     );
@@ -60,7 +62,7 @@ export function MonthlyPulseWidget() {
       <CardHeader className="pb-3 bg-muted/10">
         <CardTitle className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
           <Activity className="w-4 h-4 text-primary" />
-          Le Pulse (vs mois dernier)
+          {t('title')}
         </CardTitle>
       </CardHeader>
       <CardContent className="pt-2">
@@ -70,7 +72,7 @@ export function MonthlyPulseWidget() {
               {formatCurrency(totalExpenseB.toString())}
             </p>
             <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest">
-              Dépenses totales
+              {t('total_expenses')}
             </p>
           </div>
           
@@ -83,7 +85,7 @@ export function MonthlyPulseWidget() {
               {Math.abs(percentage)}%
             </div>
             <span className="text-[8px] uppercase font-black mt-1">
-              {!isMoreExpensive ? "Économie" : "Surplus"}
+              {!isMoreExpensive ? t('saving') : t('surplus')}
             </span>
           </div>
         </div>

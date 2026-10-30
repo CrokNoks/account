@@ -3,12 +3,13 @@
 import { useAIInsights } from '../api/use-ai-insights';
 import { BaseAIInsightsCard } from './base-ai-insights-card';
 import { Sparkles } from 'lucide-react';
-import { useLocale } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 
 import { useAccountStore } from '@/features/accounts/model/use-account-store';
 
 export function AIInsightsCard() {
   const { activeAccountId, activePeriodId } = useAccountStore();
+  const t = useTranslations('Reporting.ai');
   const locale = useLocale();
   const { data: insights, isLoading, isError, refetch, isFetching } = useAIInsights(activeAccountId, activePeriodId, locale);
 
@@ -16,7 +17,7 @@ export function AIInsightsCard() {
 
   return (
     <BaseAIInsightsCard
-      title="Analyse IA"
+      title={t('title')}
       icon={<Sparkles className="w-4 h-4 text-primary" />}
       insights={insights}
       isLoading={isLoading}

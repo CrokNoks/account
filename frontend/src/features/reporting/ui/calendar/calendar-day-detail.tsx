@@ -12,6 +12,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { formatCurrency } from '@/shared/lib/format';
 import { cn } from '@/lib/utils';
+import { useTranslations } from 'next-intl';
 import { CalendarEvent } from '../../model/types';
 import { Category } from '@/features/categories/model/types';
 
@@ -32,6 +33,7 @@ export function CalendarDayDetail({
   dateLocale,
   categories
 }: CalendarDayDetailProps) {
+  const t = useTranslations('Reporting.calendar');
   return (
     <Sheet open={!!selectedDay} onOpenChange={(open) => !open && onClose()}>
       <SheetContent side="right" className="sm:max-w-md p-0">
@@ -48,7 +50,7 @@ export function CalendarDayDetail({
             <div className="p-6 space-y-6">
               <div className="grid grid-cols-2 gap-4">
                 <div className="p-4 rounded-xl border bg-muted/10 space-y-1">
-                  <span className="text-[10px] font-bold text-muted-foreground uppercase">Bilan Journée</span>
+                  <span className="text-[10px] font-bold text-muted-foreground uppercase">{t('day_balance')}</span>
                   <div className={cn(
                     "text-xl font-black",
                     dayTotal < BigInt(0) ? "text-red-500" : "text-green-500"
@@ -57,7 +59,7 @@ export function CalendarDayDetail({
                   </div>
                 </div>
                 <div className="p-4 rounded-xl border bg-muted/10 space-y-1">
-                  <span className="text-[10px] font-bold text-muted-foreground uppercase">Opérations</span>
+                  <span className="text-[10px] font-bold text-muted-foreground uppercase">{t('operations')}</span>
                   <div className="text-xl font-black">
                     {dayEvents.length}
                   </div>
@@ -66,12 +68,12 @@ export function CalendarDayDetail({
 
               <div className="space-y-3">
                 <h3 className="text-sm font-bold flex items-center gap-2 text-muted-foreground uppercase tracking-widest">
-                  Détail des mouvements
+                  {t('movements_detail')}
                 </h3>
                 <div className="space-y-2">
                   {dayEvents.length === 0 ? (
                     <div className="text-center py-12 border rounded-xl border-dashed bg-muted/5">
-                      <p className="text-sm text-muted-foreground italic">Aucun mouvement pour cette journée</p>
+                      <p className="text-sm text-muted-foreground italic">{t('no_movement')}</p>
                     </div>
                   ) : (
                     dayEvents.map((event) => (
@@ -91,10 +93,10 @@ export function CalendarDayDetail({
                             <p className="text-sm font-bold leading-none">{event.description}</p>
                             <div className="flex items-center gap-2 mt-1">
                               <Badge variant="secondary" className="text-[9px] py-0 px-1.5 h-4 font-normal">
-                                {event.type === 'recurring' ? 'Prévision' : 'Réel'}
+                                {event.type === 'recurring' ? t('forecast') : t('real')}
                               </Badge>
                               <span className="text-[10px] text-muted-foreground">
-                                {categories?.find(c => c.id === event.categoryId)?.name || 'Sans catégorie'}
+                                {categories?.find(c => c.id === event.categoryId)?.name || t('no_category')}
                               </span>
                             </div>
                           </div>
@@ -115,7 +117,7 @@ export function CalendarDayDetail({
                 <div className="p-4 rounded-xl border border-primary/20 bg-primary/5 flex gap-3 items-start">
                   <Info className="w-4 h-4 text-primary shrink-0 mt-0.5" />
                   <p className="text-[11px] text-primary/80 leading-relaxed italic">
-                    Les prévisions sont basées sur vos opérations récurrentes. Elles disparaissent automatiquement une fois l&apos;opération réelle detectée.
+                    {t('forecast_note')}
                   </p>
                 </div>
               )}

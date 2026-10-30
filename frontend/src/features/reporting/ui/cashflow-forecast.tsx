@@ -4,7 +4,8 @@ import { useCashflowForecast } from '../api/use-cashflow-forecast';
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { formatCurrency } from '@/shared/lib/format';
 import { format, isToday, isTomorrow, parseISO } from 'date-fns';
-import { fr } from 'date-fns/locale';
+import { fr, enUS } from 'date-fns/locale';
+import { useLocale, useTranslations } from 'next-intl';
 import { Loader2, TrendingUp, Calendar, ArrowRight, Wallet } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -13,15 +14,17 @@ interface CashflowForecastProps {
 }
 
 export function CashflowForecast({ accountId }: CashflowForecastProps) {
+  const t = useTranslations('Reporting.cashflow');
+  const dateLocale = useLocale() === 'fr' ? fr : enUS;
   const { data, isLoading } = useCashflowForecast(accountId);
 
   if (!accountId) return null;
 
   const getDayLabel = (dateStr: string) => {
     const date = parseISO(dateStr);
-    if (isToday(date)) return "Aujourd'hui";
-    if (isTomorrow(date)) return "Demain";
-    return format(date, 'dd MMMM yyyy', { locale: fr });
+    if (isToday(date)) return t('today');
+    if (isTomorrow(date)) return t('tomorrow');
+    return format(date, 'dd MMMM yyyy', { locale: dateLocale });
   };
 
   return (
@@ -31,7 +34,7 @@ export function CashflowForecast({ accountId }: CashflowForecastProps) {
           <CardContent className="pt-6">
             <div className="flex items-center gap-2 text-muted-foreground mb-1">
               <Wallet className="w-4 h-4" />
-              <span className="text-xs font-medium uppercase tracking-wider">Solde Actuel</span>
+              <span className="text-xs font-medium uppercase tracking-wider">{t('current_balance')}</span>
             </div>
             <div className="text-2xl font-bold">
               {data ? formatCurrency(data.currentBalance) : '...'}
@@ -44,7 +47,7 @@ export function CashflowForecast({ accountId }: CashflowForecastProps) {
             <CardContent className="pt-6">
               <div className="flex items-center gap-2 text-muted-foreground mb-1">
                 <TrendingUp className="w-4 h-4 text-emerald-600" />
-                <span className="text-xs font-medium uppercase tracking-wider">Projection à 90j</span>
+                <span className="text-xs font-medium uppercase tracking-wider">{t('projection_90')}</span>
               </div>
               <div className="text-2xl font-bold text-emerald-700">
                 {formatCurrency(data.events[data.events.length - 1].projectedBalance)}
@@ -58,7 +61,7 @@ export function CashflowForecast({ accountId }: CashflowForecastProps) {
         <CardHeader>
           <CardTitle className="text-sm font-semibold flex items-center gap-2">
             <Calendar className="w-4 h-4 text-primary" />
-            Échéancier de trésorerie
+            {t('schedule_title')}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -68,7 +71,7 @@ export function CashflowForecast({ accountId }: CashflowForecastProps) {
             </div>
           ) : !data || data.events.length === 0 ? (
             <div className="h-32 flex items-center justify-center text-sm text-muted-foreground border-2 border-dashed rounded-lg">
-              Aucune opération récurrente configurée pour les prévisions.
+              {t('no_recurring')}
             </div>
           ) : (
             <div className="relative space-y-0 pb-4">
@@ -104,7 +107,7 @@ export function CashflowForecast({ accountId }: CashflowForecastProps) {
                           </span>
                         </div>
                         <div className="flex flex-col items-end bg-muted/30 px-3 py-1 rounded-md min-w-[100px]">
-                          <span className="text-[10px] text-muted-foreground leading-none mb-1">Solde estimé</span>
+                          <span className="text-[10px] text-muted-foreground leading-none mb-1">{t('estimated_balance')}</span>
                           <span className="text-xs font-mono font-bold leading-none">
                             {formatCurrency(event.projectedBalance)}
                           </span>

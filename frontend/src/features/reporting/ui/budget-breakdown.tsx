@@ -36,7 +36,7 @@ export function BudgetBreakdown() {
       <Card className="border-2 shadow-sm h-full overflow-hidden flex flex-col">
         {header}
         <CardContent className="flex-1 flex items-center justify-center">
-          <NoDataState title="Aucune donnée" description="Aucune donnée budgétaire pour cette période" />
+          <NoDataState title={t('no_data_title')} description={t('no_data_desc')} />
         </CardContent>
       </Card>
     );
@@ -76,7 +76,7 @@ function BudgetGroup({ title, items, isExpense }: { title: string, items: Budget
   const t = useTranslations('Reporting');
   if (items.length === 0) return (
     <div className="h-32 flex items-center justify-center text-muted-foreground italic bg-muted/5 rounded-xl border border-dashed text-xs">
-      Aucune donnée pour {title.toLowerCase()}
+      {t('no_data_for', { title: title.toLowerCase() })}
     </div>
   );
 

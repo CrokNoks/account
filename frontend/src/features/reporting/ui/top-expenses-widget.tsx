@@ -7,8 +7,10 @@ import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recha
 import { formatCurrency } from '@/shared/lib/format';
 import { PieChart as PieChartIcon } from 'lucide-react';
 import { NoDataState } from '@/shared/ui/no-data-state';
+import { useTranslations } from 'next-intl';
 
 export function TopExpensesWidget() {
+  const t = useTranslations('Reporting.top_expenses');
   const { activeAccountId, activePeriodId } = useAccountStore();
   const { data: breakdown, isLoading } = useBudgetBreakdown(activeAccountId, activePeriodId);
 
@@ -18,7 +20,7 @@ export function TopExpensesWidget() {
     <CardHeader className="pb-3 bg-muted/10 shrink-0">
       <CardTitle className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
         <PieChartIcon className="w-4 h-4 text-primary" />
-        Top Dépenses
+        {t('title')}
       </CardTitle>
     </CardHeader>
   );
@@ -28,7 +30,7 @@ export function TopExpensesWidget() {
       <Card className="h-full border-2 shadow-sm overflow-hidden flex flex-col">
         {header}
         <CardContent className="pt-2 flex-1 flex items-center justify-center min-h-[200px]">
-          <NoDataState title="Aucune dépense" description="Pas de dépenses pour cette période" />
+          <NoDataState title={t('none_title')} description={t('none_desc')} />
         </CardContent>
       </Card>
     );
@@ -51,7 +53,7 @@ export function TopExpensesWidget() {
       <CardHeader className="pb-3 bg-muted/10 shrink-0">
         <CardTitle className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
           <PieChartIcon className="w-4 h-4 text-primary" />
-          Top Dépenses
+          {t('title')}
         </CardTitle>
       </CardHeader>
       <CardContent className="pt-2 flex-1 overflow-y-auto min-h-0">

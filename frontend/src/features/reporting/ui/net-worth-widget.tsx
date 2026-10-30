@@ -7,8 +7,10 @@ import { formatCurrency } from '@/shared/lib/format';
 import { Landmark } from 'lucide-react';
 import { LineChart, Line, ResponsiveContainer, Tooltip } from 'recharts';
 import { NoDataState } from '@/shared/ui/no-data-state';
+import { useTranslations } from 'next-intl';
 
 export function NetWorthWidget() {
+  const t = useTranslations('Reporting.net_worth');
   const { activeAccountId } = useAccountStore();
   const { data, isLoading } = useNetWorth(activeAccountId);
 
@@ -18,7 +20,7 @@ export function NetWorthWidget() {
     <CardHeader className="pb-3 bg-muted/10">
       <CardTitle className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
         <Landmark className="w-4 h-4 text-primary" />
-        Patrimoine Net (Tous comptes)
+        {t('title')}
       </CardTitle>
     </CardHeader>
   );
@@ -28,7 +30,7 @@ export function NetWorthWidget() {
       <Card className="h-full border-2 shadow-sm overflow-hidden">
         {header}
         <CardContent className="pt-2 flex items-center justify-center min-h-[80px]">
-          <NoDataState title="Aucune donnée" description="Historique de solde indisponible" className="p-4" />
+          <NoDataState title={t('no_data')} description={t('history_unavailable')} className="p-4" />
         </CardContent>
       </Card>
     );
@@ -47,7 +49,7 @@ export function NetWorthWidget() {
       <CardHeader className="pb-3 bg-muted/10">
         <CardTitle className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
           <Landmark className="w-4 h-4 text-primary" />
-          Patrimoine Net (Tous comptes)
+          {t('title')}
         </CardTitle>
       </CardHeader>
       <CardContent className="flex flex-col gap-4 pt-2">

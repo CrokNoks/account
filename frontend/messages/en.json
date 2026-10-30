@@ -55,7 +55,122 @@
     "evolution_title": "Evolution",
     "evolution_desc": "Track your balance and income/expenses evolution over time.",
     "balance_evolution": "Bank Balance Evolution",
-    "income_vs_expenses": "Income vs Expenses"
+    "income_vs_expenses": "Income vs Expenses",
+    "calendar": {
+      "page_title": "Financial Calendar",
+      "page_desc": "View your past and forecast cash flows.",
+      "forecast_title": "Forecast financial calendar",
+      "week_of": "Week of {date}",
+      "received": "Received",
+      "spent": "Spent",
+      "net": "Net",
+      "month": "Month",
+      "week": "Week",
+      "today": "Today",
+      "day_balance": "Day balance",
+      "operations": "Transactions",
+      "movements_detail": "Movement details",
+      "no_movement": "No movement on this day",
+      "forecast": "Forecast",
+      "real": "Actual",
+      "no_category": "No category",
+      "forecast_note": "Forecasts are based on your recurring transactions. They disappear automatically once the actual transaction is detected.",
+      "others": "more",
+      "legend_real": "Actual transaction",
+      "legend_recurring": "Recurring forecast",
+      "weekdays": {
+        "mon": "Mon",
+        "tue": "Tue",
+        "wed": "Wed",
+        "thu": "Thu",
+        "fri": "Fri",
+        "sat": "Sat",
+        "sun": "Sun"
+      }
+    },
+    "evolution_no_data": "No evolution data available",
+    "category_breakdown_title": "Expense breakdown by category",
+    "no_data_title": "No data",
+    "no_data_desc": "No budget data for this period",
+    "no_data_for": "No data for {title}",
+    "cashflow": {
+      "page_title": "Cash flow forecast",
+      "page_desc": "Projection of your balance over the next 90 days based on your recurring transactions.",
+      "today": "Today",
+      "tomorrow": "Tomorrow",
+      "current_balance": "Current balance",
+      "projection_90": "90-day projection",
+      "schedule_title": "Cash flow schedule",
+      "no_recurring": "No recurring transaction configured for the forecast.",
+      "estimated_balance": "Estimated balance"
+    },
+    "flux": {
+      "title": "Cash flow",
+      "desc": "Overview of money in and out for the selected period."
+    },
+    "evolution": {
+      "filters": "Filters",
+      "select_all": "Select all",
+      "deselect_all": "Deselect all"
+    },
+    "pulse": {
+      "title": "The Pulse (vs last month)",
+      "unavailable": "Unavailable",
+      "need_two_periods": "Two periods are needed to compare",
+      "total_expenses": "Total expenses",
+      "saving": "Saving",
+      "surplus": "Overspend"
+    },
+    "net_worth": {
+      "title": "Net worth (all accounts)",
+      "no_data": "No data",
+      "history_unavailable": "Balance history unavailable"
+    },
+    "comparison": {
+      "title": "Period comparison",
+      "base": "Base (A):",
+      "target": "Target (B):",
+      "period_a": "Period A",
+      "period_b": "Period B",
+      "period_a_placeholder": "Period A...",
+      "period_b_placeholder": "Period B...",
+      "period_a_label": "Period A:",
+      "period_b_label": "Period B:",
+      "current_suffix": "(Current)",
+      "select_two": "Select two periods to compare the results.",
+      "gap": "Gap"
+    },
+    "sankey": {
+      "title": "Cash flow (Sankey)",
+      "no_data": "Not enough data to build the diagram.",
+      "amount": "Amount"
+    },
+    "top_expenses": {
+      "title": "Top expenses",
+      "none_title": "No expense",
+      "none_desc": "No expenses for this period"
+    },
+    "deadlines": {
+      "title": "Upcoming deadlines (7d)",
+      "none": "Nothing planned this week",
+      "recurring": "Recurring",
+      "planned": "Planned"
+    },
+    "anomalies": {
+      "all_good": "All clear",
+      "none_detected": "No anomaly detected for this period.",
+      "detected": "Anomalies detected ({count})",
+      "ignore": "Dismiss this alert",
+      "update_error": "Error while updating the anomaly"
+    },
+    "ai": {
+      "title": "AI analysis",
+      "trend_title": "AI trend analysis",
+      "loading": "Generating the analysis...",
+      "trend_loading": "Analyzing historical data...",
+      "error": "Unable to load the AI analyses right now.",
+      "none": "No analysis available at the moment."
+    }
   },
   "Accounts": {
     "title": "My Accounts",
