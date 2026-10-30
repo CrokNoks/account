@@ -15,9 +15,6 @@
       "Bash(npx httpyac:*)",
       "Edit(http/**)",
       "Write(http/**)"
-    ],
-    "deny": [
-      "Bash(git push:*)"
     ]
   }
 }
