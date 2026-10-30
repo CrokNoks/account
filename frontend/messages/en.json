@@ -62,17 +62,10 @@
     "new_account_desc": "Enter the details of your new bank account.",
     "fields": {
       "name": "Name",
-      "type": "Account Type",
-      "currency": "Currency",
       "balance": "Initial Balance",
       "description": "Purpose / Pitch",
       "description_hint": "Describe the purpose of this account to help the AI personalize its analysis."
       },
-    "types": {
-      "checking": "Checking",
-      "savings": "Savings",
-      "cash": "Cash"
-    },
     "select_account": "Select an account",
     "share": "Share",
     "share_title": "Share account",
@@ -252,7 +245,6 @@
       "name": "Give your account a clear name (e.g., Checking, Savings).",
       "create_btn": "Click here to create a new account.",
       "balance": "Enter your current bank balance to start on the right foot.",
-      "type": "Choose the account type to adapt calculations and display.",
       "categories": "Set up your expense and income categories to organize your transactions.",
       "recurring": "Schedule your automatic transfers and withdrawals here.",
       "periods": "Finally, create your budget periods (month by month) to track your goals."

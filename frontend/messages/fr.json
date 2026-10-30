@@ -62,17 +62,10 @@
     "new_account_desc": "Entrez les détails de votre nouveau compte.",
     "fields": {
       "name": "Nom",
-      "type": "Type de compte",
-      "currency": "Devise",
       "balance": "Solde initial",
       "description": "Objectif / Pitch",
       "description_hint": "Décrivez l'utilité de ce compte pour aider l'IA à personnaliser ses analyses."
       },
-    "types": {
-      "checking": "Courant",
-      "savings": "Épargne",
-      "cash": "Espèces"
-    },
     "select_account": "Sélectionner un compte",
     "share": "Partager",
     "share_title": "Partager le compte",
@@ -252,7 +245,6 @@
       "name": "Donnez un nom clair à votre compte (ex: Courant, Livret A).",
       "create_btn": "Cliquez ici pour créer un nouveau compte.",
       "balance": "Saisissez le solde actuel de votre compte en banque pour démarrer sur de bonnes bases.",
-      "type": "Choisissez le type de compte pour adapter les calculs et l'affichage.",
       "categories": "Configurez vos catégories de dépenses et revenus pour organiser vos transactions.",
       "recurring": "Programmez vos virements et prélèvements automatiques ici.",
       "periods": "Enfin, créez vos périodes budgétaires (mois par mois) pour suivre vos objectifs."

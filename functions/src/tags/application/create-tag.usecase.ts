@@ -4,9 +4,11 @@ import { Tag } from '../domain/tag.entity';
 
 export interface CreateTagCommand {
   name: string;
-  color: string;
+  color?: string;
   accountId: string;
 }
+
+export const DEFAULT_TAG_COLOR = '#94a3b8';
 
 @Injectable()
 export class CreateTagUseCase {
@@ -15,7 +17,7 @@ export class CreateTagUseCase {
   async execute(command: CreateTagCommand): Promise<Tag> {
     const tag = Tag.create({
       name: command.name,
-      color: command.color,
+      color: command.color ?? DEFAULT_TAG_COLOR,
       accountId: command.accountId,
     });
 

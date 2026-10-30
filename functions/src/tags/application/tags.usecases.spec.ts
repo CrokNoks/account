@@ -41,6 +41,16 @@ describe('Tags use cases', () => {
     expect(repository.save).toHaveBeenCalledWith(tag);
   });
 
+  it('applies the default color when none is given', async () => {
+    const tag = await new CreateTagUseCase(repository).execute({
+      accountId: 'acc-1',
+      name: 'Vacances',
+    });
+
+    expect(tag.color).toBe('#94a3b8');
+    expect(repository.save).toHaveBeenCalledWith(tag);
+  });
+
   it('does not save an invalid tag', async () => {
     await expect(
       new CreateTagUseCase(repository).execute({

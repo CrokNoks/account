@@ -28,9 +28,13 @@ export class CreateTagDto {
   @ApiProperty({ description: 'Name of the tag' })
   name: string;
 
+  @IsOptional()
   @IsHexColor()
-  @ApiProperty({ description: 'Hex color code' })
-  color: string;
+  @ApiProperty({
+    required: false,
+    description: 'Hex color code (default #94a3b8)',
+  })
+  color?: string;
 }
 
 export class UpdateTagDto {

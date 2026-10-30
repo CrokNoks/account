@@ -3,9 +3,9 @@ import request from 'supertest';
 import { App } from 'supertest/types';
 import { auth, createE2EApp, Mocks, USER } from './e2e-app';
 import { Account } from '../src/accounts/domain/account.entity';
+import { RecurringTransaction } from '../src/recurring/domain/recurring-transaction.entity';
 
-// Écarts front/back relevés par les documentalistes : ces tests reproduisent
-// les requêtes envoyées aujourd'hui par le front et figent la réponse actuelle.
+// Requêtes envoyées par le front (voir frontend/src/shared/api/api-contract.test.tsx).
 describe('Front/back contract (e2e)', () => {
   let app: INestApplication<App>;
   let mocks: Mocks;
@@ -50,8 +50,8 @@ describe('Front/back contract (e2e)', () => {
       });
     });
 
-    // frontend/src/features/accounts/api/use-create-account.ts envoie type et currency.
-    it('rejects the payload sent by the front (type and currency are unknown)', async () => {
+    // Le front n'envoie plus type ni currency : ces colonnes n'existent pas.
+    it('still rejects type and currency (unknown fields)', async () => {
       await http()
         .post('/accounts')
         .set(auth())
@@ -60,6 +60,13 @@ describe('Front/back contract (e2e)', () => {
 
       expect(mocks.accounts.save).not.toHaveBeenCalled();
     });
+
+    it('accepts the payload sent by the front (name, description, initialBalance)', () =>
+      http()
+        .post('/accounts')
+        .set(auth())
+        .send({ name: 'Courant', description: 'Perso', initialBalance: '0' })
+        .expect(201));
   });
 
   describe('tag creation', () => {
@@ -71,31 +78,96 @@ describe('Front/back contract (e2e)', () => {
         .expect(201));
 
     // Le tag-selector du front crée un tag à la volée sans couleur.
-    it('rejects a tag without color', async () => {
-      await http()
+    it('creates a tag without color with the default color', async () => {
+      const res = await http()
         .post('/acc-1/tags')
         .set(auth())
         .send({ name: 'Vacances' })
-        .expect(400);
+        .expect(201);
 
-      expect(mocks.tags.save).not.toHaveBeenCalled();
+      expect((res.body as { color: string }).color).toBe('#94a3b8');
+      expect(mocks.tags.save).toHaveBeenCalledTimes(1);
     });
+
+    it('still rejects a color that is not hexadecimal', () =>
+      http()
+        .post('/acc-1/tags')
+        .set(auth())
+        .send({ name: 'Vacances', color: 'green' })
+        .expect(400));
   });
 
   describe('cashflow forecast', () => {
-    it('is exposed as POST', async () => {
+    // Un récurrent dont la prochaine occurrence tombe dans ~60 jours.
+    const inSixtyDays = () => {
+      const d = new Date();
+      d.setDate(d.getDate() + 60);
+      mocks.recurring.findAllByAccount.mockResolvedValue([
+        RecurringTransaction.create({
+          accountId: 'acc-1',
+          categoryId: null,
+          description: 'Assurance',
+          amount: BigInt(-1000),
+          dayOfMonth: Math.min(d.getDate(), 28),
+        }),
+      ]);
+    };
+
+    it('answers to the GET sent by the front', async () => {
       const res = await http()
-        .post('/acc-1/reporting/cashflow')
+        .get('/acc-1/reporting/cashflow')
         .query({ days: '30' })
         .set(auth())
-        .expect(201);
+        .expect(200);
 
       expect(res.body).toEqual({ currentBalance: '0', events: [] });
     });
 
-    // frontend/src/features/reporting/api/use-cashflow-forecast.ts appelle en GET.
-    it('answers 404 to the GET sent by the front', () =>
-      http().get('/acc-1/reporting/cashflow').set(auth()).expect(404));
+    it('converts days to a number (a 10-day horizon hides a 60-day event)', async () => {
+      inSixtyDays();
+      const res = await http()
+        .get('/acc-1/reporting/cashflow')
+        .query({ days: '10' })
+        .set(auth())
+        .expect(200);
+
+      expect((res.body as { events: unknown[] }).events).toHaveLength(0);
+    });
+
+    it('defaults to 90 days without the days parameter', async () => {
+      inSixtyDays();
+      const res = await http()
+        .get('/acc-1/reporting/cashflow')
+        .set(auth())
+        .expect(200);
+
+      expect((res.body as { events: unknown[] }).events.length).toBeGreaterThan(
+        0,
+      );
+    });
+
+    it.each(['abc', '0', '-5', '1000', '1.5'])(
+      'answers 400 for days=%s',
+      async (days) => {
+        await http()
+          .get('/acc-1/reporting/cashflow')
+          .query({ days })
+          .set(auth())
+          .expect(400);
+        expect(mocks.recurring.findAllByAccount).not.toHaveBeenCalled();
+      },
+    );
+
+    it.each(['1', '365'])('accepts days=%s', (days) =>
+      http()
+        .get('/acc-1/reporting/cashflow')
+        .query({ days })
+        .set(auth())
+        .expect(200),
+    );
+
+    it('is no longer exposed as POST', () =>
+      http().post('/acc-1/reporting/cashflow').set(auth()).expect(404));
   });
 
   describe('receipt scan', () => {

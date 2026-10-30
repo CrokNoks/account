@@ -26,36 +26,32 @@ const wrapper = ({ children }: { children: ReactNode }) => (
   </QueryClientProvider>
 );
 
-// Requêtes que le back refuse aujourd'hui (voir functions/test/front-contract.e2e-spec.ts).
-// Ces tests figent ce que le front envoie, pour que le correctif soit visible des deux côtés.
-describe('front requests known to mismatch the API', () => {
+// Requêtes envoyées par le front, alignées sur ce qu'accepte le back
+// (voir functions/test/front-contract.e2e-spec.ts).
+describe('front requests match the API', () => {
   beforeEach(() => {
     for (const fn of Object.values(api)) {
       vi.mocked(fn).mockReset().mockResolvedValue({ data: {} });
     }
   });
 
-  it('useCreateAccount sends type and currency, which the API rejects (400)', async () => {
+  it('useCreateAccount sends only the fields the API accepts', async () => {
     const { result } = renderHook(() => useCreateAccount(), { wrapper });
 
     await act(() =>
       result.current.mutateAsync({
         name: 'Courant',
-        type: 'checking',
-        currency: 'EUR',
         initialBalance: '150000',
       }),
     );
 
     expect(api.post).toHaveBeenCalledWith('/accounts', {
       name: 'Courant',
-      type: 'checking',
-      currency: 'EUR',
       initialBalance: '150000',
     });
   });
 
-  it('useCreateTag can send a tag without color, which the API rejects (400)', async () => {
+  it('useCreateTag can send a tag without color (the API applies a default)', async () => {
     const { result } = renderHook(() => useCreateTag(), { wrapper });
 
     await act(() => result.current.mutateAsync({ accountId: 'acc-1', name: 'Vacances' }));
@@ -63,7 +59,7 @@ describe('front requests known to mismatch the API', () => {
     expect(api.post).toHaveBeenCalledWith('/acc-1/tags', { name: 'Vacances' });
   });
 
-  it('useCashflowForecast uses GET, while the API exposes POST (404)', async () => {
+  it('useCashflowForecast uses GET, which the API exposes', async () => {
     const { result } = renderHook(() => useCashflowForecast('acc-1', 30), {
       wrapper,
     });

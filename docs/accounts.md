@@ -50,7 +50,7 @@ Toutes les routes : connecté (token exigé via `@UseGuards` sur le contrôleur,
 Il n'y a pas de route pour supprimer un compte (la base l'autoriserait au propriétaire).
 
 ## Zones d'ombre
-- Le front envoie `type` (courant/épargne/espèces) et `currency` (EUR/USD) à la création (`create-account-dialog.tsx:27-32`), mais le DTO back ne les connaît pas et l'application rejette les champs inconnus (`main.ts:27-31`, `forbidNonWhitelisted`). Le code ne dit pas si la création réussit en l'état. Ces champs n'existent pas non plus dans `accounts` en base (aucune migration ne les ajoute).
+- Un compte n'a ni type ni devise : ces colonnes n'existent pas en base et l'API rejette ces champs (400, `forbidNonWhitelisted`). Le front ne les envoie plus à la création (`create-account-dialog.tsx`) : le formulaire ne demande que nom, solde initial et description, et la liste des comptes n'affiche plus de type ni de devise.
 - Le type front `AccountShare` dans `model/types.ts` (rôles owner/viewer/editor) diffère de celui de `use-account-shares.ts` (read/write) ; le second correspond à l'API.
 - Erreurs métier levées en `Error` simple (pas d'exception HTTP typée) : le code HTTP renvoyé n'est pas déterminé par le code lu.
 - Le PATCH met à jour avec `dto.description ?? existant` : impossible d'effacer une description.

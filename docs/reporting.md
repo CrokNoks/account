@@ -31,7 +31,7 @@ Montants en centimes (texte dans les réponses), sauf Sankey (euros, nombre) et 
 | Évolution : une ligne par période triée par date ; ici le prévisionnel = départ + toutes les transactions de la période (≠ formule des stats). | `get-evolution.use-case.ts:104-106` | ❌ |
 | Sankey : une catégorie n'apparaît que si son montant ≠ 0 ; valeurs en valeur absolue, en euros. | `get-sankey-data.use-case.ts:58-117` | ❌ |
 | Patrimoine net : somme, sur tous les comptes accessibles à l'utilisateur, du solde initial + toutes les transactions ; l'historique couvre 30 jours mais renvoie la même valeur (solde d'il y a 30 jours) chaque jour (la boucle ne rejoue pas les transactions). | `get-net-worth.use-case.ts:28-99` | ❌ |
-| Trésorerie prévue : solde du jour (transactions jusqu'à aujourd'hui inclus) puis, jour par jour sur `days` jours (90 par défaut), ajout de chaque récurrente dont le jour du mois correspond. Même si elle a déjà été payée aujourd'hui, elle est comptée. | `get-cashflow-forecast.use-case.ts:34-75` | ❌ |
+| Trésorerie prévue : solde du jour (transactions jusqu'à aujourd'hui inclus) puis, jour par jour sur `days` jours (entier de 1 à 365, 90 par défaut ; hors de ces bornes ou non numérique → 400), ajout de chaque récurrente dont le jour du mois correspond. Même si elle a déjà été payée aujourd'hui, elle est comptée. | `get-cashflow-forecast.use-case.ts:34-75`, `reporting.controller.ts` (`CashflowQueryDto`) | ✅ e2e `front-contract.e2e-spec.ts` (défaut 90, bornes, 400) |
 | Calendrier d'un mois : transactions réelles + récurrentes projetées pour aujourd'hui et les jours futurs du mois ; une récurrente est écartée si le même jour existe une transaction au même montant dont la description contient son libellé. Trié par date. | `get-calendar-data.use-case.ts:63-96` | ✅ `get-calendar-data.use-case.spec.ts` (« return actual and projected », « not project already paid ») |
 | Résumé par tag : total et nombre de transactions par tag, trié par montant absolu décroissant ; couleur par défaut `#94a3b8`. Détail d'un tag : erreur si le tag est d'un autre compte ; répartition par catégorie en % du total absolu ; 5 dernières transactions. | `get-tags-summary.use-case.ts`, `get-tag-details.use-case.ts:50-135` | ❌ |
 | Anomalie « doublon » : plusieurs dépenses le même jour avec le même montant ; ignore revenus et dépenses de moins de 5 € (montant > −500 centimes). | `get-anomalies.use-case.ts:80-88` | ✅ `get-anomalies.use-case.spec.ts` (doublons, petits montants) |
@@ -61,7 +61,7 @@ Identité : toutes les routes sont sous `SupabaseAuthGuard` (jeton Supabase exig
 | Analyse IA de période | `GET /periods/:periodId/reporting/ai-insights?locale=` | connecté | texte Markdown | l.301 |
 | Évolution | `GET /reporting/evolution` | connecté | une ligne par période | l.262 |
 | Analyse IA d'évolution | `GET /reporting/evolution/ai-insights?locale=` | connecté | texte Markdown | l.316 |
-| Trésorerie prévue | `POST /reporting/cashflow?days=` | connecté | solde + événements | l.329 |
+| Trésorerie prévue | `GET /reporting/cashflow?days=` | connecté ; `days` entier 1 à 365 facultatif (défaut 90), sinon 400 | solde + événements | l.369 |
 | Scan de ticket | `POST /reporting/scan-receipt` (`base64Image`, `mimeType`) | connecté ; aucun contrôle du compte ; corps validé par `ScanReceiptDto` : `base64Image` non vide, `mimeType` parmi `image/jpeg`, `image/png`, `image/webp`, `image/heic`, sinon 400 sans appel à l'IA (le front envoie `image/jpeg`) | champs extraits | l.354 |
 | Résumé des tags | `GET /reporting/tags-summary?periodId=` | connecté | liste | l.348 |
 | Détail d'un tag | `GET /reporting/tags/:tagId?periodId=` | connecté | détail | l.358 |
@@ -76,7 +76,7 @@ Front : un hook par route dans `api/` (clés React Query dédiées) ; écrans `u
 Pas de cycle de vie. Une anomalie ignorée le reste (aucune route pour la rétablir).
 
 ## Zones d'ombre
-- Désaccord front/back : le hook `use-cashflow-forecast.ts:10` appelle la trésorerie en `GET`, alors que le back l'expose en `POST` (`reporting.controller.ts:329`). Le code seul ne permet pas de dire si cet écran fonctionne.
+- Trésorerie prévue : le front l'appelle en `GET` (`use-cashflow-forecast.ts:10`) et le back l'expose désormais en `GET` ; l'ancienne route `POST` n'existe plus (404). Le défaut de 90 jours et les bornes de `days` sont couverts par les tests e2e.
 - Le scan et les analyses IA envoient des données financières / images à Google Gemini ; la clé est passée dans l'URL (`gemini.service.ts`). Aucune limite de taille d'image ni de fréquence dans le code.
 - `forecastBalance` a deux définitions différentes (stats vs évolution) ; laquelle fait foi n'est pas dit.
 - Le patrimoine net présente un historique plat : intention (prototype, commentaires du code) ou bug, non tranché.

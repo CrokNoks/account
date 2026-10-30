@@ -26,9 +26,7 @@ export function CreateAccountDialog() {
   const handleSubmit = (values: AccountFormValues) => {
     createAccount({
       name: values.name,
-      type: values.type,
       description: values.description,
-      currency: values.currency,
       initialBalance: toCents(values.balance),
     }, {
       onSuccess: () => {

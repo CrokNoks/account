@@ -69,7 +69,33 @@ import {
   ScanReceiptUseCase,
   ScanReceiptResult,
 } from '../application/scan-receipt.use-case';
-import { IsArray, IsString, IsIn, IsNotEmpty } from 'class-validator';
+import {
+  IsArray,
+  IsString,
+  IsIn,
+  IsNotEmpty,
+  IsInt,
+  IsOptional,
+  Max,
+  Min,
+} from 'class-validator';
+import { Type } from 'class-transformer';
+
+export class CashflowQueryDto {
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(365)
+  @ApiProperty({
+    required: false,
+    minimum: 1,
+    maximum: 365,
+    default: 90,
+    description: 'Forecast horizon in days',
+  })
+  days?: number;
+}
 
 export class IgnoreAnomalyDto {
   @IsArray()
@@ -340,15 +366,15 @@ export class ReportingController {
     return { insights };
   }
 
-  @Post('reporting/cashflow')
+  @Get('reporting/cashflow')
   @ApiOperation({
     summary: 'Get cashflow forecast based on recurring transactions',
   })
   async getCashflow(
     @Param('accountId') accountId: string,
-    @Query('days') days?: number,
+    @Query() query: CashflowQueryDto,
   ): Promise<CashflowForecastResponse> {
-    return this.getCashflowForecastUseCase.execute(accountId, days);
+    return this.getCashflowForecastUseCase.execute(accountId, query.days);
   }
 
   @Post('reporting/scan-receipt')

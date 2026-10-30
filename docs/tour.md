@@ -14,7 +14,7 @@ Code : `frontend/src/features/tour/config/`, moteur `frontend/src/shared/ui/tour
 ## Règles métier
 | Règle | Source | Testée |
 | --- | --- | --- |
-| 3 visites : tableau de bord (6 étapes : accueil, stats, évolution, répartition, transactions, bouton d'ajout), compte (8 étapes), transactions (5 étapes : date, description, montant, en attente, raccourcis). | `features/tour/config/dashboard-tour.ts`, `account-tour.ts`, `transactions-tour.ts` | ❌ |
+| 3 visites : tableau de bord (6 étapes : accueil, stats, évolution, répartition, transactions, bouton d'ajout), compte (7 étapes : accueil, bouton de création, nom, solde, catégories, récurrentes, périodes ; l'étape « type de compte », qui ne ciblait aucun élément, est retirée), transactions (5 étapes : date, description, montant, en attente, raccourcis). | `features/tour/config/dashboard-tour.ts`, `account-tour.ts`, `transactions-tour.ts` | ❌ |
 | Les textes viennent de la traduction `Tour.*` (aucun texte en dur). | `AppTour.tsx:10-12` | ❌ |
 | Visite « compte » : après l'étape 1 on ouvre la fenêtre de création de compte (avec 500 ms de délai), on la ferme après l'étape 4, et on la rouvre si l'utilisateur revient en arrière. | `AppTour.tsx:30-62` | ❌ |
 | Si une cible est introuvable, la visite n'avance pas et écrit un avertissement dans la console. | `AppTour.tsx:70-74` | ❌ |
