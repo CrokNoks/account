@@ -1,6 +1,6 @@
 # Transactions — saisir, retrouver, corriger, importer et déplacer l'argent d'un compte
 
-Mise à jour : 2026-10-31 · Commit : 46cdaab
+Mise à jour : 2026-10-31 · Commit : df46659
 
 ## Vocabulaire
 | Mot | Ce que ça veut dire ici |
@@ -64,7 +64,7 @@ Toutes les routes sont préfixées par l'identifiant du compte : `/:accountId/tr
 | Modifier en lot | `PATCH /:accountId/transactions/bulk` | idem, compte contrôlé | voir règles | `:399` |
 | Supprimer en lot | `DELETE /:accountId/transactions/bulk` (corps `ids`) | idem, compte contrôlé | voir règles | `:413` |
 
-Front (`frontend/src/features/transactions/`) : `transaction-list` (liste, filtres, sélection, création de récurrente), `transaction-table` / `transaction-mobile-list`, `transaction-filters` (un montant min/max illisible est ignoré, pas de filtre sur 0 : `toOptionalCents`), `create-transaction-drawer` + `transaction-form` (mode standard ou virement) (date par défaut = jour calendaire local du navigateur, `todayDateOnly`), `bulk-actions-bar`, import en 3 étapes (`import/import-upload-step`, `import-mapping-step` : montant unique ou colonnes débit/crédit, `import-validation-step`). Hooks : `use-transactions`, `use-create-transaction`, `use-update-transaction`, `use-delete-transaction`, `use-create-transfer`, `use-bulk-transactions`, `use-bulk-create-transactions`, `use-predict-category`.
+Front (`frontend/src/features/transactions/`) : `transaction-list` (liste, filtres, sélection, création de récurrente), `transaction-table` / `transaction-mobile-list`, `transaction-filters` (un montant min/max illisible est ignoré, pas de filtre sur 0 : `toOptionalCents`), `create-transaction-drawer` + `transaction-form` (mode standard ou virement) (date par défaut = jour calendaire local du navigateur, `todayDateOnly`), `bulk-actions-bar`, import en 3 étapes (`import/import-upload-step`, `import-mapping-step` : montant unique ou colonnes débit/crédit, `import-validation-step` : la catégorie de chaque ligne se choisit avec le sélecteur commun `CategorySelector` de `features/categories` (tri alphabétique, recherche, « Sans catégorie » en tête, voir `docs/categories.md`) ; la page lui passe l'`accountId` et non plus la liste des catégories ; une catégorie prédite reste affichée, et un changement à la main remet `predicted` à faux ; les clés i18n `Import.validation.uncategorized` et `no_category` n'existent plus). Hooks : `use-transactions`, `use-create-transaction`, `use-update-transaction`, `use-delete-transaction`, `use-create-transfer`, `use-bulk-transactions`, `use-bulk-create-transactions`, `use-predict-category`.
 
 ## Statuts et transitions
 `pending` (en attente) et `reconciled` (rapprochée) sont deux booléens indépendants. Marquer rapprochée une transaction via la modification simple la sort de l'attente ; la modification en lot applique la même règle (`domain/pending-rule.ts`). Aucune transition n'est interdite par le code.

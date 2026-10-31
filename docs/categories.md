@@ -1,6 +1,6 @@
 # Catégories — classer ses transactions (dépenses, revenus, virements, épargne) et fixer un plafond indicatif
 
-Mise à jour : 2026-10-30 · Commit : 157b272
+Mise à jour : 2026-10-31 · Commit : df46659
 
 ## Vocabulaire
 | Mot | Ce que ça veut dire ici |
@@ -38,7 +38,7 @@ Qui : Toutes les routes exigent un token de connexion valide (`@UseGuards(Supaba
 | Modifier | `PATCH /:accountId/categories/:id` | met à jour ; `:accountId` n'est pas utilisé, seule la catégorie `:id` est cherchée | `categories.controller.ts:112` |
 | Supprimer | aucune route | le dépôt sait supprimer (`delete`) mais aucune route ne l'expose | `category.repository.interface.ts:7` |
 
-Écrans (front, `frontend/src/features/categories/`) : liste en cartes avec création et édition (`ui/category-list.tsx`, `ui/create-category-dialog.tsx`), sélecteur de catégorie réutilisable (`ui/category-selector.tsx`). Hooks : `useCategories`, `useCreateCategory`, `useUpdateCategory` (clé de cache `['categories', accountId]`, rafraîchie après création/modification). Le type front `Category` ne contient ni description ni budget (`model/types.ts`). Chaque carte affiche un montant fixé à `formatCurrency('0')` (`category-list.tsx:104`) : aucun total réel n'est calculé ici.
+Écrans (front, `frontend/src/features/categories/`) : liste en cartes avec création et édition (`ui/category-list.tsx`, `ui/create-category-dialog.tsx`), sélecteur de catégorie réutilisable (`ui/category-selector.tsx`) : l'API renvoie la liste sans tri, c'est le sélecteur qui la trie à l'affichage par ordre alphabétique français, accents et majuscules ignorés (`category-selector.tsx:50-55`) ; un champ de recherche garde les catégories dont le nom contient le texte tapé (mêmes règles accents/casse, ex. « ele » trouve « Électricité », `:54`), le texte est vidé à chaque ouverture (`:59`) ; « Sans catégorie » (`Categories.selector.none`) est toujours en tête, hors tri, et masqué pendant une recherche (`:105`) ; sans résultat, message « Aucune catégorie trouvée » (`:101-103`) ; le choix se fait par identifiant (et non par le nom), donc la catégorie cliquée est celle renvoyée quel que soit le tri ou la recherche, « Sans catégorie » renvoyant une valeur vide (`:62-65,106,112`). Il est utilisé par le formulaire de transaction, les filtres de transactions, les récurrentes (création et liste), les règles intelligentes (création et liste) et l'étape de validation de l'import. Couvert par `ui/category-selector.test.tsx`. Hooks : `useCategories`, `useCreateCategory`, `useUpdateCategory` (clé de cache `['categories', accountId]`, rafraîchie après création/modification). Le type front `Category` ne contient ni description ni budget (`model/types.ts`). Chaque carte affiche un montant fixé à `formatCurrency('0')` (`category-list.tsx:104`) : aucun total réel n'est calculé ici.
 
 ## Statuts et transitions
 Pas de cycle de vie.
