@@ -30,11 +30,11 @@ beforeAll(() => {
   Element.prototype.scrollIntoView ??= () => {};
 });
 
-function setup(value = '') {
+function setup(value = '', ariaLabel?: string) {
   const onChange = vi.fn();
   render(
     <NextIntlClientProvider locale="fr" messages={fr}>
-      <CategorySelector accountId="acc-1" value={value} onChange={onChange} />
+      <CategorySelector accountId="acc-1" value={value} onChange={onChange} aria-label={ariaLabel} />
     </NextIntlClientProvider>,
   );
   return { onChange, user: userEvent.setup() };
@@ -147,5 +147,16 @@ describe('CategorySelector', () => {
     expect(spy.mock.calls.length).toBe(callsForOne * 2);
     spy.mockRestore();
     currentCategories = categories;
+  });
+
+  it('names the trigger with the aria-label prop', () => {
+    setup('', 'Catégorie de : Loyer');
+    expect(screen.getByRole('combobox', { name: 'Catégorie de : Loyer' })).toBeInTheDocument();
+  });
+
+  it('names the search field', async () => {
+    const { user } = setup();
+    await open(user);
+    expect(screen.getByRole('combobox', { name: fr.Categories.selector.search_label })).toBeInTheDocument();
   });
 });

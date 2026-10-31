@@ -106,4 +106,9 @@ describe('ImportValidationStep category selector', () => {
       predicted: false,
     });
   });
+
+  it('names each row selector after the row description', () => {
+    renderWith([rows[0]]);
+    expect(screen.getByRole('combobox', { name: 'Catégorie de : Loyer' })).toBeInTheDocument();
+  });
 });

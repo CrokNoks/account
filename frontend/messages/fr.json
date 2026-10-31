@@ -337,6 +337,7 @@
       "active_columns": "Colonnes actives surlignées"
     },
     "validation": {
+      "category_of": "Catégorie de : {description}",
       "skipped_banner": "{count, plural, one {# ligne ignorée} other {# lignes ignorées}} (non envoyées à l'import)",
       "date": "Date",
       "description": "Description",
@@ -368,7 +369,8 @@
       "placeholder": "Sélectionner une catégorie...",
       "none": "Sans catégorie",
       "empty": "Aucune catégorie trouvée",
-      "search_placeholder": "Rechercher une catégorie..."
+      "search_placeholder": "Rechercher une catégorie...",
+      "search_label": "Rechercher une catégorie"
     }
   },
   "Tags": {

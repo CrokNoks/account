@@ -67,6 +67,7 @@ export function ImportValidationStep({
               <TableCell>
                 <CategorySelector
                   accountId={accountId}
+                  aria-label={t('category_of', { description: row.description })}
                   disabled={!!row.invalidReason}
                   value={row.categoryId || ''}
                   className="h-9 text-xs"

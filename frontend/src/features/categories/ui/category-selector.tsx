@@ -23,6 +23,7 @@ interface CategorySelectorProps {
   placeholder?: string;
   className?: string;
   disabled?: boolean;
+  'aria-label'?: string;
 }
 
 const NONE = 'none';
@@ -60,6 +61,7 @@ export function CategorySelector({
   placeholder,
   className,
   disabled,
+  'aria-label': ariaLabel,
 }: CategorySelectorProps) {
   const t = useTranslations('Categories');
   const { data: categories, isLoading } = useCategories(accountId);
@@ -95,6 +97,7 @@ export function CategorySelector({
             variant="outline"
             role="combobox"
             aria-expanded={open}
+            aria-label={ariaLabel}
             disabled={disabled || isLoading || !accountId}
             className={cn("w-full h-11 justify-between font-normal", className)}
           >
@@ -112,7 +115,7 @@ export function CategorySelector({
       />
       <PopoverContent className="w-(--anchor-width) min-w-56 p-0" align="start">
         {/* Filtering and sorting are done here (by id), not by cmdk on the item value. */}
-        <Command shouldFilter={false}>
+        <Command shouldFilter={false} label={t('selector.search_label')}>
           <CommandInput
             placeholder={t('selector.search_placeholder')}
             value={search}

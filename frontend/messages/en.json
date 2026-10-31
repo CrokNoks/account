@@ -337,6 +337,7 @@
       "active_columns": "Active columns highlighted"
     },
     "validation": {
+      "category_of": "Category for: {description}",
       "skipped_banner": "{count, plural, one {# line skipped} other {# lines skipped}} (not sent to the import)",
       "date": "Date",
       "description": "Description",
@@ -368,7 +369,8 @@
       "placeholder": "Select a category...",
       "none": "No category",
       "empty": "No category found",
-      "search_placeholder": "Search a category..."
+      "search_placeholder": "Search a category...",
+      "search_label": "Search a category"
     }
   },
   "Tags": {
