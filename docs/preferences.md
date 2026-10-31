@@ -1,6 +1,6 @@
 # Préférences — mémorise la disposition du tableau de bord de chaque utilisateur
 
-Mise à jour : 2026-10-30 · Commit : 157b272
+Mise à jour : 2026-10-31 · Commit : 746eb38
 
 Code : back `functions/src/preferences/`, front `frontend/src/features/preferences/`, base `supabase/migrations/20260316000000..03`.
 
@@ -21,9 +21,10 @@ Code : back `functions/src/preferences/`, front `frontend/src/features/preferenc
 | Base : une ligne par utilisateur (clé = `user_id`, supprimée avec l'utilisateur) ; RLS : chacun ne voit / n'insère / ne modifie que sa ligne. | `20260316000000_create_user_preferences.sql:2-21` | ❌ |
 | Le défaut en base a été remplacé deux fois, et ces migrations ont réinitialisé la disposition de tous les utilisateurs existants. | `20260316000001_...sql`, `20260316000003_...sql` (UPDATE sans condition) | ❌ |
 | Front : ajouter un widget l'ajoute en largeur 12, visible partout ; en retirer un le supprime de la liste. | `frontend/src/features/preferences/model/use-dashboard-store.ts:18-27` | ❌ |
+| Front : une disposition enregistrée est filtrée sur les widgets connus du catalogue : un id inconnu (ex. `insights`, retiré avec les analyses IA) est ignoré à l'affichage et en édition, les autres gardent ordre, largeur et visibilité. Rien n'est réécrit en base tant que l'utilisateur n'enregistre pas. | `frontend/src/features/preferences/model/visible-layout.ts`, utilisé dans `app/[locale]/(dashboard)/page.tsx:64` | ✅ `visible-layout.test.ts` |
 | Front : les modifications se font sur une copie temporaire (`tempLayout`), l'enregistrement passe par `useUpdateUserPreferences`. | `use-dashboard-store.ts`, `api/use-user-preferences.ts:30-43` | ❌ |
 
-Aucun test dans `preferences/` ni `features/preferences/`.
+Aucun test dans `preferences/` (back) ; côté front, seul `visible-layout.test.ts` existe.
 
 ## Ce qu'on stocke
 Table `user_preferences` : `user_id`, `dashboard_layout` (JSON `{widgets: [{id, width, desktopVisible, mobileVisible}]}`), `updated_at`. Aucun montant.
@@ -36,12 +37,12 @@ Identité : `SupabaseAuthGuard` exige un jeton valide ; l'utilisateur est lu dan
 | Lire | `GET /preferences` | connecté, ses propres données | renvoie (ou crée) la disposition | `preferences.controller.ts:83` |
 | Enregistrer | `PATCH /preferences` (corps `{widgets:[…]}`) | connecté, ses propres données | remplace la disposition | `preferences.controller.ts:99` |
 
-Écrans : catalogue des widgets possibles et libellés (`config/dashboard-widgets.tsx`, 16 widgets dont `insights`, `tags`, `savings`, `upcoming` absents de la disposition par défaut) ; composants d'édition par glisser-déposer (`ui/dashboard-editor-components.tsx` : changement de largeur en boucle 2→3→4→6→12, bascule bureau/mobile). L'écran du tableau de bord (`app/[locale]/(dashboard)/page.tsx`) les utilise.
+Écrans : catalogue des widgets possibles et libellés (`config/dashboard-widgets.tsx`, 15 widgets dont `tags`, `savings`, `upcoming` absents de la disposition par défaut) ; composants d'édition par glisser-déposer (`ui/dashboard-editor-components.tsx` : changement de largeur en boucle 2→3→4→6→12, bascule bureau/mobile). L'écran du tableau de bord (`app/[locale]/(dashboard)/page.tsx`) les utilise.
 
 ## Statuts et transitions
 Mode lecture / mode édition côté front (`isEditing`), sans statut en base.
 
 ## Zones d'ombre
-- Le catalogue front (16 widgets) et la liste côté back ne sont pas reliés : un `id` inconnu serait enregistré tel quel ; comportement à l'affichage non vérifié ici.
+- Le catalogue front (15 widgets) et la liste côté back ne sont pas reliés : un `id` inconnu est enregistré tel quel par le back, mais le front l'ignore à l'affichage (voir règle ci-dessus).
 - Les anciennes valeurs par défaut (`widgets: ["anomalies", …]`, liste de textes) ont existé ; le code actuel ne gère pas ce format.
 - Pourquoi la largeur 3 et 4 existent à l'édition alors que le défaut n'utilise que 2, 6, 12 : inconnu.
