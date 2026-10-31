@@ -11,9 +11,10 @@ import {
 } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { X } from 'lucide-react';
 import { formatCurrency, toCents } from '@/shared/lib/format';
+import { formatDateOnly } from '@/shared/lib/date-only';
 import { ParsedTransaction } from '../../model/import-types';
 import { Category } from '@/features/categories/model/types';
 
@@ -29,6 +30,7 @@ export function ImportValidationStep({
   categories
 }: ImportValidationStepProps) {
   const t = useTranslations('Import.validation');
+  const locale = useLocale();
   const invalidCount = parsedData.filter((row) => row.invalidReason).length;
 
   return (
@@ -52,7 +54,7 @@ export function ImportValidationStep({
           {parsedData.map((row) => (
             <TableRow key={row.id} className={row.invalidReason ? 'bg-destructive/10' : undefined} data-invalid={row.invalidReason ? 'true' : undefined}>
               <TableCell className="pl-8 font-medium text-xs">
-                {row.date}
+                {formatDateOnly(row.date, locale)}
                 {row.invalidReason === 'date' && <span className="block text-destructive">{t('unreadable_date')}</span>}
               </TableCell>
               <TableCell className="truncate text-xs" title={row.description}>{row.description}</TableCell>
