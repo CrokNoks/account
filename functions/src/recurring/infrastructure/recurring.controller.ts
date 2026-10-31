@@ -21,15 +21,9 @@ import { CreateRecurringTransactionUseCase } from '../application/create-recurri
 import { UpdateRecurringTransactionUseCase } from '../application/update-recurring-transaction.use-case';
 import { DeleteRecurringTransactionUseCase } from '../application/delete-recurring-transaction.use-case';
 import { RecurringTransaction } from '../domain/recurring-transaction.entity';
-import {
-  IsString,
-  IsOptional,
-  IsNumberString,
-  IsInt,
-  Min,
-  Max,
-  IsUUID,
-} from 'class-validator';
+import { IsString, IsOptional, IsInt, Min, Max, IsUUID } from 'class-validator';
+import { parseCents } from '../../shared/domain/cents';
+import { IsCents } from '../../shared/infrastructure/is-cents.decorator';
 
 export class CreateRecurringTransactionDto {
   @IsOptional()
@@ -41,7 +35,7 @@ export class CreateRecurringTransactionDto {
   @ApiProperty()
   description: string;
 
-  @IsNumberString()
+  @IsCents()
   @ApiProperty({ description: 'Amount in cents' })
   amount: string;
 
@@ -64,7 +58,7 @@ export class UpdateRecurringTransactionDto {
   description?: string;
 
   @IsOptional()
-  @IsNumberString()
+  @IsCents()
   @ApiProperty({ required: false, description: 'Amount in cents' })
   amount?: string;
 
@@ -119,7 +113,7 @@ export class RecurringController {
     const transaction = await this.createRecurringUseCase.execute({
       ...dto,
       accountId,
-      amount: BigInt(Math.round(Number(dto.amount))),
+      amount: parseCents(dto.amount),
     });
     return this.mapToResponse(transaction);
   }
@@ -139,7 +133,7 @@ export class RecurringController {
       ...(dto.description !== undefined && { description: dto.description }),
       ...(dto.dayOfMonth !== undefined && { dayOfMonth: dto.dayOfMonth }),
       ...(dto.amount !== undefined && {
-        amount: BigInt(Math.round(Number(dto.amount))),
+        amount: parseCents(dto.amount),
       }),
     };
     const transaction = await this.updateRecurringUseCase.execute(

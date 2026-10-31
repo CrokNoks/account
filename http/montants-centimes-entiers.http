@@ -1,0 +1,98 @@
+# Montants en centimes entiers (transactions, récurrentes).
+# Lancement : npx httpyac send --all http/montants-centimes-entiers.http --var port=8080 --var anonKey=... --var email=... --var password=...
+# (clé et identifiants viennent de la ligne de commande, jamais du fichier)
+@baseUrl = http://localhost:{{port}}
+@supabaseUrl = http://127.0.0.1:54321
+
+### Connexion (Supabase local)
+# @name login
+POST {{supabaseUrl}}/auth/v1/token?grant_type=password
+apikey: {{anonKey}}
+Content-Type: application/json
+
+{ "email": "{{email}}", "password": "{{password}}" }
+
+?? status == 200
+
+### Compte jetable pour le test
+# @name account
+POST {{baseUrl}}/accounts
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "name": "montants-{{$timestamp}}", "initialBalance": "0" }
+
+?? status == 201
+
+### Transaction : "12.5" refusé (plus d'arrondi silencieux à 13)
+POST {{baseUrl}}/{{account.id}}/transactions
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "date": "2026-10-01", "description": "decimal", "amount": "12.5" }
+
+?? status == 400
+
+### Transaction : montant au-delà de 64 bits refusé (400 et non 500)
+POST {{baseUrl}}/{{account.id}}/transactions
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "date": "2026-10-01", "description": "trop grand", "amount": "99999999999999999999999" }
+
+?? status == 400
+
+### Transaction : dépense "-1234" créée telle quelle
+POST {{baseUrl}}/{{account.id}}/transactions
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "date": "2026-10-01", "description": "depense", "amount": "-1234" }
+
+?? status == 201
+?? body contains "amount":"-1234"
+
+### Modification d'une transaction : "12.5" refusé
+# @name tx
+POST {{baseUrl}}/{{account.id}}/transactions
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "date": "2026-10-01", "description": "a-modifier", "amount": "500" }
+
+?? status == 201
+
+###
+PATCH {{baseUrl}}/{{account.id}}/transactions/{{tx.id}}
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "amount": "12.5" }
+
+?? status == 400
+
+### Après le refus, la transaction est intacte (relecture par la liste)
+GET {{baseUrl}}/{{account.id}}/transactions?search=a-modifier
+Authorization: Bearer {{login.access_token}}
+
+?? status == 200
+?? body contains "amount":"500"
+
+### Récurrente : "12.5" refusé
+POST {{baseUrl}}/{{account.id}}/recurring
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "description": "loyer", "amount": "12.5", "dayOfMonth": 5 }
+
+?? status == 400
+
+### Récurrente : cas nominal
+POST {{baseUrl}}/{{account.id}}/recurring
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "description": "loyer", "amount": "-65000", "dayOfMonth": 5 }
+
+?? status == 201
+?? body contains "amount":"-65000"

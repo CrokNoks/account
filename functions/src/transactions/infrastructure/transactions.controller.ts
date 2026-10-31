@@ -50,6 +50,8 @@ import {
 import { Type, Transform } from 'class-transformer';
 import { PeriodRepository } from '../../periods/domain/period.repository.interface';
 import { Inject } from '@nestjs/common';
+import { parseCents } from '../../shared/domain/cents';
+import { IsCents } from '../../shared/infrastructure/is-cents.decorator';
 
 export class CreateTransactionDto {
   @IsOptional()
@@ -75,7 +77,7 @@ export class CreateTransactionDto {
   @ApiProperty({ description: 'Description' })
   description: string;
 
-  @IsNumberString()
+  @IsCents()
   @ApiProperty({ description: 'Amount in cents' })
   amount: string;
 
@@ -146,7 +148,7 @@ export class CreateTransferDto {
   @ApiProperty({ description: 'Description' })
   description: string;
 
-  @IsNumberString()
+  @IsCents()
   @ApiProperty({ description: 'Amount in cents (must be positive)' })
   amount: string;
 }
@@ -512,9 +514,7 @@ export class TransactionsController {
       pending,
       date: dto.date !== undefined ? parseDateOnly(dto.date) : existing.date,
       amount:
-        dto.amount !== undefined
-          ? BigInt(Math.round(Number(dto.amount)))
-          : existing.amount,
+        dto.amount !== undefined ? parseCents(dto.amount) : existing.amount,
       updatedAt: new Date(),
     });
 
@@ -549,7 +549,7 @@ export class TransactionsController {
       transactions: dto.transactions.map((t) => ({
         ...t,
         date: parseDateOnly(t.date),
-        amount: BigInt(Math.round(Number(t.amount))),
+        amount: parseCents(t.amount),
       })),
     });
     return transactions.map((t) => this.mapToResponse(t));
@@ -567,7 +567,7 @@ export class TransactionsController {
       userId: req.user.id,
       sourceAccountId: accountId,
       destinationAccountId: dto.destinationAccountId,
-      amount: BigInt(Math.round(Number(dto.amount))),
+      amount: parseCents(dto.amount),
       date: parseDateOnly(dto.date),
       description: dto.description,
     });
@@ -585,7 +585,7 @@ export class TransactionsController {
       ...dto,
       accountId,
       date: parseDateOnly(dto.date),
-      amount: BigInt(Math.round(Number(dto.amount))),
+      amount: parseCents(dto.amount),
     });
     return this.mapToResponse(transaction);
   }

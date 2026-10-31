@@ -110,15 +110,40 @@ describe('Transactions routes (e2e)', () => {
         expect(mocks.transactions.save).not.toHaveBeenCalled();
       });
 
-      it('rounds a decimal amount to the nearest cent', async () => {
-        const res = await http()
+      it.each([
+        ['a decimal amount', '12.5'],
+        ['an exponent notation', '1e3'],
+        ['an explicit plus sign', '+5'],
+        ['an amount above the signed 64-bit range', '9223372036854775808'],
+        ['an amount below the signed 64-bit range', '-9223372036854775809'],
+        ['a huge amount', '99999999999999999999999'],
+      ])('answers 400 without saving for %s', async (_, amount) => {
+        await http()
           .post('/00000000-0000-4000-8000-000000000101/transactions')
           .set(auth())
-          .send({ ...body, amount: '12.6' })
-          .expect(201);
-
-        expect((res.body as Record<string, unknown>).amount).toBe('13');
+          .send({ ...body, amount })
+          .expect(400);
+        expect(mocks.transactions.save).not.toHaveBeenCalled();
       });
+
+      it.each([
+        ['the largest signed 64-bit amount', '9223372036854775807'],
+        ['the smallest signed 64-bit amount', '-9223372036854775808'],
+        ['a negative zero', '-0'],
+      ])(
+        'keeps %s exactly, without going through a float',
+        async (_, amount) => {
+          const res = await http()
+            .post('/00000000-0000-4000-8000-000000000101/transactions')
+            .set(auth())
+            .send({ ...body, amount })
+            .expect(201);
+
+          expect((res.body as Record<string, unknown>).amount).toBe(
+            amount === '-0' ? '0' : amount,
+          );
+        },
+      );
 
       it('accepts the payload sent by the front (null category, no period)', () =>
         http()
@@ -213,6 +238,20 @@ describe('Transactions routes (e2e)', () => {
       ]);
     });
 
+    it('answers 400 without saving for a non integer amount', async () => {
+      await http()
+        .post('/00000000-0000-4000-8000-000000000101/transactions/transfer')
+        .set(auth())
+        .send({
+          destinationAccountId: '00000000-0000-4000-8000-000000000014',
+          date: '2026-03-01',
+          description: 'Épargne',
+          amount: '150.5',
+        })
+        .expect(400);
+      expect(mocks.transactions.saveTransfer).not.toHaveBeenCalled();
+    });
+
     it('answers 400 for a transfer to the same account', () =>
       http()
         .post('/00000000-0000-4000-8000-000000000101/transactions/transfer')
@@ -242,6 +281,20 @@ describe('Transactions routes (e2e)', () => {
       expect(res.body).toHaveLength(2);
       expect(mocks.transactions.saveMany).toHaveBeenCalledTimes(1);
       expect(mocks.transactions.save).not.toHaveBeenCalled();
+    });
+
+    it('answers 400 without saving when a line has a non integer amount', async () => {
+      await http()
+        .post('/00000000-0000-4000-8000-000000000101/transactions/bulk')
+        .set(auth())
+        .send({
+          transactions: [
+            { date: '2026-03-01', description: 'A', amount: '-100' },
+            { date: '2026-03-02', description: 'B', amount: '-20.5' },
+          ],
+        })
+        .expect(400);
+      expect(mocks.transactions.saveMany).not.toHaveBeenCalled();
     });
 
     it('validates each line', () =>
@@ -314,6 +367,20 @@ describe('Transactions routes (e2e)', () => {
         )
         .set(auth())
         .send({ amount: 'abc' })
+        .expect(400);
+      await http()
+        .patch(
+          '/00000000-0000-4000-8000-000000000101/transactions/00000000-0000-4000-8000-000000000111',
+        )
+        .set(auth())
+        .send({ amount: '12.5' })
+        .expect(400);
+      await http()
+        .patch(
+          '/00000000-0000-4000-8000-000000000101/transactions/00000000-0000-4000-8000-000000000111',
+        )
+        .set(auth())
+        .send({ amount: '99999999999999999999999' })
         .expect(400);
       await http()
         .patch(

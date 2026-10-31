@@ -174,6 +174,54 @@ describe('Request body validation (e2e)', () => {
     });
   });
 
+  describe('recurring amounts are integer cents (signed 64-bit)', () => {
+    const base = '/00000000-0000-4000-8000-000000000101/recurring';
+    const created = { description: 'Loyer', dayOfMonth: 5 };
+
+    it.each([
+      ['a decimal amount', '12.5'],
+      ['an amount above the signed 64-bit range', '9223372036854775808'],
+      ['a huge amount', '99999999999999999999999'],
+    ])('POST answers 400 without saving for %s', async (_, amount) => {
+      await http()
+        .post(base)
+        .set(auth())
+        .send({ ...created, amount })
+        .expect(400);
+      expect(mocks.recurring.save).not.toHaveBeenCalled();
+    });
+
+    it.each([
+      ['a decimal amount', '12.5'],
+      ['a huge amount', '99999999999999999999999'],
+    ])('PATCH answers 400 without saving for %s', async (_, amount) => {
+      await http()
+        .patch(`${base}/00000000-0000-4000-8000-000000000114`)
+        .set(auth())
+        .send({ amount })
+        .expect(400);
+      expect(mocks.recurring.save).not.toHaveBeenCalled();
+    });
+
+    it('keeps the largest signed 64-bit amount exactly on create and update', async () => {
+      const max = '9223372036854775807';
+      const res = await http()
+        .post(base)
+        .set(auth())
+        .send({ ...created, amount: max })
+        .expect(201);
+      expect((res.body as { amount: string }).amount).toBe(max);
+
+      await http()
+        .patch(`${base}/00000000-0000-4000-8000-000000000114`)
+        .set(auth())
+        .send({ amount: max })
+        .expect(200);
+      const calls = mocks.recurring.save.mock.calls as [RecurringTransaction][];
+      expect(calls[calls.length - 1][0].amount.toString()).toBe(max);
+    });
+  });
+
   describe('PATCH /:accountId/recurring/:id', () => {
     it('answers 404 for an unknown recurring transaction', async () => {
       mocks.recurring.findById.mockResolvedValue(null);
