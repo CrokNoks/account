@@ -1,0 +1,68 @@
+# Dates calendaires : un jour inexistant (2026-02-30) est refusé en 400 au lieu d'être décalé (2 mars).
+# Lancement : npx httpyac send --all http/dates-calendaires.http --var port=8080 --var anon=<ANON_KEY de `supabase status`>
+# (la clé vient de la ligne de commande, jamais du fichier ; l'utilisateur est jetable, créé par le fichier)
+@baseUrl = http://localhost:{{port}}
+@authUrl = http://127.0.0.1:54321/auth/v1
+
+### Utilisateur jetable
+# @name login
+POST {{authUrl}}/signup
+apikey: {{anon}}
+Content-Type: application/json
+
+{ "email": "dates-{{$timestamp}}@example.com", "password": "Password123!" }
+
+?? status == 200
+
+### Compte jetable pour le test
+# @name account
+POST {{baseUrl}}/accounts
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "name": "dates-{{$timestamp}}", "initialBalance": "0" }
+
+?? status == 201
+
+### Transaction : 2026-02-30 refusé
+POST {{baseUrl}}/{{account.id}}/transactions
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "date": "2026-02-30", "description": "impossible", "amount": "-1000" }
+
+?? status == 400
+
+### Transaction : 2026-02-29 refusé (2026 n'est pas bissextile)
+POST {{baseUrl}}/{{account.id}}/transactions
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "date": "2026-02-29", "description": "pas bissextile", "amount": "-1000" }
+
+?? status == 400
+
+### Transaction : 2028-02-29 accepté (année bissextile), date inchangée
+POST {{baseUrl}}/{{account.id}}/transactions
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "date": "2028-02-29", "description": "bissextile", "amount": "-1000" }
+
+?? status == 201
+?? body contains 2028-02-29
+
+### Période : startDate 2026-04-31 refusée
+POST {{baseUrl}}/{{account.id}}/periods
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "startDate": "2026-04-31", "endDate": "2026-05-31", "budgets": [] }
+
+?? status == 400
+
+### Filtre : startDate=2026-02-30 refusé
+GET {{baseUrl}}/{{account.id}}/transactions?startDate=2026-02-30
+Authorization: Bearer {{login.access_token}}
+
+?? status == 400

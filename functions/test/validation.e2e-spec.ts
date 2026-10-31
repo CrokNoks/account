@@ -360,6 +360,134 @@ describe('Request body validation (e2e)', () => {
     });
   });
 
+  describe('dates must exist on the calendar (400, nothing saved)', () => {
+    const acc = '00000000-0000-4000-8000-000000000101';
+    const tx = '00000000-0000-4000-8000-000000000111';
+    const cat = '00000000-0000-4000-8000-000000000019';
+    const impossible = [
+      '2026-02-30',
+      '2026-04-31',
+      '2026-02-29',
+      '2026-13-01',
+      '2026-00-10',
+      '2026-02-30T10:00:00Z',
+    ];
+    const periodBody = (startDate: string, endDate: string) => ({
+      startDate,
+      endDate,
+      budgets: [{ categoryId: cat, amountAllocated: '1000' }],
+    });
+    const cases: [string, 'post' | 'patch', string, (d: string) => object][] = [
+      [
+        'transactions POST',
+        'post',
+        `/${acc}/transactions`,
+        (date) => ({ date, description: 'x', amount: '-100' }),
+      ],
+      [
+        'transactions PATCH',
+        'patch',
+        `/${acc}/transactions/${tx}`,
+        (date) => ({ date }),
+      ],
+      [
+        'transactions bulk',
+        'post',
+        `/${acc}/transactions/bulk`,
+        (date) => ({
+          transactions: [{ date, description: 'x', amount: '-100' }],
+        }),
+      ],
+      [
+        'transfer',
+        'post',
+        `/${acc}/transactions/transfer`,
+        (date) => ({
+          destinationAccountId: '00000000-0000-4000-8000-000000000102',
+          date,
+          amount: '100',
+        }),
+      ],
+      [
+        'periods POST startDate',
+        'post',
+        `/${acc}/periods`,
+        (d) => periodBody(d, '2026-03-31'),
+      ],
+      [
+        'periods POST endDate',
+        'post',
+        `/${acc}/periods`,
+        (d) => periodBody('2026-03-01', d),
+      ],
+      [
+        'periods PATCH startDate',
+        'patch',
+        `/${acc}/periods/00000000-0000-4000-8000-000000000113`,
+        (startDate) => ({ startDate }),
+      ],
+      [
+        'periods PATCH endDate',
+        'patch',
+        `/${acc}/periods/00000000-0000-4000-8000-000000000113`,
+        (endDate) => ({ endDate }),
+      ],
+      [
+        'savings-goals POST deadline',
+        'post',
+        `/${acc}/savings-goals`,
+        (deadline) => ({ name: 'V', targetAmount: '1000', deadline }),
+      ],
+      [
+        'savings-goals PATCH deadline',
+        'patch',
+        `/${acc}/savings-goals/00000000-0000-4000-8000-000000000116`,
+        (deadline) => ({ deadline }),
+      ],
+    ];
+
+    describe.each(cases)('%s', (_n, method, url, body) => {
+      it.each(impossible)('answers 400 for %s', async (date) => {
+        await http()[method](url).set(auth()).send(body(date)).expect(400);
+        expect(mocks.transactions.save).not.toHaveBeenCalled();
+        expect(mocks.periods.createWithBudgets).not.toHaveBeenCalled();
+        expect(mocks.savingsGoals.save).not.toHaveBeenCalled();
+      });
+    });
+
+    it.each(['startDate', 'endDate'])(
+      'GET transactions answers 400 for an impossible %s',
+      async (field) => {
+        for (const date of impossible) {
+          await http()
+            .get(`/${acc}/transactions`)
+            .query({ [field]: date })
+            .set(auth())
+            .expect(400);
+        }
+        expect(mocks.transactions.findAllByAccount).not.toHaveBeenCalled();
+      },
+    );
+
+    it('still accepts 29 February of a leap year, and dates with time/zone', async () => {
+      mocks.transactions.findAllByAccount.mockResolvedValue({
+        data: [],
+        total: 0,
+      });
+      for (const date of [
+        '2028-02-29',
+        '2026-10-15T23:30:00-05:00',
+        '2026-03-01T00:00:00.000Z',
+      ]) {
+        await http()
+          .get(`/${acc}/transactions`)
+          .query({ startDate: date })
+          .set(auth())
+          .expect(200);
+      }
+    });
+  });
+
   describe('PATCH /:accountId/recurring/:id', () => {
     it('answers 404 for an unknown recurring transaction', async () => {
       mocks.recurring.findById.mockResolvedValue(null);

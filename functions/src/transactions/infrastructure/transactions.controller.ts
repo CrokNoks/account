@@ -39,7 +39,6 @@ import {
   IsString,
   IsOptional,
   IsNumberString,
-  IsDateString,
   IsBoolean,
   IsObject,
   IsArray,
@@ -52,6 +51,7 @@ import { PeriodRepository } from '../../periods/domain/period.repository.interfa
 import { Inject } from '@nestjs/common';
 import { parseCents } from '../../shared/domain/cents';
 import { IsCents } from '../../shared/infrastructure/is-cents.decorator';
+import { IsCalendarDate } from '../../shared/infrastructure/is-calendar-date.decorator';
 
 export class CreateTransactionDto {
   @IsOptional()
@@ -69,7 +69,7 @@ export class CreateTransactionDto {
   @ApiProperty({ description: 'Period ID', required: false, nullable: true })
   periodId?: string | null;
 
-  @IsDateString()
+  @IsCalendarDate()
   @ApiProperty({ description: 'Transaction date' })
   date: string;
 
@@ -140,7 +140,7 @@ export class CreateTransferDto {
   @ApiProperty({ description: 'Destination Account ID' })
   destinationAccountId: string;
 
-  @IsDateString()
+  @IsCalendarDate()
   @ApiProperty({ description: 'Transfer date' })
   date: string;
 
@@ -332,11 +332,11 @@ export class FindTransactionsQueryDto {
   reconciled?: boolean;
 
   @IsOptional()
-  @IsDateString()
+  @IsCalendarDate()
   startDate?: string;
 
   @IsOptional()
-  @IsDateString()
+  @IsCalendarDate()
   endDate?: string;
 
   @IsOptional()

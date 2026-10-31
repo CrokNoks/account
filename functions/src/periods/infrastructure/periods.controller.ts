@@ -30,7 +30,6 @@ import { BudgetRepository } from '../../budgets/domain/budget.repository.interfa
 import { Period } from '../domain/period.entity';
 import {
   IsString,
-  IsDateString,
   IsArray,
   ValidateNested,
   IsOptional,
@@ -41,6 +40,7 @@ import { Type } from 'class-transformer';
 import { ensureBelongsToAccount } from '../../shared/domain/account-ownership';
 import { parseCents } from '../../shared/domain/cents';
 import { IsCents } from '../../shared/infrastructure/is-cents.decorator';
+import { IsCalendarDate } from '../../shared/infrastructure/is-calendar-date.decorator';
 
 export class BudgetInitDto {
   @IsUUID()
@@ -59,11 +59,11 @@ export class CreatePeriodDto {
   @ApiProperty()
   accountId: string;
 
-  @IsDateString()
+  @IsCalendarDate()
   @ApiProperty()
   startDate: string;
 
-  @IsDateString()
+  @IsCalendarDate()
   @ApiProperty()
   endDate: string;
 
@@ -86,11 +86,11 @@ export class CreatePeriodBodyDto extends OmitType(CreatePeriodDto, [
 
 export class UpdatePeriodDto {
   @IsOptional()
-  @IsDateString()
+  @IsCalendarDate()
   @ApiProperty({ required: false })
   startDate?: string;
   @IsOptional()
-  @IsDateString()
+  @IsCalendarDate()
   @ApiProperty({ required: false })
   endDate?: string;
   @IsOptional()
