@@ -36,3 +36,57 @@ describe('SupabaseAccountShareRepository.save', () => {
     await expect(repository.save(share)).rejects.toThrow('boom');
   });
 });
+
+describe('SupabaseAccountShareRepository.findAllByAccount', () => {
+  const query = (result: unknown) => {
+    const q: Record<string, jest.Mock> = {};
+    q.select = jest.fn().mockReturnValue(q);
+    q.eq = jest.fn().mockReturnValue(q);
+    q.in = jest.fn().mockReturnValue(q);
+    q.returns = jest.fn().mockResolvedValue(result);
+    return q;
+  };
+
+  it('reads the shares then the emails from app_users, without embedding a relation', async () => {
+    const shares = query({
+      data: [
+        {
+          id: 's1',
+          account_id: 'acc-1',
+          user_id: 'user-2',
+          permission: 'write',
+          created_at: '2026-01-01T00:00:00Z',
+        },
+      ],
+      error: null,
+    });
+    const users = query({
+      data: [{ id: 'user-2', email: 'bob@test.local' }],
+      error: null,
+    });
+    const from = jest.fn((table: string) =>
+      table === 'account_shares' ? shares : users,
+    );
+    const repository = new SupabaseAccountShareRepository({
+      from,
+    } as unknown as SupabaseClient);
+
+    const result = await repository.findAllByAccount('acc-1');
+
+    expect(shares.select).toHaveBeenCalledWith('*');
+    expect(users.in).toHaveBeenCalledWith('id', ['user-2']);
+    expect(result).toHaveLength(1);
+    expect(result[0].userEmail).toBe('bob@test.local');
+    expect(result[0].permission).toBe('write');
+  });
+
+  it('does not query app_users when there is no share', async () => {
+    const shares = query({ data: [], error: null });
+    const from = jest.fn().mockReturnValue(shares);
+    const repository = new SupabaseAccountShareRepository({
+      from,
+    } as unknown as SupabaseClient);
+    await expect(repository.findAllByAccount('acc-1')).resolves.toEqual([]);
+    expect(from).toHaveBeenCalledTimes(1);
+  });
+});

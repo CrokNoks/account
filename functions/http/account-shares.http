@@ -1,0 +1,32 @@
+@api = http://localhost:8080
+@supabase = http://127.0.0.1:54321
+@anon = sb_publishable_ACJWlzQHlZjBrEguHvfOxg_3BJgxAaH
+@alice = 7385d77b-78f2-4709-87de-074f22f0721f
+
+# Local stack only. Test users: e2e-alice@test.local / e2e-bob@test.local
+
+### Alice token
+# @name aliceLogin
+POST {{supabase}}/auth/v1/token?grant_type=password
+apikey: {{anon}}
+Content-Type: application/json
+
+{"email":"e2e-alice@test.local","password":"Test-1234!"}
+
+### Bob token
+# @name bobLogin
+POST {{supabase}}/auth/v1/token?grant_type=password
+apikey: {{anon}}
+Content-Type: application/json
+
+{"email":"e2e-bob@test.local","password":"Test-1234!"}
+
+### Owner lists shares of her account: sees Bob with email and write
+# @ref aliceLogin
+GET {{api}}/accounts/{{alice}}/shares
+Authorization: Bearer {{aliceLogin.access_token}}
+
+?? status == 200
+?? js response.parsedBody.length >= 1
+?? js response.parsedBody[0].userEmail == e2e-bob@test.local
+?? js response.parsedBody[0].permission == write

@@ -32,7 +32,7 @@ export function ShareAccountDialog({ accountId, accountName, open, onOpenChange 
   const [email, setEmail] = useState('');
   const [permission, setPermission] = useState<'read' | 'write'>('read');
   
-  const { data: shares, isLoading } = useAccountShares(accountId);
+  const { data: shares, isLoading, error: sharesError } = useAccountShares(accountId);
   const { share, isSharing, remove, isRemoving } = useManageShare();
 
   const handleShare = (e: React.FormEvent) => {
@@ -98,6 +98,10 @@ export function ShareAccountDialog({ accountId, accountName, open, onOpenChange 
             <div className="border rounded-md divide-y max-h-[400px] overflow-y-auto">
               {isLoading ? (
                 <div className="p-4 text-center text-sm text-muted-foreground">{tc('loading')}</div>
+              ) : sharesError ? (
+                <div role="alert" className="p-4 text-center text-sm text-destructive">
+                  {getApiErrorMessage(sharesError, tc('error'))}
+                </div>
               ) : shares?.length === 0 ? (
                 <div className="p-4 text-center text-sm text-muted-foreground">{t('share_empty')}</div>
               ) : (

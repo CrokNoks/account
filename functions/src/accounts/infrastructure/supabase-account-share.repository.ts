@@ -10,9 +10,11 @@ interface AccountShareRow {
   user_id: string;
   permission: string;
   created_at: string;
-  app_users: {
-    email: string;
-  } | null;
+}
+
+interface AppUserRow {
+  id: string;
+  email: string;
 }
 
 @Injectable()
@@ -25,9 +27,11 @@ export class SupabaseAccountShareRepository extends AccountShareRepository {
   }
 
   async findAllByAccount(accountId: string): Promise<AccountShare[]> {
+    // account_shares.user_id references auth.users, not app_users: there is no
+    // relationship PostgREST could embed, so the emails are read separately.
     const { data, error } = await this.supabase
       .from('account_shares')
-      .select('*, app_users(email)')
+      .select('*')
       .eq('account_id', accountId)
       .returns<AccountShareRow[]>();
 
@@ -35,13 +39,31 @@ export class SupabaseAccountShareRepository extends AccountShareRepository {
       throw new Error(`Failed to fetch shares: ${error.message}`);
     }
 
-    return (data || []).map(
+    const rows = data || [];
+    const emails = new Map<string, string>();
+    if (rows.length > 0) {
+      const { data: users, error: usersError } = await this.supabase
+        .from('app_users')
+        .select('id, email')
+        .in(
+          'id',
+          rows.map((row) => row.user_id),
+        )
+        .returns<AppUserRow[]>();
+
+      if (usersError) {
+        throw new Error(`Failed to fetch share users: ${usersError.message}`);
+      }
+      for (const user of users || []) emails.set(user.id, user.email);
+    }
+
+    return rows.map(
       (row) =>
         new AccountShare({
           id: row.id,
           accountId: row.account_id,
           userId: row.user_id,
-          userEmail: row.app_users?.email || '',
+          userEmail: emails.get(row.user_id) || '',
           permission: row.permission as 'read' | 'write',
           createdAt: new Date(row.created_at),
         }),
