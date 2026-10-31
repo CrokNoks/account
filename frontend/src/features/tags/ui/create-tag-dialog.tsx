@@ -16,6 +16,7 @@ import { useAccountStore } from '@/features/accounts/model/use-account-store';
 import { Plus } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTranslations } from 'next-intl';
+import { getApiErrorMessage } from '@/shared/api/mutation-error';
 
 export function CreateTagDialog() {
   const t = useTranslations('Tags');
@@ -40,7 +41,10 @@ export function CreateTagDialog() {
         toast.success(tc('success'));
         setName('');
         setOpen(false);
-      }
+      },
+      onError: (error) => {
+        toast.error(getApiErrorMessage(error, tc('error')));
+      },
     });
   };
 
