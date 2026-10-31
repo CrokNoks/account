@@ -34,17 +34,21 @@ export abstract class TransactionRepository {
   ): Promise<Transaction[]>;
   abstract findAllByPeriod(periodId: string): Promise<Transaction[]>;
   abstract findById(id: string): Promise<Transaction | null>;
-  abstract save(transaction: Transaction): Promise<void>;
+  /** Renvoie la ligne telle qu'enregistrée (periodId posé par le trigger inclus). */
+  abstract save(transaction: Transaction): Promise<Transaction>;
   /**
    * Enregistre le débit et le crédit d'un virement dans une seule transaction
    * base de données : les deux lignes sont écrites, ou aucune.
    */
-  abstract saveTransfer(debit: Transaction, credit: Transaction): Promise<void>;
+  abstract saveTransfer(
+    debit: Transaction,
+    credit: Transaction,
+  ): Promise<[Transaction, Transaction]>;
   /**
    * Enregistre plusieurs nouvelles transactions (et leurs tags) dans une seule
    * transaction base de données : toutes sont écrites, ou aucune.
    */
-  abstract saveMany(transactions: Transaction[]): Promise<void>;
+  abstract saveMany(transactions: Transaction[]): Promise<Transaction[]>;
   /**
    * Modifie plusieurs transactions existantes (et remplace leurs tags) dans une
    * seule transaction base de données : toutes sont modifiées, ou aucune. Une

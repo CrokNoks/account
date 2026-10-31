@@ -22,7 +22,11 @@ describe('CreateTransferUseCase', () => {
   };
 
   beforeEach(() => {
-    repository = { saveTransfer: jest.fn().mockResolvedValue(undefined) };
+    repository = {
+      saveTransfer: jest.fn((debit: Transaction, credit: Transaction) =>
+        Promise.resolve([debit, credit] as [Transaction, Transaction]),
+      ),
+    };
     accounts = {
       findById: jest
         .fn()

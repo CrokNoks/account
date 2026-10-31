@@ -21,7 +21,7 @@ describe('CreateTransactionUseCase', () => {
         {
           provide: TransactionRepository,
           useValue: {
-            save: jest.fn().mockResolvedValue(undefined),
+            save: jest.fn((t: unknown) => Promise.resolve(t)),
           },
         },
       ],

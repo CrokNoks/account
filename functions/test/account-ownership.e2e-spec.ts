@@ -255,6 +255,16 @@ describe('Account ownership of :id routes (e2e)', () => {
         m[fn].mockResolvedValue(undefined);
       }
     }
+    // Les écritures renvoient les lignes enregistrées : ici, celles reçues.
+    mocks.transactions.save.mockImplementation((t: unknown) =>
+      Promise.resolve(t),
+    );
+    mocks.transactions.saveMany.mockImplementation((l: unknown) =>
+      Promise.resolve(l),
+    );
+    mocks.transactions.saveTransfer.mockImplementation(
+      (d: unknown, c: unknown) => Promise.resolve([d, c]),
+    );
     mocks.budgets.findAllByPeriod.mockResolvedValue([]);
     // Catégorie référencée par le PUT budgets : celle du compte de l'URL.
     mocks.categories.findById.mockResolvedValue({

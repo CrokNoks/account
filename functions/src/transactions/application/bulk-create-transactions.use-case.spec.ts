@@ -20,7 +20,7 @@ describe('BulkCreateTransactionsUseCase', () => {
 
   beforeEach(() => {
     repository = {
-      saveMany: jest.fn().mockResolvedValue(undefined),
+      saveMany: jest.fn((list: unknown) => Promise.resolve(list)),
       save: jest.fn(),
     };
     matchRules = {

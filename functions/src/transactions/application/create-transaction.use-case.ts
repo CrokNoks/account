@@ -45,7 +45,6 @@ export class CreateTransactionUseCase {
       savingsGoalId: command.savingsGoalId || null,
     });
 
-    await this.transactionRepository.save(transaction);
-    return transaction;
+    return this.transactionRepository.save(transaction);
   }
 }

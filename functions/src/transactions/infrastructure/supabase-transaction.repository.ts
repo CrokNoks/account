@@ -203,7 +203,7 @@ export class SupabaseTransactionRepository implements TransactionRepository {
     return this.mapToDomain(data);
   }
 
-  async save(transaction: Transaction): Promise<void> {
+  async save(transaction: Transaction): Promise<Transaction> {
     // Fonction SQL save_transaction : upsert + remplacement des tags dans une
     // seule transaction base de données, toutes les erreurs sont remontées.
     const { error } = await this.supabase.rpc('save_transaction', {
@@ -211,9 +211,15 @@ export class SupabaseTransactionRepository implements TransactionRepository {
     });
 
     if (error) throw toDomainError(error);
+
+    const [stored] = await this.readBack([transaction]);
+    return stored;
   }
 
-  async saveTransfer(debit: Transaction, credit: Transaction): Promise<void> {
+  async saveTransfer(
+    debit: Transaction,
+    credit: Transaction,
+  ): Promise<[Transaction, Transaction]> {
     // Fonction SQL create_transfer : une seule transaction base de données.
     const { error } = await this.supabase.rpc('create_transfer', {
       p_debit: toTransactionPayload(debit),
@@ -221,15 +227,20 @@ export class SupabaseTransactionRepository implements TransactionRepository {
     });
 
     if (error) throw toDomainError(error);
+
+    const [storedDebit, storedCredit] = await this.readBack([debit, credit]);
+    return [storedDebit, storedCredit];
   }
 
-  async saveMany(transactions: Transaction[]): Promise<void> {
+  async saveMany(transactions: Transaction[]): Promise<Transaction[]> {
     // Fonction SQL create_transactions : une seule transaction base de données.
     const { error } = await this.supabase.rpc('create_transactions', {
       p_transactions: transactions.map(toTransactionPayload),
     });
 
     if (error) throw toDomainError(error);
+
+    return this.readBack(transactions);
   }
 
   async updateMany(transactions: Transaction[]): Promise<void> {
@@ -263,6 +274,40 @@ export class SupabaseTransactionRepository implements TransactionRepository {
       .in('id', ids);
 
     if (error) throw toDomainError(error);
+  }
+
+  /**
+   * Relit les lignes qui viennent d'être écrites : les triggers de la base
+   * (assign_period_id, updated_at...) peuvent compléter des champs que
+   * l'entité d'avant écriture n'a pas (ex. periodId). Même ordre que l'entrée.
+   * L'écriture est déjà validée : si la relecture échoue, on renvoie l'entité
+   * écrite plutôt qu'une erreur qui ferait croire que rien n'a été enregistré.
+   */
+  private async readBack(written: Transaction[]): Promise<Transaction[]> {
+    if (written.length === 0) return [];
+
+    const { data, error } = await this.supabase
+      .from('transactions')
+      .select('*, transaction_tags(tag_id)')
+      .in(
+        'id',
+        written.map((t) => t.id),
+      )
+      .returns<TransactionRow[]>();
+
+    if (error) {
+      console.warn(
+        'Read-back after write failed, returning written rows',
+        error,
+      );
+      return written;
+    }
+
+    const byId = new Map((data || []).map((row) => [row.id, row]));
+    return written.map((t) => {
+      const row = byId.get(t.id);
+      return row ? this.mapToDomain(row) : t;
+    });
   }
 
   private mapToDomain(row: TransactionRow): Transaction {

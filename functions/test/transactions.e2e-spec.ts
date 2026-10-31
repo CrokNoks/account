@@ -31,7 +31,16 @@ describe('Transactions routes (e2e)', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    mocks.transactions.save.mockResolvedValue(undefined);
+    // Les écritures renvoient les lignes enregistrées : ici, celles reçues.
+    mocks.transactions.save.mockImplementation((t: unknown) =>
+      Promise.resolve(t),
+    );
+    mocks.transactions.saveMany.mockImplementation((l: unknown) =>
+      Promise.resolve(l),
+    );
+    mocks.transactions.saveTransfer.mockImplementation(
+      (d: unknown, c: unknown) => Promise.resolve([d, c]),
+    );
     mocks.transactions.delete.mockResolvedValue(undefined);
     mocks.transactions.findById.mockResolvedValue(
       tx('00000000-0000-4000-8000-000000000016'),

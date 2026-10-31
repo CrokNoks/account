@@ -195,6 +195,16 @@ describe('Cross-account references (e2e)', () => {
         m[fn].mockResolvedValue(undefined);
       }
     }
+    // Les écritures renvoient les lignes enregistrées : ici, celles reçues.
+    mocks.transactions.save.mockImplementation((t: unknown) =>
+      Promise.resolve(t),
+    );
+    mocks.transactions.saveMany.mockImplementation((l: unknown) =>
+      Promise.resolve(l),
+    );
+    mocks.transactions.saveTransfer.mockImplementation(
+      (d: unknown, c: unknown) => Promise.resolve([d, c]),
+    );
     const owner = (id: string, accountId: string) => ({ id, accountId });
     mocks.categories.findById.mockImplementation((id: string) =>
       Promise.resolve(

@@ -1,0 +1,100 @@
+@api = http://localhost:8080
+@supabase = http://127.0.0.1:54321
+@anon = sb_publishable_ACJWlzQHlZjBrEguHvfOxg_3BJgxAaH
+@courant = 7385d77b-78f2-4709-87de-074f22f0721f
+@livret = 74748454-281b-41d3-b3f8-f4bf65951bb1
+@period = dc439a24-b481-4aac-af83-f93831ae7f80
+
+# Local stack only. Alice owns E2E Courant (active period {{period}}) and E2E Livret.
+# Every transaction created here is deleted at the end of the file.
+
+### Alice token
+# @name aliceLogin
+POST {{supabase}}/auth/v1/token?grant_type=password
+apikey: {{anon}}
+Content-Type: application/json
+
+{"email":"e2e-alice@test.local","password":"Test-1234!"}
+
+### POST: the response carries the period assigned by the trigger
+# @name created
+POST {{api}}/{{courant}}/transactions
+Authorization: Bearer {{aliceLogin.access_token}}
+Content-Type: application/json
+
+{"date":"2026-10-15T00:00:00.000Z","amount":"-1234","description":"http periodId single"}
+
+?? status == 201
+?? js response.parsedBody.periodId == dc439a24-b481-4aac-af83-f93831ae7f80
+
+### PATCH: the response carries the period too
+PATCH {{api}}/{{courant}}/transactions/{{created.id}}
+Authorization: Bearer {{aliceLogin.access_token}}
+Content-Type: application/json
+
+{"description":"http periodId single edited"}
+
+?? status == 200
+?? js response.parsedBody.description == http periodId single edited
+?? js response.parsedBody.periodId == dc439a24-b481-4aac-af83-f93831ae7f80
+
+### POST bulk: every line carries its period
+# @name bulk
+POST {{api}}/{{courant}}/transactions/bulk
+Authorization: Bearer {{aliceLogin.access_token}}
+Content-Type: application/json
+
+{"transactions":[{"date":"2026-10-15T00:00:00.000Z","amount":"-100","description":"http periodId bulk A"},{"date":"2026-10-16T00:00:00.000Z","amount":"-200","description":"http periodId bulk B"}]}
+
+?? status == 201
+?? js response.parsedBody.length == 2
+?? js response.parsedBody[0].periodId == dc439a24-b481-4aac-af83-f93831ae7f80
+?? js response.parsedBody[1].periodId == dc439a24-b481-4aac-af83-f93831ae7f80
+
+### POST transfer: the debit (source has an active period) carries it
+# @name transfer
+POST {{api}}/{{courant}}/transactions/transfer
+Authorization: Bearer {{aliceLogin.access_token}}
+Content-Type: application/json
+
+{"destinationAccountId":"{{livret}}","amount":"500","date":"2026-10-15T00:00:00.000Z","description":"http periodId transfer"}
+
+?? status == 201
+?? js response.parsedBody.length == 2
+?? js response.parsedBody[0].periodId == dc439a24-b481-4aac-af83-f93831ae7f80
+
+### Reload from the list: same period as the POST response
+GET {{api}}/{{courant}}/transactions?search=http periodId single
+Authorization: Bearer {{aliceLogin.access_token}}
+
+?? status == 200
+
+### Cleanup
+DELETE {{api}}/{{courant}}/transactions/{{created.id}}
+Authorization: Bearer {{aliceLogin.access_token}}
+
+?? status == 204
+
+###
+DELETE {{api}}/{{courant}}/transactions/{{bulk[0].id}}
+Authorization: Bearer {{aliceLogin.access_token}}
+
+?? status == 204
+
+###
+DELETE {{api}}/{{courant}}/transactions/{{bulk[1].id}}
+Authorization: Bearer {{aliceLogin.access_token}}
+
+?? status == 204
+
+###
+DELETE {{api}}/{{courant}}/transactions/{{transfer[0].id}}
+Authorization: Bearer {{aliceLogin.access_token}}
+
+?? status == 204
+
+###
+DELETE {{api}}/{{livret}}/transactions/{{transfer[1].id}}
+Authorization: Bearer {{aliceLogin.access_token}}
+
+?? status == 204

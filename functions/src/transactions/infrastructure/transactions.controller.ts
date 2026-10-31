@@ -480,8 +480,8 @@ export class TransactionsController {
       updatedAt: new Date(),
     });
 
-    await this.transactionRepository.save(updated);
-    return this.mapToResponse(updated);
+    const stored = await this.transactionRepository.save(updated);
+    return this.mapToResponse(stored);
   }
 
   @Delete(':id')

@@ -59,10 +59,7 @@ export class BulkCreateTransactionsUseCase {
     }
 
     // Une seule écriture atomique : toutes les lignes (et leurs tags) ou aucune.
-    if (createdTransactions.length > 0) {
-      await this.transactionRepository.saveMany(createdTransactions);
-    }
-
-    return createdTransactions;
+    if (createdTransactions.length === 0) return [];
+    return this.transactionRepository.saveMany(createdTransactions);
   }
 }

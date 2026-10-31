@@ -43,7 +43,7 @@ Toutes les routes : connecté (token exigé via `@UseGuards` sur le contrôleur,
 | Lister mes comptes | `GET /accounts` | connecté ; filtrage par la base (RLS) | comptes possédés + partagés | `accounts.controller.ts:210` |
 | Créer un compte | `POST /accounts` | connecté, devient propriétaire | compte créé | `accounts.controller.ts:180` |
 | Modifier un compte | `PATCH /accounts/:id` | connecté + propriétaire contrôlé (403 sinon, 404 si le compte n'existe pas), sans écriture en cas de refus | compte mis à jour | `accounts.controller.ts:145` |
-| Voir les partages | `GET /accounts/:id/shares` | connecté + propriétaire contrôlé (403 sinon, 404 si le compte n'existe pas) | liste avec email | `accounts.controller.ts:105` |
+| Voir les partages | `GET /accounts/:id/shares` | connecté + propriétaire contrôlé (403 sinon, 404 si le compte n'existe pas) | liste avec email (partages lus dans `account_shares`, emails lus ensuite dans `app_users` : `account_shares.user_id` référence `auth.users`, pas `app_users`, donc pas de jointure possible ; la route répondait 500) | `accounts.controller.ts:105`, `supabase-account-share.repository.ts` (`findAllByAccount`), `functions/http/account-shares.http` |
 | Partager | `POST /accounts/:id/shares` (email, permission) | connecté + propriétaire contrôlé | partage créé/mis à jour | `share-account.use-case.ts` |
 | Retirer un partage | `DELETE /accounts/:id/shares/:userId` | connecté + propriétaire contrôlé | partage supprimé | `accounts.controller.ts:128` |
 | Écrans front | `account-list`, `account-form`, `create-account-dialog`, `share-account-dialog`, `account-selector` ; hooks `use-accounts`, `use-create-account`, `use-update-account`, `use-account-shares`, `use-manage-share` | | | `frontend/src/features/accounts/` |

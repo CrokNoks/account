@@ -27,22 +27,54 @@ const deleteChain = (error: { code?: string; message: string } | null) => {
   return { repository, from, inFn };
 };
 
+const rowOf = (t: Transaction, periodId: string | null) => ({
+  id: t.id,
+  account_id: t.accountId,
+  category_id: null,
+  period_id: periodId,
+  date: '2026-03-01',
+  description: t.description,
+  amount: t.amount.toString(),
+  reconciled: false,
+  pending: false,
+  payment_method: null,
+  notes: null,
+  metadata: {},
+  savings_goal_id: null,
+  created_at: '2026-03-01T00:00:00Z',
+  updated_at: '2026-03-01T00:00:00Z',
+  transaction_tags: [],
+});
+
+// Relecture après écriture : select(...).in('id', ids) renvoie les lignes données.
+const readBack = (result: { data: unknown; error: unknown }) => {
+  const returns = jest.fn().mockResolvedValue(result);
+  const inFn = jest.fn().mockReturnValue({ returns });
+  const select = jest.fn().mockReturnValue({ in: inFn });
+  const from = jest.fn().mockReturnValue({ select });
+  return { from, select, inFn };
+};
+
 const repoWith = (error: { code?: string; message: string } | null) => {
   const rpc = jest
     .fn<Promise<unknown>, [string, Record<string, Record<string, unknown>>]>()
     .mockResolvedValue({ data: null, error });
-  const from = jest.fn();
+  const from = jest.fn().mockReturnValue({
+    select: () => ({
+      in: () => ({ returns: () => Promise.resolve({ data: [], error: null }) }),
+    }),
+  });
   const repository = new SupabaseTransactionRepository({
     rpc,
     from,
   } as unknown as SupabaseClient);
-  return { repository, rpc, from };
+  return { repository, rpc };
 };
 
 describe('SupabaseTransactionRepository atomic writes', () => {
   describe('saveTransfer', () => {
     it('calls create_transfer once with both sides and writes nothing else', async () => {
-      const { repository, rpc, from } = repoWith(null);
+      const { repository, rpc } = repoWith(null);
       const debit = tx({ amount: BigInt(-15000) });
       const credit = tx({ accountId: 'acc-2', amount: BigInt(15000) });
 
@@ -65,7 +97,6 @@ describe('SupabaseTransactionRepository atomic writes', () => {
         account_id: 'acc-2',
         amount: '15000',
       });
-      expect(from).not.toHaveBeenCalled();
     });
 
     it('throws the database error', async () => {
@@ -79,7 +110,7 @@ describe('SupabaseTransactionRepository atomic writes', () => {
 
   describe('saveMany', () => {
     it('calls create_transactions once with every line and its tags', async () => {
-      const { repository, rpc, from } = repoWith(null);
+      const { repository, rpc } = repoWith(null);
       const a = tx({ description: 'A', tagIds: ['tag-1', 'tag-2'] });
       const b = tx({ description: 'B', amount: BigInt(-200) });
 
@@ -101,7 +132,6 @@ describe('SupabaseTransactionRepository atomic writes', () => {
         amount: '-200',
         tag_ids: [],
       });
-      expect(from).not.toHaveBeenCalled();
     });
 
     it('throws the database error', async () => {
@@ -126,7 +156,7 @@ describe('SupabaseTransactionRepository atomic writes', () => {
     });
 
     it('calls save_transaction once with the transaction and its tags', async () => {
-      const { repository, rpc, from } = repoWith(null);
+      const { repository, rpc } = repoWith(null);
       const t = tx({ tagIds: ['tag-1'] });
 
       await repository.save(t);
@@ -139,7 +169,6 @@ describe('SupabaseTransactionRepository atomic writes', () => {
         amount: '-15000',
         tag_ids: ['tag-1'],
       });
-      expect(from).not.toHaveBeenCalled();
     });
 
     it('throws the database error', async () => {
@@ -151,7 +180,7 @@ describe('SupabaseTransactionRepository atomic writes', () => {
 
   describe('updateMany', () => {
     it('calls update_transactions once with every transaction and its tags', async () => {
-      const { repository, rpc, from } = repoWith(null);
+      const { repository, rpc } = repoWith(null);
       const a = tx({ tagIds: ['tag-1'] });
       const b = tx({ description: 'B' });
 
@@ -164,7 +193,6 @@ describe('SupabaseTransactionRepository atomic writes', () => {
       >;
       expect(lines.map((l) => l.id)).toEqual([a.id, b.id]);
       expect(lines[0].tag_ids).toEqual(['tag-1']);
-      expect(from).not.toHaveBeenCalled();
     });
 
     it('turns P0002 (transaction not found) into a NotFoundError', async () => {
@@ -220,5 +248,72 @@ describe('SupabaseTransactionRepository atomic writes', () => {
 
       await expect(repository.deleteMany(['t1'])).rejects.toThrow('boom');
     });
+  });
+});
+
+describe('SupabaseTransactionRepository returns the rows as stored', () => {
+  const build = (read: { data: unknown; error: unknown }) => {
+    const rpc = jest.fn().mockResolvedValue({ data: null, error: null });
+    const back = readBack(read);
+    const repository = new SupabaseTransactionRepository({
+      rpc,
+      from: back.from,
+    } as unknown as SupabaseClient);
+    return { repository, back };
+  };
+
+  it('save returns the period assigned by the database trigger', async () => {
+    const t = tx();
+    const { repository, back } = build({
+      data: [rowOf(t, 'period-1')],
+      error: null,
+    });
+
+    const saved = await repository.save(t);
+
+    expect(back.from).toHaveBeenCalledWith('transactions');
+    expect(back.inFn).toHaveBeenCalledWith('id', [t.id]);
+    expect(saved.periodId).toBe('period-1');
+    expect(saved.id).toBe(t.id);
+  });
+
+  it('saveTransfer returns both sides with their period, in order', async () => {
+    const debit = tx();
+    const credit = tx({ accountId: 'acc-2', amount: BigInt(15000) });
+    const { repository } = build({
+      data: [rowOf(credit, 'p-credit'), rowOf(debit, 'p-debit')],
+      error: null,
+    });
+
+    const [d, c] = await repository.saveTransfer(debit, credit);
+
+    expect(d.id).toBe(debit.id);
+    expect(d.periodId).toBe('p-debit');
+    expect(c.id).toBe(credit.id);
+    expect(c.periodId).toBe('p-credit');
+  });
+
+  it('saveMany returns every line with its period, in order', async () => {
+    const a = tx({ description: 'A' });
+    const b = tx({ description: 'B' });
+    const { repository } = build({
+      data: [rowOf(b, 'p2'), rowOf(a, 'p1')],
+      error: null,
+    });
+
+    const saved = await repository.saveMany([a, b]);
+
+    expect(saved.map((t) => [t.id, t.periodId])).toEqual([
+      [a.id, 'p1'],
+      [b.id, 'p2'],
+    ]);
+  });
+
+  it('falls back to the written entity when the read-back fails (the write is committed)', async () => {
+    const t = tx();
+    const { repository } = build({ data: null, error: { message: 'down' } });
+    jest.spyOn(console, 'warn').mockImplementation(() => undefined);
+
+    await expect(repository.save(t)).resolves.toBe(t);
   });
 });
