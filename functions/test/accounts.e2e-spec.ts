@@ -120,7 +120,7 @@ describe('Accounts and sharing routes (e2e)', () => {
     it('GET /accounts never returns description', async () => {
       mocks.accounts.findAllForUser.mockResolvedValue([account()]);
       const res = await http().get('/accounts').set(auth()).expect(200);
-      expect(res.body[0]).not.toHaveProperty('description');
+      expect((res.body as unknown[])[0]).not.toHaveProperty('description');
     });
 
     it('PATCH /accounts/:id still rejects other unknown fields (400)', async () => {
