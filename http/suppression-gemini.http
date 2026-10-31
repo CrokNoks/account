@@ -1,0 +1,31 @@
+@baseUrl = http://localhost:{{port}}
+@accountId = 00000000-0000-4000-8000-000000000101
+@periodId = 00000000-0000-4000-8000-000000000107
+
+### CA5 - analyse IA de période : route supprimée (404 même pour un anonyme)
+GET {{baseUrl}}/{{accountId}}/periods/{{periodId}}/reporting/ai-insights
+
+?? status == 404
+
+### CA5 - analyse IA d'évolution : route supprimée
+GET {{baseUrl}}/{{accountId}}/reporting/evolution/ai-insights
+
+?? status == 404
+
+### CA5 - scan de ticket : route supprimée
+POST {{baseUrl}}/{{accountId}}/reporting/scan-receipt
+Content-Type: application/json
+
+{ "base64Image": "AAAA", "mimeType": "image/jpeg" }
+
+?? status == 404
+
+### CA7 - une route de reporting conservée existe toujours (401 sans jeton, pas 404)
+GET {{baseUrl}}/{{accountId}}/reporting/net-worth
+
+?? status == 401
+
+### CA7 - idem pour l'évolution (graphique)
+GET {{baseUrl}}/{{accountId}}/reporting/evolution
+
+?? status == 401
