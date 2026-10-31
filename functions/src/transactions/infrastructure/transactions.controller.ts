@@ -45,6 +45,7 @@ import {
   IsArray,
   ValidateNested,
   IsUUID,
+  ArrayMaxSize,
 } from 'class-validator';
 import { Type, Transform } from 'class-transformer';
 import { PeriodRepository } from '../../periods/domain/period.repository.interface';
@@ -256,6 +257,21 @@ export class PredictionResponseDto {
   categoryId: string | null;
 }
 
+export const MAX_PREDICTIONS_PER_REQUEST = 1000;
+
+export class PredictCategoriesDto {
+  @ApiProperty({ type: [String], maxItems: MAX_PREDICTIONS_PER_REQUEST })
+  @IsArray()
+  @ArrayMaxSize(MAX_PREDICTIONS_PER_REQUEST)
+  @IsString({ each: true })
+  descriptions: string[];
+}
+
+export class PredictCategoriesResponseDto {
+  @ApiProperty({ type: [PredictionResponseDto] })
+  predictions: PredictionResponseDto[];
+}
+
 export class PaginatedTransactionsResponseDto {
   @ApiProperty({ type: [TransactionResponseDto] })
   data: TransactionResponseDto[];
@@ -359,6 +375,25 @@ export class TransactionsController {
     @Query('description') description: string,
   ): Promise<PredictionResponseDto> {
     return this.predictCategoryUseCase.execute(accountId, description);
+  }
+
+  @Post('predict-categories')
+  @HttpCode(200)
+  @ApiOperation({
+    summary:
+      'Predict categories for several descriptions (same result as predict-category, history read once)',
+  })
+  @ApiResponse({ status: 200, type: PredictCategoriesResponseDto })
+  async predictCategories(
+    @Param('accountId') accountId: string,
+    @Body() dto: PredictCategoriesDto,
+  ): Promise<PredictCategoriesResponseDto> {
+    return {
+      predictions: await this.predictCategoryUseCase.executeMany(
+        accountId,
+        dto.descriptions,
+      ),
+    };
   }
 
   @Get()

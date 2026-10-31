@@ -159,3 +159,27 @@ Authorization: Bearer {{owner.access_token}}
 
 ?? status == 200
 ?? js response.parsedBody.categoryId == null
+
+### Import : prédiction groupée, même résultat que les appels unitaires, dans l'ordre
+POST {{baseUrl}}/{{account.id}}/transactions/predict-categories
+Authorization: Bearer {{owner.access_token}}
+Content-Type: application/json
+
+{ "descriptions": ["abonnements", "electricite edf", "Paiement par carte X0053 03/11 - E.Leclerc", "Paiement par carte X1234 12/10", "ab"] }
+
+?? status == 200
+?? js response.parsedBody.predictions.length == 5
+?? js response.parsedBody.predictions[0].categoryId == {{telecom.id}}
+?? js response.parsedBody.predictions[1].categoryId == {{energie.id}}
+?? js response.parsedBody.predictions[2].categoryId == {{courses.id}}
+?? js response.parsedBody.predictions[3].categoryId == null
+?? js response.parsedBody.predictions[4].categoryId == null
+
+### Import : corps invalide (descriptions n est pas une liste) -> 400
+POST {{baseUrl}}/{{account.id}}/transactions/predict-categories
+Authorization: Bearer {{owner.access_token}}
+Content-Type: application/json
+
+{ "descriptions": 12 }
+
+?? status == 400

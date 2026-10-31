@@ -4,6 +4,12 @@ import { MatchSmartRulesUseCase } from '../../smart-rules/application/match-smar
 import * as natural from 'natural';
 import { extractWords } from './description-words';
 
+type Prediction = { categoryId: string | null; tagIds?: string[] };
+type PredictionModel = {
+  classifier: natural.BayesClassifier;
+  knownWords: Set<string>;
+};
+
 @Injectable()
 export class PredictCategoryUseCase {
   constructor(
@@ -11,27 +17,52 @@ export class PredictCategoryUseCase {
     private readonly matchRulesUseCase: MatchSmartRulesUseCase,
   ) {}
 
-  async execute(
+  async execute(accountId: string, description: string): Promise<Prediction> {
+    const [prediction] = await this.executeMany(accountId, [description]);
+    return prediction;
+  }
+
+  /**
+   * Une prédiction par description, dans l'ordre. L'historique est lu et le
+   * classifieur entraîné une seule fois, et seulement si une ligne n'est pas
+   * résolue par une règle intelligente. `execute` passe par ici : un seul
+   * algorithme.
+   */
+  async executeMany(
     accountId: string,
-    description: string,
-  ): Promise<{ categoryId: string | null; tagIds?: string[] }> {
-    if (!description || description.trim().length < 3) {
-      return { categoryId: null };
+    descriptions: string[],
+  ): Promise<Prediction[]> {
+    let model: Promise<PredictionModel | null> | undefined;
+    const results: Prediction[] = [];
+
+    for (const description of descriptions) {
+      if (!description || description.trim().length < 3) {
+        results.push({ categoryId: null });
+        continue;
+      }
+
+      // 1. Règles intelligentes d'abord (configuration explicite)
+      const ruleMatch = await this.matchRulesUseCase.execute(
+        accountId,
+        description,
+      );
+      if (ruleMatch.categoryId || ruleMatch.tagIds.length > 0) {
+        results.push({
+          categoryId: ruleMatch.categoryId,
+          tagIds: ruleMatch.tagIds,
+        });
+        continue;
+      }
+
+      // 2. Classifieur sur l'historique, construit à la première utilisation
+      model ??= this.buildModel(accountId);
+      results.push(this.classify(await model, description));
     }
 
-    // 1. Try smart rules first (Explicit user configuration)
-    const ruleMatch = await this.matchRulesUseCase.execute(
-      accountId,
-      description,
-    );
-    if (ruleMatch.categoryId || ruleMatch.tagIds.length > 0) {
-      return {
-        categoryId: ruleMatch.categoryId,
-        tagIds: ruleMatch.tagIds,
-      };
-    }
+    return results;
+  }
 
-    // 2. Fallback to ML classifier (Historical data)
+  private async buildModel(accountId: string): Promise<PredictionModel | null> {
     const transactions =
       await this.transactionRepository.findAllByAccountUnpaginated(accountId);
 
@@ -41,7 +72,7 @@ export class PredictCategoryUseCase {
     );
 
     if (trainingData.length === 0) {
-      return { categoryId: null };
+      return null;
     }
 
     // Un seul traitement des mots (accents, français, bruit bancaire) pour le
@@ -53,15 +84,6 @@ export class PredictCategoryUseCase {
       }))
       .filter((d) => d.words.length > 0);
 
-    // Aucun mot utile connu : on ne propose rien plutôt que la catégorie la
-    // plus fréquente.
-    const knownWords = new Set(documents.flatMap((d) => d.words));
-    const words = extractWords(description);
-
-    if (!words.some((word) => knownWords.has(word))) {
-      return { categoryId: null };
-    }
-
     const classifier = new natural.BayesClassifier();
 
     for (const d of documents) {
@@ -70,12 +92,33 @@ export class PredictCategoryUseCase {
 
     classifier.train();
 
-    const classifications = classifier.getClassifications(words);
+    return {
+      classifier,
+      knownWords: new Set(documents.flatMap((d) => d.words)),
+    };
+  }
+
+  private classify(
+    model: PredictionModel | null,
+    description: string,
+  ): Prediction {
+    if (!model) {
+      return { categoryId: null };
+    }
+
+    // Aucun mot utile connu : on ne propose rien plutôt que la catégorie la
+    // plus fréquente.
+    const words = extractWords(description);
+
+    if (!words.some((word) => model.knownWords.has(word))) {
+      return { categoryId: null };
+    }
+
+    const classifications = model.classifier.getClassifications(words);
 
     if (classifications.length > 0) {
-      // Les classifications sont triées par valeur (le plus probable en premier)
-      const bestMatch = classifications[0];
-      return { categoryId: bestMatch.label };
+      // Triées par valeur (le plus probable en premier)
+      return { categoryId: classifications[0].label };
     }
 
     return { categoryId: null };

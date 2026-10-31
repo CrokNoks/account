@@ -246,4 +246,73 @@ describe('PredictCategoryUseCase', () => {
       'cat-transport',
     );
   });
+  describe('executeMany', () => {
+    beforeEach(() => {
+      repository.findAllByAccountUnpaginated.mockResolvedValue([
+        history('Électricité de France', 'cat-energie'),
+        history('sncf billet train', 'cat-transport'),
+        history('sncf voyage paris', 'cat-transport'),
+      ]);
+    });
+
+    it('returns one prediction per description, identical to the single one', async () => {
+      const descriptions = [
+        'electricite edf',
+        'SNCF BILLET',
+        'zzz inconnu',
+        'ab',
+      ];
+
+      const many = await useCase.executeMany('acc-1', descriptions);
+      const single: Awaited<ReturnType<typeof useCase.execute>>[] = [];
+      for (const d of descriptions) {
+        single.push(await useCase.execute('acc-1', d));
+      }
+
+      expect(many).toEqual(single);
+      expect(many.map((r) => r.categoryId)).toEqual([
+        'cat-energie',
+        'cat-transport',
+        null,
+        null,
+      ]);
+    });
+
+    it('reads the history once whatever the number of descriptions', async () => {
+      repository.findAllByAccountUnpaginated.mockClear();
+
+      await useCase.executeMany('acc-1', ['edf', 'sncf', 'train', 'paris']);
+
+      expect(repository.findAllByAccountUnpaginated).toHaveBeenCalledTimes(1);
+    });
+
+    it('keeps smart rules first, line by line', async () => {
+      matchRules.execute.mockImplementation((_a: string, d: string) =>
+        Promise.resolve(
+          d === 'NETFLIX'
+            ? { categoryId: 'cat-rule', tagIds: ['t1'] }
+            : { categoryId: null, tagIds: [] },
+        ),
+      );
+
+      const result = await useCase.executeMany('acc-1', [
+        'NETFLIX',
+        'SNCF BILLET',
+      ]);
+
+      expect(result).toEqual([
+        { categoryId: 'cat-rule', tagIds: ['t1'] },
+        { categoryId: 'cat-transport' },
+      ]);
+    });
+
+    it('does not read the history when every line is solved by a rule', async () => {
+      matchRules.execute.mockResolvedValue({ categoryId: 'c', tagIds: [] });
+      repository.findAllByAccountUnpaginated.mockClear();
+
+      await useCase.executeMany('acc-1', ['NETFLIX', 'SPOTIFY']);
+
+      expect(repository.findAllByAccountUnpaginated).not.toHaveBeenCalled();
+    });
+  });
 });
