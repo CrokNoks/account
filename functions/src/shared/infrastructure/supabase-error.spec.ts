@@ -33,6 +33,15 @@ describe('toDomainError', () => {
     expect(e.message).toBe('duplicate key');
   });
 
+  it('23P01 (exclusion) -> ConflictError avec le message fourni', () => {
+    const e = toDomainError(
+      { code: '23P01', message: 'conflicting key value violates exclusion' },
+      { conflict: 'Period overlaps an existing period' },
+    );
+    expect(e).toBeInstanceOf(ConflictError);
+    expect(e.message).toBe('Period overlaps an existing period');
+  });
+
   it('P0002 -> NotFoundError', () => {
     const e = toDomainError(
       { code: 'P0002', message: 'x' },

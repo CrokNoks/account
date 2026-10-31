@@ -1,0 +1,83 @@
+# Périodes : deux périodes d'un même compte ne peuvent pas se chevaucher (bornes incluses) -> 409.
+# Lancement : npx httpyac send --all http/periodes-sans-chevauchement.http --var port=8080 --var anon=<ANON_KEY de `supabase status`>
+# (la clé vient de la ligne de commande, jamais du fichier ; l'utilisateur est jetable, créé par le fichier)
+@baseUrl = http://localhost:{{port}}
+@authUrl = http://127.0.0.1:54321/auth/v1
+
+### Utilisateur jetable
+# @name login
+POST {{authUrl}}/signup
+apikey: {{anon}}
+Content-Type: application/json
+
+{ "email": "periodes-{{$timestamp}}@example.com", "password": "Password123!" }
+
+?? status == 200
+
+### Compte jetable
+# @name account
+POST {{baseUrl}}/accounts
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "name": "periodes-{{$timestamp}}", "initialBalance": "0" }
+
+?? status == 201
+
+### Octobre 2026 : créée
+POST {{baseUrl}}/{{account.id}}/periods
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "startDate": "2026-10-01", "endDate": "2026-10-31", "budgets": [] }
+
+?? status == 201
+
+### 10 -> 20 octobre : chevauche octobre
+POST {{baseUrl}}/{{account.id}}/periods
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "startDate": "2026-10-10", "endDate": "2026-10-20", "budgets": [] }
+
+?? status == 409
+?? body contains Period overlaps an existing period
+
+### 31 octobre -> 30 novembre : borne partagée, refusée
+POST {{baseUrl}}/{{account.id}}/periods
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "startDate": "2026-10-31", "endDate": "2026-11-30", "budgets": [] }
+
+?? status == 409
+?? body contains Period overlaps an existing period
+
+### Novembre 2026 : jour adjacent, créée
+# @name november
+POST {{baseUrl}}/{{account.id}}/periods
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "startDate": "2026-11-01", "endDate": "2026-11-30", "budgets": [] }
+
+?? status == 201
+
+### PATCH de novembre vers le 15 octobre : chevauche octobre
+PATCH {{baseUrl}}/{{account.id}}/periods/{{november.id}}
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "startDate": "2026-10-15" }
+
+?? status == 409
+?? body contains Period overlaps an existing period
+
+### Il reste exactement 2 périodes, novembre intacte
+GET {{baseUrl}}/{{account.id}}/periods
+Authorization: Bearer {{login.access_token}}
+
+?? status == 200
+?? body contains 2026-10-01
+?? body contains 2026-11-01
+?? js response.parsedBody.length == 2

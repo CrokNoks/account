@@ -18,7 +18,8 @@ interface PeriodRow {
   updated_at: string;
 }
 
-/** Code Postgres d'une violation de contrainte d'unicité. */
+/** Contrainte d'exclusion periods_no_overlap (23P01). */
+const PERIOD_OVERLAP = 'Period overlaps an existing period';
 
 @Injectable()
 export class SupabasePeriodRepository implements PeriodRepository {
@@ -82,7 +83,7 @@ export class SupabasePeriodRepository implements PeriodRepository {
       updated_at: period.updatedAt.toISOString(),
     });
 
-    if (error) throw toDomainError(error);
+    if (error) throw toDomainError(error, { conflict: PERIOD_OVERLAP });
   }
 
   async createWithBudgets(
@@ -110,9 +111,12 @@ export class SupabasePeriodRepository implements PeriodRepository {
     // UNIQUE(period_id, category_id) : budget_instances_period_id_category_id_key
     if (error)
       throw toDomainError(error, {
-        conflict: error.message.includes('budget_instances')
-          ? 'A budget already exists for this category in this period'
-          : undefined,
+        conflict:
+          error.code === '23P01'
+            ? PERIOD_OVERLAP
+            : error.message.includes('budget_instances')
+              ? 'A budget already exists for this category in this period'
+              : undefined,
       });
   }
 

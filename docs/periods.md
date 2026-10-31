@@ -53,9 +53,12 @@ Front (`frontend/src/features/periods/`) : liste (`ui/period-list.tsx`) avec « 
 ## Statuts et transitions
 Active / inactive (`is_active`). Création : la nouvelle est active, les autres actives passent inactives. Clôture : active -> inactive via PATCH. Rien n'interdit (code lu) de réactiver une période inactive par PATCH ni d'avoir alors plusieurs actives.
 
+## Pas de chevauchement
+Deux périodes d'un même compte ne peuvent pas se chevaucher : contrainte d'exclusion `periods_no_overlap` (migration `20261031100100_periods_no_overlap.sql`, extension `btree_gist`) sur `account_id` et `daterange(start_date, end_date, '[]')`. Bornes incluses (une période qui commence le jour où une autre finit est refusée) ; `end_date` NULL = période ouverte à l'infini. La base fait foi, donc aussi sous concurrence : deux créations identiques simultanées donnent un 201 et un 409. Création (`createWithBudgets`) et PATCH des dates (`save`) renvoient 409 « Period overlaps an existing period » (`supabase-error.ts`, code Postgres 23P01 ; `supabase-period.repository.ts`). Tests : `supabase-period.repository.spec.ts`, `supabase-error.spec.ts` ; scénarios réels : `http/periodes-sans-chevauchement.http`.
+Avant `supabase db push` en production : vérifier qu'aucune période existante ne se chevauche, sinon la migration échoue (par compte, deux lignes dont les intervalles `[start_date, end_date]` se recoupent).
+
 ## Zones d'ombre
 - Les `categoryId` des budgets reçus en body doivent être des UUID : sinon 400 (voir `transactions.md`). Ceux de la route (`:accountId`, `:id`) le sont aussi (voir `transactions.md`).
-- Les périodes peuvent-elles se chevaucher ? Aucun contrôle trouvé (code ni base).
 - Réactiver une période laisse-t-il volontairement plusieurs périodes actives ? Non traité.
 - Pourquoi le montant 0 est filtré au remplacement mais pas à la création : inconnu.
 - La date du jour du brouillon est la date calendaire du fuseau métier (`APP_TIME_ZONE`, `Europe/Paris` par défaut), identique quel que soit le fuseau du serveur (`shared/domain/date-only.ts`).

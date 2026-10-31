@@ -93,6 +93,31 @@ describe('SupabasePeriodRepository.createWithBudgets', () => {
     ).rejects.toBeInstanceOf(ConflictError);
   });
 
+  it('turns an overlapping period (23P01) into a 409 ConflictError on creation', async () => {
+    const { repository } = repoWith({
+      code: '23P01',
+      message:
+        'conflicting key value violates exclusion constraint "periods_no_overlap"',
+    });
+
+    const result = repository.createWithBudgets(period, [], []);
+    await expect(result).rejects.toBeInstanceOf(ConflictError);
+    await expect(result).rejects.toThrow('Period overlaps an existing period');
+  });
+
+  it('turns an overlapping period (23P01) into a ConflictError on date change', async () => {
+    const upsert = jest.fn().mockResolvedValue({
+      error: { code: '23P01', message: 'periods_no_overlap' },
+    });
+    const repository = new SupabasePeriodRepository({
+      from: jest.fn().mockReturnValue({ upsert }),
+    } as unknown as SupabaseClient);
+
+    const result = repository.save(period);
+    await expect(result).rejects.toBeInstanceOf(ConflictError);
+    await expect(result).rejects.toThrow('Period overlaps an existing period');
+  });
+
   it('keeps any other database error as is', async () => {
     const { repository } = repoWith({ code: 'XX000', message: 'rls' });
 
