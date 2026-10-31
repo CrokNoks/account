@@ -8,13 +8,15 @@ import { useTranslations } from 'next-intl';
 
 export function ThemeToggle() {
   const t = useTranslations('Navigation');
-  const [mounted, setMounted] = React.useState(false);
   const { theme, setTheme } = useTheme();
 
-  // useEffect only runs on the client, so now we can safely show the UI
-  React.useEffect(() => {
-    setMounted(true);
-  }, []);
+  // false during server rendering and hydration, true on the client: the theme
+  // is only known in the browser.
+  const mounted = React.useSyncExternalStore(
+    noopSubscribe,
+    () => true,
+    () => false,
+  );
 
   if (!mounted) {
     return <div className="w-9 h-9" />; // Placeholder of the same size
@@ -32,4 +34,8 @@ export function ThemeToggle() {
       <span className="sr-only">{t('toggle_theme')}</span>
     </Button>
   );
+}
+
+function noopSubscribe() {
+  return () => {};
 }
