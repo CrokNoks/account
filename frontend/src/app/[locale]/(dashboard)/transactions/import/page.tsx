@@ -101,8 +101,8 @@ export default function ImportTransactionsPage() {
           date: headers.find(h => /date/i.test(h)) || headers[0] || '',
           description: headers.find(h => /libelle|description|label/i.test(h)) || headers[1] || '',
           amount: headers.find(h => /montant|amount/i.test(h)) || headers[2] || '',
-          debit: headers.find(h => /debit/i.test(h)) || '',
-          credit: headers.find(h => /credit/i.test(h)) || ''
+          debit: headers.find(h => /d[ée]bit/i.test(h)) || '',
+          credit: headers.find(h => /cr[ée]dit/i.test(h)) || ''
         };
         setMapping(guess);
         setStep('mapping');
@@ -125,8 +125,8 @@ export default function ImportTransactionsPage() {
       date: newHeaders.find(h => /date/i.test(h)) || newHeaders[0] || '',
       description: newHeaders.find(h => /libelle|description|label/i.test(h)) || newHeaders[1] || '',
       amount: newHeaders.find(h => /montant|amount/i.test(h)) || newHeaders[2] || '',
-      debit: newHeaders.find(h => /debit/i.test(h)) || '',
-      credit: newHeaders.find(h => /credit/i.test(h)) || ''
+      debit: newHeaders.find(h => /d[ée]bit/i.test(h)) || '',
+      credit: newHeaders.find(h => /cr[ée]dit/i.test(h)) || ''
     });
   };
 

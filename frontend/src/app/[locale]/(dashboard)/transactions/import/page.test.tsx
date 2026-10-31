@@ -253,6 +253,15 @@ describe('CSV import page', () => {
 
     expect(lines.map((l) => l.amount)).toEqual(['-123456', '200010', '20', '-505']);
   });
+
+  it('detects accented Débit and Crédit columns automatically', async () => {
+    const lines = await importCsv(
+      ['Date;Libellé;Débit;Crédit', '01/03/2026;A;12,50;', '02/03/2026;B;;3,00'].join('\n'),
+      true,
+    );
+
+    expect(lines.map((l) => l.amount)).toEqual(['-1250', '300']);
+  });
 });
 
 describe('CSV import page encoding', () => {
