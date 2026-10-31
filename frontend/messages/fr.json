@@ -343,9 +343,7 @@
       "amount": "Montant",
       "category": "Catégorie",
       "unreadable_date": "date illisible",
-      "unreadable_amount": "montant illisible",
-      "no_category": "Pas de catégorie",
-      "uncategorized": "Non catégorisé"
+      "unreadable_amount": "montant illisible"
     }
   },
   "Categories": {

@@ -9,25 +9,24 @@ import {
   TableHeader, 
   TableRow 
 } from "@/components/ui/table";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { useLocale, useTranslations } from 'next-intl';
 import { X } from 'lucide-react';
 import { formatCurrency, toCents } from '@/shared/lib/format';
 import { formatDateOnly } from '@/shared/lib/date-only';
 import { ParsedTransaction } from '../../model/import-types';
-import { Category } from '@/features/categories/model/types';
+import { CategorySelector } from '@/features/categories/ui/category-selector';
 
 interface ImportValidationStepProps {
   parsedData: ParsedTransaction[];
   setParsedData: React.Dispatch<React.SetStateAction<ParsedTransaction[]>>;
-  categories?: Category[];
+  accountId: string | null;
 }
 
 export function ImportValidationStep({
   parsedData,
   setParsedData,
-  categories
+  accountId
 }: ImportValidationStepProps) {
   const t = useTranslations('Import.validation');
   const locale = useLocale();
@@ -66,31 +65,15 @@ export function ImportValidationStep({
                 )}
               </TableCell>
               <TableCell>
-                <Select disabled={!!row.invalidReason} value={row.categoryId || 'none'} onValueChange={(v) => {
-                  setParsedData(prev => prev.map(item => item.id === row.id ? { ...item, categoryId: v === 'none' ? null : v, predicted: false } : item));
-                }}>
-                  <SelectTrigger className="h-9 text-xs">
-                    <SelectValue>
-                      {row.categoryId ? (
-                        <div className="flex items-center gap-2 truncate">
-                          <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: categories?.find(c => c.id === row.categoryId)?.color }} />
-                          <span className="truncate">{categories?.find(c => c.id === row.categoryId)?.name}</span>
-                        </div>
-                      ) : <span className="text-muted-foreground italic">{t('no_category')}</span>}
-                    </SelectValue>
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">{t('uncategorized')}</SelectItem>
-                    {categories?.map((cat) => (
-                      <SelectItem key={cat.id} value={cat.id}>
-                        <div className="flex items-center gap-2 text-xs">
-                          <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: cat.color }} />
-                          {cat.name}
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <CategorySelector
+                  accountId={accountId}
+                  disabled={!!row.invalidReason}
+                  value={row.categoryId || ''}
+                  className="h-9 text-xs"
+                  onChange={(id) => {
+                    setParsedData(prev => prev.map(item => item.id === row.id ? { ...item, categoryId: id || null, predicted: false } : item));
+                  }}
+                />
               </TableCell>
               <TableCell className="pr-8">
                 <Button variant="ghost" size="icon-sm" onClick={() => setParsedData(prev => prev.filter(p => p.id !== row.id))} className="h-8 w-8 text-muted-foreground hover:text-destructive">

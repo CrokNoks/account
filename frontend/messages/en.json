@@ -343,9 +343,7 @@
       "amount": "Amount",
       "category": "Category",
       "unreadable_date": "unreadable date",
-      "unreadable_amount": "unreadable amount",
-      "no_category": "No category",
-      "uncategorized": "Uncategorized"
+      "unreadable_amount": "unreadable amount"
     }
   },
   "Categories": {

@@ -5,7 +5,6 @@ import Papa from 'papaparse';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { useAccountStore } from '@/features/accounts/model/use-account-store';
-import { useCategories } from '@/features/categories/api/use-categories';
 import { usePeriods } from '@/features/budgets/api/use-periods';
 import { useBulkCreateTransactions } from '@/features/transactions/api/use-bulk-create-transactions';
 import { Loader2, ArrowRight, ArrowLeft, CheckCircle2 } from 'lucide-react';
@@ -24,7 +23,6 @@ export default function ImportTransactionsPage() {
   const t = useTranslations('Import');
   const router = useRouter();
   const { activeAccountId } = useAccountStore();
-  const { data: categories } = useCategories(activeAccountId);
   const { data: periods } = usePeriods(activeAccountId);
   const { mutate: bulkCreate, isPending } = useBulkCreateTransactions();
   
@@ -279,7 +277,7 @@ export default function ImportTransactionsPage() {
             <ImportValidationStep 
               parsedData={parsedData}
               setParsedData={setParsedData}
-              categories={categories}
+              accountId={activeAccountId}
             />
           )}
         </CardContent>
