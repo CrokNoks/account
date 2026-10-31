@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef } from 'react';
+import { todayDateOnly } from '@/shared/lib/date-only';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -50,7 +51,7 @@ export function TransactionForm({
   const { data: savingsGoals } = useSavingsGoals(accountId);
   const { mutate: predictCategory } = usePredictCategory();
 
-  const [date, setDate] = useState(initialValues?.date || new Date().toISOString().split('T')[0]);
+  const [date, setDate] = useState(initialValues?.date || todayDateOnly());
   const [description, setDescription] = useState(initialValues?.description || '');
   const [categoryId, setCategoryId] = useState(initialValues?.categoryId || '');
   const [tagIds, setTagIds] = useState<string[]>(initialValues?.tagIds || []);
