@@ -16,7 +16,7 @@ vi.mock('@/i18n/routing', () => ({
 vi.mock('sonner', () => ({
   toast: { info: vi.fn(), error: vi.fn(), success: vi.fn() },
 }));
-vi.mock('@/shared/api/api-client', () => ({ apiClient: { get: vi.fn() } }));
+vi.mock('@/shared/api/api-client', () => ({ apiClient: { get: vi.fn(), post: vi.fn() } }));
 vi.mock('@/features/categories/api/use-categories', () => ({
   useCategories: () => ({ data: [] }),
 }));
@@ -42,6 +42,19 @@ type ImportedLine = {
 };
 
 const catalogs = { fr, en };
+
+// Back stand-in: one prediction per description, in order.
+function mockPredictions(byDescription: Record<string, string> = {}) {
+  vi.mocked(apiClient.post).mockImplementation((_url, body) =>
+    Promise.resolve({
+      data: {
+        predictions: (body as { descriptions: string[] }).descriptions.map((d) => ({
+          categoryId: byDescription[d] ?? null,
+        })),
+      },
+    }),
+  );
+}
 
 function renderPage(locale: 'fr' | 'en' = 'fr') {
   return render(
@@ -83,7 +96,9 @@ describe('CSV import page', () => {
   beforeEach(() => {
     bulkCreate.mockReset();
     useAccountStore.setState({ activeAccountId: 'acc-1' });
-    vi.mocked(apiClient.get).mockReset().mockResolvedValue({ data: {} });
+    vi.mocked(apiClient.get).mockReset();
+    vi.mocked(apiClient.post).mockReset();
+    mockPredictions();
   });
 
   it('maps a French bank export (semicolon, dd/mm/yyyy, comma decimals) to cents', async () => {
@@ -121,14 +136,7 @@ describe('CSV import page', () => {
   });
 
   it('applies the predicted category of each description', async () => {
-    vi.mocked(apiClient.get).mockImplementation((_url, config) =>
-      Promise.resolve({
-        data:
-          (config?.params as { description: string }).description === 'CB CARREFOUR'
-            ? { categoryId: 'cat-courses' }
-            : {},
-      }),
-    );
+    mockPredictions({ 'CB CARREFOUR': 'cat-courses' });
 
     const lines = await importCsv(
       ['Date;Libellé;Montant', '01/03/2026;CB CARREFOUR;-42,50', '01/03/2026;AUTRE;-1'].join(
@@ -136,10 +144,30 @@ describe('CSV import page', () => {
       ),
     );
 
-    expect(apiClient.get).toHaveBeenCalledWith('/acc-1/transactions/predict-category', {
-      params: { description: 'CB CARREFOUR' },
+    expect(apiClient.post).toHaveBeenCalledTimes(1);
+    expect(apiClient.post).toHaveBeenCalledWith('/acc-1/transactions/predict-categories', {
+      descriptions: ['CB CARREFOUR', 'AUTRE'],
     });
+    expect(apiClient.get).not.toHaveBeenCalled();
     expect(lines.map((l) => l.categoryId)).toEqual(['cat-courses', null]);
+  });
+
+  it('splits a long file into requests of at most 500 descriptions', async () => {
+    const rows = Array.from({ length: 1001 }, (_, i) => `01/03/2026;LIGNE ${i};-1`);
+    await importCsv(['Date;Libellé;Montant', ...rows].join('\n'));
+
+    const sizes = vi
+      .mocked(apiClient.post)
+      .mock.calls.map(([, body]) => (body as { descriptions: string[] }).descriptions.length);
+    expect(sizes).toEqual([500, 500, 1]);
+  }, 30000);
+
+  it('keeps the import usable when the prediction request fails', async () => {
+    vi.mocked(apiClient.post).mockReset().mockRejectedValue(new Error('boom'));
+
+    const lines = await importCsv(['Date;Libellé;Montant', '01/03/2026;A;-1'].join('\n'));
+
+    expect(lines.map((l) => l.categoryId)).toEqual([null]);
   });
 
   it('removes spaces used as thousands separators', async () => {
@@ -210,8 +238,11 @@ describe('CSV import page', () => {
 
     expect(lines.map((l) => l.description)).toEqual(['OK1', 'OK2']);
     expect(screen.getByRole('alert')).toHaveTextContent('2 lignes ignorées');
-    // no category prediction for invalid rows
-    expect(apiClient.get).toHaveBeenCalledTimes(2);
+    // one request, without the invalid rows
+    expect(apiClient.post).toHaveBeenCalledTimes(1);
+    expect(apiClient.post).toHaveBeenCalledWith('/acc-1/transactions/predict-categories', {
+      descriptions: ['OK1', 'OK2'],
+    });
   });
 
   it('disables the confirm button when every row is invalid', async () => {
@@ -220,7 +251,7 @@ describe('CSV import page', () => {
     );
 
     expect(confirm).toBeDisabled();
-    expect(apiClient.get).not.toHaveBeenCalled();
+    expect(apiClient.post).not.toHaveBeenCalled();
     fireEvent.click(confirm);
     expect(bulkCreate).not.toHaveBeenCalled();
   });
@@ -281,7 +312,9 @@ describe('CSV import page encoding', () => {
   beforeEach(() => {
     bulkCreate.mockReset();
     useAccountStore.setState({ activeAccountId: 'acc-1' });
-    vi.mocked(apiClient.get).mockReset().mockResolvedValue({ data: {} });
+    vi.mocked(apiClient.get).mockReset();
+    vi.mocked(apiClient.post).mockReset();
+    mockPredictions();
   });
 
   it('reads a Windows-1252 file with its accents', async () => {
@@ -334,7 +367,9 @@ describe('CSV import page i18n', () => {
     bulkCreate.mockReset();
     vi.mocked(toast.success).mockReset();
     vi.mocked(toast.info).mockReset();
-    vi.mocked(apiClient.get).mockReset().mockResolvedValue({ data: {} });
+    vi.mocked(apiClient.get).mockReset();
+    vi.mocked(apiClient.post).mockReset();
+    mockPredictions();
     useAccountStore.setState({ activeAccountId: 'acc-1' });
   });
 
@@ -364,7 +399,7 @@ describe('CSV import page i18n', () => {
     });
     fireEvent.click(await screen.findByRole('button', { name: locale === 'fr' ? /Analyser/ : /Analyze/ }));
     const confirm = await screen.findByRole('button', { name: locale === 'fr' ? /Confirmer/ : /Confirm/ });
-    await waitFor(() => expect(apiClient.get).toHaveBeenCalled());
+    await waitFor(() => expect(apiClient.post).toHaveBeenCalled());
     await new Promise((r) => setTimeout(r, 0));
     fireEvent.click(confirm);
     bulkCreate.mock.calls[0][1].onSuccess();

@@ -19,6 +19,9 @@ import { ImportUploadStep } from '@/features/transactions/ui/import/import-uploa
 import { ImportMappingStep } from '@/features/transactions/ui/import/import-mapping-step';
 import { ImportValidationStep } from '@/features/transactions/ui/import/import-validation-step';
 
+// Must stay under the back limit of 1000 descriptions per request.
+const PREDICTION_CHUNK_SIZE = 500;
+
 function readAsArrayBuffer(file: File): Promise<ArrayBuffer> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -185,17 +188,22 @@ export default function ImportTransactionsPage() {
     if (activeAccountId && mappedData.some(r => !r.invalidReason)) {
       toast.info(t('analyzing_categories'));
       const updatedData = [...mappedData];
-      for (let i = 0; i < updatedData.length; i++) {
-        if (updatedData[i].invalidReason) continue;
+      // Invalid rows are never predicted; the others go by chunks, one request per chunk.
+      const validIndexes = updatedData.flatMap((row, i) => (row.invalidReason ? [] : [i]));
+      for (let start = 0; start < validIndexes.length; start += PREDICTION_CHUNK_SIZE) {
+        const chunk = validIndexes.slice(start, start + PREDICTION_CHUNK_SIZE);
         try {
-          const { data } = await apiClient.get(`/${activeAccountId}/transactions/predict-category`, {
-            params: { description: updatedData[i].description }
+          const { data } = await apiClient.post(`/${activeAccountId}/transactions/predict-categories`, {
+            descriptions: chunk.map((i) => updatedData[i].description),
           });
-          if (data.categoryId) {
-            updatedData[i].categoryId = data.categoryId;
-            updatedData[i].predicted = true;
-            setParsedData([...updatedData]);
-          }
+          const predictions: { categoryId: string | null }[] = data.predictions ?? [];
+          chunk.forEach((rowIndex, k) => {
+            const categoryId = predictions[k]?.categoryId;
+            if (categoryId) {
+              updatedData[rowIndex] = { ...updatedData[rowIndex], categoryId, predicted: true };
+            }
+          });
+          setParsedData([...updatedData]);
         } catch {
           // Ignore prediction error
         }
