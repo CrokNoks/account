@@ -1,0 +1,56 @@
+@baseUrl = http://localhost:{{port}}
+# Supabase local (auth) : --var anon=<ANON_KEY de `supabase status`> --var port=<port de l'API>
+@authUrl = http://127.0.0.1:54321/auth/v1
+
+### Utilisateur jetable
+# @name owner
+POST {{authUrl}}/signup
+apikey: {{anon}}
+Content-Type: application/json
+
+{ "email": "predict-{{$timestamp}}@example.com", "password": "Password123!" }
+
+?? status == 200
+
+### Compte
+# @name account
+POST {{baseUrl}}/accounts
+Authorization: Bearer {{owner.access_token}}
+Content-Type: application/json
+
+{ "name": "Courant", "initialBalance": "1000" }
+
+?? status == 201
+
+### Catégorie
+# @name category
+POST {{baseUrl}}/{{account.id}}/categories
+Authorization: Bearer {{owner.access_token}}
+Content-Type: application/json
+
+{ "name": "Énergie", "color": "#ffaa00", "type": "expense" }
+
+?? status == 201
+
+### Historique : une transaction catégorisée « EDF facture »
+POST {{baseUrl}}/{{account.id}}/transactions
+Authorization: Bearer {{owner.access_token}}
+Content-Type: application/json
+
+{ "categoryId": "{{category.id}}", "date": "2026-10-01", "description": "EDF facture", "amount": "-5000" }
+
+?? status == 201
+
+### Mot inconnu : aucune catégorie (avant le correctif : la plus fréquente)
+GET {{baseUrl}}/{{account.id}}/transactions/predict-category?description=boulangerie
+Authorization: Bearer {{owner.access_token}}
+
+?? status == 200
+?? js response.parsedBody.categoryId == null
+
+### Mot connu : la catégorie de l'historique
+GET {{baseUrl}}/{{account.id}}/transactions/predict-category?description=EDF janvier
+Authorization: Bearer {{owner.access_token}}
+
+?? status == 200
+?? js response.parsedBody.categoryId == {{category.id}}

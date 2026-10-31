@@ -43,6 +43,21 @@ export class PredictCategoryUseCase {
       return { categoryId: null };
     }
 
+    // Aucun mot connu : on ne propose rien plutôt que la catégorie la plus
+    // fréquente. Même traitement (tokenize + stem) que le classifieur.
+    const knownWords = new Set(
+      trainingData.flatMap((t) =>
+        natural.PorterStemmer.tokenizeAndStem(t.description.toLowerCase()),
+      ),
+    );
+    const hasKnownWord = natural.PorterStemmer.tokenizeAndStem(
+      description.toLowerCase(),
+    ).some((word) => knownWords.has(word));
+
+    if (!hasKnownWord) {
+      return { categoryId: null };
+    }
+
     const classifier = new natural.BayesClassifier();
 
     for (const t of trainingData) {

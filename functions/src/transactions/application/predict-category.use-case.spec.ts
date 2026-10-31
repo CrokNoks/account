@@ -76,6 +76,30 @@ describe('PredictCategoryUseCase', () => {
     });
   });
 
+  it('returns no category when no word of the description was ever seen', async () => {
+    repository.findAllByAccountUnpaginated.mockResolvedValue([
+      history('cb carrefour market', 'cat-courses'),
+      history('cb carrefour city', 'cat-courses'),
+      history('sncf billet train', 'cat-transport'),
+    ]);
+
+    expect(await useCase.execute('acc-1', 'zzz inconnu')).toEqual({
+      categoryId: null,
+    });
+  });
+
+  it('compares words after stemming, like the classifier', async () => {
+    repository.findAllByAccountUnpaginated.mockResolvedValue([
+      history('monthly subscriptions', 'cat-abo'),
+      history('sncf billet train', 'cat-transport'),
+      history('sncf voyage paris', 'cat-transport'),
+    ]);
+
+    expect((await useCase.execute('acc-1', 'subscription')).categoryId).toBe(
+      'cat-abo',
+    );
+  });
+
   it('predicts the category from similar past transactions', async () => {
     repository.findAllByAccountUnpaginated.mockResolvedValue([
       history('cb carrefour market', 'cat-courses'),
