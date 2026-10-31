@@ -1,6 +1,6 @@
 # Accounts — comptes bancaires de l'utilisateur et partage avec d'autres personnes
 
-Mise à jour : 2026-10-30 · Commit : 157b272
+Mise à jour : 2026-10-31 · Commit : d12f690
 
 ## Vocabulaire
 | Mot | Ce que ça veut dire ici |
@@ -13,7 +13,7 @@ Mise à jour : 2026-10-30 · Commit : 157b272
 ## Règles métier
 | Règle | Source | Testée |
 | --- | --- | --- |
-| Un compte a un nom obligatoire ; solde initial 0 par défaut | `functions/src/accounts/domain/account.entity.ts:22`, `accounts.controller.ts:28-30` | ✅ `account.entity.spec.ts` |
+| Un compte a un nom obligatoire ; description optionnelle (texte libre, `null` si absente) ; solde initial 0 par défaut | `functions/src/accounts/domain/account.entity.ts:22`, `accounts.controller.ts:36-58` (DTO : `description` facultative), `account.entity.ts:5,15,24` | ✅ `account.entity.spec.ts` |
 | Le propriétaire d'un compte créé est l'utilisateur du token | `accounts.controller.ts:184` (`req.user.id`) | ✅ use case seul : `create-account.use-case.spec.ts` |
 | Le solde initial est envoyé en texte numérique (centimes) et converti en grand entier | `accounts.controller.ts:58,189-191` | ❌ |
 | La liste des comptes ne filtre pas dans le code : elle s'appuie sur la base, qui renvoie comptes possédés + partagés avec soi | `supabase-account.repository.ts:40-53`, `20260106081523_remote_schema.sql` (policy « Users can view accounts… ») | ✅ `get-accounts.use-case.spec.ts` (repo simulé) |
@@ -22,14 +22,14 @@ Mise à jour : 2026-10-30 · Commit : 157b272
 | On ne peut pas partager avec soi-même | `share-account.use-case.ts:38-42` | ❌ |
 | Repartager avec la même personne remplace sa permission (une seule ligne par compte+utilisateur) | `supabase-account-share.repository.ts:51` (upsert avec `onConflict: 'account_id,user_id'`, sans quoi la base refusait le doublon : 500), contrainte `UNIQUE(account_id, user_id)` `20251221_schema_complete.sql:121` | ❌ |
 | Seul le propriétaire peut retirer un partage | `accounts.controller.ts:128-137` | ❌ |
-| Modifier un compte : réservé au propriétaire (403 sinon, 404 si le compte est inconnu ou invisible) ; seuls les champs fournis changent (nom, description, solde initial) | `accounts.controller.ts` (`update`, `assertOwner`) | ✅ e2e `cross-account-references.e2e-spec.ts` |
+| Modifier un compte : réservé au propriétaire (403 sinon, 404 si le compte est inconnu ou invisible) ; seuls les champs fournis changent (nom, description, solde initial ; la description est ici le champ « Objectif / Pitch », voir Zones d'ombre) | `accounts.controller.ts` (`update`, `assertOwner`) | ✅ e2e `cross-account-references.e2e-spec.ts` |
 | En base : voir un compte = propriétaire ou partagé ; créer = être propriétaire du compte créé ; modifier/supprimer = propriétaire | `supabase/migrations/20251221_schema_complete.sql:168-186` | ❌ |
 | En base : fonction `has_account_access(compte, 'read'|'write')` : vrai si propriétaire ; sinon si partage de même permission (un `write` donne aussi `read`). Utilisée par les règles des autres tables (transactions, tags) | `20260106081523_remote_schema.sql:48-70` | ❌ |
 | En base : les partages sont gérables/visibles par le propriétaire ; un utilisateur voit aussi les partages qui le concernent | `20260106081523_remote_schema.sql:75-95` | ❌ |
 | En base : `app_users` lisible par tout utilisateur connecté | `20251221_schema_complete.sql:321` | ❌ |
 
 ## Ce qu'on stocke
-- Compte (`accounts`) : id, nom, propriétaire, description (optionnelle, ajoutée `20260311100000`), solde initial (centimes, BIGINT depuis `20260307000000_migrate_to_v2.sql:14-15`), dates de création/modification.
+- Compte (`accounts`) : id, nom, propriétaire, description (texte, optionnelle ; colonne ajoutée par `20260311100000_add_description_to_accounts.sql`, dont le commentaire dit qu'elle donnait du contexte à l'analyse IA), solde initial (centimes, BIGINT depuis `20260307000000_migrate_to_v2.sql:14-15`), dates de création/modification.
 - Partage (`account_shares`) : id, compte, utilisateur, permission (`read`|`write`), date. Suppression du compte supprime ses partages (CASCADE).
 - Utilisateur (`app_users`) : id, email (copie de l'auth Supabase).
 - Front : un solde initial non vide et illisible est refusé avec un message d'erreur (création et modification) au lieu d'être enregistré comme 0.
@@ -51,9 +51,18 @@ Toutes les routes : connecté (token exigé via `@UseGuards` sur le contrôleur,
 Il n'y a pas de route pour supprimer un compte (la base l'autoriserait au propriétaire).
 
 ## Zones d'ombre
-- Un compte n'a ni type ni devise : ces colonnes n'existent pas en base et l'API rejette ces champs (400, `forbidNonWhitelisted`). Le front ne les envoie plus à la création (`create-account-dialog.tsx`) : le formulaire ne demande que nom, solde initial et description, et la liste des comptes n'affiche plus de type ni de devise.
+- Un compte n'a ni type ni devise : ces colonnes n'existent pas en base et l'API rejette ces champs (400, `forbidNonWhitelisted`). Le front ne les envoie plus à la création (`create-account-dialog.tsx`) : le formulaire demande nom, solde initial et description (libellé « Objectif / Pitch », aide « …pour aider l'IA à personnaliser ses analyses », `messages/fr.json:215-218`), et la liste des comptes n'affiche plus de type ni de devise.
 - Front : les boutons « partager » et « modifier » de `account-list.tsx` ne s'affichent que pour le propriétaire (`account.ownerId` comparé à l'utilisateur de la session Supabase, `features/auth/api/use-current-user-id.ts`) ; tant que l'utilisateur n'est pas connu, ils sont masqués. Test : `account-list.test.tsx`.
 - Le type front `AccountShare` dans `model/types.ts` (rôles owner/viewer/editor) diffère de celui de `use-account-shares.ts` (read/write) ; le second correspond à l'API.
 - Erreurs métier typées (`functions/src/shared/domain/errors.ts`), traduites par `DomainExceptionFilter` : compte ou utilisateur (email) introuvable → 404, partage/suppression de partage par un non-propriétaire → 403, partage avec soi-même → 400. Toutes les écritures des repositories Supabase passent par `toDomainError` (`functions/src/shared/infrastructure/supabase-error.ts`) : refus RLS (Postgres `42501`) → 403 « You do not have permission to modify this resource » (sans détail de policy), clé étrangère (`23503`) → 400 « Referenced resource does not exist », `23505` → 409 (message propre à chaque contrainte), `P0002` → 404 ; toute autre erreur technique reste un 500 « Internal server error ». Les lectures sont inchangées.
 - Le PATCH met à jour avec `dto.description ?? existant` : impossible d'effacer une description.
 - `balance` apparaît dans le type front `Account` mais n'est jamais renvoyé par ces routes ; d'où il vient n'est pas dans ce module.
+
+## Où la description du compte est lue ou écrite (état actuel)
+Constat pour le besoin « suppression-description-compte ». La description n'est utilisée par aucune règle métier : elle est seulement stockée et renvoyée.
+- Base : colonne `accounts.description` (`20260311100000_add_description_to_accounts.sql:2-4`). Aucune fonction SQL, vue, policy ni RPC ne la lit : `has_account_access` et la fonction de `remote_schema.sql:43` n'utilisent que `id` et `owner_id`. Le `seed.sql:13` n'insère pas cette colonne.
+- Back, `functions/src/accounts/` : entité (`account.entity.ts:5,15,24`), DTO de création et de modification (`accounts.controller.ts:44-51,65-68`), use case de création (`create-account.use-case.ts:8,20`), PATCH (`accounts.controller.ts:162,175`), réponses de création et de liste (`:209,219,237`), repository (`supabase-account.repository.ts:11,31,77` ; les lectures font `select('*')`, lignes 46 et 59).
+- Aucun autre module back ni la doc d'un autre module ne lit `accounts.description` (recherche dans `functions/src`).
+- Front, `features/accounts/` : type `Account` (`model/types.ts:6`), formulaire (`ui/account-form.tsx:11,32,39`), création (`ui/create-account-dialog.tsx:34`), modification (`ui/account-list.tsx:119,140`), appels API (`api/use-create-account.ts:6`, `api/use-update-account.ts:7`), libellés `messages/fr.json:215-218` et `en.json:215`.
+- Tests qui l'utilisent : `functions/test/front-contract.e2e-spec.ts:64-68` (accepte `description` à la création), `functions/test/account-ownership.e2e-spec.ts:41,109,361` (compte avec `description: null` ; PATCH `{ description: 'n' }` à la ligne 109 sert à tester le refus 403 pour un non-propriétaire), `account-list.test.tsx:8-9`, `create-account-dialog.test.tsx:35`.
+- Si la colonne disparaît alors que l'API garde `forbidNonWhitelisted`, un ancien client qui enverrait encore `description` recevrait un 400 (comportement déjà décrit pour `type` et `currency`).
