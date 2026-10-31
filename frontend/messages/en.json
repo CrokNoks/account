@@ -9,6 +9,7 @@
     "categories": "Categories",
     "tags": "Tags",
     "transactions": "Transactions",
+    "import": "Import transactions",
     "budgets": "Budgets",
     "recurring": "Recurring",
     "smart_rules": "Rules",

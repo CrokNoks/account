@@ -13,17 +13,7 @@ import {
   SelectValue 
 } from "@/components/ui/select";
 import { useRouter } from '@/i18n/routing';
-
-const routeKeys: Record<string, string> = {
-  '/': 'dashboard',
-  '/evolution': 'evolution',
-  '/flux': 'flux',
-  '/cashflow': 'prevision',
-  '/accounts': 'accounts',
-  '/transactions': 'transactions',
-  '/budgets': 'budgets',
-  '/categories': 'categories'
-};
+import { headerTitleKey } from './header-title';
 
 export function Header() {
   const pathname = usePathname();
@@ -31,12 +21,7 @@ export function Header() {
   const router = useRouter();
   const t = useTranslations('Navigation');
 
-  // Find the key by checking if pathname ends with the route
-  const currentKey = Object.keys(routeKeys).find(route => 
-    pathname === route
-  ) || '/';
-  
-  const label = t(routeKeys[currentKey] || 'dashboard');
+  const label = t(headerTitleKey(pathname));
 
   const handleLocaleChange = (newLocale: string | null) => {
     if (!newLocale) return;
