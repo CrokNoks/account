@@ -26,10 +26,31 @@ interface CategorySelectorProps {
 }
 
 const NONE = 'none';
+const EMPTY: readonly never[] = [];
 
 // Lowercase and strip accents, so "ele" matches "Électricité".
 function normalize(text: string) {
   return text.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase();
+}
+
+type Category = NonNullable<ReturnType<typeof useCategories>['data']>[number];
+interface SortedEntry {
+  category: Category;
+  key: string;
+}
+
+// Sorted once per categories array (react-query keeps the same reference), shared by all selectors.
+const sortedCache = new WeakMap<readonly Category[], SortedEntry[]>();
+
+function getSorted(categories: readonly Category[]): SortedEntry[] {
+  let sorted = sortedCache.get(categories);
+  if (!sorted) {
+    sorted = categories
+      .map((category) => ({ category, key: normalize(category.name) }))
+      .sort((a, b) => a.key.localeCompare(b.key, 'fr'));
+    sortedCache.set(categories, sorted);
+  }
+  return sorted;
 }
 
 export function CategorySelector({
@@ -49,9 +70,9 @@ export function CategorySelector({
 
   const visibleCategories = React.useMemo(() => {
     const query = normalize(search.trim());
-    return [...(categories ?? [])]
-      .sort((a, b) => normalize(a.name).localeCompare(normalize(b.name), 'fr'))
-      .filter((c) => !query || normalize(c.name).includes(query));
+    return getSorted(categories ?? EMPTY)
+      .filter((e) => !query || e.key.includes(query))
+      .map((e) => e.category);
   }, [categories, search]);
 
   const handleOpenChange = (next: boolean) => {

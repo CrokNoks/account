@@ -15,8 +15,9 @@ const categories = [
   { id: 'c-divers-2', name: 'Divers', color: '#666666' },
 ];
 
+let currentCategories = categories;
 vi.mock('@/features/categories/api/use-categories', () => ({
-  useCategories: () => ({ data: categories, isLoading: false }),
+  useCategories: () => ({ data: currentCategories, isLoading: false }),
 }));
 
 beforeAll(() => {
@@ -120,5 +121,31 @@ describe('CategorySelector', () => {
     await user.keyboard('{Escape}');
     await open(user);
     expect(screen.getByPlaceholderText(fr.Categories.selector.search_placeholder)).toHaveValue('');
+  });
+
+  it('sorts once per categories list, whatever the number of selectors', () => {
+    currentCategories = categories.map((c) => ({ ...c }));
+    const spy = vi.spyOn(String.prototype, 'localeCompare');
+    const renderMany = (n: number) =>
+      render(
+        <NextIntlClientProvider locale="fr" messages={fr}>
+          {Array.from({ length: n }, (_, i) => (
+            <CategorySelector key={i} accountId="acc-1" value="" onChange={() => {}} />
+          ))}
+        </NextIntlClientProvider>,
+      );
+    const first = renderMany(1);
+    const callsForOne = spy.mock.calls.length;
+    expect(callsForOne).toBeGreaterThan(0);
+    first.unmount();
+    renderMany(5);
+    expect(spy.mock.calls.length).toBe(callsForOne);
+
+    // a new list (new reference) is sorted again
+    currentCategories = categories.map((c) => ({ ...c }));
+    renderMany(1);
+    expect(spy.mock.calls.length).toBe(callsForOne * 2);
+    spy.mockRestore();
+    currentCategories = categories;
   });
 });
