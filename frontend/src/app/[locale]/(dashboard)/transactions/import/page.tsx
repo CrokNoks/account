@@ -19,6 +19,24 @@ import { ImportUploadStep } from '@/features/transactions/ui/import/import-uploa
 import { ImportMappingStep } from '@/features/transactions/ui/import/import-mapping-step';
 import { ImportValidationStep } from '@/features/transactions/ui/import/import-validation-step';
 
+function readAsArrayBuffer(file: File): Promise<ArrayBuffer> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as ArrayBuffer);
+    reader.onerror = () => reject(reader.error);
+    reader.readAsArrayBuffer(file);
+  });
+}
+
+// UTF-8 (BOM removed by the decoder) first; Windows-1252 (French bank exports) if the bytes are not valid UTF-8.
+function decodeCsv(buffer: ArrayBuffer): string {
+  try {
+    return new TextDecoder('utf-8', { fatal: true }).decode(buffer);
+  } catch {
+    return new TextDecoder('windows-1252').decode(buffer);
+  }
+}
+
 export default function ImportTransactionsPage() {
   const t = useTranslations('Import');
   const router = useRouter();
@@ -55,10 +73,19 @@ export default function ImportTransactionsPage() {
     parseFile(file);
   };
 
-  const parseFile = (file: File) => {
+  const parseFile = async (file: File) => {
     setIsProcessing(true);
-    
-    Papa.parse(file, {
+
+    let text: string;
+    try {
+      text = decodeCsv(await readAsArrayBuffer(file));
+    } catch {
+      toast.error(t('parse_error'));
+      setIsProcessing(false);
+      return;
+    }
+
+    Papa.parse<string[]>(text, {
       header: false,
       delimiter: delimiter,
       skipEmptyLines: true,

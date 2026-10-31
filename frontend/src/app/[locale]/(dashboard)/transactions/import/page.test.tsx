@@ -255,6 +255,71 @@ describe('CSV import page', () => {
   });
 });
 
+describe('CSV import page encoding', () => {
+  const csv = [
+    'Date;Libellé;Montant;Débit;Crédit',
+    '01/03/2026;Prélèvement Électricité Exemple;-12,00;;',
+  ].join('\n');
+
+  async function upload(bytes: Uint8Array<ArrayBuffer>) {
+    const { container } = renderPage();
+    fireEvent.change(container.querySelector('input[type="file"]')!, {
+      target: { files: [new File([bytes], 'releve.csv', { type: 'text/csv' })] },
+    });
+    await screen.findByRole('button', { name: /Analyser les données/ });
+  }
+
+  beforeEach(() => {
+    bulkCreate.mockReset();
+    useAccountStore.setState({ activeAccountId: 'acc-1' });
+    vi.mocked(apiClient.get).mockReset().mockResolvedValue({ data: {} });
+  });
+
+  it('reads a Windows-1252 file with its accents', async () => {
+    await upload(Uint8Array.from(Buffer.from(csv, 'latin1')));
+
+    expect(screen.getAllByText('Libellé').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Débit').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Crédit').length).toBeGreaterThan(0);
+    expect(screen.queryByText(/�/)).toBeNull();
+  });
+
+  it('keeps reading the description of a Windows-1252 file', async () => {
+    const lines = await importBytes(Uint8Array.from(Buffer.from(csv, 'latin1')));
+
+    expect(lines.map((l) => l.description)).toEqual(['Prélèvement Électricité Exemple']);
+  });
+
+  it.each([
+    ['without BOM', Buffer.from(csv, 'utf-8')],
+    ['with BOM', Buffer.concat([Buffer.from([0xef, 0xbb, 0xbf]), Buffer.from(csv, 'utf-8')])],
+  ])('keeps a UTF-8 file correct (%s)', async (_label, buf) => {
+    await upload(Uint8Array.from(buf));
+
+    expect(screen.getAllByText('Date').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Libellé').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Débit').length).toBeGreaterThan(0);
+
+    const lines = await importBytes(Uint8Array.from(buf));
+    expect(lines.map((l) => l.description)).toEqual(['Prélèvement Électricité Exemple']);
+  });
+
+  async function importBytes(bytes: Uint8Array<ArrayBuffer>): Promise<ImportedLine[]> {
+    document.body.innerHTML = '';
+    bulkCreate.mockReset();
+    const { container } = renderPage();
+    fireEvent.change(container.querySelector('input[type="file"]')!, {
+      target: { files: [new File([bytes], 'releve.csv', { type: 'text/csv' })] },
+    });
+    fireEvent.click(await screen.findByRole('button', { name: /Analyser les données/ }));
+    const confirm = await screen.findByRole('button', { name: /Confirmer l.import/ });
+    await waitFor(() => expect(screen.queryByRole('button', { name: /Analyser/ })).toBeNull());
+    await new Promise((r) => setTimeout(r, 0));
+    fireEvent.click(confirm);
+    return (bulkCreate.mock.calls[0][0] as { transactions: ImportedLine[] }).transactions;
+  }
+});
+
 describe('CSV import page i18n', () => {
   beforeEach(() => {
     bulkCreate.mockReset();
