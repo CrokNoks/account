@@ -25,3 +25,28 @@ describe('TransactionForm default date', () => {
     expect((container.querySelector('input[type="date"]') as HTMLInputElement).value).toBe('2026-11-01');
   });
 });
+
+describe('TransactionForm amount field on mobile', () => {
+  it('uses a full keyboard (which has a "-" key) and keeps a typed negative amount', async () => {
+    const { default: userEvent } = await import('@testing-library/user-event');
+    const { screen } = await import('@testing-library/react');
+    const { toCents } = await import('@/shared/lib/format');
+    const user = userEvent.setup();
+    const onSubmit = vi.fn();
+    render(<TransactionForm accountId="acc-1" onSubmit={onSubmit} isPending={false} submitLabel="ok" />);
+
+    const amount = screen.getByPlaceholderText('0.00') as HTMLInputElement;
+    // type="number", inputMode="decimal"/"numeric" give iOS a keypad without "-"
+    expect(amount.type).toBe('text');
+    expect(amount.getAttribute('inputmode')).toBe('text');
+    expect(amount.getAttribute('pattern')).toBeNull();
+
+    await user.type(screen.getByPlaceholderText('form.description_placeholder_standard'), 'Courses');
+    await user.type(amount, '-12,5');
+    expect(amount.value).toBe('-12,5');
+
+    await user.click(screen.getByRole('button', { name: /^ok/ }));
+    expect(onSubmit).toHaveBeenCalledTimes(1);
+    expect(toCents(onSubmit.mock.calls[0][0].amount)).toBe('-1250');
+  });
+});

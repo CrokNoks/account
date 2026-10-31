@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { AmountInput } from '@/components/ui/amount-input';
 import { useAccountStore } from '@/features/accounts/model/use-account-store';
 import { useCreateSavingsGoal } from '../api/use-savings-goals';
 import { Plus, Target } from 'lucide-react';
@@ -93,8 +94,7 @@ export function CreateSavingsGoalDialog() {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">{t('fields.target_amount')}</label>
-                <Input 
-                  type="number" 
+                <AmountInput
                   placeholder="0.00" 
                   value={targetAmount}
                   onChange={(e) => setTargetAmount(e.target.value)}

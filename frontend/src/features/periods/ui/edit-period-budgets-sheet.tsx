@@ -10,7 +10,7 @@ import {
   SheetDescription
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { AmountInput } from '@/components/ui/amount-input';
 import { useAccountStore } from '@/features/accounts/model/use-account-store';
 import { useCategories } from '@/features/categories/api/use-categories';
 import { usePeriodBudgets } from '../api/use-period-budgets';
@@ -113,9 +113,7 @@ export function EditPeriodBudgetsSheet({ periodId, open, onOpenChange }: EditPer
                         </p>
                       </div>
                       <div className="w-32">
-                        <Input 
-                          type="number" 
-                          step="0.01"
+                        <AmountInput
                           placeholder="0.00"
                           value={budgets[cat.id] || ''}
                           onChange={(e) => setBudgets({ ...budgets, [cat.id]: e.target.value })}

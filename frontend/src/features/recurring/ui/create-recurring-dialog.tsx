@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { AmountInput } from '@/components/ui/amount-input';
 import { useAccountStore } from '@/features/accounts/model/use-account-store';
 import { useCreateRecurringTransaction } from '../api/use-create-recurring-transaction';
 import { Plus, Repeat } from 'lucide-react';
@@ -174,9 +175,7 @@ export function CreateRecurringDialog({
           <div className="space-y-2">
             <label className="text-sm font-medium">{t('fields.amount')}</label>
             <div className="relative">
-              <Input 
-                type="number" 
-                step="0.01"
+              <AmountInput
                 placeholder="0.00"
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}

@@ -4,6 +4,7 @@ import { useState, useRef } from 'react';
 import { todayDateOnly } from '@/shared/lib/date-only';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { AmountInput } from '@/components/ui/amount-input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { TagSelector } from '@/features/tags/ui/tag-selector';
@@ -222,9 +223,7 @@ export function TransactionForm({
       <div className="space-y-2">
         <label className="text-sm font-medium">{t('fields.amount')}</label>
         <div className="relative">
-          <Input 
-            type="number" 
-            step="0.01"
+          <AmountInput
             placeholder="0.00"
             value={amount}
             onChange={(e) => setAmount(e.target.value)}

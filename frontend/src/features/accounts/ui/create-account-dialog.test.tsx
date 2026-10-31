@@ -29,8 +29,8 @@ describe('CreateAccountDialog', () => {
     });
     fireEvent.click(screen.getByRole('button', { name: fr.Common.add }));
 
-    // Seuls le nom et le solde sont demandés.
-    expect(screen.getAllByRole('textbox')).toHaveLength(1);
+    // Seuls le nom et le solde sont demandés (le solde est un champ texte: clavier avec « - »).
+    expect(screen.getAllByRole('textbox')).toHaveLength(2);
     expect(createAccount).toHaveBeenCalledTimes(1);
     expect(createAccount.mock.calls[0][0]).toEqual({
       name: 'Courant',

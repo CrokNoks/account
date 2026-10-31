@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { AmountInput } from '@/components/ui/amount-input';
 import { Checkbox } from "@/components/ui/checkbox";
 import { useAccountStore } from '@/features/accounts/model/use-account-store';
 import { usePeriodDraft } from '../api/use-period-draft';
@@ -162,9 +163,7 @@ export function CreatePeriodDialog() {
                           </div>
                         </div>
                         <div className="w-32">
-                          <Input 
-                            type="number" 
-                            step="0.01"
+                          <AmountInput
                             value={budgets[cat.categoryId] || '0'}
                             onChange={(e) => setBudgets({ ...budgets, [cat.categoryId]: e.target.value })}
                             className="text-right h-10 font-bold"

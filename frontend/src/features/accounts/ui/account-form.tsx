@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { AmountInput } from '@/components/ui/amount-input';
 import { useTranslations } from 'next-intl';
 
 export interface AccountFormValues {
@@ -51,9 +52,7 @@ export function AccountForm({
 
       <div className="space-y-2">
         <label className="text-sm font-medium">{t('fields.balance')}</label>
-        <Input 
-          type="number" 
-          step="0.01"
+        <AmountInput
           value={balance}
           onChange={(e) => setBalance(e.target.value)}
           required

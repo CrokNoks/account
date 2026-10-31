@@ -14,6 +14,7 @@ import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetFooter } from '@/components/ui/sheet';
 import { Input } from '@/components/ui/input';
+import { AmountInput } from '@/components/ui/amount-input';
 
 export function SavingsGoalsList() {
   const t = useTranslations('Savings');
@@ -134,9 +135,7 @@ export function SavingsGoalsList() {
             <div className="space-y-2">
               <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">{t('amount_to_add')}</label>
               <div className="relative">
-                <Input 
-                  type="text" 
-                  inputMode="decimal"
+                <AmountInput
                   placeholder="0.00" 
                   value={contributionAmount}
                   onChange={(e) => setContributionAmount(e.target.value)}
@@ -230,8 +229,7 @@ function EditSavingsGoalSheet({ goal, open, onOpenChange }: { goal: SavingsGoal,
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">{t('fields.target_amount')}</label>
-                <Input 
-                  type="number" 
+                <AmountInput
                   placeholder="0.00" 
                   value={targetAmount}
                   onChange={(e) => setTargetAmount(e.target.value)}
@@ -241,8 +239,7 @@ function EditSavingsGoalSheet({ goal, open, onOpenChange }: { goal: SavingsGoal,
               </div>
               <div className="space-y-2">
                 <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">{t('fields.current_amount')}</label>
-                <Input 
-                  type="number" 
+                <AmountInput
                   placeholder="0.00" 
                   value={currentAmount}
                   onChange={(e) => setCurrentAmount(e.target.value)}

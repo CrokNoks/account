@@ -202,7 +202,7 @@ describe('Bug 1 — Enter déclenche onAddAnother et non onSubmit', () => {
     expect(onAddAnother).toHaveBeenCalledWith(
       expect.objectContaining({
         description: 'Supermarché',
-        amount: '-25.5', // type=number normalise -25.50 → -25.5
+        amount: '-25.50',
       })
     );
   });
@@ -387,7 +387,7 @@ describe('TransactionForm — comportements généraux du formulaire', () => {
     expect(onAddAnother).toHaveBeenCalledWith(
       expect.objectContaining({
         description: 'Test transaction',
-        amount: '42', // type=number normalise 42.00 → 42
+        amount: '42.00',
       })
     );
   });
@@ -405,7 +405,7 @@ describe('TransactionForm — comportements généraux du formulaire', () => {
     expect(onSubmit).toHaveBeenCalledWith(
       expect.objectContaining({
         description: 'Test transaction',
-        amount: '42', // type=number normalise 42.00 → 42
+        amount: '42.00',
       })
     );
   });

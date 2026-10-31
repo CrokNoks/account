@@ -27,6 +27,7 @@ import {
   SheetFooter 
 } from "@/components/ui/sheet";
 import { Input } from "@/components/ui/input";
+import { AmountInput } from '@/components/ui/amount-input';
 import { CategorySelector } from '@/features/categories/ui/category-selector';
 import { toast } from 'sonner';
 import { useTranslations } from 'next-intl';
@@ -182,7 +183,7 @@ function EditRecurringDialog({ transaction, open, onOpenChange }: { transaction:
             <div className="space-y-2">
               <label className="text-sm font-medium">{t('fields.amount')}</label>
               <div className="relative">
-                <Input type="number" step="0.01" value={amount} onChange={(e) => setAmount(e.target.value)} required className="h-11" />
+                <AmountInput value={amount} onChange={(e) => setAmount(e.target.value)} required className="h-11" />
                 <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">€</span>
               </div>
             </div>

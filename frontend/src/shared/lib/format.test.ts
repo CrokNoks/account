@@ -135,5 +135,6 @@ describe('isUnreadableAmount / toOptionalCents', () => {
     expect(toOptionalCents('abc')).toBeUndefined();
     expect(toOptionalCents('0')).toBe('0');
     expect(toOptionalCents('10,5')).toBe('1050');
+    expect(toOptionalCents('-10,5')).toBe('-1050');
   });
 });

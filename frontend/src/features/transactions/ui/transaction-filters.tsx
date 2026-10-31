@@ -1,6 +1,7 @@
 'use client';
 
 import { Input } from "@/components/ui/input";
+import { AmountInput } from '@/components/ui/amount-input';
 import { Button } from "@/components/ui/button";
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -159,16 +160,14 @@ export function TransactionFilters({
             <div className="space-y-1.5">
               <label className="text-[10px] font-bold uppercase text-muted-foreground px-1">{t('amount_range')}</label>
               <div className="flex items-center gap-2">
-                <Input 
-                  type="number" 
+                <AmountInput
                   placeholder={t('filters.min')} 
                   className="h-10 bg-background" 
                   value={minAmount}
                   onChange={(e) => setMinAmount(e.target.value)}
                 />
                 <span className="text-muted-foreground">-</span>
-                <Input 
-                  type="number" 
+                <AmountInput
                   placeholder={t('filters.max')} 
                   className="h-10 bg-background" 
                   value={maxAmount}

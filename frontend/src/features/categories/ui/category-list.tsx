@@ -17,6 +17,7 @@ import {
   SheetTitle, 
 } from "@/components/ui/sheet";
 import { Input } from "@/components/ui/input";
+import { AmountInput } from '@/components/ui/amount-input';
 import { 
   Select, 
   SelectContent, 
@@ -197,7 +198,7 @@ function EditCategoryDialog({ category, open, onOpenChange }: { category: Catego
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium">{t('fields.budget')}</label>
-              <Input type="number" step="0.01" value={budget} onChange={(e) => setBudget(e.target.value)} />
+              <AmountInput value={budget} onChange={(e) => setBudget(e.target.value)} />
             </div>
             <div className="pt-4">
               <Button type="submit" className="w-full" disabled={isPending}>
