@@ -18,7 +18,7 @@ function run(error: Error) {
   const host = {
     switchToHttp: () => ({ getResponse: () => ({ status }) }),
   } as unknown as ArgumentsHost;
-  new DomainExceptionFilter().catch(error as never, host);
+  new DomainExceptionFilter().catch(error, host);
   return { status, json };
 }
 

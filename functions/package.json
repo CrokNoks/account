@@ -102,5 +102,11 @@
     "transformIgnorePatterns": [
       "/node_modules/(?!(afinn-165[^/]*|uuid)/)"
     ]
+  },
+  "overrides": {
+    "multer": "^2.5.0",
+    "@nestjs/swagger": {
+      "js-yaml": "^5.5.0"
+    }
   }
 }

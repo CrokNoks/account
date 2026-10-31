@@ -11,7 +11,7 @@ describe('GetAccountsUseCase', () => {
       save: jest.fn(),
       findAllForUser: jest.fn(),
       findById: jest.fn(),
-    } as unknown as jest.Mocked<AccountRepository>;
+    };
     useCase = new GetAccountsUseCase(repository);
   });
 

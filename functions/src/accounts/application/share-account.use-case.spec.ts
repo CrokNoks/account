@@ -6,7 +6,6 @@ import {
 import { ShareAccountUseCase } from './share-account.use-case';
 import { AccountRepository } from '../domain/account.repository.interface';
 import { AccountShareRepository } from '../domain/account-share.repository.interface';
-import { UserRepository } from '../domain/user.repository.interface';
 import { Account } from '../domain/account.entity';
 import { AccountShare } from '../domain/account-share.entity';
 
@@ -40,7 +39,7 @@ describe('ShareAccountUseCase', () => {
     useCase = new ShareAccountUseCase(
       accounts as unknown as AccountRepository,
       shares as unknown as AccountShareRepository,
-      users as unknown as UserRepository,
+      users,
     );
   });
 
