@@ -369,7 +369,8 @@
     "selector": {
       "placeholder": "Sélectionner une catégorie...",
       "none": "Sans catégorie",
-      "empty": "Aucune catégorie trouvée"
+      "empty": "Aucune catégorie trouvée",
+      "search_placeholder": "Rechercher une catégorie..."
     }
   },
   "Tags": {

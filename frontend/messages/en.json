@@ -369,7 +369,8 @@
     "selector": {
       "placeholder": "Select a category...",
       "none": "No category",
-      "empty": "No category found"
+      "empty": "No category found",
+      "search_placeholder": "Search a category..."
     }
   },
   "Tags": {
