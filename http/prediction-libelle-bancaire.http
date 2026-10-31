@@ -1,0 +1,161 @@
+@baseUrl = http://localhost:{{port}}
+# Supabase local (auth) : --var anon=<ANON_KEY de `supabase status`> --var port=<port de l'API>
+@authUrl = http://127.0.0.1:54321/auth/v1
+
+### Utilisateur jetable
+# @name owner
+POST {{authUrl}}/signup
+apikey: {{anon}}
+Content-Type: application/json
+
+{ "email": "predict-bank-{{$timestamp}}@example.com", "password": "Password123!" }
+
+?? status == 200
+
+### Compte
+# @name account
+POST {{baseUrl}}/accounts
+Authorization: Bearer {{owner.access_token}}
+Content-Type: application/json
+
+{ "name": "Courant", "initialBalance": "1000" }
+
+?? status == 201
+
+### Catégorie Énergie
+# @name energie
+POST {{baseUrl}}/{{account.id}}/categories
+Authorization: Bearer {{owner.access_token}}
+Content-Type: application/json
+
+{ "name": "Énergie", "color": "#ffaa00", "type": "expense" }
+
+?? status == 201
+
+### Catégorie Courses
+# @name courses
+POST {{baseUrl}}/{{account.id}}/categories
+Authorization: Bearer {{owner.access_token}}
+Content-Type: application/json
+
+{ "name": "Courses", "color": "#22aa55", "type": "expense" }
+
+?? status == 201
+
+### Catégorie Restauration (pour que le bruit « Paiement par carte » soit fréquent ailleurs)
+# @name resto
+POST {{baseUrl}}/{{account.id}}/categories
+Authorization: Bearer {{owner.access_token}}
+Content-Type: application/json
+
+{ "name": "Restauration", "color": "#aa2255", "type": "expense" }
+
+?? status == 201
+
+### Historique : Énergie
+POST {{baseUrl}}/{{account.id}}/transactions
+Authorization: Bearer {{owner.access_token}}
+Content-Type: application/json
+
+{ "categoryId": "{{energie.id}}", "date": "2026-10-01", "description": "Électricité de France", "amount": "-5000" }
+
+?? status == 201
+
+### Historique : Courses (deux achats, libellé bancaire bruité)
+POST {{baseUrl}}/{{account.id}}/transactions
+Authorization: Bearer {{owner.access_token}}
+Content-Type: application/json
+
+{ "categoryId": "{{courses.id}}", "date": "2026-10-24", "description": "Paiement par carte X2909 24/10 - E.Leclerc", "amount": "-4200" }
+
+?? status == 201
+
+###
+POST {{baseUrl}}/{{account.id}}/transactions
+Authorization: Bearer {{owner.access_token}}
+Content-Type: application/json
+
+{ "categoryId": "{{courses.id}}", "date": "2026-10-20", "description": "Paiement par carte X2909 20/10 - E.Leclerc", "amount": "-3100" }
+
+?? status == 201
+
+### Historique : Restauration (plus de lignes avec le bruit, pour tirer vers elle sans le correctif)
+POST {{baseUrl}}/{{account.id}}/transactions
+Authorization: Bearer {{owner.access_token}}
+Content-Type: application/json
+
+{ "categoryId": "{{resto.id}}", "date": "2026-10-10", "description": "Paiement par carte X2909 10/10 - Boulangerie Exemple", "amount": "-800" }
+
+?? status == 201
+
+###
+POST {{baseUrl}}/{{account.id}}/transactions
+Authorization: Bearer {{owner.access_token}}
+Content-Type: application/json
+
+{ "categoryId": "{{resto.id}}", "date": "2026-10-11", "description": "Paiement par carte X2909 11/10 - Snack Exemple", "amount": "-900" }
+
+?? status == 201
+
+###
+POST {{baseUrl}}/{{account.id}}/transactions
+Authorization: Bearer {{owner.access_token}}
+Content-Type: application/json
+
+{ "categoryId": "{{resto.id}}", "date": "2026-10-12", "description": "Paiement par carte X2909 12/10 - Pizzeria Exemple", "amount": "-1500" }
+
+?? status == 201
+
+### Catégorie Télécom
+# @name telecom
+POST {{baseUrl}}/{{account.id}}/categories
+Authorization: Bearer {{owner.access_token}}
+Content-Type: application/json
+
+{ "name": "Télécom", "color": "#2255aa", "type": "expense" }
+
+?? status == 201
+
+### Historique : Télécom
+POST {{baseUrl}}/{{account.id}}/transactions
+Authorization: Bearer {{owner.access_token}}
+Content-Type: application/json
+
+{ "categoryId": "{{telecom.id}}", "date": "2026-10-02", "description": "abonnement mobile", "amount": "-1500" }
+
+?? status == 201
+
+### CA2 : formes françaises proches (« abonnements »)
+GET {{baseUrl}}/{{account.id}}/transactions/predict-category?description=abonnements
+Authorization: Bearer {{owner.access_token}}
+
+?? status == 200
+?? js response.parsedBody.categoryId == {{telecom.id}}
+
+### CA1 : accents et casse sans effet (« electricite edf » et « ÉLECTRICITÉ »)
+GET {{baseUrl}}/{{account.id}}/transactions/predict-category?description=electricite edf
+Authorization: Bearer {{owner.access_token}}
+
+?? status == 200
+?? js response.parsedBody.categoryId == {{energie.id}}
+
+###
+GET {{baseUrl}}/{{account.id}}/transactions/predict-category?description=ÉLECTRICITÉ
+Authorization: Bearer {{owner.access_token}}
+
+?? status == 200
+?? js response.parsedBody.categoryId == {{energie.id}}
+
+### CA3 : autre carte, autre date, même commerçant -> Courses
+GET {{baseUrl}}/{{account.id}}/transactions/predict-category?description=Paiement par carte X0053 03/11 - E.Leclerc
+Authorization: Bearer {{owner.access_token}}
+
+?? status == 200
+?? js response.parsedBody.categoryId == {{courses.id}}
+
+### CA4 : seuls des mots de bruit sont connus -> aucune catégorie
+GET {{baseUrl}}/{{account.id}}/transactions/predict-category?description=Paiement par carte X1234 12/10
+Authorization: Bearer {{owner.access_token}}
+
+?? status == 200
+?? js response.parsedBody.categoryId == null

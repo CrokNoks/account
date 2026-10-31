@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { TransactionRepository } from '../domain/transaction.repository.interface';
 import { MatchSmartRulesUseCase } from '../../smart-rules/application/match-smart-rules.use-case';
 import * as natural from 'natural';
+import { extractWords } from './description-words';
 
 @Injectable()
 export class PredictCategoryUseCase {
@@ -43,32 +44,33 @@ export class PredictCategoryUseCase {
       return { categoryId: null };
     }
 
-    // Aucun mot connu : on ne propose rien plutôt que la catégorie la plus
-    // fréquente. Même traitement (tokenize + stem) que le classifieur.
-    const knownWords = new Set(
-      trainingData.flatMap((t) =>
-        natural.PorterStemmer.tokenizeAndStem(t.description.toLowerCase()),
-      ),
-    );
-    const hasKnownWord = natural.PorterStemmer.tokenizeAndStem(
-      description.toLowerCase(),
-    ).some((word) => knownWords.has(word));
+    // Un seul traitement des mots (accents, français, bruit bancaire) pour le
+    // contrôle « mot connu » et le classifieur : ils ne peuvent pas diverger.
+    const documents = trainingData
+      .map((t) => ({
+        words: extractWords(t.description),
+        label: t.categoryId!,
+      }))
+      .filter((d) => d.words.length > 0);
 
-    if (!hasKnownWord) {
+    // Aucun mot utile connu : on ne propose rien plutôt que la catégorie la
+    // plus fréquente.
+    const knownWords = new Set(documents.flatMap((d) => d.words));
+    const words = extractWords(description);
+
+    if (!words.some((word) => knownWords.has(word))) {
       return { categoryId: null };
     }
 
     const classifier = new natural.BayesClassifier();
 
-    for (const t of trainingData) {
-      classifier.addDocument(t.description.toLowerCase(), t.categoryId!);
+    for (const d of documents) {
+      classifier.addDocument(d.words, d.label);
     }
 
     classifier.train();
 
-    const classifications = classifier.getClassifications(
-      description.toLowerCase(),
-    );
+    const classifications = classifier.getClassifications(words);
 
     if (classifications.length > 0) {
       // Les classifications sont triées par valeur (le plus probable en premier)
