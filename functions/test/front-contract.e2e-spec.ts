@@ -173,37 +173,20 @@ describe('Front/back contract (e2e)', () => {
         .expect(404));
   });
 
-  describe('receipt scan', () => {
-    it('accepts the payload sent by the front and returns empty fields when the AI is not configured', async () => {
-      mocks.gemini.analyzeImage.mockRejectedValue(new Error('no key'));
-      jest.spyOn(console, 'error').mockImplementation(() => {});
-
-      const res = await http()
-        .post('/00000000-0000-4000-8000-000000000101/reporting/scan-receipt')
+  describe('removed AI routes', () => {
+    it.each([
+      [
+        'get',
+        'periods/00000000-0000-4000-8000-000000000107/reporting/ai-insights',
+      ],
+      ['get', 'reporting/evolution/ai-insights'],
+      ['post', 'reporting/scan-receipt'],
+    ] as const)('%s %s answers 404', (method, path) =>
+      http()
+        [method](`/00000000-0000-4000-8000-000000000101/${path}`)
         .set(auth())
         .send({ base64Image: 'AAAA', mimeType: 'image/jpeg' })
-        .expect(201);
-
-      expect(res.body).toEqual({
-        date: null,
-        amount: null,
-        description: null,
-        type: null,
-      });
-    });
-
-    it.each([
-      ['an unknown body', { anything: true }],
-      ['an empty image', { base64Image: '', mimeType: 'image/jpeg' }],
-      ['an unsupported mime type', { base64Image: 'AAAA', mimeType: 'text/x' }],
-      ['a missing mime type', { base64Image: 'AAAA' }],
-    ])('answers 400 without calling the AI for %s', async (_, payload) => {
-      await http()
-        .post('/00000000-0000-4000-8000-000000000101/reporting/scan-receipt')
-        .set(auth())
-        .send(payload)
-        .expect(400);
-      expect(mocks.gemini.analyzeImage).not.toHaveBeenCalled();
-    });
+        .expect(404),
+    );
   });
 });

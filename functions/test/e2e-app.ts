@@ -13,7 +13,6 @@ import { RecurringTransactionRepository } from '../src/recurring/domain/recurrin
 import { TagRepository } from '../src/tags/domain/tag.repository.interface';
 import { TransactionRepository } from '../src/transactions/domain/transaction.repository.interface';
 import { globalPipes } from '../src/shared/infrastructure/route-id.pipe';
-import { GeminiService } from '../src/reporting/application/gemini.service';
 
 // Doit correspondre à test/e2e-env.ts
 const JWT_SECRET = 'e2e-secret';
@@ -62,7 +61,6 @@ export const REPOSITORIES = {
   savingsGoals: 'SavingsGoalRepository',
   preferences: 'UserPreferencesRepository',
   smartRules: 'SmartRuleRepository',
-  gemini: GeminiService,
 } as const;
 
 export type Mocks = Record<keyof typeof REPOSITORIES, Mocked>;

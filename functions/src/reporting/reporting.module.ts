@@ -11,8 +11,6 @@ import { GetBudgetBreakdownUseCase } from './application/get-budget-breakdown.us
 import { GetEvolutionUseCase } from './application/get-evolution.use-case';
 import { GetPeriodComparisonUseCase } from './application/get-period-comparison.use-case';
 import { GetSankeyDataUseCase } from './application/get-sankey-data.use-case';
-import { GetAIInsightsUseCase } from './application/get-ai-insights.use-case';
-import { GetEvolutionAIInsightsUseCase } from './application/get-evolution-ai-insights.use-case';
 import { GetCashflowForecastUseCase } from './application/get-cashflow-forecast.use-case';
 import { GetTagsSummaryUseCase } from './application/get-tags-summary.use-case';
 import { GetTagDetailsUseCase } from './application/get-tag-details.use-case';
@@ -20,8 +18,6 @@ import { GetCalendarDataUseCase } from './application/get-calendar-data.use-case
 import { GetAnomaliesUseCase } from './application/get-anomalies.use-case';
 import { IgnoreAnomalyUseCase } from './application/ignore-anomaly.use-case';
 import { GetNetWorthUseCase } from './application/get-net-worth.use-case';
-import { ScanReceiptUseCase } from './application/scan-receipt.use-case';
-import { GeminiService } from './application/gemini.service';
 import { ReportingController } from './infrastructure/reporting.controller';
 
 @Module({
@@ -41,8 +37,6 @@ import { ReportingController } from './infrastructure/reporting.controller';
     GetEvolutionUseCase,
     GetPeriodComparisonUseCase,
     GetSankeyDataUseCase,
-    GetAIInsightsUseCase,
-    GetEvolutionAIInsightsUseCase,
     GetCashflowForecastUseCase,
     GetTagsSummaryUseCase,
     GetTagDetailsUseCase,
@@ -50,8 +44,6 @@ import { ReportingController } from './infrastructure/reporting.controller';
     GetAnomaliesUseCase,
     IgnoreAnomalyUseCase,
     GetNetWorthUseCase,
-    ScanReceiptUseCase,
-    GeminiService,
   ],
 })
 export class ReportingModule {}

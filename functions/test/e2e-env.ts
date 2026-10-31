@@ -3,4 +3,3 @@
 process.env.SUPABASE_URL = 'https://e2e.supabase.co';
 process.env.SUPABASE_ANON_KEY = 'e2e-anon-key';
 process.env.SUPABASE_JWT_SECRET = 'e2e-secret';
-process.env.GEMINI_API_KEY = '';

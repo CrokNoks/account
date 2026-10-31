@@ -37,8 +37,6 @@ import {
   GetSankeyDataUseCase,
   SankeyDataResponse,
 } from '../application/get-sankey-data.use-case';
-import { GetAIInsightsUseCase } from '../application/get-ai-insights.use-case';
-import { GetEvolutionAIInsightsUseCase } from '../application/get-evolution-ai-insights.use-case';
 import {
   GetCashflowForecastUseCase,
   CashflowForecastResponse,
@@ -66,14 +64,9 @@ import {
   NetWorthResponse,
 } from '../application/get-net-worth.use-case';
 import {
-  ScanReceiptUseCase,
-  ScanReceiptResult,
-} from '../application/scan-receipt.use-case';
-import {
   IsArray,
   IsString,
   IsIn,
-  IsNotEmpty,
   IsInt,
   IsOptional,
   Max,
@@ -121,20 +114,6 @@ export class IgnoreAnomalyDto {
   @IsIn(['duplicate', 'spike', 'outlier'])
   @ApiProperty({ enum: ['duplicate', 'spike', 'outlier'] })
   type: 'duplicate' | 'spike' | 'outlier';
-}
-
-export class ScanReceiptDto {
-  @IsString()
-  @IsNotEmpty()
-  @ApiProperty({ description: 'Receipt image, base64 encoded' })
-  base64Image: string;
-
-  @IsString()
-  @IsIn(['image/jpeg', 'image/png', 'image/webp', 'image/heic'])
-  @ApiProperty({
-    enum: ['image/jpeg', 'image/png', 'image/webp', 'image/heic'],
-  })
-  mimeType: string;
 }
 
 class AnomalyDto implements Anomaly {
@@ -255,8 +234,6 @@ export class ReportingController {
     private readonly getEvolutionUseCase: GetEvolutionUseCase,
     private readonly getPeriodComparisonUseCase: GetPeriodComparisonUseCase,
     private readonly getSankeyDataUseCase: GetSankeyDataUseCase,
-    private readonly getAIInsightsUseCase: GetAIInsightsUseCase,
-    private readonly getEvolutionAIInsightsUseCase: GetEvolutionAIInsightsUseCase,
     private readonly getCashflowForecastUseCase: GetCashflowForecastUseCase,
     private readonly getTagsSummaryUseCase: GetTagsSummaryUseCase,
     private readonly getTagDetailsUseCase: GetTagDetailsUseCase,
@@ -264,7 +241,6 @@ export class ReportingController {
     private readonly getAnomaliesUseCase: GetAnomaliesUseCase,
     private readonly ignoreAnomalyUseCase: IgnoreAnomalyUseCase,
     private readonly getNetWorthUseCase: GetNetWorthUseCase,
-    private readonly scanReceiptUseCase: ScanReceiptUseCase,
   ) {}
 
   @Post('reporting/anomalies/ignore')
@@ -352,34 +328,6 @@ export class ReportingController {
     return this.getSankeyDataUseCase.execute(accountId, periodId);
   }
 
-  @Get('periods/:periodId/reporting/ai-insights')
-  @ApiOperation({ summary: 'Get AI-generated financial insights' })
-  async getAIInsights(
-    @Param('accountId') accountId: string,
-    @Param('periodId') periodId: string,
-    @Query('locale') locale: string = 'fr',
-  ): Promise<{ insights: string }> {
-    const insights = await this.getAIInsightsUseCase.execute(
-      accountId,
-      periodId,
-      locale,
-    );
-    return { insights };
-  }
-
-  @Get('reporting/evolution/ai-insights')
-  @ApiOperation({ summary: 'Get AI-generated evolution insights' })
-  async getEvolutionAIInsights(
-    @Param('accountId') accountId: string,
-    @Query('locale') locale: string = 'fr',
-  ): Promise<{ insights: string }> {
-    const insights = await this.getEvolutionAIInsightsUseCase.execute(
-      accountId,
-      locale,
-    );
-    return { insights };
-  }
-
   @Get('reporting/cashflow')
   @ApiOperation({
     summary: 'Get cashflow forecast based on recurring transactions',
@@ -389,12 +337,6 @@ export class ReportingController {
     @Query() query: CashflowQueryDto,
   ): Promise<CashflowForecastResponse> {
     return this.getCashflowForecastUseCase.execute(accountId, query.days);
-  }
-
-  @Post('reporting/scan-receipt')
-  @ApiOperation({ summary: 'Scan a receipt image to extract data' })
-  async scanReceipt(@Body() dto: ScanReceiptDto): Promise<ScanReceiptResult> {
-    return this.scanReceiptUseCase.execute(dto.base64Image, dto.mimeType);
   }
 
   @Get('reporting/tags-summary')
