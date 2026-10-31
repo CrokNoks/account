@@ -39,13 +39,13 @@ describe('AnomaliesWidget ignore error', () => {
 
   it('shows the API message once and restores the anomaly', () => {
     ignoreAnomaly.mockImplementation((_vars, opts) =>
-      opts.onError({ response: { data: { message: 'Anomalie introuvable' } } }),
+      opts.onError({ response: { data: { message: 'Transaction not found' } } }),
     );
     renderWidget();
     fireEvent.click(screen.getByTitle(fr.Reporting.anomalies.ignore));
 
     expect(toast.error).toHaveBeenCalledTimes(1);
-    expect(toast.error).toHaveBeenCalledWith('Anomalie introuvable');
+    expect(toast.error).toHaveBeenCalledWith('Transaction introuvable');
     expect(screen.getByText('Doublon')).toBeTruthy();
   });
 

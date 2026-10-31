@@ -8,6 +8,7 @@ import { DeleteRecurringTransactionData } from '../model/types';
 export function useDeleteRecurringTransaction() {
   const queryClient = useQueryClient();
   const t = useTranslations('Recurring');
+  const tApi = useTranslations('ApiErrors');
 
   return useMutation({
     mutationFn: async ({ accountId, id }: DeleteRecurringTransactionData) => {
@@ -17,7 +18,7 @@ export function useDeleteRecurringTransaction() {
       queryClient.invalidateQueries({ queryKey: ['recurring-transactions', variables.accountId] });
     },
     onError: (error) => {
-      toast.error(getApiErrorMessage(error, t('delete_error')));
+      toast.error(getApiErrorMessage(error, t('delete_error'), tApi));
     },
   });
 }

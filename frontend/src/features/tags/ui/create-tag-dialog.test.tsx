@@ -37,7 +37,7 @@ describe('CreateTagDialog creation error', () => {
     submit();
 
     expect(toast.error).toHaveBeenCalledTimes(1);
-    expect(toast.error).toHaveBeenCalledWith('color must be a hexadecimal color');
+    expect(toast.error).toHaveBeenCalledWith('Le champ « couleur » doit être une couleur hexadécimale (ex. #FF5733)');
   });
 
   it('falls back to the generic message when the API gave none', () => {

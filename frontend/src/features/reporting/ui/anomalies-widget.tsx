@@ -15,6 +15,7 @@ import { useTranslations } from 'next-intl';
 
 export function AnomaliesWidget() {
   const t = useTranslations('Reporting.anomalies');
+  const tApi = useTranslations('ApiErrors');
   const { activeAccountId, activePeriodId } = useAccountStore();
   const { data: anomalies, isLoading } = useAnomalies(activeAccountId, activePeriodId);
   const { mutate: ignoreAnomaly } = useIgnoreAnomaly(activePeriodId);
@@ -66,7 +67,7 @@ export function AnomaliesWidget() {
             next.delete(anomaly.id);
             return next;
           });
-          toast.error(getApiErrorMessage(error, t('update_error')));
+          toast.error(getApiErrorMessage(error, t('update_error'), tApi));
         }
       }
     );

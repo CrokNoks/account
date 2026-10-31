@@ -53,11 +53,11 @@ describe.each(cases)('recurring $name error toast', ({ method, fallback, run, va
   beforeEach(() => vi.clearAllMocks());
 
   it('shows the API message once', async () => {
-    vi.mocked(apiClient[method]).mockRejectedValue({ response: { data: { message: 'Catégorie introuvable' } } });
+    vi.mocked(apiClient[method]).mockRejectedValue({ response: { data: { message: 'Account not found' } } });
     const { result } = run();
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     act(() => (result.current as any).mutate(vars));
-    await waitFor(() => expect(toast.error).toHaveBeenCalledWith('Catégorie introuvable'));
+    await waitFor(() => expect(toast.error).toHaveBeenCalledWith('Compte introuvable'));
     expect(toast.error).toHaveBeenCalledTimes(1);
   });
 

@@ -35,12 +35,12 @@ describe('ShareAccountDialog share error', () => {
 
   it('shows the API message once', () => {
     share.mockImplementation((_vars, opts) =>
-      opts.onError({ response: { data: { message: ['email must be an email', 'permission is invalid'] } } }),
+      opts.onError({ response: { data: { message: ['email must be an email', 'permission must be one of the following values: read, write'] } } }),
     );
     submitShare();
 
     expect(toast.error).toHaveBeenCalledTimes(1);
-    expect(toast.error).toHaveBeenCalledWith('email must be an email · permission is invalid');
+    expect(toast.error).toHaveBeenCalledWith('Le champ « e-mail » doit être une adresse e-mail valide · Le champ « permission » a une valeur non autorisée');
   });
 
   it('falls back to the generic translated message when the API gave none', () => {

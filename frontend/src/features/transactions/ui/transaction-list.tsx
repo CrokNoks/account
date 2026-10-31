@@ -50,6 +50,7 @@ export function TransactionList({
   extraActions?: React.ReactNode
 }) {
   const t = useTranslations('Transactions');
+  const tApi = useTranslations('ApiErrors');
   const tc = useTranslations('Common');
   const { activeAccountId, activePeriodId } = useAccountStore();
   const { setTagDetailId, isCreateTransactionDrawerOpen, setCreateTransactionDrawerOpen } = useUiStore();
@@ -180,7 +181,7 @@ export function TransactionList({
   const displayedIds = useMemo(() => new Set(transactions?.data.map(t => t.id) ?? []), [transactions]);
   const bulkIds = useMemo(() => selectedIds.filter(id => displayedIds.has(id)), [selectedIds, displayedIds]);
 
-  const bulkErrorMessage = (err: unknown) => getApiErrorMessage(err, tc('error'));
+  const bulkErrorMessage = (err: unknown) => getApiErrorMessage(err, tc('error'), tApi);
 
   const toggleSelectAll = () => {
     if (transactions?.data && selectedIds.length === transactions.data.length) {

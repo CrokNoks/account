@@ -169,12 +169,12 @@ describe('TransactionList bulk error toast', () => {
 
   it('shows the API message once when the bulk delete fails', () => {
     bulkDelete.mockImplementation((_vars, opts) =>
-      opts.onError({ response: { data: { message: 'Transaction introuvable' } } }),
+      opts.onError({ response: { data: { message: 'Transaction not found' } } }),
     );
     selectOneAndClick('bulk delete');
 
     expect(toast.error).toHaveBeenCalledTimes(1);
-    expect(toast.error).toHaveBeenCalledWith('Transaction introuvable');
+    expect(toast.error).toHaveBeenCalledWith('exact.transaction_not_found');
   });
 
   it('shows the generic message when the bulk update fails without an API message', () => {

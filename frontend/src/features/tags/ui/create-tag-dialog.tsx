@@ -20,6 +20,7 @@ import { getApiErrorMessage } from '@/shared/api/mutation-error';
 
 export function CreateTagDialog() {
   const t = useTranslations('Tags');
+  const tApi = useTranslations('ApiErrors');
   const tc = useTranslations('Common');
   const { activeAccountId } = useAccountStore();
   const [open, setOpen] = useState(false);
@@ -43,7 +44,7 @@ export function CreateTagDialog() {
         setOpen(false);
       },
       onError: (error) => {
-        toast.error(getApiErrorMessage(error, tc('error')));
+        toast.error(getApiErrorMessage(error, tc('error'), tApi));
       },
     });
   };

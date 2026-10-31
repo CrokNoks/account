@@ -8,6 +8,7 @@ import { UpdateRecurringTransactionData } from '../model/types';
 export function useUpdateRecurringTransaction() {
   const queryClient = useQueryClient();
   const t = useTranslations('Recurring');
+  const tApi = useTranslations('ApiErrors');
 
   return useMutation({
     mutationFn: async ({ accountId, id, data }: UpdateRecurringTransactionData) => {
@@ -18,7 +19,7 @@ export function useUpdateRecurringTransaction() {
       queryClient.invalidateQueries({ queryKey: ['recurring-transactions', variables.accountId] });
     },
     onError: (error) => {
-      toast.error(getApiErrorMessage(error, t('update_error')));
+      toast.error(getApiErrorMessage(error, t('update_error'), tApi));
     },
   });
 }

@@ -27,6 +27,7 @@ interface ShareAccountDialogProps {
 
 export function ShareAccountDialog({ accountId, accountName, open, onOpenChange }: ShareAccountDialogProps) {
   const t = useTranslations('Accounts');
+  const tApi = useTranslations('ApiErrors');
   const tc = useTranslations('Common');
   
   const [email, setEmail] = useState('');
@@ -45,7 +46,7 @@ export function ShareAccountDialog({ accountId, accountName, open, onOpenChange 
         setEmail('');
       },
       onError: (err) => {
-        toast.error(getApiErrorMessage(err, tc('error')));
+        toast.error(getApiErrorMessage(err, tc('error'), tApi));
       }
     });
   };
@@ -100,7 +101,7 @@ export function ShareAccountDialog({ accountId, accountName, open, onOpenChange 
                 <div className="p-4 text-center text-sm text-muted-foreground">{tc('loading')}</div>
               ) : sharesError ? (
                 <div role="alert" className="p-4 text-center text-sm text-destructive">
-                  {getApiErrorMessage(sharesError, tc('error'))}
+                  {getApiErrorMessage(sharesError, tc('error'), tApi)}
                 </div>
               ) : shares?.length === 0 ? (
                 <div className="p-4 text-center text-sm text-muted-foreground">{t('share_empty')}</div>

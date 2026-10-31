@@ -8,9 +8,10 @@ import { AppTour } from '@/shared/ui/tour/AppTour';
 
 export default function QueryProvider({ children }: { children: React.ReactNode }) {
   const t = useTranslations('Common');
+  const tApi = useTranslations('ApiErrors');
   const errorMessage = t('error');
-  const [{ cache: mutationCache, setFallback }] = useState(() => createMutationCache(errorMessage));
-  useEffect(() => setFallback(errorMessage), [setFallback, errorMessage]);
+  const [{ cache: mutationCache, setFallback }] = useState(() => createMutationCache(errorMessage, tApi));
+  useEffect(() => setFallback(errorMessage, tApi), [setFallback, errorMessage, tApi]);
   const [queryClient] = useState(
     () =>
       new QueryClient({

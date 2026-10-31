@@ -32,6 +32,7 @@ interface TagSelectorProps {
 
 export function TagSelector({ accountId, selectedTagIds, onChange }: TagSelectorProps) {
   const t = useTranslations('Tags.selector');
+  const tApi = useTranslations('ApiErrors');
   const [open, setOpen] = React.useState(false);
   const [inputValue, setInputValue] = React.useState('');
   const { data: tags } = useTags(accountId);
@@ -62,7 +63,7 @@ export function TagSelector({ accountId, selectedTagIds, onChange }: TagSelector
         toast.success(t('created', { name: newTag.name }));
       },
       onError: (error) => {
-        toast.error(getApiErrorMessage(error, t('create_error')));
+        toast.error(getApiErrorMessage(error, t('create_error'), tApi));
       }
     });
   };

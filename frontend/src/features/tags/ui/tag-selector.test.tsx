@@ -34,12 +34,12 @@ describe('TagSelector on-the-fly creation error', () => {
 
   it('shows the API message once', () => {
     createTag.mockImplementation((_vars, opts) =>
-      opts.onError({ response: { data: { message: 'Ce tag existe déjà' } } }),
+      opts.onError({ response: { data: { message: 'A tag with this name already exists' } } }),
     );
     openAndCreate();
 
     expect(toast.error).toHaveBeenCalledTimes(1);
-    expect(toast.error).toHaveBeenCalledWith('Ce tag existe déjà');
+    expect(toast.error).toHaveBeenCalledWith('Une étiquette portant ce nom existe déjà');
   });
 
   it('falls back to the translated message when the API gave none', () => {
