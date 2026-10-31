@@ -85,13 +85,18 @@ function BudgetGroup({ title, items, isExpense }: { title: string, items: Budget
         {items.map((item) => {
           // remaining < 0 means the budget is exceeded (expense, saving or income alike)
           const remaining = parseInt(item.remaining, 10);
-          const percentage = Math.min(Math.abs(item.percentage), 100);
-          
+          const real = parseInt(item.real, 10);
+          const budget = parseInt(item.budget, 10);
+          // Without budget the API returns 0 %: an amount spent or received
+          // on a 0 budget fills the whole bar.
+          const unbudgeted = budget === 0 && real !== 0;
+          const percentage = unbudgeted ? 100 : Math.min(Math.abs(item.percentage), 100);
+
           // Expense real is negative and budget positive: compare absolute values.
           // Red only when the budget is exceeded.
-          const variant = isExpense 
-            ? (Math.abs(parseInt(item.real, 10)) > Math.abs(parseInt(item.budget, 10)) ? "bg-red-500" : "bg-green-500")
-            : (parseInt(item.real, 10) >= parseInt(item.budget, 10) ? "bg-green-500" : "bg-yellow-500");
+          const variant = isExpense
+            ? (Math.abs(real) > Math.abs(budget) ? "bg-red-500" : "bg-green-500")
+            : (real >= budget ? "bg-green-500" : "bg-yellow-500");
 
           return (
             <div key={item.categoryId} className="space-y-2">

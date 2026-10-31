@@ -6,6 +6,8 @@ const breakdown = {
   expenses: [
     { categoryId: 'e1', name: 'Courses', real: '-60000', budget: '50000', remaining: '-10000', percentage: 120 },
     { categoryId: 'e2', name: 'Loisirs', real: '-3000', budget: '10000', remaining: '7000', percentage: 30 },
+    { categoryId: 'e3', name: 'Imprévus', real: '-2000', budget: '0', remaining: '-2000', percentage: 0 },
+    { categoryId: 'e4', name: 'Cadeaux', real: '0', budget: '0', remaining: '0', percentage: 0 },
   ],
   income: [
     { categoryId: 'i1', name: 'Salaire', real: '260000', budget: '250000', remaining: '-10000', percentage: 104 },
@@ -31,9 +33,22 @@ describe('BudgetBreakdown overrun', () => {
   it('shows an expense above its budget as an overrun, not as a remaining amount', () => {
     render(<BudgetBreakdown />);
     const over = screen.getAllByTestId('over-budget');
-    expect(over).toHaveLength(1); // only the overspent expense on the default tab
+    expect(over).toHaveLength(2); // Courses and Imprévus on the default tab
     expect(nbsp(over[0].textContent!)).toBe('over_budget_expense(100,00 €)');
-    expect(screen.getByText(/remaining/).textContent).toContain('70,00');
+    expect(screen.getAllByText(/remaining/)[0].textContent).toContain('70,00');
+  });
+
+  it('shows a full red bar for an expense spent without any budget', () => {
+    render(<BudgetBreakdown />);
+    const bar = screen.getAllByTestId('budget-bar')[2]; // Imprévus: 20 spent on 0
+    expect(bar.className).toContain('bg-red-500');
+    expect(bar.style.width).toBe('100%');
+  });
+
+  it('keeps an empty bar when nothing is spent and nothing is budgeted', () => {
+    render(<BudgetBreakdown />);
+    const bar = screen.getAllByTestId('budget-bar')[3]; // Cadeaux: 0 on 0
+    expect(bar.style.width).toBe('0%');
   });
 
   it('colours an expense bar red only when the budget is exceeded', () => {
