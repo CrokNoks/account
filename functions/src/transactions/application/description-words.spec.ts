@@ -1,5 +1,5 @@
 import * as natural from 'natural';
-import { extractWords, NOISE_WORDS } from './description-words';
+import { extractWords, NOISE_PHRASES, NOISE_WORDS } from './description-words';
 import { PredictCategoryUseCase } from './predict-category.use-case';
 import { TransactionRepository } from '../domain/transaction.repository.interface';
 import { MatchSmartRulesUseCase } from '../../smart-rules/application/match-smart-rules.use-case';
@@ -48,7 +48,7 @@ describe('extractWords', () => {
   it('removes the noise on every line of a multi-line label', () => {
     expect(
       extractWords(
-        'Prélèvement\nSEPA PRLV EDF\nRéf 99\nMDT FR12ZZZ123456 D12-3456789\nEchéance 12/10',
+        'Prélèvement\nSEPA PRLV EDF\nRéf 99\nMDT FR12ZZZ123456 3456789\nEchéance 12/10',
       ),
     ).toEqual(['edf']);
   });
@@ -81,43 +81,72 @@ describe('extractWords', () => {
     );
   });
 
-  it('removes words with at least as many digits as letters, keeps the others', () => {
-    expect(extractWords('q731bz5520 9876501234 d12 Spotify')).toEqual(
-      extractWords('Spotify'),
-    );
-    expect(extractWords('1Password')).toHaveLength(1);
-    expect(extractWords('bebe9')).toHaveLength(1);
-  });
-
-  it('lists the noise words explicitly', () => {
-    expect([...NOISE_WORDS].sort()).toEqual(
-      [
-        'sepa',
-        'prlv',
-        'cb',
-        'carte',
-        'paiement',
-        'prelevement',
-        'virement',
-        'emis',
-        'recu',
-        'faveur',
-        'echeance',
-        'ref',
-        'mdt',
-        'ou',
-        'mme',
-        'mlle',
-      ].sort(),
-    );
-  });
-
-  it.each([...NOISE_WORDS].filter((w) => w.length >= 2))(
-    'ignores the noise word "%s"',
+  it.each(['9876501234', 'q731bz5520', '12', '2026', 'a1b2c3d4'])(
+    'removes the word with only digits or mostly digits "%s"',
     (word) => {
       expect(extractWords(`${word} Spotify`)).toEqual(extractWords('Spotify'));
     },
   );
+
+  it.each(['24h', 'u2', 'd12', '1password', 'bebe9'])(
+    'keeps the word "%s"',
+    (word) => {
+      expect(extractWords(`${word} Spotify`)).toHaveLength(2);
+    },
+  );
+
+  it('compares stop words without accents', () => {
+    for (const stop of ['à', 'été', 'où', 'A', 'ÉTÉ']) {
+      expect(extractWords(`${stop} Spotify`)).toEqual(extractWords('Spotify'));
+    }
+  });
+
+  it('removes a noise expression wherever it is in the line', () => {
+    for (const phrase of NOISE_PHRASES) {
+      expect(extractWords(`${phrase} Spotify`)).toEqual(
+        extractWords('Spotify'),
+      );
+      expect(extractWords(`Spotify ${phrase}`)).toEqual(
+        extractWords('Spotify'),
+      );
+      expect(extractWords(`Spotify ${phrase.toUpperCase()} Premium`)).toEqual(
+        extractWords('Spotify Premium'),
+      );
+    }
+    expect(extractWords('Spotify Paiement  par   Carte Premium')).toEqual(
+      extractWords('Spotify Premium'),
+    );
+  });
+
+  it('keeps « carte » and the other words of an expression when they stand alone', () => {
+    expect(extractWords('Carte Noire')).toEqual([
+      ...extractWords('carte'),
+      ...extractWords('noire'),
+    ]);
+    expect(extractWords('Carte Noire')).toHaveLength(2);
+    expect(extractWords('Paiement Dupont')).toHaveLength(2);
+    expect(extractWords('Virement Dupont')).toHaveLength(2);
+  });
+
+  it('lists the noise expressions and acronyms explicitly', () => {
+    expect([...NOISE_PHRASES].sort()).toEqual(
+      [
+        'paiement par carte',
+        'virement en votre faveur',
+        'virement emis',
+        'virement recu',
+        'prelevement',
+        'echeance',
+      ].sort(),
+    );
+    expect([...NOISE_WORDS].sort()).toEqual(
+      ['sepa', 'prlv', 'cb', 'mdt', 'ref', 'mme', 'mlle'].sort(),
+    );
+  });
+
+  it.each([...NOISE_WORDS])('ignores the acronym "%s"', (word) => {
+    expect(extractWords(`${word} Spotify`)).toEqual(extractWords('Spotify'));
+  });
 });
 
 /**
