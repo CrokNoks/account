@@ -1,6 +1,6 @@
 # Règles intelligentes — classer automatiquement une transaction d'après sa description
 
-Mise à jour : 2026-10-30 · Commit : 157b272
+Mise à jour : 2026-10-31 · Commit : a010dfb
 
 ## Vocabulaire
 | Mot | Ce que ça veut dire ici |
@@ -17,7 +17,7 @@ Mise à jour : 2026-10-30 · Commit : 157b272
 | Les règles sont essayées de la plus haute priorité à la plus basse ; la première qui correspond gagne, les autres sont ignorées | `match-smart-rules.use-case.ts:17-27` | ❌ |
 | Aucune correspondance : catégorie vide, aucune étiquette | `match-smart-rules.use-case.ts:29` | ❌ |
 | À l'import/création en masse, si la transaction n'a pas de catégorie, la règle fournit catégorie et étiquettes (celles de la règle s'ajoutent à celles déjà données) | `functions/src/transactions/application/bulk-create-transactions.use-case.ts:28-37` | ❌ (ici) |
-| La prédiction de catégorie essaie les règles en premier (avant tout autre moyen) | `functions/src/transactions/application/predict-category.use-case.ts:21-28` | ❌ (ici) |
+| La prédiction de catégorie essaie les règles en premier (avant tout autre moyen) | `functions/src/transactions/application/predict-category.use-case.ts:44-55` | ❌ (ici) |
 | Création : catégorie vide si non fournie, étiquettes vides, priorité 0 par défaut | `smart-rules.controller.ts:92-98` | ❌ |
 | Le motif n'est pas contrôlé (une chaîne vide est acceptée par le code ; le front bloque le bouton si vide) | `smart-rule.entity.ts` (pas de validation) ; `frontend/.../create-smart-rule-dialog.tsx:153` | ❌ |
 | Modification partielle : seuls les champs envoyés changent ; règle absente = 404 | `smart-rules.controller.ts:107-113` | ❌ |
@@ -47,7 +47,7 @@ Pas de cycle de vie.
 ## Zones d'ombre
 - Les identifiants reçus en body (`categoryId`, `tagIds`) doivent être des UUID : sinon 400 (voir `transactions.md`). Ceux de la route (`:accountId`, `:id`) le sont aussi (voir `transactions.md`).
 - Deux règles de même priorité : l'ordre entre elles dépend de l'ordre renvoyé par la base (tri stable non garanti par le code).
-- Quand une règle donne une catégorie vide mais des étiquettes, la prédiction de catégorie renvoie quand même un résultat (voir `predict-category.use-case.ts:26`) ; l'intention n'est pas documentée.
+- Quand une règle donne une catégorie vide mais des étiquettes, la prédiction de catégorie renvoie quand même un résultat (voir `predict-category.use-case.ts:49-55`) ; l'intention n'est pas documentée.
 - À la création et à la modification, la catégorie et les étiquettes citées doivent appartenir au compte de l'URL : sinon 400 sans écriture (`AccountReferencesService`, `smart-rules.controller.ts`) ; e2e `cross-account-references.e2e-spec.ts`.
 - Les règles ne sont pas rejouées sur les transactions déjà existantes (aucun code trouvé).
 - « Regex plus tard » : commentaire du code (`smart-rule.entity.ts:61`), pas de décision confirmée.
