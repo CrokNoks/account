@@ -14,6 +14,7 @@ import { apiClient } from '@/shared/api/api-client';
 import { useRouter } from '@/i18n/routing';
 import { toCents, parseAmountToCents, centsToDecimalString } from '@/shared/lib/format';
 import { ParsedTransaction, ImportStep, ImportMapping } from '@/features/transactions/model/import-types';
+import { decodeCsv } from '@/features/transactions/model/import-csv';
 import { parseImportDate } from '@/features/transactions/model/parse-import-date';
 import { ImportUploadStep } from '@/features/transactions/ui/import/import-upload-step';
 import { ImportMappingStep } from '@/features/transactions/ui/import/import-mapping-step';
@@ -29,15 +30,6 @@ function readAsArrayBuffer(file: File): Promise<ArrayBuffer> {
     reader.onerror = () => reject(reader.error);
     reader.readAsArrayBuffer(file);
   });
-}
-
-// UTF-8 (BOM removed by the decoder) first; Windows-1252 (French bank exports) if the bytes are not valid UTF-8.
-function decodeCsv(buffer: ArrayBuffer): string {
-  try {
-    return new TextDecoder('utf-8', { fatal: true }).decode(buffer);
-  } catch {
-    return new TextDecoder('windows-1252').decode(buffer);
-  }
 }
 
 export default function ImportTransactionsPage() {
