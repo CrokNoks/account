@@ -1,7 +1,7 @@
 import { ValidateBy, ValidationOptions } from 'class-validator';
 import { isCentsString } from '../domain/cents';
 
-/** Montant en centimes entiers (chaîne), dans les bornes d'un bigint signé 64 bits. */
+/** Montant en centimes entiers (chaîne), dans ±(2^53 − 1). */
 export const IsCents = (options?: ValidationOptions): PropertyDecorator =>
   ValidateBy(
     {
@@ -9,7 +9,7 @@ export const IsCents = (options?: ValidationOptions): PropertyDecorator =>
       validator: {
         validate: (value) => isCentsString(value),
         defaultMessage: (args) =>
-          `${args?.property ?? 'value'} must be an integer amount in cents (signed 64-bit)`,
+          `${args?.property ?? 'value'} must be an integer amount in cents within ±(2^53 - 1)`,
       },
     },
     options,

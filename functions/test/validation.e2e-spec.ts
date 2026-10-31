@@ -174,13 +174,14 @@ describe('Request body validation (e2e)', () => {
     });
   });
 
-  describe('recurring amounts are integer cents (signed 64-bit)', () => {
+  describe('recurring amounts are integer cents (within ±(2^53 - 1))', () => {
     const base = '/00000000-0000-4000-8000-000000000101/recurring';
     const created = { description: 'Loyer', dayOfMonth: 5 };
 
     it.each([
       ['a decimal amount', '12.5'],
-      ['an amount above the signed 64-bit range', '9223372036854775808'],
+      ['an amount above 2^53 - 1', '9007199254740992'],
+      ['a negative amount below -(2^53 - 1)', '-9007199254740992'],
       ['a huge amount', '99999999999999999999999'],
     ])('POST answers 400 without saving for %s', async (_, amount) => {
       await http()
@@ -203,8 +204,8 @@ describe('Request body validation (e2e)', () => {
       expect(mocks.recurring.save).not.toHaveBeenCalled();
     });
 
-    it('keeps the largest signed 64-bit amount exactly on create and update', async () => {
-      const max = '9223372036854775807';
+    it('keeps the largest accepted amount (2^53 - 1) exactly on create and update', async () => {
+      const max = '9007199254740991';
       const res = await http()
         .post(base)
         .set(auth())
@@ -222,13 +223,13 @@ describe('Request body validation (e2e)', () => {
     });
   });
 
-  describe('other amounts are integer cents (signed 64-bit)', () => {
+  describe('other amounts are integer cents (within ±(2^53 - 1))', () => {
     const acc = '00000000-0000-4000-8000-000000000101';
     const bad = [
       ['a decimal amount', '12.5'],
       ['a scientific notation amount', '1e3'],
       ['a non numeric amount', 'abc'],
-      ['an amount above the signed 64-bit range', '9223372036854775808'],
+      ['an amount above 2^53 - 1', '9007199254740992'],
       ['a huge amount', '99999999999999999999'],
     ];
     const cat = '00000000-0000-4000-8000-000000000019';
@@ -329,7 +330,8 @@ describe('Request body validation (e2e)', () => {
       ['minAmount', '1.5'],
       ['maxAmount', '1.5'],
       ['minAmount', '1e3'],
-      ['maxAmount', '9223372036854775808'],
+      ['maxAmount', '9007199254740992'],
+      ['minAmount', '-9007199254740992'],
       ['minAmount', '99999999999999999999'],
     ])('GET transactions answers 400 for %s=%s', async (field, value) => {
       await http()
@@ -347,14 +349,14 @@ describe('Request body validation (e2e)', () => {
       });
       await http()
         .get(`/${acc}/transactions`)
-        .query({ minAmount: '-5000', maxAmount: '9223372036854775807' })
+        .query({ minAmount: '-5000', maxAmount: '9007199254740991' })
         .set(auth())
         .expect(200);
       const [[, options]] = mocks.transactions.findAllByAccount.mock.calls as [
         [string, { minAmount: bigint; maxAmount: bigint }],
       ];
       expect(options.minAmount).toBe(BigInt(-5000));
-      expect(options.maxAmount).toBe(BigInt('9223372036854775807'));
+      expect(options.maxAmount).toBe(BigInt('9007199254740991'));
     });
   });
 

@@ -6,8 +6,8 @@ describe('cents', () => {
     '-0',
     '1250',
     '-4250',
-    '9223372036854775807',
-    '-9223372036854775808',
+    '9007199254740991',
+    '-9007199254740991',
   ])('accepts %s', (value) => expect(isCentsString(value)).toBe(true));
 
   it.each([
@@ -17,17 +17,17 @@ describe('cents', () => {
     '+5',
     ' 5',
     '12 €',
-    '9223372036854775808',
-    '-9223372036854775809',
+    '9007199254740992',
+    '-9007199254740992',
+    '9223372036854775807',
+    '-9223372036854775808',
     '99999999999999999999999',
   ])('refuses %j', (value) => expect(isCentsString(value)).toBe(false));
 
   it('refuses non strings', () => expect(isCentsString(5)).toBe(false));
 
   it('converts without losing precision', () => {
-    expect(parseCents('9223372036854775807').toString()).toBe(
-      '9223372036854775807',
-    );
+    expect(parseCents('9007199254740991').toString()).toBe('9007199254740991');
     expect(parseCents('-0')).toBe(BigInt(0));
   });
 });

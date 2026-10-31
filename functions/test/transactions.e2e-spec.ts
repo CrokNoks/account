@@ -114,8 +114,9 @@ describe('Transactions routes (e2e)', () => {
         ['a decimal amount', '12.5'],
         ['an exponent notation', '1e3'],
         ['an explicit plus sign', '+5'],
-        ['an amount above the signed 64-bit range', '9223372036854775808'],
-        ['an amount below the signed 64-bit range', '-9223372036854775809'],
+        ['an amount above 2^53 - 1', '9007199254740992'],
+        ['an amount below -(2^53 - 1)', '-9007199254740992'],
+        ['the largest signed 64-bit amount', '9223372036854775807'],
         ['a huge amount', '99999999999999999999999'],
       ])('answers 400 without saving for %s', async (_, amount) => {
         await http()
@@ -127,8 +128,8 @@ describe('Transactions routes (e2e)', () => {
       });
 
       it.each([
-        ['the largest signed 64-bit amount', '9223372036854775807'],
-        ['the smallest signed 64-bit amount', '-9223372036854775808'],
+        ['the largest accepted amount (2^53 - 1)', '9007199254740991'],
+        ['the smallest accepted amount', '-9007199254740991'],
         ['a negative zero', '-0'],
       ])(
         'keeps %s exactly, without going through a float',
