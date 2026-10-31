@@ -1,0 +1,128 @@
+@baseUrl = http://localhost:{{port}}
+# Supabase local (auth) : --var anon=<ANON_KEY de `supabase status`> --var port=<port de l'API>
+@authUrl = http://127.0.0.1:54321/auth/v1
+
+### Utilisateur jetable : propriétaire
+# @name owner
+POST {{authUrl}}/signup
+apikey: {{anon}}
+Content-Type: application/json
+
+{ "email": "owner-{{$timestamp}}@example.com", "password": "Password123!" }
+
+?? status == 200
+
+### Utilisateur jetable : autre utilisateur connecté
+# @name stranger
+POST {{authUrl}}/signup
+apikey: {{anon}}
+Content-Type: application/json
+
+{ "email": "stranger-{{$timestamp}}@example.com", "password": "Password123!" }
+
+?? status == 200
+
+### CA2/CA4 - création avec l'ancienne description : succès, ni renvoyée
+# @name created
+POST {{baseUrl}}/accounts
+Authorization: Bearer {{owner.access_token}}
+Content-Type: application/json
+
+{ "name": "Courant", "description": "Perso", "initialBalance": "1000" }
+
+?? status == 201
+?? js response.parsedBody.name == Courant
+?? js response.parsedBody.description == undefined
+
+### CA4 - liste : aucun compte ne contient description
+GET {{baseUrl}}/accounts
+Authorization: Bearer {{owner.access_token}}
+
+?? status == 200
+?? js response.parsedBody.length == 1
+?? js response.parsedBody[0].description == undefined
+
+### CA3 - PATCH avec description : autres champs modifiés, description ignorée
+PATCH {{baseUrl}}/accounts/{{created.id}}
+Authorization: Bearer {{owner.access_token}}
+Content-Type: application/json
+
+{ "name": "Renommé", "description": "Perso" }
+
+?? status == 200
+?? js response.parsedBody.name == Renommé
+?? js response.parsedBody.initialBalance isString
+?? js response.parsedBody.initialBalance == 1000
+?? js response.parsedBody.description == undefined
+
+### Décision - PATCH avec seulement description : succès, compte inchangé
+PATCH {{baseUrl}}/accounts/{{created.id}}
+Authorization: Bearer {{owner.access_token}}
+Content-Type: application/json
+
+{ "description": "Perso" }
+
+?? status == 200
+?? js response.parsedBody.name == Renommé
+?? js response.parsedBody.initialBalance isString
+?? js response.parsedBody.initialBalance == 1000
+
+### CA5 - autre champ inconnu à la création : 400
+POST {{baseUrl}}/accounts
+Authorization: Bearer {{owner.access_token}}
+Content-Type: application/json
+
+{ "name": "X", "type": "checking", "currency": "EUR" }
+
+?? status == 400
+
+### CA5 - autre champ inconnu au PATCH : 400
+PATCH {{baseUrl}}/accounts/{{created.id}}
+Authorization: Bearer {{owner.access_token}}
+Content-Type: application/json
+
+{ "name": "X", "type": "checking" }
+
+?? status == 400
+
+### CA6 - l'autre utilisateur n'a aucun accès : le compte lui est invisible (404, RLS), rien n'est écrit
+PATCH {{baseUrl}}/accounts/{{created.id}}
+Authorization: Bearer {{stranger.access_token}}
+Content-Type: application/json
+
+{ "name": "Pirate", "description": "x" }
+
+?? status == 404
+
+### Partage en lecture avec l'autre utilisateur
+POST {{baseUrl}}/accounts/{{created.id}}/shares
+Authorization: Bearer {{owner.access_token}}
+Content-Type: application/json
+
+{ "email": "{{stranger.user.email}}", "permission": "read" }
+
+?? status == 201
+
+### CA6 - non-propriétaire avec accès (partage) et description : 403
+PATCH {{baseUrl}}/accounts/{{created.id}}
+Authorization: Bearer {{stranger.access_token}}
+Content-Type: application/json
+
+{ "name": "Pirate", "description": "x" }
+
+?? status == 403
+
+### CA6 - anonyme : 401
+PATCH {{baseUrl}}/accounts/{{created.id}}
+Content-Type: application/json
+
+{ "name": "Pirate" }
+
+?? status == 401
+
+### CA6 - rien n'a été écrit
+GET {{baseUrl}}/accounts
+Authorization: Bearer {{owner.access_token}}
+
+?? status == 200
+?? js response.parsedBody[0].name == Renommé
