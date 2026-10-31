@@ -358,7 +358,6 @@ describe('Account ownership of :id routes (e2e)', () => {
         mocks.accounts.findById.mockResolvedValue({
           id: '00000000-0000-4000-8000-000000000101',
           initialBalance: BigInt(0),
-          description: null,
         });
         await http()
           .get(`/00000000-0000-4000-8000-000000000101/${path}`)

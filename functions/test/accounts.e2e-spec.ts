@@ -5,6 +5,15 @@ import { auth, createE2EApp, Mocks, USER } from './e2e-app';
 import { Account } from '../src/accounts/domain/account.entity';
 import { AccountShare } from '../src/accounts/domain/account-share.entity';
 
+const ENTITY_KEYS = [
+  'createdAt',
+  'id',
+  'initialBalance',
+  'name',
+  'ownerId',
+  'updatedAt',
+];
+
 describe('Accounts and sharing routes (e2e)', () => {
   let app: INestApplication<App>;
   let mocks: Mocks;
@@ -63,6 +72,91 @@ describe('Accounts and sharing routes (e2e)', () => {
     expect(res.body).toMatchObject({
       ownerId: USER.id,
       initialBalance: '-2500',
+    });
+  });
+
+  describe('legacy `description` sent by a cached front', () => {
+    it('POST /accounts succeeds and neither stores nor returns description', async () => {
+      const res = await http()
+        .post('/accounts')
+        .set(auth())
+        .send({ name: 'Courant', description: 'Perso', initialBalance: '0' })
+        .expect(201);
+
+      expect(res.body).not.toHaveProperty('description');
+      const [[saved]] = mocks.accounts.save.mock.calls as [Account][];
+      expect(Object.keys(saved).sort()).toEqual(ENTITY_KEYS);
+      expect(saved.name).toBe('Courant');
+    });
+
+    it('PATCH /accounts/:id updates the other fields and ignores description', async () => {
+      const res = await http()
+        .patch('/accounts/00000000-0000-4000-8000-000000000101')
+        .set(auth())
+        .send({ name: 'Renommé', description: 'Perso' })
+        .expect(200);
+
+      expect(res.body).toMatchObject({ name: 'Renommé' });
+      expect(res.body).not.toHaveProperty('description');
+      const [[saved]] = mocks.accounts.save.mock.calls as [Account][];
+      expect(Object.keys(saved).sort()).toEqual(ENTITY_KEYS);
+      expect(saved.name).toBe('Renommé');
+    });
+
+    it('PATCH /accounts/:id with only description succeeds and changes nothing', async () => {
+      const res = await http()
+        .patch('/accounts/00000000-0000-4000-8000-000000000101')
+        .set(auth())
+        .send({ description: 'Perso' })
+        .expect(200);
+
+      expect(res.body).toMatchObject({
+        name: 'Courant',
+        initialBalance: '150000',
+      });
+      expect(res.body).not.toHaveProperty('description');
+    });
+
+    it('GET /accounts never returns description', async () => {
+      mocks.accounts.findAllForUser.mockResolvedValue([account()]);
+      const res = await http().get('/accounts').set(auth()).expect(200);
+      expect(res.body[0]).not.toHaveProperty('description');
+    });
+
+    it('PATCH /accounts/:id still rejects other unknown fields (400)', async () => {
+      await http()
+        .patch('/accounts/00000000-0000-4000-8000-000000000101')
+        .set(auth())
+        .send({ name: 'X', type: 'checking' })
+        .expect(400);
+      expect(mocks.accounts.save).not.toHaveBeenCalled();
+    });
+
+    it('PATCH /accounts/:id answers 404 to a user with no access at all (RLS hides the account), nothing written', async () => {
+      mocks.accounts.findById.mockResolvedValue(null);
+      await http()
+        .patch('/accounts/00000000-0000-4000-8000-000000000101')
+        .set(auth())
+        .send({ name: 'X', description: 'Perso' })
+        .expect(404);
+      expect(mocks.accounts.save).not.toHaveBeenCalled();
+    });
+
+    it('PATCH /accounts/:id answers 403 to a non-owner, with or without description', async () => {
+      mocks.accounts.findById.mockResolvedValue(
+        account('00000000-0000-4000-8000-000000000104'),
+      );
+      await http()
+        .patch('/accounts/00000000-0000-4000-8000-000000000101')
+        .set(auth())
+        .send({ name: 'X' })
+        .expect(403);
+      await http()
+        .patch('/accounts/00000000-0000-4000-8000-000000000101')
+        .set(auth())
+        .send({ name: 'X', description: 'Perso' })
+        .expect(403);
+      expect(mocks.accounts.save).not.toHaveBeenCalled();
     });
   });
 

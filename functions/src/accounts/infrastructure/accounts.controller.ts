@@ -31,6 +31,7 @@ import {
   ApiBearerAuth,
   ApiProperty,
 } from '@nestjs/swagger';
+import { IgnoredLegacyField } from './ignored-legacy-field.decorator';
 import { Account } from '../domain/account.entity';
 
 export class CreateAccountDto {
@@ -41,14 +42,8 @@ export class CreateAccountDto {
   @IsString()
   name: string;
 
-  @ApiProperty({
-    description: 'The description of the account purpose',
-    example: 'Main checking account for daily expenses',
-    required: false,
-  })
-  @IsOptional()
-  @IsString()
-  description?: string;
+  // Ancien champ encore envoyé par un front en cache.
+  @IgnoredLegacyField() description?: unknown;
 
   @ApiProperty({
     description: 'The initial balance in cents',
@@ -64,12 +59,11 @@ export class UpdateAccountDto {
   @ApiProperty({ required: false }) @IsOptional() @IsString() name?: string;
   @ApiProperty({ required: false })
   @IsOptional()
-  @IsString()
-  description?: string;
-  @ApiProperty({ required: false })
-  @IsOptional()
   @IsNumberString()
   initialBalance?: string;
+
+  // Ancien champ encore envoyé par un front en cache.
+  @IgnoredLegacyField() description?: unknown;
 }
 
 export class ShareAccountDto {
@@ -159,7 +153,6 @@ export class AccountsController {
       id: existing.id,
       ownerId: existing.ownerId,
       name: dto.name ?? existing.name,
-      description: dto.description ?? existing.description,
       initialBalance: dto.initialBalance
         ? BigInt(dto.initialBalance)
         : existing.initialBalance,
@@ -172,7 +165,6 @@ export class AccountsController {
       id: updated.id,
       name: updated.name,
       ownerId: updated.ownerId,
-      description: updated.description,
       initialBalance: updated.initialBalance.toString(),
       createdAt: updated.createdAt.toISOString(),
       updatedAt: updated.updatedAt.toISOString(),
@@ -206,7 +198,6 @@ export class AccountsController {
     const account = await this.createAccountUseCase.execute({
       name: dto.name,
       ownerId: ownerId,
-      description: dto.description,
       initialBalance: dto.initialBalance
         ? BigInt(dto.initialBalance)
         : undefined,
@@ -216,7 +207,6 @@ export class AccountsController {
       id: account.id,
       name: account.name,
       ownerId: account.ownerId,
-      description: account.description,
       initialBalance: account.initialBalance.toString(),
       createdAt: account.createdAt.toISOString(),
       updatedAt: account.updatedAt.toISOString(),
@@ -234,7 +224,6 @@ export class AccountsController {
       id: account.id,
       name: account.name,
       ownerId: account.ownerId,
-      description: account.description,
       initialBalance: account.initialBalance.toString(),
       createdAt: account.createdAt.toISOString(),
       updatedAt: account.updatedAt.toISOString(),

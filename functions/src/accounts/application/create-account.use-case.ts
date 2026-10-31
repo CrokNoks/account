@@ -5,7 +5,6 @@ import { randomUUID } from 'node:crypto';
 export interface CreateAccountInput {
   name: string;
   ownerId: string;
-  description?: string;
   initialBalance?: bigint;
 }
 
@@ -17,7 +16,6 @@ export class CreateAccountUseCase {
       id: randomUUID(),
       name: input.name,
       ownerId: input.ownerId,
-      description: input.description,
       initialBalance: input.initialBalance ?? 0n,
     });
 

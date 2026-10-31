@@ -61,12 +61,15 @@ describe('Front/back contract (e2e)', () => {
       expect(mocks.accounts.save).not.toHaveBeenCalled();
     });
 
-    it('accepts the payload sent by the front (name, description, initialBalance)', () =>
-      http()
+    // Un front en cache envoie encore description : acceptée et ignorée.
+    it('accepts and ignores the description sent by a cached front', async () => {
+      const res = await http()
         .post('/accounts')
         .set(auth())
         .send({ name: 'Courant', description: 'Perso', initialBalance: '0' })
-        .expect(201));
+        .expect(201);
+      expect(res.body).not.toHaveProperty('description');
+    });
   });
 
   describe('tag creation', () => {
