@@ -109,7 +109,7 @@ export function TagSelector({ accountId, selectedTagIds, onChange }: TagSelector
             </Button>
           }
         />
-        <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+        <PopoverContent className="w-(--anchor-width) p-0" align="start">
           <Command>
             <CommandInput 
               placeholder={t('search_placeholder')} 
