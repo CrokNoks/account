@@ -16,13 +16,7 @@ import { GetAccountsUseCase } from '../application/get-accounts.use-case';
 import { ShareAccountUseCase } from '../application/share-account.use-case';
 import { AccountRepository } from '../domain/account.repository.interface';
 import { AccountShareRepository } from '../domain/account-share.repository.interface';
-import {
-  IsString,
-  IsOptional,
-  IsNumberString,
-  IsEmail,
-  IsIn,
-} from 'class-validator';
+import { IsString, IsOptional, IsEmail, IsIn } from 'class-validator';
 import { SupabaseAuthGuard } from '../../auth/supabase-auth.guard';
 import {
   ApiTags,
@@ -33,6 +27,8 @@ import {
 } from '@nestjs/swagger';
 import { IgnoredLegacyField } from './ignored-legacy-field.decorator';
 import { Account } from '../domain/account.entity';
+import { parseCents } from '../../shared/domain/cents';
+import { IsCents } from '../../shared/infrastructure/is-cents.decorator';
 
 export class CreateAccountDto {
   @ApiProperty({
@@ -51,7 +47,7 @@ export class CreateAccountDto {
     required: false,
   })
   @IsOptional()
-  @IsNumberString()
+  @IsCents()
   initialBalance?: string; // DTO uses string for bigint input
 }
 
@@ -59,7 +55,7 @@ export class UpdateAccountDto {
   @ApiProperty({ required: false }) @IsOptional() @IsString() name?: string;
   @ApiProperty({ required: false })
   @IsOptional()
-  @IsNumberString()
+  @IsCents()
   initialBalance?: string;
 
   // Ancien champ encore envoyé par un front en cache.
@@ -154,7 +150,7 @@ export class AccountsController {
       ownerId: existing.ownerId,
       name: dto.name ?? existing.name,
       initialBalance: dto.initialBalance
-        ? BigInt(dto.initialBalance)
+        ? parseCents(dto.initialBalance)
         : existing.initialBalance,
       createdAt: existing.createdAt,
       updatedAt: new Date(),
@@ -199,7 +195,7 @@ export class AccountsController {
       name: dto.name,
       ownerId: ownerId,
       initialBalance: dto.initialBalance
-        ? BigInt(dto.initialBalance)
+        ? parseCents(dto.initialBalance)
         : undefined,
     });
 

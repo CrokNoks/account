@@ -315,11 +315,11 @@ export class FindTransactionsQueryDto {
   tagIds?: string[];
 
   @IsOptional()
-  @IsNumberString()
+  @IsCents()
   minAmount?: string;
 
   @IsOptional()
-  @IsNumberString()
+  @IsCents()
   maxAmount?: string;
 
   @IsOptional()
@@ -431,8 +431,8 @@ export class TransactionsController {
         search: query.search,
         categoryId: query.categoryId,
         tagIds: query.tagIds,
-        minAmount: query.minAmount ? BigInt(query.minAmount) : undefined,
-        maxAmount: query.maxAmount ? BigInt(query.maxAmount) : undefined,
+        minAmount: query.minAmount ? parseCents(query.minAmount) : undefined,
+        maxAmount: query.maxAmount ? parseCents(query.maxAmount) : undefined,
         reconciled: query.reconciled,
         page: query.page ? parseInt(query.page, 10) : undefined,
         limit: query.limit ? parseInt(query.limit, 10) : undefined,

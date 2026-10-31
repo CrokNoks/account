@@ -20,15 +20,11 @@ import { SupabaseAuthGuard } from '../../auth/supabase-auth.guard';
 import { GetCategoriesUseCase } from '../application/get-categories.use-case';
 import { CreateCategoryUseCase } from '../application/create-category.use-case';
 import { Category, CategoryType } from '../domain/category.entity';
-import {
-  IsString,
-  IsOptional,
-  IsEnum,
-  IsHexColor,
-  IsNumberString,
-} from 'class-validator';
+import { IsString, IsOptional, IsEnum, IsHexColor } from 'class-validator';
 import { CategoryRepository } from '../domain/category.repository.interface';
 import { ensureBelongsToAccount } from '../../shared/domain/account-ownership';
+import { parseCents } from '../../shared/domain/cents';
+import { IsCents } from '../../shared/infrastructure/is-cents.decorator';
 
 export class CreateCategoryDto {
   @IsString()
@@ -53,7 +49,7 @@ export class CreateCategoryDto {
   accountId: string;
 
   @IsOptional()
-  @IsNumberString()
+  @IsCents()
   @ApiProperty({
     description: 'Budget limit in cents (optional)',
     required: false,
@@ -78,7 +74,7 @@ export class UpdateCategoryDto {
   @ApiProperty({ enum: CategoryType, required: false })
   type?: CategoryType;
   @IsOptional()
-  @IsNumberString()
+  @IsCents()
   @ApiProperty({ required: false })
   budget?: string;
 }
@@ -139,7 +135,7 @@ export class CategoriesController {
       color: dto.color ?? existing.color,
       type: dto.type ?? existing.type,
       accountId: existing.accountId,
-      budget: dto.budget ? BigInt(dto.budget) : existing.budget,
+      budget: dto.budget ? parseCents(dto.budget) : existing.budget,
       createdAt: existing.createdAt,
       updatedAt: new Date(),
     });
@@ -158,7 +154,7 @@ export class CategoriesController {
     const category = await this.createCategoryUseCase.execute({
       ...dto,
       accountId,
-      budget: dto.budget ? BigInt(dto.budget) : null,
+      budget: dto.budget ? parseCents(dto.budget) : null,
     });
 
     return this.mapToResponse(category);

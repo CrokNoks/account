@@ -15,7 +15,7 @@ Mise à jour : 2026-10-31 · Commit : ac92968
 | --- | --- | --- |
 | Un compte a un nom obligatoire ; solde initial 0 par défaut. Il n'a plus de description | `functions/src/accounts/domain/account.entity.ts`, `accounts.controller.ts:36-58` (DTO) | ✅ `account.entity.spec.ts` |
 | Le propriétaire d'un compte créé est l'utilisateur du token | `accounts.controller.ts:184` (`req.user.id`) | ✅ use case seul : `create-account.use-case.spec.ts` |
-| Le solde initial est envoyé en texte numérique (centimes) et converti en grand entier | `accounts.controller.ts:58,189-191` | ❌ |
+| Le solde initial est reçu en chaîne d'entier de centimes signé 64 bits (`@IsCents` / `parseCents`, `shared/`), décimal, notation scientifique ou hors bornes → 400, « -0 » lu comme 0 (création et modification) | `accounts.controller.ts` (DTO), `shared/domain/cents.ts` | ✅ e2e `validation.e2e-spec.ts` |
 | La liste des comptes ne filtre pas dans le code : elle s'appuie sur la base, qui renvoie comptes possédés + partagés avec soi | `supabase-account.repository.ts:40-53`, `20260106081523_remote_schema.sql` (policy « Users can view accounts… ») | ✅ `get-accounts.use-case.spec.ts` (repo simulé) |
 | Seul le propriétaire peut partager un compte | `application/share-account.use-case.ts:27` | ❌ |
 | On ne peut partager qu'avec un utilisateur existant (déjà connecté au moins une fois, trouvé par email dans `app_users`) | `share-account.use-case.ts:31-36` | ❌ |

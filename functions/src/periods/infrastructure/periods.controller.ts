@@ -39,13 +39,15 @@ import {
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ensureBelongsToAccount } from '../../shared/domain/account-ownership';
+import { parseCents } from '../../shared/domain/cents';
+import { IsCents } from '../../shared/infrastructure/is-cents.decorator';
 
 export class BudgetInitDto {
   @IsUUID()
   @ApiProperty()
   categoryId: string;
 
-  @IsString()
+  @IsCents()
   @ApiProperty({
     description: 'Amount allocated in cents (stringified BigInt)',
   })
@@ -164,7 +166,7 @@ export class PeriodsController {
       periodId: id,
       budgets: dto.budgets.map((b) => ({
         categoryId: b.categoryId,
-        amountAllocated: BigInt(b.amountAllocated),
+        amountAllocated: parseCents(b.amountAllocated),
       })),
     });
 
@@ -247,7 +249,7 @@ export class PeriodsController {
       endDate: parseDateOnly(dto.endDate),
       budgets: dto.budgets.map((b) => ({
         categoryId: b.categoryId,
-        amountAllocated: BigInt(b.amountAllocated),
+        amountAllocated: parseCents(b.amountAllocated),
       })),
       injectRecurring: dto.injectRecurring,
     });

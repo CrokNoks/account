@@ -3,6 +3,7 @@ import { Injectable, Inject } from '@nestjs/common';
 import type { SavingsGoalRepository } from '../domain/savings-goal.repository.interface';
 import { SavingsGoal } from '../domain/savings-goal.entity';
 import { ensureBelongsToAccount } from '../../shared/domain/account-ownership';
+import { parseCents } from '../../shared/domain/cents';
 
 @Injectable()
 export class GetSavingsGoalsUseCase {
@@ -35,7 +36,7 @@ export class CreateSavingsGoalUseCase {
     const goal = SavingsGoal.create({
       accountId: command.accountId,
       name: command.name,
-      targetAmount: BigInt(command.targetAmount),
+      targetAmount: parseCents(command.targetAmount),
       deadline: command.deadline ? parseDateOnly(command.deadline) : null,
       color: command.color || '#3b82f6',
     });
@@ -73,10 +74,10 @@ export class UpdateSavingsGoalUseCase {
       ...existing,
       name: command.name ?? existing.name,
       targetAmount: command.targetAmount
-        ? BigInt(command.targetAmount)
+        ? parseCents(command.targetAmount)
         : existing.targetAmount,
       currentAmount: command.currentAmount
-        ? BigInt(command.currentAmount)
+        ? parseCents(command.currentAmount)
         : existing.currentAmount,
       deadline:
         command.deadline === null

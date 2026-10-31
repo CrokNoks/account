@@ -222,6 +222,142 @@ describe('Request body validation (e2e)', () => {
     });
   });
 
+  describe('other amounts are integer cents (signed 64-bit)', () => {
+    const acc = '00000000-0000-4000-8000-000000000101';
+    const bad = [
+      ['a decimal amount', '12.5'],
+      ['a scientific notation amount', '1e3'],
+      ['a non numeric amount', 'abc'],
+      ['an amount above the signed 64-bit range', '9223372036854775808'],
+      ['a huge amount', '99999999999999999999'],
+    ];
+    const cat = '00000000-0000-4000-8000-000000000019';
+    const cases: [string, 'post' | 'patch' | 'put', string, string, string][] =
+      [
+        ['accounts POST', 'post', '/accounts', 'initialBalance', 'name'],
+        ['accounts PATCH', 'patch', `/accounts/${acc}`, 'initialBalance', ''],
+        [
+          'categories POST',
+          'post',
+          `/${acc}/categories`,
+          'budget',
+          'categorie',
+        ],
+        [
+          'categories PATCH',
+          'patch',
+          `/${acc}/categories/00000000-0000-4000-8000-000000000112`,
+          'budget',
+          '',
+        ],
+        [
+          'savings-goals POST',
+          'post',
+          `/${acc}/savings-goals`,
+          'targetAmount',
+          'goal',
+        ],
+        [
+          'savings-goals PATCH targetAmount',
+          'patch',
+          `/${acc}/savings-goals/00000000-0000-4000-8000-000000000116`,
+          'targetAmount',
+          '',
+        ],
+        [
+          'savings-goals PATCH currentAmount',
+          'patch',
+          `/${acc}/savings-goals/00000000-0000-4000-8000-000000000116`,
+          'currentAmount',
+          '',
+        ],
+      ];
+
+    const payload = (kind: string, field: string, value: string) => {
+      const extra: Record<string, unknown> =
+        kind === 'name'
+          ? { name: 'Courant' }
+          : kind === 'categorie'
+            ? { name: 'Courses', color: '#000000', type: 'expense' }
+            : kind === 'goal'
+              ? { name: 'Vacances' }
+              : {};
+      return { ...extra, [field]: value };
+    };
+
+    describe.each(cases)('%s', (_n, method, url, field, kind) => {
+      it.each(bad)('answers 400 for %s', async (_, value) => {
+        await http()
+          [method](url)
+          .set(auth())
+          .send(payload(kind, field, value))
+          .expect(400);
+        for (const repo of ['accounts', 'categories', 'savingsGoals'] as const)
+          expect(mocks[repo].save).not.toHaveBeenCalled();
+      });
+    });
+
+    it.each([
+      [
+        'PUT budgets',
+        'put',
+        `/${acc}/periods/00000000-0000-4000-8000-000000000113/budgets`,
+        false,
+      ],
+      ['POST period', 'post', `/${acc}/periods`, true],
+    ] as const)(
+      '%s answers 400 for a bad amountAllocated',
+      async (_n, method, url, withDates) => {
+        for (const [, amountAllocated] of bad) {
+          await http()
+            [method](url)
+            .set(auth())
+            .send({
+              ...(withDates
+                ? { startDate: '2026-03-01', endDate: '2026-03-31' }
+                : {}),
+              budgets: [{ categoryId: cat, amountAllocated }],
+            })
+            .expect(400);
+        }
+        expect(mocks.budgets.replaceForPeriod).not.toHaveBeenCalled();
+        expect(mocks.periods.createWithBudgets).not.toHaveBeenCalled();
+      },
+    );
+
+    it.each([
+      ['minAmount', '1.5'],
+      ['maxAmount', '1.5'],
+      ['minAmount', '1e3'],
+      ['maxAmount', '9223372036854775808'],
+      ['minAmount', '99999999999999999999'],
+    ])('GET transactions answers 400 for %s=%s', async (field, value) => {
+      await http()
+        .get(`/${acc}/transactions`)
+        .query({ [field]: value })
+        .set(auth())
+        .expect(400);
+      expect(mocks.transactions.findAllByAccount).not.toHaveBeenCalled();
+    });
+
+    it('GET transactions still accepts negative integer bounds', async () => {
+      mocks.transactions.findAllByAccount.mockResolvedValue({
+        data: [],
+        total: 0,
+      });
+      await http()
+        .get(`/${acc}/transactions`)
+        .query({ minAmount: '-5000', maxAmount: '9223372036854775807' })
+        .set(auth())
+        .expect(200);
+      const [[, options]] = mocks.transactions.findAllByAccount.mock.calls as [
+        [string, { minAmount: bigint; maxAmount: bigint }],
+      ];
+      expect(options.minAmount).toBe(BigInt(-5000));
+      expect(options.maxAmount).toBe(BigInt('9223372036854775807'));
+    });
+  });
+
   describe('PATCH /:accountId/recurring/:id', () => {
     it('answers 404 for an unknown recurring transaction', async () => {
       mocks.recurring.findById.mockResolvedValue(null);

@@ -16,9 +16,9 @@ Mise à jour : 2026-10-31 · Commit : df46659
 | Le type doit être l'une des 4 valeurs | `category.entity.ts:48` ; en base `supabase/migrations/20260307000000_migrate_to_v2.sql:32` (contrainte CHECK) | ❌ côté code ; base non testée |
 | La couleur doit être au format hexadécimal `#RRGGBB` | `category.entity.ts:51` ; DTO `IsHexColor` `categories.controller.ts:42` ; couleur invalide → 400 (e2e `validation.e2e-spec.ts`) | ✅ « should throw error if color is invalid hex » |
 | Le budget est facultatif | `category.entity.ts:15` | ✅ « should allow null budget » |
-| Le budget est reçu en texte numérique et converti en entier (centimes) | `categories.controller.ts:53-59,154` | ❌ |
+| Le budget est reçu en chaîne d'entier de centimes signé 64 bits (`@IsCents` / `parseCents`, `shared/`), décimal, notation scientifique ou hors bornes → 400, « -0 » lu comme 0 (création et modification) | `categories.controller.ts` (DTO), `shared/domain/cents.ts` | ✅ e2e `validation.e2e-spec.ts` |
 | Modification partielle : un champ non envoyé garde sa valeur ; impossible de vider la description ou le budget (valeur vide ignorée) | `categories.controller.ts:122-132` | ❌ |
-| Le corps de la création est validé (`CreateCategoryBodyDto`, sans `accountId`) : nom, couleur `#RRGGBB`, type (enum), budget en texte numérique ; champ inconnu ou `accountId` → 400, le compte vient uniquement de l'URL | `categories.controller.ts:64-66,144-156` | ✅ e2e `validation.e2e-spec.ts` |
+| Le corps de la création est validé (`CreateCategoryBodyDto`, sans `accountId`) : nom, couleur `#RRGGBB`, type (enum), budget en centimes entiers (texte) ; champ inconnu ou `accountId` → 400, le compte vient uniquement de l'URL | `categories.controller.ts:64-66,144-156` | ✅ e2e `validation.e2e-spec.ts` |
 | Le type d'une catégorie peut être changé après création | `categories.controller.ts:70,127` | ❌ |
 | Création et lecture passent par des cas d'usage ; la modification passe directement par le dépôt, sans cas d'usage | `categories.controller.ts:119-134` | ❌ |
 | Accès en base : lecture si accès « read » au compte, écriture si « write » (propriétaire = tout) | `20251221_schema_complete.sql:208-225` (RLS), `:140` | ❌ |
