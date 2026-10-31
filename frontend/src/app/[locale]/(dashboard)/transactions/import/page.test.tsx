@@ -295,6 +295,57 @@ describe('CSV import page', () => {
   });
 });
 
+describe('CSV import page header row', () => {
+  // Invented export shaped like a Crédit Agricole one: a preamble, then the header on line 5.
+  const csv = [
+    'Compte courant;',
+    'Numéro de compte;00000000000',
+    ';',
+    'Solde au 31/10/2026;1 234,56',
+    'Date;Libellé;Débit euros;Crédit euros',
+    '01/10/2026;Magasin Exemple;12,50;',
+    '02/10/2026;Salaire Exemple;;1000,00',
+  ].join('\n');
+
+  beforeEach(() => {
+    bulkCreate.mockReset();
+    useAccountStore.setState({ activeAccountId: 'acc-1' });
+    vi.mocked(apiClient.get).mockReset();
+    vi.mocked(apiClient.post).mockReset();
+    mockPredictions();
+  });
+
+  it('detects the header row, the columns and the debit/credit mode by itself', async () => {
+    const lines = await importCsv(csv);
+
+    expect(lines.map((l) => [l.date, l.description, l.amount])).toEqual([
+      ['2026-10-01', 'Magasin Exemple', '-1250'],
+      ['2026-10-02', 'Salaire Exemple', '100000'],
+    ]);
+  });
+
+  it('guesses the columns again when the header row is typed by hand', async () => {
+    const { container } = renderPage();
+    fireEvent.change(container.querySelector('input[type="file"]')!, {
+      target: { files: [new File([csv], 'releve.csv', { type: 'text/csv' })] },
+    });
+    const input = (await screen.findByDisplayValue('4')) as HTMLInputElement;
+
+    fireEvent.change(input, { target: { value: '0' } });
+    expect(screen.getByDisplayValue('0')).toBeInTheDocument();
+
+    fireEvent.change(screen.getByDisplayValue('0'), { target: { value: '4' } });
+    fireEvent.click(await screen.findByRole('button', { name: /Analyser les données/ }));
+    await screen.findByRole('button', { name: /Confirmer l.import/ });
+    await waitFor(() => expect(screen.queryByRole('button', { name: /Analyser/ })).toBeNull());
+    await new Promise((r) => setTimeout(r, 0));
+    fireEvent.click(screen.getByRole('button', { name: /Confirmer l.import/ }));
+
+    const [{ transactions }] = bulkCreate.mock.calls[0] as [{ transactions: ImportedLine[] }];
+    expect(transactions.map((l) => l.amount)).toEqual(['-1250', '100000']);
+  });
+});
+
 describe('CSV import page encoding', () => {
   const csv = [
     'Date;Libellé;Montant;Débit;Crédit',

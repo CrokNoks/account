@@ -14,7 +14,7 @@ import { apiClient } from '@/shared/api/api-client';
 import { useRouter } from '@/i18n/routing';
 import { toCents, parseAmountToCents, centsToDecimalString } from '@/shared/lib/format';
 import { ParsedTransaction, ImportStep, ImportMapping } from '@/features/transactions/model/import-types';
-import { decodeCsv } from '@/features/transactions/model/import-csv';
+import { decodeCsv, findHeaderRow, guessMapping } from '@/features/transactions/model/import-csv';
 import { parseImportDate } from '@/features/transactions/model/parse-import-date';
 import { ImportUploadStep } from '@/features/transactions/ui/import/import-upload-step';
 import { ImportMappingStep } from '@/features/transactions/ui/import/import-mapping-step';
@@ -87,19 +87,7 @@ export default function ImportTransactionsPage() {
       complete: (results) => {
         const data = results.data as string[][];
         setRawRows(data);
-        
-        const headers = data[0] || [];
-        setCsvHeaders(headers);
-        
-        // Guess mapping
-        const guess = {
-          date: headers.find(h => /date/i.test(h)) || headers[0] || '',
-          description: headers.find(h => /libelle|description|label/i.test(h)) || headers[1] || '',
-          amount: headers.find(h => /montant|amount/i.test(h)) || headers[2] || '',
-          debit: headers.find(h => /d[ée]bit/i.test(h)) || '',
-          credit: headers.find(h => /cr[ée]dit/i.test(h)) || ''
-        };
-        setMapping(guess);
+        applyHeaderRow(data, findHeaderRow(data));
         setStep('mapping');
         setIsProcessing(false);
       },
@@ -110,19 +98,18 @@ export default function ImportTransactionsPage() {
     });
   };
 
+  // Header row chosen (detected or typed): columns and amount mode are guessed again.
+  const applyHeaderRow = (rows: string[][], index: number) => {
+    const headers = rows[index] || [];
+    const guess = guessMapping(headers);
+    setHeaderRowIndex(index);
+    setCsvHeaders(headers);
+    setMapping(guess.mapping);
+    setAmountMode(guess.amountMode);
+  };
+
   const handleHeaderRowChange = (index: number) => {
-    const idx = Math.max(0, Math.min(index, rawRows.length - 1));
-    setHeaderRowIndex(idx);
-    const newHeaders = rawRows[idx] || [];
-    setCsvHeaders(newHeaders);
-    
-    setMapping({
-      date: newHeaders.find(h => /date/i.test(h)) || newHeaders[0] || '',
-      description: newHeaders.find(h => /libelle|description|label/i.test(h)) || newHeaders[1] || '',
-      amount: newHeaders.find(h => /montant|amount/i.test(h)) || newHeaders[2] || '',
-      debit: newHeaders.find(h => /d[ée]bit/i.test(h)) || '',
-      credit: newHeaders.find(h => /cr[ée]dit/i.test(h)) || ''
-    });
+    applyHeaderRow(rawRows, Math.max(0, Math.min(index, rawRows.length - 1)));
   };
 
   const processMapping = async () => {
