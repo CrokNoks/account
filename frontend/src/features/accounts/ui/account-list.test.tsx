@@ -5,8 +5,8 @@ import fr from '../../../../messages/fr.json';
 import { AccountList } from './account-list';
 
 const accounts = [
-  { id: 'a1', name: 'Mon compte', ownerId: 'me', description: null, initialBalance: '1000' },
-  { id: 'a2', name: 'Compte partagé', ownerId: 'someone-else', description: null, initialBalance: '2000' },
+  { id: 'a1', name: 'Mon compte', ownerId: 'me', initialBalance: '1000' },
+  { id: 'a2', name: 'Compte partagé', ownerId: 'someone-else', initialBalance: '2000' },
 ];
 let currentUserId: string | undefined;
 

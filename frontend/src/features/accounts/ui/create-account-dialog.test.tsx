@@ -17,7 +17,7 @@ vi.mock('@/shared/model/use-ui-store', () => ({
 }));
 
 describe('CreateAccountDialog', () => {
-  it('sends only the fields the API accepts (no type, no currency)', () => {
+  it('sends only the fields the API accepts (no type, no currency, no description)', () => {
     render(
       <NextIntlClientProvider locale="fr" messages={fr}>
         <CreateAccountDialog />
@@ -29,10 +29,11 @@ describe('CreateAccountDialog', () => {
     });
     fireEvent.click(screen.getByRole('button', { name: fr.Common.add }));
 
+    // Seuls le nom et le solde sont demandés.
+    expect(screen.getAllByRole('textbox')).toHaveLength(1);
     expect(createAccount).toHaveBeenCalledTimes(1);
     expect(createAccount.mock.calls[0][0]).toEqual({
       name: 'Courant',
-      description: '',
       initialBalance: '0',
     });
   });

@@ -212,10 +212,7 @@
     "fields": {
       "name": "Nom",
       "balance": "Solde initial",
-      "description": "Objectif / Pitch",
-      "description_hint": "Décrivez l'utilité de ce compte pour aider l'IA à personnaliser ses analyses.",
-      "name_placeholder": "Compte courant, Épargne...",
-      "description_placeholder": "Ex: Compte pour les dépenses du quotidien, loyer et abonnements..."
+      "name_placeholder": "Compte courant, Épargne..."
     },
     "select_account": "Sélectionner un compte",
     "share": "Partager",
@@ -557,7 +554,7 @@
     },
     "transactions": {
       "date": "La date de l'opération. Par défaut, c'est aujourd'hui.",
-      "description": "Indiquez le libellé. Notre IA vous suggérera une catégorie automatiquement !",
+      "description": "Indiquez le libellé. Vos règles intelligentes peuvent vous suggérer une catégorie automatiquement !",
       "amount": "Le montant. Utilisez un signe moins (-) pour les dépenses.",
       "pending": "Cochez ceci pour les pré-autorisations ou paiements à venir. Ils ne compteront pas immédiatement dans votre solde pointé.",
       "shortcuts": "Utilisez Maj+Tab pour basculer entre transaction et transfert, et Entrée pour valider."

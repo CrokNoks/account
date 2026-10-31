@@ -3,12 +3,10 @@
 import { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { useTranslations } from 'next-intl';
 
 export interface AccountFormValues {
   name: string;
-  description: string;
   balance: string;
 }
 
@@ -29,14 +27,12 @@ export function AccountForm({
   const tc = useTranslations('Common');
 
   const [name, setName] = useState(initialValues?.name || '');
-  const [description, setDescription] = useState(initialValues?.description || '');
   const [balance, setBalance] = useState(initialValues?.balance || '0');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onSubmit({
       name,
-      description,
       balance,
     });
   };
@@ -62,19 +58,6 @@ export function AccountForm({
           onChange={(e) => setBalance(e.target.value)}
           required
         />
-      </div>
-
-      <div className="space-y-2">
-        <label className="text-sm font-medium">{t('fields.description')}</label>
-        <Textarea 
-          placeholder={t('fields.description_placeholder')} 
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-          className="resize-none h-20"
-        />
-        <p className="text-[10px] text-muted-foreground italic">
-          {t('fields.description_hint')}
-        </p>
       </div>
 
       <div className="flex justify-end pt-2">

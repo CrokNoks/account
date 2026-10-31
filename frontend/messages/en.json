@@ -212,10 +212,7 @@
     "fields": {
       "name": "Name",
       "balance": "Initial Balance",
-      "description": "Purpose / Pitch",
-      "description_hint": "Describe the purpose of this account to help the AI personalize its analysis.",
-      "name_placeholder": "Checking account, Savings...",
-      "description_placeholder": "E.g. Account for everyday spending, rent and subscriptions..."
+      "name_placeholder": "Checking account, Savings..."
     },
     "select_account": "Select an account",
     "share": "Share",
@@ -557,7 +554,7 @@
     },
     "transactions": {
       "date": "Operation date. Defaults to today.",
-      "description": "Enter the description. Our AI will suggest a category automatically!",
+      "description": "Enter the description. Your smart rules can suggest a category automatically!",
       "amount": "The amount. Use a minus sign (-) for expenses.",
       "pending": "Check this for pre-authorizations or upcoming payments. They won't count immediately in your reconciled balance.",
       "shortcuts": "Use Shift+Tab to toggle between transaction and transfer, and Enter to save."

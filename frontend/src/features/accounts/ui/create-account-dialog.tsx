@@ -31,7 +31,6 @@ export function CreateAccountDialog() {
     }
     createAccount({
       name: values.name,
-      description: values.description,
       initialBalance: toCents(values.balance),
     }, {
       onSuccess: () => {

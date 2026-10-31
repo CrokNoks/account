@@ -116,7 +116,6 @@ function EditAccountDialog({ account, open, onOpenChange }: { account: Account, 
       id: account.id,
       data: {
         name: values.name,
-        description: values.description,
         initialBalance: toCents(values.balance),
       }
     }, {
@@ -137,7 +136,6 @@ function EditAccountDialog({ account, open, onOpenChange }: { account: Account, 
           <AccountForm 
             initialValues={{
               name: account.name,
-              description: account.description || '',
               balance: fromCents(account.initialBalance),
             }}
             onSubmit={handleSubmit}

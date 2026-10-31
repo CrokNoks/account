@@ -3,7 +3,6 @@ export interface Account {
   name: string;
   /** Propriétaire du compte : seul lui peut le modifier et le partager. */
   ownerId: string;
-  description: string | null;
   initialBalance: string;
   balance?: string;
 }

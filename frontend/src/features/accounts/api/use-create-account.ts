@@ -3,7 +3,6 @@ import { apiClient } from '@/shared/api/api-client';
 
 export interface CreateAccountCommand {
   name: string;
-  description?: string;
   initialBalance: string;
 }
 
