@@ -63,6 +63,20 @@ describe('GetAnomaliesUseCase', () => {
     ).not.toHaveBeenCalled();
   });
 
+  it('analyses the current month up to today, today included, just after midnight in the business time zone', async () => {
+    jest.setSystemTime(new Date('2026-10-31T23:30:00Z')); // 1er nov. à Paris
+    transactionRepository.findAllByAccountUnpaginated.mockResolvedValue([]);
+
+    await useCase.execute(accountId);
+
+    expect(
+      transactionRepository.findAllByAccountUnpaginated,
+    ).toHaveBeenCalledWith(accountId, {
+      startDate: new Date('2026-05-01T00:00:00.000Z'),
+      endDate: new Date('2026-11-01T00:00:00.000Z'),
+    });
+  });
+
   it('should detect duplicate transactions on the same day', async () => {
     const tx1 = Transaction.create({
       id: 'tx-1',

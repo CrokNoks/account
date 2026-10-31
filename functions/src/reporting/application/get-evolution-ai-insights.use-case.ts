@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { GetEvolutionUseCase } from './get-evolution.use-case';
 import { GeminiService } from './gemini.service';
-import { format } from 'date-fns';
+import { toDateOnly } from '../../shared/domain/date-only';
 import { AccountRepository } from '../../accounts/domain/account.repository.interface';
 
 @Injectable()
@@ -39,7 +39,8 @@ export class GetEvolutionAIInsightsUseCase {
       Données historiques (du plus ancien au plus récent) :
       ${recentData
         .map((d) => {
-          const dateStr = format(new Date(d.startDate), 'MM/yyyy');
+          const [year, month] = toDateOnly(new Date(d.startDate)).split('-');
+          const dateStr = `${month}/${year}`;
           return `- ${dateStr} : Revenus ${Number(d.realIncome) / 100}€, Dépenses ${Number(d.realExpenses) / 100}€, Solde fin ${Number(d.realBankBalance) / 100}€`;
         })
         .join('\n')}

@@ -2,7 +2,13 @@ import { Injectable } from '@nestjs/common';
 import { TransactionRepository } from '../../transactions/domain/transaction.repository.interface';
 import { PeriodRepository } from '../../periods/domain/period.repository.interface';
 import { Transaction } from '../../transactions/domain/transaction.entity';
-import { startOfMonth, subMonths, endOfDay, format } from 'date-fns';
+import {
+  addMonthsDateOnly,
+  formatDateOnlyFr,
+  startOfMonthDateOnly,
+  toDateOnly,
+  todayDateOnly,
+} from '../../shared/domain/date-only';
 import { ensureBelongsToAccount } from '../../shared/domain/account-ownership';
 
 export interface Anomaly {
@@ -32,14 +38,14 @@ export class GetAnomaliesUseCase {
         'Period',
       );
       targetStartDate = period.startDate;
-      targetEndDate = period.endDate || new Date();
+      targetEndDate = period.endDate || todayDateOnly();
     } else {
-      const now = new Date();
-      targetStartDate = startOfMonth(now);
-      targetEndDate = endOfDay(now);
+      const today = todayDateOnly();
+      targetStartDate = startOfMonthDateOnly(today);
+      targetEndDate = today;
     }
 
-    const historyStartDate = subMonths(targetStartDate, 6);
+    const historyStartDate = addMonthsDateOnly(targetStartDate, -6);
 
     const allTransactions =
       await this.transactionRepository.findAllByAccountUnpaginated(accountId, {
@@ -67,7 +73,7 @@ export class GetAnomaliesUseCase {
         id: `dup-${group[0].id}`,
         type: 'duplicate',
         title: 'Doublon potentiel détecté',
-        description: `Ces transactions du ${format(group[0].date, 'dd/MM/yyyy')} pour ${this.formatAmount(group[0].amount)} semblent identiques.`,
+        description: `Ces transactions du ${formatDateOnlyFr(group[0].date)} pour ${this.formatAmount(group[0].amount)} semblent identiques.`,
         severity: 'high',
         transactionIds: group.map((t) => t.id),
       });
@@ -98,7 +104,7 @@ export class GetAnomaliesUseCase {
       const ignoredAnomalies = (metadata?.ignoredAnomalies as string[]) || [];
       if (ignoredAnomalies.includes('duplicate')) continue;
 
-      const key = `${format(t.date, 'yyyy-MM-dd')}_${t.amount.toString()}`;
+      const key = `${toDateOnly(t.date)}_${t.amount.toString()}`;
 
       const existing = groups.get(key) || [];
       existing.push(t);

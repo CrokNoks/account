@@ -21,7 +21,7 @@ describe('GetNetWorthUseCase', () => {
   let useCase: GetNetWorthUseCase;
 
   beforeEach(() => {
-    jest.useFakeTimers().setSystemTime(new Date(2026, 3, 28, 10, 0, 0));
+    jest.useFakeTimers().setSystemTime(new Date('2026-04-28T08:00:00Z'));
     accounts = {
       findAllForUser: jest.fn().mockResolvedValue([
         new Account({
@@ -40,11 +40,11 @@ describe('GetNetWorthUseCase', () => {
     };
     const byAccount: Record<string, Transaction[]> = {
       courant: [
-        tx('courant', -20000, new Date(2026, 0, 15)), // hors fenêtre
-        tx('courant', 250000, new Date(2026, 3, 1)), // dans les 30 jours
-        tx('courant', -50000, new Date(2026, 3, 20)), // dans les 30 jours
+        tx('courant', -20000, new Date('2026-01-15')), // hors fenêtre
+        tx('courant', 250000, new Date('2026-04-01')), // dans les 30 jours
+        tx('courant', -50000, new Date('2026-04-20')), // dans les 30 jours
       ],
-      livret: [tx('livret', 10000, new Date(2026, 1, 1))],
+      livret: [tx('livret', 10000, new Date('2026-02-01'))],
     };
     transactions = {
       findAllByAccountUnpaginated: jest.fn((id: string) =>
@@ -101,8 +101,8 @@ describe('GetNetWorthUseCase', () => {
       Promise.resolve(
         id === 'courant'
           ? [
-              tx('courant', -1000, new Date(2026, 3, 28, 18, 0, 0)),
-              tx('courant', -5000, new Date(2026, 3, 29, 0, 0, 0)),
+              tx('courant', -1000, new Date('2026-04-28')),
+              tx('courant', -5000, new Date('2026-04-29')),
             ]
           : [],
       ),
@@ -114,6 +114,20 @@ describe('GetNetWorthUseCase', () => {
     expect(history.at(-1)?.amount).toBe('599000');
   });
 
+  it('counts a transaction dated today just after midnight in the business time zone', async () => {
+    jest.setSystemTime(new Date('2026-10-31T23:30:00Z')); // 1er nov. à Paris
+    transactions.findAllByAccountUnpaginated.mockImplementation((id: string) =>
+      Promise.resolve(
+        id === 'courant' ? [tx('courant', -1000, new Date('2026-11-01'))] : [],
+      ),
+    );
+
+    const { currentTotal, history } = await useCase.execute();
+
+    expect(history.at(-1)?.date).toBe('2026-11-01');
+    expect(currentTotal).toBe('599000');
+  });
+
   it('loads the transactions only once per account', async () => {
     await useCase.execute();
 
@@ -123,7 +137,7 @@ describe('GetNetWorthUseCase', () => {
   it('excludes future-dated transactions from the current total', async () => {
     transactions.findAllByAccountUnpaginated.mockImplementation((id: string) =>
       Promise.resolve(
-        id === 'courant' ? [tx('courant', -1000, new Date(2026, 5, 1))] : [],
+        id === 'courant' ? [tx('courant', -1000, new Date('2026-06-01'))] : [],
       ),
     );
 

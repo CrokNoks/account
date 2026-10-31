@@ -2,13 +2,11 @@ import { Injectable } from '@nestjs/common';
 import { TransactionRepository } from '../../transactions/domain/transaction.repository.interface';
 import { RecurringTransactionRepository } from '../../recurring/domain/recurring-transaction.repository.interface';
 import {
-  startOfMonth,
-  endOfMonth,
-  eachDayOfInterval,
-  isFuture,
-  isToday,
-  startOfDay,
-} from 'date-fns';
+  endOfMonthDateOnly,
+  eachDayDateOnly,
+  dateOnly,
+  todayDateOnly,
+} from '../../shared/domain/date-only';
 import { isRecurringDueOn } from '../../shared/domain/recurring-day';
 
 export interface CalendarEvent {
@@ -32,8 +30,9 @@ export class GetCalendarDataUseCase {
     year: number,
     month: number, // 1-12
   ): Promise<CalendarEvent[]> {
-    const startDate = startOfMonth(new Date(year, month - 1));
-    const endDate = endOfMonth(startDate);
+    const startDate = dateOnly(year, month, 1);
+    const endDate = endOfMonthDateOnly(startDate);
+    const today = todayDateOnly();
 
     // 1. Fetch actual transactions for the interval
     const actualTransactions =
@@ -55,11 +54,11 @@ export class GetCalendarDataUseCase {
     const recurringTxs =
       await this.recurringRepository.findAllByAccount(accountId);
 
-    const daysInMonth = eachDayOfInterval({ start: startDate, end: endDate });
+    const daysInMonth = eachDayDateOnly(startDate, endDate);
 
     for (const day of daysInMonth) {
       // Only project if it's today or in the future
-      if (isFuture(day) || isToday(day)) {
+      if (day >= today) {
         const matches = recurringTxs.filter((rt) =>
           isRecurringDueOn(rt.dayOfMonth, day),
         );
@@ -69,7 +68,7 @@ export class GetCalendarDataUseCase {
           // Simple heuristic: same description and same amount on the same day
           const alreadyPaid = actualTransactions.some(
             (at) =>
-              startOfDay(at.date).getTime() === startOfDay(day).getTime() &&
+              at.date.getTime() === day.getTime() &&
               at.description
                 .toLowerCase()
                 .includes(match.description.toLowerCase()) &&

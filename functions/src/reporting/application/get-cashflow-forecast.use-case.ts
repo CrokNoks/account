@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { AccountRepository } from '../../accounts/domain/account.repository.interface';
 import { TransactionRepository } from '../../transactions/domain/transaction.repository.interface';
 import { RecurringTransactionRepository } from '../../recurring/domain/recurring-transaction.repository.interface';
-import { addDays, startOfDay } from 'date-fns';
+import { addDaysDateOnly, todayDateOnly } from '../../shared/domain/date-only';
 import { isRecurringDueOn } from '../../shared/domain/recurring-day';
 import { NotFoundError } from '../../shared/domain/errors';
 
@@ -35,7 +35,8 @@ export class GetCashflowForecastUseCase {
     if (!account) throw new NotFoundError('Account not found');
 
     // 1. Get current balance (up to today inclusive)
-    const tomorrow = startOfDay(addDays(new Date(), 1));
+    const startDate = todayDateOnly();
+    const tomorrow = addDaysDateOnly(startDate, 1);
     const sumAll =
       await this.transactionRepository.sumAmountByAccountBeforeDate(
         accountId,
@@ -51,11 +52,9 @@ export class GetCashflowForecastUseCase {
     const events: CashflowEvent[] = [];
     let runningBalance = currentBalance;
 
-    const startDate = startOfDay(new Date());
-
     // We iterate day by day to find recurring events
     for (let d = 0; d <= days; d++) {
-      const currentDay = addDays(startDate, d);
+      const currentDay = addDaysDateOnly(startDate, d);
 
       // Récurrentes dues ce jour (le 31 tombe le dernier jour d'un mois plus court)
       const matches = recurringTxs.filter((rt) =>

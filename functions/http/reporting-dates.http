@@ -1,0 +1,56 @@
+@api = http://localhost:8080
+@supabase = http://127.0.0.1:54321
+@anon = sb_publishable_ACJWlzQHlZjBrEguHvfOxg_3BJgxAaH
+@courant = 10b38326-053f-4b02-b2ae-1317ee90c313
+@period = 7d88e042-f7e5-4623-93f9-4131ac08753f
+
+# Local stack only. Read-only: the dates of the reports are calendar dates,
+# so "today" counts in the current balance whatever the server time zone.
+# Expected values hold for the local test data on 2026-10-31
+# (initial balance 100000 + 101743 of transactions up to today included).
+
+### Alice token
+# @name aliceLogin
+POST {{supabase}}/auth/v1/token?grant_type=password
+apikey: {{anon}}
+Content-Type: application/json
+
+{"email":"e2e-alice@test.local","password":"Test-1234!"}
+
+### Cashflow: transactions dated today are in the current balance
+GET {{api}}/{{courant}}/reporting/cashflow
+Authorization: Bearer {{aliceLogin.access_token}}
+
+?? status == 200
+?? js response.parsedBody.currentBalance == 201743
+
+### Net worth: the last point is today and equals the total
+# @name netWorth
+GET {{api}}/{{courant}}/reporting/net-worth
+Authorization: Bearer {{aliceLogin.access_token}}
+
+?? status == 200
+?? js response.parsedBody.history.length == 31
+?? js response.parsedBody.history[30].date == 2026-10-31
+?? js response.parsedBody.history[30].amount == 216743
+
+### Calendar: October 2026
+GET {{api}}/{{courant}}/reporting/calendar?year=2026&month=10
+Authorization: Bearer {{aliceLogin.access_token}}
+
+?? status == 200
+?? js response.parsedBody.filter(e => e.type === "actual").every(e => e.date.endsWith("T00:00:00.000Z")) == true
+
+### Anomalies: current month up to today
+GET {{api}}/{{courant}}/reporting/anomalies
+Authorization: Bearer {{aliceLogin.access_token}}
+
+?? status == 200
+
+### Period stats: the period starting 2026-10-01 starts at the right day
+GET {{api}}/{{courant}}/periods/{{period}}/reporting/stats
+Authorization: Bearer {{aliceLogin.access_token}}
+
+?? status == 200
+?? js response.parsedBody.upcomingBalance == 201743
+?? js response.parsedBody.startBalance == 100000

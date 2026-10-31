@@ -130,4 +130,22 @@ describe('GetPeriodDraftUseCase', () => {
     // Sum of recurring is -350
     expect(result.categoriesWithStats[0].defaultAllocated).toBe('-350');
   });
+
+  it('suggests today (calendar date in the business time zone) when there is no period yet', async () => {
+    jest.useFakeTimers().setSystemTime(new Date('2026-10-31T23:30:00Z')); // 1er nov. à Paris
+    (periodRepo.findLastByAccount as jest.Mock).mockResolvedValue(null);
+    (budgetRepo.getHistoricalStatsByAccount as jest.Mock).mockResolvedValue([]);
+    (categoryRepo.findAllByAccount as jest.Mock).mockResolvedValue([]);
+    (recurringRepo.findAllByAccount as jest.Mock).mockResolvedValue([]);
+
+    const result = await useCase.execute('acc-1');
+    jest.useRealTimers();
+
+    expect(result.suggestedStartDate.toISOString()).toBe(
+      '2026-11-01T00:00:00.000Z',
+    );
+    expect(result.suggestedEndDate.toISOString()).toBe(
+      '2026-11-30T00:00:00.000Z',
+    );
+  });
 });

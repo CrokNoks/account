@@ -1,3 +1,4 @@
+import { parseDateOnly } from '../../shared/domain/date-only';
 import { Injectable, Inject } from '@nestjs/common';
 import type { SavingsGoalRepository } from '../domain/savings-goal.repository.interface';
 import { SavingsGoal } from '../domain/savings-goal.entity';
@@ -35,7 +36,7 @@ export class CreateSavingsGoalUseCase {
       accountId: command.accountId,
       name: command.name,
       targetAmount: BigInt(command.targetAmount),
-      deadline: command.deadline ? new Date(command.deadline) : null,
+      deadline: command.deadline ? parseDateOnly(command.deadline) : null,
       color: command.color || '#3b82f6',
     });
 
@@ -81,7 +82,7 @@ export class UpdateSavingsGoalUseCase {
         command.deadline === null
           ? null
           : command.deadline
-            ? new Date(command.deadline)
+            ? parseDateOnly(command.deadline)
             : existing.deadline,
       color: command.color ?? existing.color,
       updatedAt: new Date(),

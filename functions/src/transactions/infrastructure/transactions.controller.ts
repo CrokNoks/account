@@ -1,3 +1,4 @@
+import { parseDateOnly } from '../../shared/domain/date-only';
 import {
   Controller,
   Get,
@@ -370,8 +371,10 @@ export class TransactionsController {
     @Param('accountId') accountId: string,
     @Query() query: FindTransactionsQueryDto,
   ): Promise<PaginatedTransactionsResponseDto> {
-    let startDate = query.startDate ? new Date(query.startDate) : undefined;
-    let endDate = query.endDate ? new Date(query.endDate) : undefined;
+    let startDate = query.startDate
+      ? parseDateOnly(query.startDate)
+      : undefined;
+    let endDate = query.endDate ? parseDateOnly(query.endDate) : undefined;
 
     if (query.periodId) {
       const period = ensureBelongsToAccount(
@@ -472,7 +475,7 @@ export class TransactionsController {
       ...existing,
       ...provided,
       pending,
-      date: dto.date !== undefined ? new Date(dto.date) : existing.date,
+      date: dto.date !== undefined ? parseDateOnly(dto.date) : existing.date,
       amount:
         dto.amount !== undefined
           ? BigInt(Math.round(Number(dto.amount)))
@@ -510,7 +513,7 @@ export class TransactionsController {
       accountId,
       transactions: dto.transactions.map((t) => ({
         ...t,
-        date: new Date(t.date),
+        date: parseDateOnly(t.date),
         amount: BigInt(Math.round(Number(t.amount))),
       })),
     });
@@ -530,7 +533,7 @@ export class TransactionsController {
       sourceAccountId: accountId,
       destinationAccountId: dto.destinationAccountId,
       amount: BigInt(Math.round(Number(dto.amount))),
-      date: new Date(dto.date),
+      date: parseDateOnly(dto.date),
       description: dto.description,
     });
     return [this.mapToResponse(sourceTx), this.mapToResponse(destTx)];
@@ -546,7 +549,7 @@ export class TransactionsController {
     const transaction = await this.createTransactionUseCase.execute({
       ...dto,
       accountId,
-      date: new Date(dto.date),
+      date: parseDateOnly(dto.date),
       amount: BigInt(Math.round(Number(dto.amount))),
     });
     return this.mapToResponse(transaction);

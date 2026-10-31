@@ -1,3 +1,4 @@
+import { parseDateOnly } from '../../shared/domain/date-only';
 import {
   Controller,
   Get,
@@ -197,8 +198,10 @@ export class PeriodsController {
     const updated = new Period({
       id: existing.id,
       accountId: existing.accountId,
-      startDate: dto.startDate ? new Date(dto.startDate) : existing.startDate,
-      endDate: dto.endDate ? new Date(dto.endDate) : existing.endDate,
+      startDate: dto.startDate
+        ? parseDateOnly(dto.startDate)
+        : existing.startDate,
+      endDate: dto.endDate ? parseDateOnly(dto.endDate) : existing.endDate,
       isActive: dto.isActive !== undefined ? dto.isActive : existing.isActive,
       createdAt: existing.createdAt,
       updatedAt: new Date(),
@@ -240,8 +243,8 @@ export class PeriodsController {
   ) {
     const result = await this.createPeriodWithBudgetsUseCase.execute({
       accountId,
-      startDate: new Date(dto.startDate),
-      endDate: new Date(dto.endDate),
+      startDate: parseDateOnly(dto.startDate),
+      endDate: parseDateOnly(dto.endDate),
       budgets: dto.budgets.map((b) => ({
         categoryId: b.categoryId,
         amountAllocated: BigInt(b.amountAllocated),

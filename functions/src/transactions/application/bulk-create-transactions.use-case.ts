@@ -1,3 +1,4 @@
+import { parseDateOnly, todayDateOnly } from '../../shared/domain/date-only';
 import { Injectable } from '@nestjs/common';
 import { TransactionRepository } from '../domain/transaction.repository.interface';
 import { Transaction } from '../domain/transaction.entity';
@@ -49,7 +50,7 @@ export class BulkCreateTransactionsUseCase {
         accountId,
         categoryId,
         tagIds,
-        date: dto.date ? new Date(dto.date) : new Date(),
+        date: dto.date ? parseDateOnly(dto.date) : todayDateOnly(),
         amount: BigInt(dto.amount),
         reconciled: dto.reconciled ?? false,
         pending: dto.pending ?? false,

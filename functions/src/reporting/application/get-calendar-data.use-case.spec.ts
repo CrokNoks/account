@@ -4,7 +4,6 @@ import { TransactionRepository } from '../../transactions/domain/transaction.rep
 import { RecurringTransactionRepository } from '../../recurring/domain/recurring-transaction.repository.interface';
 import { Transaction } from '../../transactions/domain/transaction.entity';
 import { RecurringTransaction } from '../../recurring/domain/recurring-transaction.entity';
-import { getDate } from 'date-fns';
 
 describe('GetCalendarDataUseCase', () => {
   let useCase: GetCalendarDataUseCase;
@@ -19,7 +18,7 @@ describe('GetCalendarDataUseCase', () => {
       id: 'tx-1',
       accountId,
       categoryId: 'cat-1',
-      date: new Date(2026, 2, 15), // March 15
+      date: new Date('2026-03-15'), // March 15
       description: 'Groceries',
       amount: BigInt(-5000),
       reconciled: true,
@@ -68,7 +67,7 @@ describe('GetCalendarDataUseCase', () => {
 
   it('should return actual and projected transactions', async () => {
     // Set "today" to March 1st 2026 for consistent testing
-    jest.useFakeTimers().setSystemTime(new Date(2026, 2, 1));
+    jest.useFakeTimers().setSystemTime(new Date('2026-03-01T09:00:00Z'));
 
     const result = await useCase.execute(accountId, year, month);
 
@@ -81,16 +80,16 @@ describe('GetCalendarDataUseCase', () => {
     const recurring = result.find((e) => e.type === 'recurring');
     expect(recurring?.description).toBe('Internet');
     expect(recurring?.amount).toBe('-3000');
-    expect(getDate(new Date(recurring!.date))).toBe(20);
+    expect(new Date(recurring!.date).getUTCDate()).toBe(20);
 
     jest.useRealTimers();
   });
 
   it('should not project recurring transactions that were already paid', async () => {
     // Set "today" to March 1st 2026
-    jest.useFakeTimers().setSystemTime(new Date(2026, 2, 1));
+    jest.useFakeTimers().setSystemTime(new Date('2026-03-01T09:00:00Z'));
 
-    const paidRecurringDate = new Date(2026, 2, 20);
+    const paidRecurringDate = new Date('2026-03-20');
     const paidTransaction = Transaction.create({
       accountId,
       categoryId: 'cat-2',
@@ -117,7 +116,7 @@ describe('GetCalendarDataUseCase', () => {
   });
 
   it('projects a day-31 recurring transaction on the last day of a shorter month, once', async () => {
-    jest.useFakeTimers().setSystemTime(new Date(2026, 3, 1));
+    jest.useFakeTimers().setSystemTime(new Date('2026-04-01T09:00:00Z'));
     const findRecurring = (
       useCase as unknown as {
         recurringRepository: { findAllByAccount: jest.Mock };
@@ -138,8 +137,19 @@ describe('GetCalendarDataUseCase', () => {
 
     const projected = result.filter((e) => e.type === 'recurring');
     expect(projected).toHaveLength(1);
-    expect(getDate(new Date(projected[0].date))).toBe(30);
+    expect(new Date(projected[0].date).getUTCDate()).toBe(30);
 
+    jest.useRealTimers();
+  });
+
+  it('projects on the exact calendar days whatever the server time zone', async () => {
+    jest.useFakeTimers().setSystemTime(new Date('2026-03-01T09:00:00Z'));
+
+    const result = await useCase.execute(accountId, 2026, 3);
+
+    expect(result.find((e) => e.type === 'recurring')?.date).toBe(
+      '2026-03-20T00:00:00.000Z',
+    );
     jest.useRealTimers();
   });
 });

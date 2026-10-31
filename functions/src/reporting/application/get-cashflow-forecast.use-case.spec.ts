@@ -21,8 +21,8 @@ describe('GetCashflowForecastUseCase', () => {
   let useCase: GetCashflowForecastUseCase;
 
   beforeEach(() => {
-    // 28 avril 2026, heure locale
-    jest.useFakeTimers().setSystemTime(new Date(2026, 3, 28, 10, 0, 0));
+    // 28 avril 2026, 10 h à Paris (fuseau métier)
+    jest.useFakeTimers().setSystemTime(new Date('2026-04-28T08:00:00Z'));
     accounts = {
       findById: jest.fn().mockResolvedValue(
         new Account({
@@ -59,9 +59,21 @@ describe('GetCashflowForecastUseCase', () => {
 
     expect(transactions.sumAmountByAccountBeforeDate).toHaveBeenCalledWith(
       'acc-1',
-      new Date(2026, 3, 29, 0, 0, 0),
+      new Date('2026-04-29T00:00:00.000Z'),
     );
     expect(result.currentBalance).toBe('105000');
+  });
+
+  it('counts the transactions dated today when the clock is just past midnight in the business time zone', async () => {
+    // 31 oct. 23:30 UTC = 1er nov. 00:30 à Paris : aujourd'hui = 1er novembre
+    jest.setSystemTime(new Date('2026-10-31T23:30:00Z'));
+
+    await useCase.execute('acc-1', 5);
+
+    expect(transactions.sumAmountByAccountBeforeDate).toHaveBeenCalledWith(
+      'acc-1',
+      new Date('2026-11-02T00:00:00.000Z'),
+    );
   });
 
   it('projects recurring transactions day by day with a running balance', async () => {
@@ -76,27 +88,15 @@ describe('GetCashflowForecastUseCase', () => {
         e.type,
       ]),
     ).toEqual([
+      ['2026-04-30T00:00:00.000Z', 'Salaire', '250000', '355000', 'recurring'],
       [
-        new Date(2026, 3, 30).toISOString(),
-        'Salaire',
-        '250000',
-        '355000',
-        'recurring',
-      ],
-      [
-        new Date(2026, 3, 30).toISOString(),
+        '2026-04-30T00:00:00.000Z',
         'Fin de mois longue',
         '-100',
         '354900',
         'recurring',
       ],
-      [
-        new Date(2026, 4, 1).toISOString(),
-        'Loyer',
-        '-85000',
-        '269900',
-        'recurring',
-      ],
+      ['2026-05-01T00:00:00.000Z', 'Loyer', '-85000', '269900', 'recurring'],
     ]);
   });
 
@@ -104,13 +104,11 @@ describe('GetCashflowForecastUseCase', () => {
     const { events } = await useCase.execute('acc-1', 5);
 
     const long = events.filter((e) => e.description === 'Fin de mois longue');
-    expect(long.map((e) => e.date)).toEqual([
-      new Date(2026, 3, 30).toISOString(),
-    ]);
+    expect(long.map((e) => e.date)).toEqual(['2026-04-30T00:00:00.000Z']);
   });
 
   it('places day 29/30/31 recurring transactions on 28 February, once', async () => {
-    jest.setSystemTime(new Date(2026, 1, 20, 10, 0, 0));
+    jest.setSystemTime(new Date('2026-02-20T09:00:00Z'));
     recurrings.findAllByAccount.mockResolvedValue([
       recurring('Trente', -1, 30),
       recurring('Trente et un', -2, 31),
@@ -119,8 +117,8 @@ describe('GetCashflowForecastUseCase', () => {
     const { events } = await useCase.execute('acc-1', 15); // jusqu'au 7 mars
 
     expect(events.map((e) => [e.description, e.date])).toEqual([
-      ['Trente', new Date(2026, 1, 28).toISOString()],
-      ['Trente et un', new Date(2026, 1, 28).toISOString()],
+      ['Trente', '2026-02-28T00:00:00.000Z'],
+      ['Trente et un', '2026-02-28T00:00:00.000Z'],
     ]);
   });
 
@@ -146,9 +144,9 @@ describe('GetCashflowForecastUseCase', () => {
     const { events } = await useCase.execute('acc-1');
 
     expect(events.map((e) => e.date)).toEqual([
-      new Date(2026, 4, 1).toISOString(),
-      new Date(2026, 5, 1).toISOString(),
-      new Date(2026, 6, 1).toISOString(),
+      '2026-05-01T00:00:00.000Z',
+      '2026-06-01T00:00:00.000Z',
+      '2026-07-01T00:00:00.000Z',
     ]);
     expect(events.at(-1)?.projectedBalance).toBe(String(105000 - 3 * 85000));
   });

@@ -136,7 +136,7 @@ describe('AI insights use cases', () => {
 
     const point = (month: number): EvolutionDataPoint => ({
       periodId: `p${month}`,
-      startDate: new Date(2026, month - 1, 1).toISOString(),
+      startDate: new Date(Date.UTC(2026, month - 1, 1)).toISOString(),
       endDate: '',
       isActive: false,
       realIncome: '250000',

@@ -2,12 +2,11 @@ import { Injectable } from '@nestjs/common';
 import { AccountRepository } from '../../accounts/domain/account.repository.interface';
 import { TransactionRepository } from '../../transactions/domain/transaction.repository.interface';
 import {
-  startOfDay,
-  subDays,
-  addDays,
-  eachDayOfInterval,
-  format,
-} from 'date-fns';
+  addDaysDateOnly,
+  eachDayDateOnly,
+  toDateOnly,
+  todayDateOnly,
+} from '../../shared/domain/date-only';
 
 export interface NetWorthDataPoint {
   date: string;
@@ -38,11 +37,11 @@ export class GetNetWorthUseCase {
     // journée de chaque jour des 30 derniers jours (aujourd'hui inclus) est
     // calculé en appliquant les transactions jour par jour ; les transactions
     // datées après aujourd'hui ne comptent ni dans le total ni dans l'historique.
-    const today = startOfDay(new Date());
-    const startDate = subDays(today, 30);
-    const endOfToday = addDays(today, 1); // exclu
-    const days = eachDayOfInterval({ start: startDate, end: today });
-    const dayKeys = days.map((day) => format(day, 'yyyy-MM-dd'));
+    const today = todayDateOnly();
+    const startDate = addDaysDateOnly(today, -30);
+    const endOfToday = addDaysDateOnly(today, 1); // exclu
+    const days = eachDayDateOnly(startDate, today);
+    const dayKeys = days.map((day) => toDateOnly(day));
 
     let currentTotal = BigInt(0);
     const totalByDay = new Map<string, bigint>(
@@ -64,7 +63,7 @@ export class GetNetWorthUseCase {
           running += t.amount;
           continue;
         }
-        const key = format(t.date, 'yyyy-MM-dd');
+        const key = toDateOnly(t.date);
         deltaByDay.set(key, (deltaByDay.get(key) ?? BigInt(0)) + t.amount);
       }
 

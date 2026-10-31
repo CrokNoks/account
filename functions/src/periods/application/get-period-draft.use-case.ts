@@ -3,6 +3,11 @@ import { PeriodRepository } from '../domain/period.repository.interface';
 import { BudgetRepository } from '../../budgets/domain/budget.repository.interface';
 import { CategoryRepository } from '../../categories/domain/category.repository.interface';
 import { RecurringTransactionRepository } from '../../recurring/domain/recurring-transaction.repository.interface';
+import {
+  addDaysDateOnly,
+  addMonthsDateOnly,
+  todayDateOnly,
+} from '../../shared/domain/date-only';
 
 export interface PeriodDraft {
   suggestedStartDate: Date;
@@ -29,15 +34,15 @@ export class GetPeriodDraftUseCase {
   async execute(accountId: string): Promise<PeriodDraft> {
     // 1. Suggested dates
     const lastPeriod = await this.periodRepository.findLastByAccount(accountId);
-    let startDate = new Date();
+    let startDate = todayDateOnly();
     if (lastPeriod) {
-      startDate = new Date(lastPeriod.endDate || lastPeriod.startDate);
-      startDate.setDate(startDate.getDate() + 1);
+      startDate = addDaysDateOnly(
+        lastPeriod.endDate || lastPeriod.startDate,
+        1,
+      );
     }
-    const endDate = new Date(startDate);
-    endDate.setMonth(endDate.getMonth() + 1);
-    // Move back one day to keep it consistent (e.g. 01/01 to 31/01 instead of 01/02)
-    endDate.setDate(endDate.getDate() - 1);
+    // Un mois plus tard moins un jour (ex. 01/01 au 31/01 plutôt que 01/02)
+    const endDate = addDaysDateOnly(addMonthsDateOnly(startDate, 1), -1);
 
     // 2. Historical stats
     const stats =
