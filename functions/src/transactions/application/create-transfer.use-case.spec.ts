@@ -1,5 +1,6 @@
 import { CreateTransferUseCase } from './create-transfer.use-case';
 import { TransactionRepository } from '../domain/transaction.repository.interface';
+import { Transaction } from '../domain/transaction.entity';
 import { AccountRepository } from '../../accounts/domain/account.repository.interface';
 import { AccountShareRepository } from '../../accounts/domain/account-share.repository.interface';
 import { Account } from '../../accounts/domain/account.entity';
