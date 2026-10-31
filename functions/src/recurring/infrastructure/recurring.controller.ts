@@ -21,7 +21,16 @@ import { CreateRecurringTransactionUseCase } from '../application/create-recurri
 import { UpdateRecurringTransactionUseCase } from '../application/update-recurring-transaction.use-case';
 import { DeleteRecurringTransactionUseCase } from '../application/delete-recurring-transaction.use-case';
 import { RecurringTransaction } from '../domain/recurring-transaction.entity';
-import { IsString, IsOptional, IsInt, Min, Max, IsUUID } from 'class-validator';
+import {
+  IsString,
+  IsOptional,
+  IsInt,
+  Min,
+  Max,
+  IsUUID,
+  MaxLength,
+  Matches,
+} from 'class-validator';
 import { parseCents } from '../../shared/domain/cents';
 import { IsCents } from '../../shared/infrastructure/is-cents.decorator';
 
@@ -33,6 +42,8 @@ export class CreateRecurringTransactionDto {
 
   @IsString()
   @ApiProperty()
+  @MaxLength(255)
+  @Matches(/\S/, { message: 'Description is required' })
   description: string;
 
   @IsCents()
@@ -55,6 +66,8 @@ export class UpdateRecurringTransactionDto {
   @IsOptional()
   @IsString()
   @ApiProperty({ required: false })
+  @MaxLength(255)
+  @Matches(/\S/, { message: 'Description is required' })
   description?: string;
 
   @IsOptional()

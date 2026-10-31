@@ -20,7 +20,13 @@ import { SupabaseAuthGuard } from '../../auth/supabase-auth.guard';
 import { GetCategoriesUseCase } from '../application/get-categories.use-case';
 import { CreateCategoryUseCase } from '../application/create-category.use-case';
 import { Category, CategoryType } from '../domain/category.entity';
-import { IsString, IsOptional, IsEnum, IsHexColor } from 'class-validator';
+import {
+  IsString,
+  IsOptional,
+  IsEnum,
+  IsHexColor,
+  MaxLength,
+} from 'class-validator';
 import { CategoryRepository } from '../domain/category.repository.interface';
 import { ensureBelongsToAccount } from '../../shared/domain/account-ownership';
 import { parseCents } from '../../shared/domain/cents';
@@ -29,6 +35,7 @@ import { IsCents } from '../../shared/infrastructure/is-cents.decorator';
 export class CreateCategoryDto {
   @IsString()
   @ApiProperty({ description: 'Name of the category' })
+  @MaxLength(255)
   name: string;
 
   @IsOptional()

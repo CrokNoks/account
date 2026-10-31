@@ -82,6 +82,22 @@ export class PeriodQueryDto {
   periodId?: string;
 }
 
+export class CalendarQueryDto {
+  @Type(() => Number)
+  @IsInt()
+  @Min(1900)
+  @Max(2100)
+  @ApiProperty({ minimum: 1900, maximum: 2100 })
+  year: number;
+
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(12)
+  @ApiProperty({ minimum: 1, maximum: 12 })
+  month: number;
+}
+
 export class CompareWithQueryDto {
   @IsUUID()
   @ApiProperty({ format: 'uuid' })
@@ -365,14 +381,9 @@ export class ReportingController {
   @ApiResponse({ status: 200, type: [CalendarEventDto] })
   async getCalendar(
     @Param('accountId') accountId: string,
-    @Query('year') year: number,
-    @Query('month') month: number,
+    @Query() { year, month }: CalendarQueryDto,
   ): Promise<CalendarEventDto[]> {
-    return this.getCalendarDataUseCase.execute(
-      accountId,
-      Number(year),
-      Number(month),
-    );
+    return this.getCalendarDataUseCase.execute(accountId, year, month);
   }
 
   @Get('reporting/anomalies')

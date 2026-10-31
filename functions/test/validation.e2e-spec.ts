@@ -725,4 +725,348 @@ describe('Request body validation (e2e)', () => {
       }
     });
   });
+
+  describe('invalid text and calendar inputs answer 400, not 500 or 201', () => {
+    const acc = '00000000-0000-4000-8000-000000000101';
+    const tx = '00000000-0000-4000-8000-000000000111';
+    const cat = '00000000-0000-4000-8000-000000000112';
+    const tag = '00000000-0000-4000-8000-000000000111';
+    const rec = '00000000-0000-4000-8000-000000000114';
+
+    it.each([
+      '',
+      '?year=2026',
+      '?month=5',
+      '?year=abc&month=5',
+      '?year=2026&month=13',
+      '?year=2026&month=0',
+      '?year=2026&month=1.5',
+      '?year=99999999&month=5',
+      '?year=1800&month=5',
+    ])('GET reporting/calendar%s answers 400', async (qs) => {
+      await http()
+        .get(`/${acc}/reporting/calendar${qs}`)
+        .set(auth())
+        .expect(400);
+    });
+
+    it('GET reporting/calendar still accepts a valid month', async () => {
+      mocks.transactions.findAllByAccountUnpaginated.mockResolvedValue([]);
+      mocks.recurring.findAllByAccount.mockResolvedValue([]);
+      const res = await http()
+        .get(`/${acc}/reporting/calendar?year=2026&month=5`)
+        .set(auth());
+      expect(res.status).toBe(200);
+    });
+
+    const long = (n: number) => 'x'.repeat(n);
+    const cases: [string, 'post' | 'patch', string, object][] = [
+      ['account name', 'post', '/accounts', { name: long(256) }],
+      ['account name', 'patch', `/accounts/${acc}`, { name: long(256) }],
+      [
+        'category name',
+        'post',
+        `/${acc}/categories`,
+        { name: long(256), color: '#000000', type: 'expense' },
+      ],
+      [
+        'category name',
+        'patch',
+        `/${acc}/categories/${cat}`,
+        { name: long(256) },
+      ],
+      ['tag name', 'post', `/${acc}/tags`, { name: long(51) }],
+      ['tag name', 'patch', `/${acc}/tags/${tag}`, { name: long(51) }],
+      [
+        'transaction description',
+        'post',
+        `/${acc}/transactions`,
+        { date: '2026-03-01', description: long(256), amount: '-100' },
+      ],
+      [
+        'transaction description',
+        'patch',
+        `/${acc}/transactions/${tx}`,
+        { description: long(256) },
+      ],
+      [
+        'recurring description',
+        'post',
+        `/${acc}/recurring`,
+        { description: long(256), amount: '-100', dayOfMonth: 5 },
+      ],
+      [
+        'recurring description',
+        'patch',
+        `/${acc}/recurring/${rec}`,
+        { description: long(256) },
+      ],
+      [
+        'transfer description',
+        'post',
+        `/${acc}/transactions/transfer`,
+        {
+          destinationAccountId: '00000000-0000-4000-8000-000000000102',
+          date: '2026-03-01',
+          description: long(256),
+          amount: '100',
+        },
+      ],
+      [
+        'tag color (varchar(7))',
+        'post',
+        `/${acc}/tags`,
+        { name: 'ok', color: '#12345678' },
+      ],
+    ];
+    it.each(cases)(
+      '%s (%s) beyond the database limit answers 400',
+      async (_n, method, url, body) => {
+        await http()[method](url).set(auth()).send(body).expect(400);
+      },
+    );
+
+    it.each([
+      ['post', '/accounts'],
+      ['patch', `/accounts/${acc}`],
+    ] as const)(
+      '%s account with an empty or blank name answers 400',
+      async (method, url) => {
+        for (const name of ['', '   ']) {
+          await http()[method](url).set(auth()).send({ name }).expect(400);
+        }
+        expect(mocks.accounts.save).not.toHaveBeenCalled();
+      },
+    );
+
+    it('accepts a 255-character account name', async () => {
+      await http()
+        .post('/accounts')
+        .set(auth())
+        .send({ name: long(255) })
+        .expect(201);
+    });
+
+    it('GET transactions answers 400 for a search above 200 characters', async () => {
+      await http()
+        .get(`/${acc}/transactions`)
+        .query({ search: long(5000) })
+        .set(auth())
+        .expect(400);
+      expect(mocks.transactions.findAllByAccount).not.toHaveBeenCalled();
+    });
+
+    it('GET transactions accepts a 200-character search', async () => {
+      mocks.transactions.findAllByAccount.mockResolvedValue({
+        data: [],
+        total: 0,
+      });
+      await http()
+        .get(`/${acc}/transactions`)
+        .query({ search: long(200) })
+        .set(auth())
+        .expect(200);
+    });
+
+    describe('follow-up inputs (payment method, blank text, paging)', () => {
+      const sg = '00000000-0000-4000-8000-000000000116';
+      const rule = '00000000-0000-4000-8000-000000000115';
+      const blank = '   ';
+
+      it.each([
+        ['post', `/${acc}/transactions`],
+        ['patch', `/${acc}/transactions/${tx}`],
+      ] as const)(
+        '%s transaction with an unknown paymentMethod answers 400',
+        async (method, url) => {
+          await http()
+            [method](url)
+            .set(auth())
+            .send({
+              date: '2026-03-01',
+              description: 'x',
+              amount: '-100',
+              paymentMethod: 'bitcoin',
+            })
+            .expect(400);
+        },
+      );
+
+      it('POST transactions/bulk with an unknown paymentMethod answers 400', async () => {
+        await http()
+          .post(`/${acc}/transactions/bulk`)
+          .set(auth())
+          .send({
+            transactions: [
+              {
+                date: '2026-03-01',
+                description: 'x',
+                amount: '-100',
+                paymentMethod: 'bitcoin',
+              },
+            ],
+          })
+          .expect(400);
+      });
+
+      it.each([
+        'credit_card',
+        'direct_debit',
+        'transfer',
+        'check',
+        'cash',
+        'other',
+      ])('accepts paymentMethod %s', async (paymentMethod) => {
+        mocks.transactions.save.mockResolvedValue(undefined);
+        const res = await http()
+          .patch(`/${acc}/transactions/${tx}`)
+          .set(auth())
+          .send({ paymentMethod });
+        expect(res.status).not.toBe(400);
+      });
+
+      const blankCases: [string, 'post' | 'patch', string, object][] = [
+        [
+          'category name',
+          'post',
+          `/${acc}/categories`,
+          { name: blank, color: '#000000', type: 'expense' },
+        ],
+        ['tag name', 'post', `/${acc}/tags`, { name: blank }],
+        ['tag name', 'patch', `/${acc}/tags/${tag}`, { name: blank }],
+        [
+          'transaction description',
+          'post',
+          `/${acc}/transactions`,
+          { date: '2026-03-01', description: blank, amount: '-100' },
+        ],
+        [
+          'transaction description',
+          'patch',
+          `/${acc}/transactions/${tx}`,
+          { description: blank },
+        ],
+        [
+          'recurring description',
+          'post',
+          `/${acc}/recurring`,
+          { description: blank, amount: '-100', dayOfMonth: 5 },
+        ],
+        [
+          'recurring description',
+          'patch',
+          `/${acc}/recurring/${rec}`,
+          { description: blank },
+        ],
+        [
+          'transfer description',
+          'post',
+          `/${acc}/transactions/transfer`,
+          {
+            destinationAccountId: '00000000-0000-4000-8000-000000000102',
+            date: '2026-03-01',
+            description: blank,
+            amount: '100',
+          },
+        ],
+        [
+          'savings goal name',
+          'post',
+          `/${acc}/savings-goals`,
+          { name: blank, targetAmount: '100' },
+        ],
+        [
+          'savings goal name',
+          'post',
+          `/${acc}/savings-goals`,
+          { name: 'x'.repeat(256), targetAmount: '100' },
+        ],
+        [
+          'savings goal name',
+          'patch',
+          `/${acc}/savings-goals/${sg}`,
+          { name: blank },
+        ],
+        [
+          'savings goal name',
+          'patch',
+          `/${acc}/savings-goals/${sg}`,
+          { name: 'x'.repeat(256) },
+        ],
+        [
+          'smart rule pattern',
+          'post',
+          `/${acc}/smart-rules`,
+          { pattern: blank, categoryId: null },
+        ],
+        [
+          'smart rule pattern',
+          'post',
+          `/${acc}/smart-rules`,
+          { pattern: 'x'.repeat(256), categoryId: null },
+        ],
+        [
+          'smart rule pattern',
+          'patch',
+          `/${acc}/smart-rules/${rule}`,
+          { pattern: blank },
+        ],
+        [
+          'smart rule pattern',
+          'patch',
+          `/${acc}/smart-rules/${rule}`,
+          { pattern: 'x'.repeat(256) },
+        ],
+      ];
+      it.each(blankCases)(
+        '%s blank or too long answers 400',
+        async (_n, method, url, body) => {
+          await http()[method](url).set(auth()).send(body).expect(400);
+        },
+      );
+
+      it('POST transactions/predict answers 400 for a description above 255 characters', async () => {
+        await http()
+          .post(`/${acc}/transactions/predict-categories`)
+          .set(auth())
+          .send({ descriptions: ['x'.repeat(256)] })
+          .expect(400);
+      });
+
+      it.each([
+        ['limit', '0'],
+        ['limit', '-1'],
+        ['limit', '5001'],
+        ['limit', 'abc'],
+        ['limit', '1.5'],
+        ['page', '0'],
+        ['page', '-2'],
+        ['page', 'abc'],
+        ['page', '1.5'],
+      ])('GET transactions answers 400 for %s=%s', async (field, value) => {
+        await http()
+          .get(`/${acc}/transactions`)
+          .query({ [field]: value })
+          .set(auth())
+          .expect(400);
+        expect(mocks.transactions.findAllByAccount).not.toHaveBeenCalled();
+      });
+
+      it('GET transactions accepts page=2&limit=5000 and forwards integers', async () => {
+        mocks.transactions.findAllByAccount.mockResolvedValue({
+          data: [],
+          total: 0,
+        });
+        await http()
+          .get(`/${acc}/transactions`)
+          .query({ page: '2', limit: '5000' })
+          .set(auth())
+          .expect(200);
+        const [[, options]] = mocks.transactions.findAllByAccount.mock
+          .calls as [[string, { page: number; limit: number }]];
+        expect(options.page).toBe(2);
+        expect(options.limit).toBe(5000);
+      });
+    });
+  });
 });

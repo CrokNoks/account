@@ -160,7 +160,7 @@ describe('Transactions routes (e2e)', () => {
           .send({ ...body, description: '   ' })
           .expect(400, {
             statusCode: 400,
-            message: 'Description is required',
+            message: ['Description is required'],
             error: 'Bad Request',
           });
         expect(mocks.transactions.save).not.toHaveBeenCalled();

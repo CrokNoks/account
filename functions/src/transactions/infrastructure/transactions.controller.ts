@@ -38,13 +38,18 @@ import { resolvePending } from '../domain/pending-rule';
 import {
   IsString,
   IsOptional,
-  IsNumberString,
   IsBoolean,
   IsObject,
   IsArray,
   ValidateNested,
   IsUUID,
   ArrayMaxSize,
+  MaxLength,
+  Matches,
+  IsIn,
+  IsInt,
+  Min,
+  Max,
 } from 'class-validator';
 import { Type, Transform } from 'class-transformer';
 import { PeriodRepository } from '../../periods/domain/period.repository.interface';
@@ -52,6 +57,16 @@ import { Inject } from '@nestjs/common';
 import { parseCents } from '../../shared/domain/cents';
 import { IsCents } from '../../shared/infrastructure/is-cents.decorator';
 import { IsCalendarDate } from '../../shared/infrastructure/is-calendar-date.decorator';
+
+// Mirrors the CHECK constraint on transactions.payment_method.
+export const PAYMENT_METHODS = [
+  'credit_card',
+  'direct_debit',
+  'transfer',
+  'check',
+  'cash',
+  'other',
+];
 
 export class CreateTransactionDto {
   @IsOptional()
@@ -75,6 +90,8 @@ export class CreateTransactionDto {
 
   @IsString()
   @ApiProperty({ description: 'Description' })
+  @MaxLength(255)
+  @Matches(/\S/, { message: 'Description is required' })
   description: string;
 
   @IsCents()
@@ -92,7 +109,7 @@ export class CreateTransactionDto {
   pending?: boolean;
 
   @IsOptional()
-  @IsString()
+  @IsIn(PAYMENT_METHODS)
   @ApiProperty({ description: 'Payment method', required: false })
   paymentMethod?: string;
 
@@ -146,6 +163,8 @@ export class CreateTransferDto {
 
   @IsString()
   @ApiProperty({ description: 'Description' })
+  @MaxLength(255)
+  @Matches(/\S/, { message: 'Description is required' })
   description: string;
 
   @IsCents()
@@ -266,6 +285,7 @@ export class PredictCategoriesDto {
   @IsArray()
   @ArrayMaxSize(MAX_PREDICTIONS_PER_REQUEST)
   @IsString({ each: true })
+  @MaxLength(255, { each: true })
   descriptions: string[];
 }
 
@@ -294,6 +314,7 @@ export class FindTransactionsQueryDto {
 
   @IsOptional()
   @IsString()
+  @MaxLength(200)
   search?: string;
 
   @IsOptional()
@@ -340,12 +361,17 @@ export class FindTransactionsQueryDto {
   endDate?: string;
 
   @IsOptional()
-  @IsNumberString()
-  page?: string;
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  page?: number;
 
   @IsOptional()
-  @IsNumberString()
-  limit?: string;
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(5000)
+  limit?: number;
 }
 
 @ApiTags('transactions')
@@ -434,8 +460,8 @@ export class TransactionsController {
         minAmount: query.minAmount ? parseCents(query.minAmount) : undefined,
         maxAmount: query.maxAmount ? parseCents(query.maxAmount) : undefined,
         reconciled: query.reconciled,
-        page: query.page ? parseInt(query.page, 10) : undefined,
-        limit: query.limit ? parseInt(query.limit, 10) : undefined,
+        page: query.page,
+        limit: query.limit,
       },
     );
     return {

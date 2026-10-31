@@ -17,6 +17,7 @@ Code : back `functions/src/savings-goals/`, front `frontend/src/features/savings
 | Règle | Source | Testée |
 | --- | --- | --- |
 | Un objectif exige un compte, un nom non vide et un montant cible strictement positif (sinon erreur). | `functions/src/savings-goals/domain/savings-goal.entity.ts:37-44` | ❌ |
+| À l'entrée de l'API, le nom doit contenir autre chose que des espaces et faire au plus 255 caractères (création et modification) : sinon 400 « name must not be blank » / « name must be shorter than or equal to 255 characters ». 255 est un plafond choisi (colonne `TEXT`, pas de limite en base), aligné sur les autres noms | `savings-goals.controller.ts` (DTO) | ✅ e2e `validation.e2e-spec.ts` |
 | Couleur par défaut `#3b82f6` si aucune n'est donnée. | `savings-goal.entity.ts:28`, `application/savings-goals.use-cases.ts:39` | ❌ |
 | Le montant actuel d'un nouvel objectif vaut 0. | `savings-goal.entity.ts:58` | ❌ |
 | Les montants (`targetAmount`, `currentAmount`) sont reçus en chaîne d'entier de centimes signé dans ±(2^53 − 1) (`@IsCents` / `parseCents`, `shared/`), décimal, notation scientifique ou hors bornes → 400, « -0 » lu comme 0 (création et modification). | `infrastructure/savings-goals.controller.ts` (DTO), `use-cases.ts`, `shared/domain/cents.ts` | ✅ e2e `validation.e2e-spec.ts` |

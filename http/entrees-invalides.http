@@ -1,0 +1,118 @@
+# Entrées invalides : 400 (jamais 500 ni 201) pour calendrier, textes trop longs ou blancs, paymentMethod, pagination.
+# Lancement : npx httpyac send --all http/entrees-invalides.http --var port=8080 --var anon=<NEXT_PUBLIC_SUPABASE_ANON_KEY de frontend/.env.local>
+# (la clé vient de la ligne de commande, jamais du fichier ; l'utilisateur est jetable, créé par le fichier)
+@baseUrl = http://localhost:{{port}}
+@authUrl = http://127.0.0.1:54321/auth/v1
+
+### Utilisateur jetable
+# @name login
+POST {{authUrl}}/signup
+apikey: {{anon}}
+Content-Type: application/json
+
+{ "email": "entrees-{{$timestamp}}@example.com", "password": "Password123!" }
+
+?? status == 200
+
+### Compte jetable
+# @name account
+POST {{baseUrl}}/accounts
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "name": "entrees-{{$timestamp}}", "initialBalance": "0" }
+
+?? status == 201
+
+### Calendrier sans paramètres : 400
+GET {{baseUrl}}/{{account.id}}/reporting/calendar
+Authorization: Bearer {{login.access_token}}
+
+?? status == 400
+
+### Calendrier avec un mois impossible : 400
+GET {{baseUrl}}/{{account.id}}/reporting/calendar?year=2026&month=13
+Authorization: Bearer {{login.access_token}}
+
+?? status == 400
+
+### Calendrier nominal : 200
+GET {{baseUrl}}/{{account.id}}/reporting/calendar?year=2026&month=5
+Authorization: Bearer {{login.access_token}}
+
+?? status == 200
+
+### Compte au nom de 256 caractères : 400
+POST {{baseUrl}}/accounts
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "name": "{{"x".repeat(256)}}" }
+
+?? status == 400
+?? body contains name must be shorter than or equal to 255 characters
+
+### Compte au nom blanc : 400
+POST {{baseUrl}}/accounts
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "name": "   " }
+
+?? status == 400
+?? body contains name must not be blank
+
+### Tag de 51 caractères : 400
+POST {{baseUrl}}/{{account.id}}/tags
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "name": "{{"x".repeat(51)}}" }
+
+?? status == 400
+
+### Catégorie au nom blanc : 400
+POST {{baseUrl}}/{{account.id}}/categories
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "name": "   ", "color": "#000000", "type": "expense" }
+
+?? status == 400
+
+### Recherche de 201 caractères : 400
+GET {{baseUrl}}/{{account.id}}/transactions?search={{"x".repeat(201)}}
+Authorization: Bearer {{login.access_token}}
+
+?? status == 400
+
+### Transaction avec un moyen de paiement inconnu : 400
+POST {{baseUrl}}/{{account.id}}/transactions
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "date": "2026-03-01", "description": "Courses", "amount": "-1000", "paymentMethod": "bitcoin" }
+
+?? status == 400
+?? body contains paymentMethod must be one of the following values
+
+### Transaction avec un moyen de paiement valide : 201
+POST {{baseUrl}}/{{account.id}}/transactions
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "date": "2026-03-01", "description": "Courses", "amount": "-1000", "paymentMethod": "cash" }
+
+?? status == 201
+
+### limit=0 : 400
+GET {{baseUrl}}/{{account.id}}/transactions?limit=0
+Authorization: Bearer {{login.access_token}}
+
+?? status == 400
+
+### limit=1000 : 200
+GET {{baseUrl}}/{{account.id}}/transactions?limit=1000
+Authorization: Bearer {{login.access_token}}
+
+?? status == 200

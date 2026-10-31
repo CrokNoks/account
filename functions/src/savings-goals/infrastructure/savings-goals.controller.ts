@@ -22,12 +22,14 @@ import {
   DeleteSavingsGoalUseCase,
 } from '../application/savings-goals.use-cases';
 import { SavingsGoal } from '../domain/savings-goal.entity';
-import { IsString, IsOptional } from 'class-validator';
+import { IsString, IsOptional, MaxLength, Matches } from 'class-validator';
 import { IsCents } from '../../shared/infrastructure/is-cents.decorator';
 import { IsCalendarDate } from '../../shared/infrastructure/is-calendar-date.decorator';
 
 class CreateSavingsGoalDto {
   @IsString()
+  @MaxLength(255)
+  @Matches(/\S/, { message: 'name must not be blank' })
   @ApiProperty()
   name: string;
 
@@ -47,7 +49,12 @@ class CreateSavingsGoalDto {
 }
 
 class UpdateSavingsGoalDto {
-  @IsOptional() @IsString() @ApiProperty({ required: false }) name?: string;
+  @IsOptional()
+  @IsString()
+  @MaxLength(255)
+  @Matches(/\S/, { message: 'name must not be blank' })
+  @ApiProperty({ required: false })
+  name?: string;
   @IsOptional()
   @IsCents()
   @ApiProperty({ required: false })

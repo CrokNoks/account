@@ -12,6 +12,7 @@ Mise à jour : 2026-10-30 · Commit : 157b272
 | Règle | Source | Testée |
 | --- | --- | --- |
 | Un tag exige un nom non vide et un compte | `functions/src/tags/domain/tag.entity.ts:28-38` | ❌ |
+| Le nom est limité à 50 caractères (colonne `varchar(50)`) et doit contenir autre chose que des espaces, création et modification : sinon 400 « name must be shorter than or equal to 50 characters » / « name must not be blank » (sans cela : 500 ou refus tardif par l'entité) | `tags.controller.ts` (DTO) | ✅ e2e `validation.e2e-spec.ts`, `http/entrees-invalides.http` |
 | La couleur, si présente, est au format hexadécimal `#RRGGBB` (contrôlé aussi à l'entrée de l'API) | `tag.entity.ts:32`, `infrastructure/tags.controller.ts:31` | ❌ |
 | A la création, la couleur est facultative côté API ; absente, le tag reçoit `#94a3b8` (la même couleur que les résumés de tags). Fournie, elle doit rester un hexadécimal valide, sinon 400. | `tags.controller.ts:26-37`, `application/create-tag.usecase.ts` (`DEFAULT_TAG_COLOR`) | ✅ `tags.usecases.spec.ts` (couleur par défaut), e2e `front-contract.e2e-spec.ts` |
 | Un nom de tag est unique dans un compte | `supabase/migrations/20260313092403_create_tags_tables.sql:9` (`UNIQUE(account_id, name)`) ; violation → 409 dans `supabase-tag.repository.ts` | ✅ `supabase-tag.repository.spec.ts` |
@@ -42,5 +43,4 @@ Front (`frontend/src/features/tags/`) : `tag-list`, `create-tag-dialog`, `tag-de
 - Création à la volée : le `tag-selector` crée un tag avec seulement un nom (`tag-selector.tsx:52-55`) ; l'API accepte maintenant ce cas et applique la couleur par défaut `#94a3b8`. Ce gris est choisi par le back, l'utilisateur ne le voit pas choisir. Si la création échoue, la notification affiche le message renvoyé par l'API (par exemple un nom déjà pris), à défaut un message traduit. Même comportement dans `create-tag-dialog` (page Tags) : une couleur invalide renvoyée en 400 s'affiche dans la notification au lieu d'échouer en silence.
 - Aucun test ne couvre le module tags.
 - Le nom unique par compte est une contrainte base : sa violation (code Postgres 23505) est traduite par le repository en `ConflictError` → 409 « A tag with this name already exists » (création et renommage), testé dans `supabase-tag.repository.spec.ts` et e2e `validation.e2e-spec.ts`. Un tag introuvable à la modification renvoie 404 (`NotFoundError`).
-- Rien n'empêche, dans le code, un nom composé d'espaces seulement côté API (`IsString` seul) ; l'entité le refuse ensuite.
 - Le calcul des récapitulatifs vit dans `reporting`, non lu ici.

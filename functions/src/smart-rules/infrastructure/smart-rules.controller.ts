@@ -25,11 +25,15 @@ import {
   IsArray,
   IsNumber,
   IsUUID,
+  MaxLength,
+  Matches,
 } from 'class-validator';
 import { Inject } from '@nestjs/common';
 
 class CreateSmartRuleDto {
   @IsString()
+  @MaxLength(255)
+  @Matches(/\S/, { message: 'pattern must not be blank' })
   @ApiProperty()
   pattern: string;
 
@@ -53,6 +57,8 @@ class CreateSmartRuleDto {
 class UpdateSmartRuleDto {
   @IsOptional()
   @IsString()
+  @MaxLength(255)
+  @Matches(/\S/, { message: 'pattern must not be blank' })
   @ApiProperty({ required: false })
   pattern?: string;
 

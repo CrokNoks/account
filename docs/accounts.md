@@ -14,6 +14,7 @@ Mise à jour : 2026-10-31 · Commit : ac92968
 | Règle | Source | Testée |
 | --- | --- | --- |
 | Un compte a un nom obligatoire ; solde initial 0 par défaut. Il n'a plus de description | `functions/src/accounts/domain/account.entity.ts`, `accounts.controller.ts:36-58` (DTO) | ✅ `account.entity.spec.ts` |
+| Le nom est limité à 255 caractères (colonne `varchar(255)`) et doit contenir autre chose que des espaces (`@MaxLength(255)`, `@Matches(/\S/)`), création et modification : sinon 400 « name must be shorter than or equal to 255 characters » / « name must not be blank » (sans cela : 500 ou compte au nom vide). Le formulaire front exige déjà un nom (`required`) | `accounts.controller.ts` (DTO) | ✅ e2e `validation.e2e-spec.ts`, `http/entrees-invalides.http` |
 | Le propriétaire d'un compte créé est l'utilisateur du token | `accounts.controller.ts:184` (`req.user.id`) | ✅ use case seul : `create-account.use-case.spec.ts` |
 | Le solde initial est reçu en chaîne d'entier de centimes signé dans ±(2^53 − 1) (`@IsCents` / `parseCents`, `shared/`), décimal, notation scientifique ou hors bornes → 400, « -0 » lu comme 0 (création et modification) | `accounts.controller.ts` (DTO), `shared/domain/cents.ts` | ✅ e2e `validation.e2e-spec.ts` |
 | La liste des comptes ne filtre pas dans le code : elle s'appuie sur la base, qui renvoie comptes possédés + partagés avec soi | `supabase-account.repository.ts:40-53`, `20260106081523_remote_schema.sql` (policy « Users can view accounts… ») | ✅ `get-accounts.use-case.spec.ts` (repo simulé) |
