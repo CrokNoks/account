@@ -62,7 +62,6 @@
       "net-worth": "Net worth",
       "pulse": "The Pulse (vs M-1)",
       "anomalies": "Anomalies",
-      "insights": "AI Insights",
       "breakdown": "Budget breakdown",
       "top-expenses": "Top expenses",
       "tags": "Tag statistics",
@@ -202,14 +201,6 @@
       "detected": "Anomalies detected ({count})",
       "ignore": "Dismiss this alert",
       "update_error": "Error while updating the anomaly"
-    },
-    "ai": {
-      "title": "AI analysis",
-      "trend_title": "AI trend analysis",
-      "loading": "Generating the analysis...",
-      "trend_loading": "Analyzing historical data...",
-      "error": "Unable to load the AI analyses right now.",
-      "none": "No analysis available at the moment."
     }
   },
   "Accounts": {
@@ -298,11 +289,6 @@
       "select_destination": "Select the destination account...",
       "no_other_account": "No other account available",
       "excluded_from_forecast": "Excluded from upcoming balance"
-    },
-    "scan": {
-      "button": "Scan",
-      "success": "Receipt analyzed successfully!",
-      "error": "Error while analyzing the receipt."
     },
     "transfer_created": "Transfer \"{description}\" created",
     "transaction_added": "Transaction \"{description}\" added",

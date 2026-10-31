@@ -62,7 +62,6 @@
       "net-worth": "Patrimoine Net",
       "pulse": "Le Pulse (vs M-1)",
       "anomalies": "Anomalies",
-      "insights": "IA Insights",
       "breakdown": "Répartition du budget",
       "top-expenses": "Top Dépenses",
       "tags": "Statistiques par Tags",
@@ -202,14 +201,6 @@
       "detected": "Anomalies détectées ({count})",
       "ignore": "Ignorer cette alerte",
       "update_error": "Erreur lors de la mise à jour de l'anomalie"
-    },
-    "ai": {
-      "title": "Analyse IA",
-      "trend_title": "Analyse des Tendances IA",
-      "loading": "Génération de l'analyse en cours...",
-      "trend_loading": "Analyse des données historiques en cours...",
-      "error": "Impossible de charger les analyses IA pour le moment.",
-      "none": "Aucune analyse disponible pour le moment."
     }
   },
   "Accounts": {
@@ -298,11 +289,6 @@
       "select_destination": "Sélectionner le compte de destination...",
       "no_other_account": "Aucun autre compte disponible",
       "excluded_from_forecast": "Exclu du solde à venir"
-    },
-    "scan": {
-      "button": "Scanner",
-      "success": "Ticket analysé avec succès !",
-      "error": "Erreur lors de l'analyse du ticket."
     },
     "transfer_created": "Virement « {description} » créé",
     "transaction_added": "Opération « {description} » ajoutée",

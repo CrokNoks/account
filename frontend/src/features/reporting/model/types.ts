@@ -112,9 +112,3 @@ export interface PeriodComparisonResponse {
   savings: ComparisonPoint[];
   transfers: ComparisonPoint[];
 }
-
-export interface ScanReceiptResponse {
-  date: string | null;
-  amount: number | null;
-  description: string | null;
-}

@@ -17,7 +17,6 @@ import { NetWorthWidget } from "@/features/reporting/ui/net-worth-widget";
 import { UpcomingDeadlinesWidget } from "@/features/reporting/ui/upcoming-deadlines-widget";
 import { MonthlyPulseWidget } from "@/features/reporting/ui/monthly-pulse-widget";
 import { TopExpensesWidget } from "@/features/reporting/ui/top-expenses-widget";
-import { AIInsightsCard } from "@/features/reporting/ui/ai-insights-card";
 import { TransactionList } from "@/features/transactions/ui/transaction-list";
 import { Card } from "@/components/ui/card";
 
@@ -33,7 +32,6 @@ export const WIDGET_COMPONENTS: Record<string, React.ComponentType> = {
   'pulse': MonthlyPulseWidget,
   'top-expenses': TopExpensesWidget,
   'upcoming': UpcomingDeadlinesWidget,
-  'insights': AIInsightsCard,
   'breakdown': () => (
     <div data-tour="budget-breakdown" className="h-full">
       <BudgetBreakdown />
@@ -60,7 +58,6 @@ export const ALL_AVAILABLE_WIDGETS = [
   { id: 'net-worth' },
   { id: 'pulse' },
   { id: 'anomalies' },
-  { id: 'insights' },
   { id: 'breakdown' },
   { id: 'top-expenses' },
   { id: 'tags' },

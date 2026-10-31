@@ -1,13 +1,10 @@
 'use client';
 
 import { EvolutionChart } from "@/features/reporting/ui/evolution-chart";
-import { EvolutionAIInsightsCard } from "@/features/reporting/ui/evolution-ai-insights-card";
-import { useAccountStore } from "@/features/accounts/model/use-account-store";
 import { useTranslations } from 'next-intl';
 
 export default function EvolutionPage() {
   const t = useTranslations('Reporting');
-  const { activeAccountId } = useAccountStore();
 
   return (
     <div className="flex flex-col gap-8">
@@ -16,10 +13,6 @@ export default function EvolutionPage() {
         <p className="text-muted-foreground">
           {t('evolution_desc')}
         </p>
-      </div>
-
-      <div className="hidden lg:block">
-        <EvolutionAIInsightsCard accountId={activeAccountId} />
       </div>
 
       <div className="space-y-12">

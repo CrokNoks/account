@@ -25,6 +25,7 @@ import {
   ALL_AVAILABLE_WIDGETS, 
   DEFAULT_WIDGETS 
 } from "@/features/preferences/config/dashboard-widgets";
+import { visibleLayout } from "@/features/preferences/model/visible-layout";
 import { 
   MiniWidget, 
   ManagementItem, 
@@ -59,15 +60,20 @@ export default function Home() {
   const { mutate: updatePreferences } = useUpdateUserPreferences();
   const { isEditing, setEditing, tempLayout, setTempLayout, toggleWidget, updateWidgetWidth, toggleDeviceVisibility } = useDashboardStore();
 
+  const savedLayout = useMemo(
+    () => visibleLayout(preferences?.dashboardLayout.widgets || DEFAULT_WIDGETS, ALL_AVAILABLE_WIDGETS.map(aw => aw.id)),
+    [preferences],
+  );
+
   const layout = useMemo(() => {
     if (isEditing && tempLayout) return tempLayout;
-    return preferences?.dashboardLayout.widgets || DEFAULT_WIDGETS;
-  }, [isEditing, tempLayout, preferences]);
+    return savedLayout;
+  }, [isEditing, tempLayout, savedLayout]);
 
   const activeWidgets = useMemo(() => {
     return layout.map(w => ({
       ...w,
-      label: ALL_AVAILABLE_WIDGETS.some(aw => aw.id === w.id) ? t(`widgets.${w.id}`) : w.id
+      label: t(`widgets.${w.id}`)
     }));
   }, [layout, t]);
 
@@ -76,7 +82,7 @@ export default function Home() {
   }, [layout, t]);
 
   const handleStartEditing = () => {
-    const currentWidgets = preferences?.dashboardLayout.widgets || DEFAULT_WIDGETS;
+    const currentWidgets = savedLayout;
 
     const normalizedWidgets = currentWidgets.map(w => ({
       ...w,
