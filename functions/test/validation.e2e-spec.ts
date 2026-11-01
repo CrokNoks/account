@@ -794,15 +794,12 @@ describe('Request body validation (e2e)', () => {
     ] as const)(
       '%s categories with a budget answers 400',
       async (method, url) => {
-        const res = await http()
-          [method](url)
-          .set(auth())
-          .send({
-            name: 'Courses',
-            color: '#000000',
-            type: 'expense',
-            budget: '5000',
-          });
+        const res = await http()[method](url).set(auth()).send({
+          name: 'Courses',
+          color: '#000000',
+          type: 'expense',
+          budget: '5000',
+        });
 
         expect(res.status).toBe(400);
         expect((res.body as { message: string[] }).message).toContain(
