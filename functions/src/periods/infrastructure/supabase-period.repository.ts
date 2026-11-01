@@ -20,6 +20,25 @@ interface PeriodRow {
 
 /** Contrainte d'exclusion periods_no_overlap (23P01). */
 const PERIOD_OVERLAP = 'Period overlaps an existing period';
+/** Index unique partiel periods_one_active_per_account (23505). */
+const ANOTHER_ACTIVE = 'Another period is already active for this account';
+const BUDGET_DUPLICATE =
+  'A budget already exists for this category in this period';
+
+/** Message 409 selon le code ET la contrainte nommée dans l'erreur. */
+function periodConflict(error: {
+  code?: string;
+  message: string;
+}): string | undefined {
+  if (
+    error.code === '23505' &&
+    error.message.includes('periods_one_active_per_account')
+  )
+    return ANOTHER_ACTIVE;
+  if (error.code === '23P01') return PERIOD_OVERLAP;
+  if (error.message.includes('budget_instances')) return BUDGET_DUPLICATE;
+  return undefined;
+}
 
 @Injectable()
 export class SupabasePeriodRepository implements PeriodRepository {
@@ -83,7 +102,7 @@ export class SupabasePeriodRepository implements PeriodRepository {
       updated_at: period.updatedAt.toISOString(),
     });
 
-    if (error) throw toDomainError(error, { conflict: PERIOD_OVERLAP });
+    if (error) throw toDomainError(error, { conflict: periodConflict(error) });
   }
 
   async createWithBudgets(
@@ -108,16 +127,8 @@ export class SupabasePeriodRepository implements PeriodRepository {
       p_transactions: transactions.map(toTransactionPayload),
     });
 
-    // UNIQUE(period_id, category_id) : budget_instances_period_id_category_id_key
-    if (error)
-      throw toDomainError(error, {
-        conflict:
-          error.code === '23P01'
-            ? PERIOD_OVERLAP
-            : error.message.includes('budget_instances')
-              ? 'A budget already exists for this category in this period'
-              : undefined,
-      });
+    // 23505 : periods_one_active_per_account ou budget_instances_period_id_category_id_key
+    if (error) throw toDomainError(error, { conflict: periodConflict(error) });
   }
 
   async delete(id: string): Promise<void> {

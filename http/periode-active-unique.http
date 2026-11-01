@@ -1,0 +1,81 @@
+# Périodes : une seule période active par compte (index unique periods_one_active_per_account) -> 409.
+# Lancement : npx httpyac send --all http/periode-active-unique.http --var port=8080 --var anon=<ANON_KEY de `supabase status`>
+# (la clé vient de la ligne de commande, jamais du fichier ; l'utilisateur est jetable, créé par le fichier)
+@baseUrl = http://localhost:{{port}}
+@authUrl = http://127.0.0.1:54321/auth/v1
+
+### Utilisateur jetable
+# @name login
+POST {{authUrl}}/signup
+apikey: {{anon}}
+Content-Type: application/json
+
+{ "email": "periode-active-{{$timestamp}}@example.com", "password": "Password123!" }
+
+?? status == 200
+
+### Compte jetable
+# @name account
+POST {{baseUrl}}/accounts
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "name": "periode-active-{{$timestamp}}", "initialBalance": "0" }
+
+?? status == 201
+
+### P1 (octobre) : créée, active
+# @name p1
+POST {{baseUrl}}/{{account.id}}/periods
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "startDate": "2026-10-01", "endDate": "2026-10-31", "budgets": [] }
+
+?? status == 201
+
+### P2 (novembre) : créée, active ; P1 passe inactive
+# @name p2
+POST {{baseUrl}}/{{account.id}}/periods
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "startDate": "2026-11-01", "endDate": "2026-11-30", "budgets": [] }
+
+?? status == 201
+
+### Réactiver P1 alors que P2 est active : refusé
+PATCH {{baseUrl}}/{{account.id}}/periods/{{p1.id}}
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "isActive": true }
+
+?? status == 409
+?? body contains Another period is already active for this account
+
+### Clôturer P2
+PATCH {{baseUrl}}/{{account.id}}/periods/{{p2.id}}
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "isActive": false }
+
+?? status == 200
+
+### Réactiver P1 : accepté
+PATCH {{baseUrl}}/{{account.id}}/periods/{{p1.id}}
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "isActive": true }
+
+?? status == 200
+
+### Une seule période active
+GET {{baseUrl}}/{{account.id}}/periods
+Authorization: Bearer {{login.access_token}}
+
+?? status == 200
+?? js response.parsedBody.length == 2
+?? js response.parsedBody.filter(p => p.isActive).length == 1

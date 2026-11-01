@@ -118,6 +118,53 @@ describe('SupabasePeriodRepository.createWithBudgets', () => {
     await expect(result).rejects.toThrow('Period overlaps an existing period');
   });
 
+  it('turns a second active period (23505 on periods_one_active_per_account) into a 409 on reactivation', async () => {
+    const upsert = jest.fn().mockResolvedValue({
+      error: {
+        code: '23505',
+        message:
+          'duplicate key value violates unique constraint "periods_one_active_per_account"',
+      },
+    });
+    const repository = new SupabasePeriodRepository({
+      from: jest.fn().mockReturnValue({ upsert }),
+    } as unknown as SupabaseClient);
+
+    const result = repository.save(period);
+    await expect(result).rejects.toBeInstanceOf(ConflictError);
+    await expect(result).rejects.toThrow(
+      'Another period is already active for this account',
+    );
+  });
+
+  it('turns a second active period (23505) into the same 409 on creation', async () => {
+    const { repository } = repoWith({
+      code: '23505',
+      message:
+        'duplicate key value violates unique constraint "periods_one_active_per_account"',
+    });
+
+    const result = repository.createWithBudgets(period, [], []);
+    await expect(result).rejects.toBeInstanceOf(ConflictError);
+    await expect(result).rejects.toThrow(
+      'Another period is already active for this account',
+    );
+  });
+
+  it('keeps the budget message for a duplicated budget category (23505)', async () => {
+    const { repository } = repoWith({
+      code: '23505',
+      message:
+        'duplicate key value violates unique constraint "budget_instances_period_id_category_id_key"',
+    });
+
+    await expect(
+      repository.createWithBudgets(period, [budget, budget], []),
+    ).rejects.toThrow(
+      'A budget already exists for this category in this period',
+    );
+  });
+
   it('keeps any other database error as is', async () => {
     const { repository } = repoWith({ code: 'XX000', message: 'rls' });
 

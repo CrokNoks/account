@@ -44,22 +44,25 @@ Qui : toutes les routes exigent un token de connexion valide (`@UseGuards(Supaba
 | Budgets d'une période | `GET /:accountId/periods/:id/budgets` | liste (id, catégorie, montant) | `periods.controller.ts:134` |
 | Remplacer les budgets | `PUT /:accountId/periods/:id/budgets` | voir règle | `periods.controller.ts:146` |
 | Lire une période | `GET /:accountId/periods/:id` | renvoie la période ou rien | `periods.controller.ts:165` |
-| Modifier (dates, active) | `PATCH /:accountId/periods/:id` | met à jour ; ne désactive pas les autres périodes quand on réactive | `periods.controller.ts:169` |
+| Modifier (dates, active) | `PATCH /:accountId/periods/:id` | met à jour ; réactiver une période alors qu'une autre est active renvoie 409 « Another period is already active for this account » (il faut d'abord clôturer l'autre) | `periods.controller.ts:169` |
 | Supprimer | `DELETE /:accountId/periods/:id` | supprime | `periods.controller.ts:205` |
 | Créer avec budgets | `POST /:accountId/periods` | voir règles ; renvoie id, dates, nombre de budgets | `periods.controller.ts:212` |
 
 Front (`frontend/src/features/periods/`) : liste (`ui/period-list.tsx`) avec « clôturer » (PATCH `isActive:false`, après confirmation navigateur), édition des dates, suppression (confirmation), édition des budgets (`ui/edit-period-budgets-sheet.tsx`) et création (`ui/create-period-dialog.tsx`, pré-remplie par le brouillon, montants saisis convertis par `toCents` ; un budget illisible bloque l'envoi avec un message d'erreur, aussi à l'édition des budgets). Hooks : `usePeriods` (dans `features/budgets`), `usePeriodDraft`, `usePeriodBudgets`, `useCreatePeriod`, `useUpdatePeriod`, `useUpdatePeriodBudgets`, `useDeletePeriod`. Après création/modification, le front rafraîchit aussi les transactions et le reporting.
 
 ## Statuts et transitions
-Active / inactive (`is_active`). Création : la nouvelle est active, les autres actives passent inactives. Clôture : active -> inactive via PATCH. Rien n'interdit (code lu) de réactiver une période inactive par PATCH ni d'avoir alors plusieurs actives.
+Active / inactive (`is_active`). Création : la nouvelle est active, les autres actives passent inactives. Clôture : active -> inactive via PATCH. Réactiver une période par PATCH est possible seulement si aucune autre n'est active (voir « Une seule période active »).
 
 ## Pas de chevauchement
 Deux périodes d'un même compte ne peuvent pas se chevaucher : contrainte d'exclusion `periods_no_overlap` (migration `20261031100100_periods_no_overlap.sql`, extension `btree_gist`) sur `account_id` et `daterange(start_date, end_date, '[]')`. Bornes incluses (une période qui commence le jour où une autre finit est refusée) ; `end_date` NULL = période ouverte à l'infini. La base fait foi, donc aussi sous concurrence : deux créations identiques simultanées donnent un 201 et un 409. Création (`createWithBudgets`) et PATCH des dates (`save`) renvoient 409 « Period overlaps an existing period » (`supabase-error.ts`, code Postgres 23P01 ; `supabase-period.repository.ts`). Tests : `supabase-period.repository.spec.ts`, `supabase-error.spec.ts` ; scénarios réels : `http/periodes-sans-chevauchement.http`.
 Avant `supabase db push` en production : vérifier qu'aucune période existante ne se chevauche, sinon la migration échoue (par compte, deux lignes dont les intervalles `[start_date, end_date]` se recoupent).
 
+## Une seule période active
+Index unique partiel `periods_one_active_per_account` sur `periods (account_id) WHERE is_active` (migration `20261031100200_periods_one_active.sql`). La base fait foi, donc aussi sous concurrence : deux réactivations simultanées de deux périodes donnent un 200 et un 409. Violation (code Postgres 23505) : 409 « Another period is already active for this account » en PATCH (`save`) comme en création (`createWithBudgets`) ; le choix du message selon la contrainte est dans `periodConflict` (`supabase-period.repository.ts`), les messages de chevauchement (23P01) et de budget en double sont inchangés. La création n'est pas gênée : `create_period_with_budgets` désactive les autres actives avant d'insérer. Tests : `supabase-period.repository.spec.ts` ; scénarios réels : `http/periode-active-unique.http`.
+Avant `supabase db push` en production : `select account_id from periods where is_active group by 1 having count(*)>1` doit renvoyer 0 ligne, sinon la migration échoue.
+
 ## Zones d'ombre
 - Les `categoryId` des budgets reçus en body doivent être des UUID : sinon 400 (voir `transactions.md`). Ceux de la route (`:accountId`, `:id`) le sont aussi (voir `transactions.md`).
-- Réactiver une période laisse-t-il volontairement plusieurs périodes actives ? Non traité.
 - Pourquoi le montant 0 est filtré au remplacement mais pas à la création : inconnu.
 - La date du jour du brouillon est la date calendaire du fuseau métier (`APP_TIME_ZONE`, `Europe/Paris` par défaut), identique quel que soit le fuseau du serveur (`shared/domain/date-only.ts`).
 - Les erreurs « Period not found » sont des `NotFoundError` (`periods.controller.ts:184`) → 404.
