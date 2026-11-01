@@ -1,0 +1,61 @@
+# Une récurrente injectée dans une période est « à venir » (comptée dans le solde à venir), pas « en attente ».
+# Lancement : npx httpyac send --all http/recurrentes-a-venir.http --var port=8080 --var anon=<ANON_KEY de `supabase status`>
+# (la clé vient de la ligne de commande, jamais du fichier ; l'utilisateur est jetable, créé par le fichier)
+@baseUrl = http://localhost:{{port}}
+@authUrl = http://127.0.0.1:54321/auth/v1
+
+### Utilisateur jetable
+# @name login
+POST {{authUrl}}/signup
+apikey: {{anon}}
+Content-Type: application/json
+
+{ "email": "recurrentes-a-venir-{{$timestamp}}@example.com", "password": "Password123!" }
+
+?? status == 200
+
+### Compte jetable, solde initial 1000,00 €
+# @name account
+POST {{baseUrl}}/accounts
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "name": "recurrentes-a-venir-{{$timestamp}}", "initialBalance": "100000" }
+
+?? status == 201
+
+### Récurrente : loyer de 650,00 € le 5
+POST {{baseUrl}}/{{account.id}}/recurring
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "description": "loyer", "amount": "-65000", "dayOfMonth": 5 }
+
+?? status == 201
+
+### Période avec les récurrentes injectées
+# @name period
+POST {{baseUrl}}/{{account.id}}/periods
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "startDate": "2026-11-01", "endDate": "2026-11-30", "budgets": [], "injectRecurring": true }
+
+?? status == 201
+
+### Le loyer généré est à venir : ni en attente, ni rapproché
+GET {{baseUrl}}/{{account.id}}/transactions?startDate=2026-11-01&endDate=2026-11-30
+Authorization: Bearer {{login.access_token}}
+
+?? status == 200
+?? js response.parsedBody.data.length == 1
+?? js response.parsedBody.data[0].pending == false
+?? js response.parsedBody.data[0].reconciled == false
+
+### Solde à venir = 1000 − 650 ; solde en banque inchangé (rien de rapproché)
+GET {{baseUrl}}/{{account.id}}/periods/{{period.id}}/reporting/stats
+Authorization: Bearer {{login.access_token}}
+
+?? status == 200
+?? js response.parsedBody.upcomingBalance == 35000
+?? js response.parsedBody.realBankBalance == 100000
