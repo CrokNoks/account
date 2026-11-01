@@ -56,14 +56,6 @@ const fixtures = {
     priority: 0,
     updatePriority: jest.fn(),
   }),
-  savingsGoals: (accountId: string) => ({
-    ...base(accountId),
-    name: 'Voyage',
-    targetAmount: BigInt(100000),
-    currentAmount: BigInt(0),
-    deadline: null,
-    color: '#3b82f6',
-  }),
   periods: (accountId: string) => ({
     ...base(accountId),
     startDate: now,
@@ -159,23 +151,6 @@ const routes: Route[] = [
     method: 'delete',
     url: '/00000000-0000-4000-8000-000000000101/smart-rules/00000000-0000-4000-8000-000000000107',
     writes: ['smartRules.delete'],
-    okStatus: 200,
-  },
-  {
-    name: 'PATCH savings-goals/:id',
-    repo: 'savingsGoals',
-    method: 'patch',
-    url: '/00000000-0000-4000-8000-000000000101/savings-goals/00000000-0000-4000-8000-000000000107',
-    body: { name: 'n' },
-    writes: ['savingsGoals.save'],
-    okStatus: 200,
-  },
-  {
-    name: 'DELETE savings-goals/:id',
-    repo: 'savingsGoals',
-    method: 'delete',
-    url: '/00000000-0000-4000-8000-000000000101/savings-goals/00000000-0000-4000-8000-000000000107',
-    writes: ['savingsGoals.delete'],
     okStatus: 200,
   },
   {

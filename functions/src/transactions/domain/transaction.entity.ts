@@ -14,7 +14,6 @@ export interface TransactionProps {
   notes?: string | null;
   metadata?: Record<string, any>;
   tagIds: string[];
-  savingsGoalId?: string | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -33,7 +32,6 @@ export class Transaction {
   public readonly notes?: string | null;
   public readonly metadata: Record<string, any> | undefined;
   public readonly tagIds: string[];
-  public readonly savingsGoalId?: string | null;
   public readonly createdAt: Date;
   public readonly updatedAt: Date;
 
@@ -51,7 +49,6 @@ export class Transaction {
     this.notes = props.notes;
     this.metadata = props.metadata;
     this.tagIds = props.tagIds || [];
-    this.savingsGoalId = props.savingsGoalId || null;
     this.createdAt = props.createdAt;
     this.updatedAt = props.updatedAt;
     this.validate();
@@ -79,11 +76,10 @@ export class Transaction {
   static create(
     props: Omit<
       TransactionProps,
-      'id' | 'createdAt' | 'updatedAt' | 'tagIds' | 'savingsGoalId'
+      'id' | 'createdAt' | 'updatedAt' | 'tagIds'
     > & {
       id?: string;
       tagIds?: string[];
-      savingsGoalId?: string | null;
       createdAt?: Date;
       updatedAt?: Date;
     },
@@ -93,7 +89,6 @@ export class Transaction {
       ...props,
       id: props.id || crypto.randomUUID(),
       tagIds: props.tagIds || [],
-      savingsGoalId: props.savingsGoalId || null,
       createdAt: props.createdAt || now,
       updatedAt: props.updatedAt || now,
       reconciled: props.reconciled ?? false,

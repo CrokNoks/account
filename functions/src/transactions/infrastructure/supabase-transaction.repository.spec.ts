@@ -40,7 +40,6 @@ const rowOf = (t: Transaction, periodId: string | null) => ({
   payment_method: null,
   notes: null,
   metadata: {},
-  savings_goal_id: null,
   created_at: '2026-03-01T00:00:00Z',
   updated_at: '2026-03-01T00:00:00Z',
   transaction_tags: [],

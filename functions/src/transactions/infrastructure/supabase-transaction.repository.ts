@@ -27,7 +27,6 @@ interface TransactionRow {
   payment_method: string | null;
   notes: string | null;
   metadata: Record<string, any> | null;
-  savings_goal_id: string | null;
   created_at: string;
   updated_at: string;
   transaction_tags?: TransactionTagRow[];
@@ -326,7 +325,6 @@ export class SupabaseTransactionRepository implements TransactionRepository {
       notes: row.notes,
       metadata: row.metadata || {},
       tagIds: tagIds,
-      savingsGoalId: row.savings_goal_id,
       createdAt: new Date(row.created_at),
       updatedAt: new Date(row.updated_at),
     });

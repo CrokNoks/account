@@ -75,11 +75,6 @@ describe('Request body validation (e2e)', () => {
         'patch',
         '/00000000-0000-4000-8000-000000000101/smart-rules/00000000-0000-4000-8000-000000000115',
       ],
-      ['post', '/00000000-0000-4000-8000-000000000101/savings-goals'],
-      [
-        'patch',
-        '/00000000-0000-4000-8000-000000000101/savings-goals/00000000-0000-4000-8000-000000000116',
-      ],
       ['patch', '/preferences'],
       ['post', '/00000000-0000-4000-8000-000000000101/transactions/transfer'],
       ['post', '/00000000-0000-4000-8000-000000000101/transactions/bulk'],
@@ -251,27 +246,6 @@ describe('Request body validation (e2e)', () => {
           'budget',
           '',
         ],
-        [
-          'savings-goals POST',
-          'post',
-          `/${acc}/savings-goals`,
-          'targetAmount',
-          'goal',
-        ],
-        [
-          'savings-goals PATCH targetAmount',
-          'patch',
-          `/${acc}/savings-goals/00000000-0000-4000-8000-000000000116`,
-          'targetAmount',
-          '',
-        ],
-        [
-          'savings-goals PATCH currentAmount',
-          'patch',
-          `/${acc}/savings-goals/00000000-0000-4000-8000-000000000116`,
-          'currentAmount',
-          '',
-        ],
       ];
 
     const payload = (kind: string, field: string, value: string) => {
@@ -280,9 +254,7 @@ describe('Request body validation (e2e)', () => {
           ? { name: 'Courant' }
           : kind === 'categorie'
             ? { name: 'Courses', color: '#000000', type: 'expense' }
-            : kind === 'goal'
-              ? { name: 'Vacances' }
-              : {};
+            : {};
       return { ...extra, [field]: value };
     };
 
@@ -293,7 +265,7 @@ describe('Request body validation (e2e)', () => {
           .set(auth())
           .send(payload(kind, field, value))
           .expect(400);
-        for (const repo of ['accounts', 'categories', 'savingsGoals'] as const)
+        for (const repo of ['accounts', 'categories'] as const)
           expect(mocks[repo].save).not.toHaveBeenCalled();
       });
     });
@@ -432,18 +404,6 @@ describe('Request body validation (e2e)', () => {
         `/${acc}/periods/00000000-0000-4000-8000-000000000113`,
         (endDate) => ({ endDate }),
       ],
-      [
-        'savings-goals POST deadline',
-        'post',
-        `/${acc}/savings-goals`,
-        (deadline) => ({ name: 'V', targetAmount: '1000', deadline }),
-      ],
-      [
-        'savings-goals PATCH deadline',
-        'patch',
-        `/${acc}/savings-goals/00000000-0000-4000-8000-000000000116`,
-        (deadline) => ({ deadline }),
-      ],
     ];
 
     describe.each(cases)('%s', (_n, method, url, body) => {
@@ -451,7 +411,6 @@ describe('Request body validation (e2e)', () => {
         await http()[method](url).set(auth()).send(body(date)).expect(400);
         expect(mocks.transactions.save).not.toHaveBeenCalled();
         expect(mocks.periods.createWithBudgets).not.toHaveBeenCalled();
-        expect(mocks.savingsGoals.save).not.toHaveBeenCalled();
       });
     });
 
@@ -567,11 +526,6 @@ describe('Request body validation (e2e)', () => {
       [
         'post',
         '/00000000-0000-4000-8000-000000000101/transactions',
-        { ...tx, savingsGoalId: bad },
-      ],
-      [
-        'post',
-        '/00000000-0000-4000-8000-000000000101/transactions',
         { ...tx, categoryId: bad },
       ],
       [
@@ -583,11 +537,6 @@ describe('Request body validation (e2e)', () => {
         'post',
         '/00000000-0000-4000-8000-000000000101/transactions',
         { ...tx, tagIds: [bad] },
-      ],
-      [
-        'patch',
-        '/00000000-0000-4000-8000-000000000101/transactions/00000000-0000-4000-8000-000000000111',
-        { savingsGoalId: bad },
       ],
       [
         'post',
@@ -657,7 +606,6 @@ describe('Request body validation (e2e)', () => {
         'transactions',
         'categories',
         'tags',
-        'savingsGoals',
         'periods',
       ] as const) {
         expect(mocks[repo].findById).not.toHaveBeenCalled();
@@ -677,6 +625,31 @@ describe('Request body validation (e2e)', () => {
         .set(auth())
         .expect(400);
     });
+  });
+  describe('savingsGoalId is no longer accepted on transactions (400, no write)', () => {
+    const goal = '00000000-0000-4000-8000-000000000116';
+    it.each([
+      [
+        'post',
+        '/00000000-0000-4000-8000-000000000101/transactions',
+        { date: '2026-03-01', description: 'CB', amount: '-100' },
+      ],
+      [
+        'patch',
+        '/00000000-0000-4000-8000-000000000101/transactions/00000000-0000-4000-8000-000000000111',
+        {},
+      ],
+    ] as const)(
+      '%s %s with a valid savingsGoalId',
+      async (method, url, body) => {
+        await http()
+          [method](url)
+          .set(auth())
+          .send({ ...body, savingsGoalId: goal })
+          .expect(400);
+        expect(mocks.transactions.save).not.toHaveBeenCalled();
+      },
+    );
   });
   describe('unique violation raised by the repository', () => {
     it('POST /:accountId/tags answers 409 when the name already exists', async () => {
@@ -869,7 +842,6 @@ describe('Request body validation (e2e)', () => {
     });
 
     describe('follow-up inputs (payment method, blank text, paging)', () => {
-      const sg = '00000000-0000-4000-8000-000000000116';
       const rule = '00000000-0000-4000-8000-000000000115';
       const blank = '   ';
 
@@ -968,30 +940,6 @@ describe('Request body validation (e2e)', () => {
             description: blank,
             amount: '100',
           },
-        ],
-        [
-          'savings goal name',
-          'post',
-          `/${acc}/savings-goals`,
-          { name: blank, targetAmount: '100' },
-        ],
-        [
-          'savings goal name',
-          'post',
-          `/${acc}/savings-goals`,
-          { name: 'x'.repeat(256), targetAmount: '100' },
-        ],
-        [
-          'savings goal name',
-          'patch',
-          `/${acc}/savings-goals/${sg}`,
-          { name: blank },
-        ],
-        [
-          'savings goal name',
-          'patch',
-          `/${acc}/savings-goals/${sg}`,
-          { name: 'x'.repeat(256) },
         ],
         [
           'smart rule pattern',

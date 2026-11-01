@@ -31,20 +31,19 @@ interface Route {
   name: string;
   method: Method;
   url: string;
-  body: (refs: { category?: string; tags?: string[]; goal?: string }) => object;
+  body: (refs: { category?: string; tags?: string[] }) => object;
   writes: string[];
   okStatus: number;
   /** Références prises en charge par la route. */
-  supports: Array<'category' | 'tags' | 'goal'>;
+  supports: Array<'category' | 'tags'>;
 }
 
-const txBody = (r: { category?: string; tags?: string[]; goal?: string }) => ({
+const txBody = (r: { category?: string; tags?: string[] }) => ({
   date: '2026-03-01',
   description: 'CB',
   amount: '-100',
   ...(r.category && { categoryId: r.category }),
   ...(r.tags && { tagIds: r.tags }),
-  ...(r.goal && { savingsGoalId: r.goal }),
 });
 
 const routes: Route[] = [
@@ -55,20 +54,19 @@ const routes: Route[] = [
     body: txBody,
     writes: ['transactions.save'],
     okStatus: 201,
-    supports: ['category', 'tags', 'goal'],
+    supports: ['category', 'tags'],
   },
   {
     name: 'PATCH transactions/:id',
     method: 'patch',
     url: '/00000000-0000-4000-8000-000000000101/transactions/00000000-0000-4000-8000-000000000111',
-    body: ({ category, tags, goal }) => ({
+    body: ({ category, tags }) => ({
       ...(category && { categoryId: category }),
       ...(tags && { tagIds: tags }),
-      ...(goal && { savingsGoalId: goal }),
     }),
     writes: ['transactions.save'],
     okStatus: 200,
-    supports: ['category', 'tags', 'goal'],
+    supports: ['category', 'tags'],
   },
   {
     name: 'POST transactions/bulk',
@@ -78,7 +76,7 @@ const routes: Route[] = [
     body: (r) => ({ transactions: [txBody({}), txBody(r)] }),
     writes: ['transactions.saveMany'],
     okStatus: 201,
-    supports: ['category', 'tags', 'goal'],
+    supports: ['category', 'tags'],
   },
   {
     name: 'PATCH transactions/bulk',
@@ -226,15 +224,6 @@ describe('Cross-account references (e2e)', () => {
             : null,
       ),
     );
-    mocks.savingsGoals.findById.mockImplementation((id: string) =>
-      Promise.resolve(
-        id === '00000000-0000-4000-8000-000000000007'
-          ? owner(id, '00000000-0000-4000-8000-000000000101')
-          : id === '00000000-0000-4000-8000-000000000008'
-            ? owner(id, '00000000-0000-4000-8000-000000000102')
-            : null,
-      ),
-    );
     mocks.transactions.findById.mockResolvedValue(tx());
     mocks.transactions.findAllByAccountUnpaginated.mockResolvedValue([tx()]);
     mocks.smartRules.findAllByAccount.mockResolvedValue([]);
@@ -287,9 +276,6 @@ describe('Cross-account references (e2e)', () => {
         ...(r.supports.includes('tags') && {
           tags: ['00000000-0000-4000-8000-000000000005'],
         }),
-        ...(r.supports.includes('goal') && {
-          goal: '00000000-0000-4000-8000-000000000007',
-        }),
       }).expect(r.okStatus);
     });
 
@@ -327,22 +313,6 @@ describe('Cross-account references (e2e)', () => {
           .expect(({ body }) =>
             expect((body as { message: string }).message).toBe(
               'Tag does not belong to this account',
-            ),
-          );
-        expectNoWrite(r);
-      });
-    }
-
-    if (r.supports.includes('goal')) {
-      it('answers 400 without writing for a savings goal of another account', async () => {
-        await send({
-          category: '00000000-0000-4000-8000-000000000001',
-          goal: '00000000-0000-4000-8000-000000000008',
-        })
-          .expect(400)
-          .expect(({ body }) =>
-            expect((body as { message: string }).message).toBe(
-              'Savings goal does not belong to this account',
             ),
           );
         expectNoWrite(r);

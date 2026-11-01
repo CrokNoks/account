@@ -58,7 +58,6 @@ export const REPOSITORIES = {
   recurring: RecurringTransactionRepository,
   tags: TagRepository,
   transactions: TransactionRepository,
-  savingsGoals: 'SavingsGoalRepository',
   preferences: 'UserPreferencesRepository',
   smartRules: 'SmartRuleRepository',
 } as const;

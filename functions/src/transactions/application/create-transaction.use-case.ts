@@ -16,7 +16,6 @@ export interface CreateTransactionCommand {
   notes?: string | null;
   metadata?: Record<string, any>;
   tagIds?: string[];
-  savingsGoalId?: string | null;
 }
 
 @Injectable()
@@ -42,7 +41,6 @@ export class CreateTransactionUseCase {
       reconciled: command.reconciled ?? false,
       pending: command.pending ?? false,
       tagIds: command.tagIds || [],
-      savingsGoalId: command.savingsGoalId || null,
     });
 
     return this.transactionRepository.save(transaction);

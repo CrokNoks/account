@@ -132,15 +132,6 @@ export class CreateTransactionDto {
     type: [String],
   })
   tagIds?: string[];
-
-  @IsOptional()
-  @IsUUID()
-  @ApiProperty({
-    description:
-      'Savings Goal ID if the transaction is linked to a savings goal',
-    required: false,
-  })
-  savingsGoalId?: string;
 }
 
 // accountId vient de l'URL, jamais du body.
@@ -262,9 +253,6 @@ export class TransactionResponseDto {
 
   @ApiProperty({ type: [String] })
   tagIds: string[];
-
-  @ApiProperty({ nullable: true })
-  savingsGoalId: string | null;
 
   @ApiProperty()
   createdAt: string;
@@ -517,7 +505,6 @@ export class TransactionsController {
     await this.references.ensureReferences(accountId, {
       categoryId: dto.categoryId,
       tagIds: dto.tagIds,
-      savingsGoalId: dto.savingsGoalId,
       periodId: dto.periodId,
     });
 
@@ -631,7 +618,6 @@ export class TransactionsController {
       notes: t.notes || null,
       metadata: t.metadata || {},
       tagIds: t.tagIds || [],
-      savingsGoalId: t.savingsGoalId || null,
       createdAt: t.createdAt.toISOString(),
       updatedAt: t.updatedAt.toISOString(),
     };

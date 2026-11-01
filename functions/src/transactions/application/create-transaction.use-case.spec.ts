@@ -59,7 +59,6 @@ describe('CreateTransactionUseCase', () => {
         accountId: 'acc-1',
         categoryId: 'cat-foreign',
         tagIds: ['tag-foreign'],
-        savingsGoalId: 'goal-foreign',
         date: new Date(),
         description: 'Coffee',
         amount: BigInt(-350),
@@ -70,7 +69,6 @@ describe('CreateTransactionUseCase', () => {
       expect.objectContaining({
         categoryId: 'cat-foreign',
         tagIds: ['tag-foreign'],
-        savingsGoalId: 'goal-foreign',
       }),
     );
     expect(repository.save).not.toHaveBeenCalled();

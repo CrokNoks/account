@@ -19,7 +19,6 @@ export function toTransactionPayload(transaction: Transaction) {
     payment_method: transaction.paymentMethod,
     notes: transaction.notes,
     metadata: transaction.metadata || {},
-    savings_goal_id: transaction.savingsGoalId || null,
     created_at: transaction.createdAt.toISOString(),
     updated_at: transaction.updatedAt.toISOString(),
     tag_ids: transaction.tagIds || [],
