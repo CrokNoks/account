@@ -347,7 +347,6 @@
       "name": "Nom",
       "type": "Type",
       "color": "Couleur",
-      "budget": "Budget",
       "name_placeholder": "Loyer, Courses..."
     },
     "types": {
@@ -543,7 +542,6 @@
       "accountId": "compte",
       "tagIds": "étiquettes",
       "type": "type",
-      "paymentMethod": "moyen de paiement",
       "page": "page",
       "limit": "limite",
       "year": "année",

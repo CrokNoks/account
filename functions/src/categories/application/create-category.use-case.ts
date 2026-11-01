@@ -8,7 +8,6 @@ export interface CreateCategoryCommand {
   color: string;
   type: CategoryType;
   accountId: string;
-  budget?: bigint | null;
 }
 
 @Injectable()
@@ -22,7 +21,6 @@ export class CreateCategoryUseCase {
       color: command.color,
       type: command.type,
       accountId: command.accountId,
-      budget: command.budget,
     });
 
     await this.categoryRepository.save(category);

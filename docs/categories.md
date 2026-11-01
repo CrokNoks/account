@@ -1,4 +1,4 @@
-# Catégories — classer ses transactions (dépenses, revenus, virements, épargne) et fixer un plafond indicatif
+# Catégories — classer ses transactions (dépenses, revenus, virements, épargne)
 
 Mise à jour : 2026-10-31 · Commit : df46659
 
@@ -7,7 +7,6 @@ Mise à jour : 2026-10-31 · Commit : df46659
 | --- | --- |
 | Catégorie | Étiquette unique d'une transaction (ex. « Courses »), propre à un compte. |
 | Type | `expense` (dépense), `income` (revenu), `transfer` (virement), `savings` (épargne). |
-| Budget (de catégorie) | Montant plafond optionnel porté par la catégorie, en centimes. Différent du budget alloué à une période (voir `periods`). |
 
 ## Règles métier
 | Règle | Source | Testée |
@@ -15,20 +14,17 @@ Mise à jour : 2026-10-31 · Commit : df46659
 | Le nom est obligatoire (pas vide ni que des espaces) | `functions/src/categories/domain/category.entity.ts:45` | ✅ `category.entity.spec.ts` « should throw error if name is empty » |
 | Le type doit être l'une des 4 valeurs | `category.entity.ts:48` ; en base `supabase/migrations/20260307000000_migrate_to_v2.sql:32` (contrainte CHECK) | ❌ côté code ; base non testée |
 | La couleur doit être au format hexadécimal `#RRGGBB` | `category.entity.ts:51` ; DTO `IsHexColor` `categories.controller.ts:42` ; couleur invalide → 400 (e2e `validation.e2e-spec.ts`) | ✅ « should throw error if color is invalid hex » |
-| Le budget est facultatif | `category.entity.ts:15` | ✅ « should allow null budget » |
-| Le budget est reçu en chaîne d'entier de centimes signé dans ±(2^53 − 1) (`@IsCents` / `parseCents`, `shared/`), décimal, notation scientifique ou hors bornes → 400, « -0 » lu comme 0 (création et modification) | `categories.controller.ts` (DTO), `shared/domain/cents.ts` | ✅ e2e `validation.e2e-spec.ts` |
 | Le nom (création **et modification**) est limité à 255 caractères (colonne `varchar(255)`) : sinon 400 « name must be shorter than or equal to 255 characters » (sans cela : 500). Un nom blanc reste refusé par l'entité (ligne ci-dessus) | `categories.controller.ts` (DTO) | ✅ e2e `validation.e2e-spec.ts`, `http/entrees-invalides.http` |
-| Le corps de la création est validé (`CreateCategoryBodyDto`, sans `accountId`) : nom, couleur `#RRGGBB`, type (enum), budget en centimes entiers (texte) ; champ inconnu ou `accountId` → 400, le compte vient uniquement de l'URL | `categories.controller.ts:64-66,144-156` | ✅ e2e `validation.e2e-spec.ts` |
+| Le corps de la création est validé (`CreateCategoryBodyDto`, sans `accountId`) : nom, couleur `#RRGGBB`, type (enum) ; champ inconnu (dont `budget` : le plafond de catégorie a été retiré, le budget est celui de la période, voir `periods`), ou `accountId` → 400, le compte vient uniquement de l'URL | `categories.controller.ts:64-66,144-156` | ✅ e2e `validation.e2e-spec.ts` |
 | Le type d'une catégorie peut être changé après création | `categories.controller.ts:70,127` | ❌ |
 | Création et lecture passent par des cas d'usage ; la modification passe directement par le dépôt, sans cas d'usage | `categories.controller.ts:119-134` | ❌ |
 | Accès en base : lecture si accès « read » au compte, écriture si « write » (propriétaire = tout) | `20251221_schema_complete.sql:208-225` (RLS), `:140` | ❌ |
-| Montant du budget stocké en centimes (BIGINT) | `20260307000000_migrate_to_v2.sql:35-36` | ❌ |
 | `updated_at` mis à jour automatiquement par la base | `20251221_schema_complete.sql:86` (trigger `handle_updated_at`) | ❌ |
 | Modification partielle : un champ non envoyé garde sa valeur | `categories.controller.ts` (`update`) | ✅ test « absent keeps it » |
-| `null` refusé en 400 sur `name`, `color` et `type` en modification. `description: null` et `budget: null` **retirent** la valeur ; champ absent = inchangé (remplace l'ancienne règle « impossible de vider ») | `categories.controller.ts` (`update`, `@IsOptionalNotNull()`) | ✅ `functions/test/validation.e2e-spec.ts` (« null on a field that cannot be null »), `http/null-refuse.http`, test « budget and description null remove the value » |
+| `null` refusé en 400 sur `name`, `color` et `type` en modification. `description: null` **retire** la valeur ; champ absent = inchangé (remplace l'ancienne règle « impossible de vider ») | `categories.controller.ts` (`update`, `@IsOptionalNotNull()`) | ✅ `functions/test/validation.e2e-spec.ts` (« null on a field that cannot be null »), `http/null-refuse.http`, test « description null removes the value » |
 
 ## Ce qu'on stocke
-Catégorie (table `categories`) : id ; nom ; description (texte, peut être vide) ; couleur (`#RRGGBB`) ; type ; compte propriétaire (`account_id`, supprimée avec le compte) ; budget (centimes, peut être vide) ; dates de création et modification. (`functions/src/categories/domain/category.entity.ts`, `supabase-category.repository.ts:6`)
+Catégorie (table `categories`) : id ; nom ; description (texte, peut être vide) ; couleur (`#RRGGBB`) ; type ; compte propriétaire (`account_id`, supprimée avec le compte) ; dates de création et modification. (`functions/src/categories/domain/category.entity.ts`, `supabase-category.repository.ts:6`)
 
 ## Ce qu'on peut faire
 Qui : Toutes les routes exigent un token de connexion valide (`@UseGuards(SupabaseAuthGuard)`, stratégie JWT : `functions/src/auth/supabase.strategy.ts:61`). Il n'y a pas de middleware global ni de décorateur d'identité dans ce module : l'identité n'est pas lue par le contrôleur. Le contrôle des droits se fait en base : le client Supabase est créé par requête avec le token de l'utilisateur (`functions/src/supabase/supabase.module.ts:25-38`), donc les règles RLS s'appliquent (propriétaire du compte ou compte partagé, via `has_account_access`, `supabase/migrations/20251221_schema_complete.sql:140`). Le contrôleur ne vérifie pas que `:accountId` appartient à l'utilisateur, mais `PATCH :id` exige que la catégorie appartienne à `:accountId` : inexistante, d'un autre compte ou globale (`accountId` nul) = 404 identique, sans écriture (`account-ownership.ts`).
@@ -48,5 +44,4 @@ Pas de cycle de vie.
 ## Zones d'ombre
 - Le nom n'est pas unique : le code et la base lus (création) n'empêchent pas deux catégories de même nom dans un compte.
 - Pourquoi une catégorie n'est pas supprimable depuis l'application : inconnu (route absente). Effet d'une suppression directe en base sur les transactions : à voir dans le module transactions (hors périmètre).
-- Le budget de catégorie : le code ne montre pas où il est consommé dans ce module (aucun calcul ici).
 - Une catégorie introuvable à la modification renvoie 404 (`NotFoundError`, `categories.controller.ts:122`).

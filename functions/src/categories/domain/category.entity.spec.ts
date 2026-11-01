@@ -6,14 +6,12 @@ describe('Category Entity', () => {
       name: 'Salary',
       color: '#2ecc71',
       type: CategoryType.INCOME,
-      budget: BigInt(200000), // 2000.00€
     });
 
     expect(category.id).toBeDefined();
     expect(category.name).toBe('Salary');
     expect(category.color).toBe('#2ecc71');
     expect(category.type).toBe(CategoryType.INCOME);
-    expect(category.budget).toBe(BigInt(200000));
     expect(category.createdAt).toBeInstanceOf(Date);
   });
 
@@ -35,16 +33,5 @@ describe('Category Entity', () => {
         type: CategoryType.EXPENSE,
       });
     }).toThrow('Invalid color format (hex required)');
-  });
-
-  it('should allow null budget', () => {
-    const category = Category.create({
-      name: 'Leisure',
-      color: '#3498db',
-      type: CategoryType.EXPENSE,
-      budget: null,
-    });
-
-    expect(category.budget).toBeNull();
   });
 });

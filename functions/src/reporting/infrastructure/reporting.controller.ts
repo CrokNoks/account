@@ -123,16 +123,15 @@ export class IgnoreAnomalyDto {
   transactionIds: string[];
 
   @IsString()
-  @IsIn(['duplicate', 'spike', 'outlier'])
-  @ApiProperty({ enum: ['duplicate', 'spike', 'outlier'] })
-  type: 'duplicate' | 'spike' | 'outlier';
+  @IsIn(['duplicate', 'outlier'])
+  @ApiProperty({ enum: ['duplicate', 'outlier'] })
+  type: 'duplicate' | 'outlier';
 }
 
 class AnomalyDto implements Anomaly {
   @ApiProperty() id: string;
-  @ApiProperty({ enum: ['duplicate', 'spike', 'outlier'] }) type:
+  @ApiProperty({ enum: ['duplicate', 'outlier'] }) type:
     | 'duplicate'
-    | 'spike'
     | 'outlier';
   @ApiProperty() title: string;
   @ApiProperty() description: string;

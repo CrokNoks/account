@@ -10,7 +10,6 @@ export interface TransactionProps {
   amount: bigint;
   reconciled: boolean;
   pending: boolean;
-  paymentMethod?: string | null;
   notes?: string | null;
   metadata?: Record<string, any>;
   tagIds: string[];
@@ -28,7 +27,6 @@ export class Transaction {
   public readonly amount: bigint;
   public readonly reconciled: boolean;
   public readonly pending: boolean;
-  public readonly paymentMethod?: string | null;
   public readonly notes?: string | null;
   public readonly metadata: Record<string, any> | undefined;
   public readonly tagIds: string[];
@@ -45,7 +43,6 @@ export class Transaction {
     this.amount = props.amount;
     this.reconciled = props.reconciled;
     this.pending = props.pending;
-    this.paymentMethod = props.paymentMethod;
     this.notes = props.notes;
     this.metadata = props.metadata;
     this.tagIds = props.tagIds || [];

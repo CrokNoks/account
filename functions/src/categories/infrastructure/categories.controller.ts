@@ -30,8 +30,6 @@ import {
 import { IsOptionalNotNull } from '../../shared/infrastructure/is-optional-not-null.decorator';
 import { CategoryRepository } from '../domain/category.repository.interface';
 import { ensureBelongsToAccount } from '../../shared/domain/account-ownership';
-import { parseCents } from '../../shared/domain/cents';
-import { IsCents } from '../../shared/infrastructure/is-cents.decorator';
 
 export class CreateCategoryDto {
   @IsString()
@@ -55,14 +53,6 @@ export class CreateCategoryDto {
   @IsString()
   @ApiProperty({ description: 'Account ID this category belongs to' })
   accountId: string;
-
-  @IsOptional()
-  @IsCents()
-  @ApiProperty({
-    description: 'Budget limit in cents (optional)',
-    required: false,
-  })
-  budget?: string; // We accept it as a string to handle BigInt
 }
 
 // accountId vient de l'URL, jamais du body.
@@ -88,10 +78,6 @@ export class UpdateCategoryDto {
   @IsEnum(CategoryType)
   @ApiProperty({ enum: CategoryType, required: false })
   type?: CategoryType;
-  @IsOptional()
-  @IsCents()
-  @ApiProperty({ required: false })
-  budget?: string;
 }
 
 export class CategoryResponseDto {
@@ -101,7 +87,6 @@ export class CategoryResponseDto {
   @ApiProperty() color: string;
   @ApiProperty({ enum: CategoryType }) type: CategoryType;
   @ApiProperty({ required: false, nullable: true }) accountId: string | null;
-  @ApiProperty({ required: false, nullable: true }) budget: string | null;
   @ApiProperty() createdAt: string;
   @ApiProperty() updatedAt: string;
 }
@@ -152,12 +137,6 @@ export class CategoriesController {
       color: dto.color ?? existing.color,
       type: dto.type ?? existing.type,
       accountId: existing.accountId,
-      budget:
-        dto.budget === undefined
-          ? existing.budget
-          : dto.budget === null
-            ? null
-            : parseCents(dto.budget),
       createdAt: existing.createdAt,
       updatedAt: new Date(),
     });
@@ -176,7 +155,6 @@ export class CategoriesController {
     const category = await this.createCategoryUseCase.execute({
       ...dto,
       accountId,
-      budget: dto.budget ? parseCents(dto.budget) : null,
     });
 
     return this.mapToResponse(category);
@@ -190,7 +168,6 @@ export class CategoriesController {
       color: c.color,
       type: c.type,
       accountId: c.accountId || null,
-      budget: c.budget ? c.budget.toString() : null,
       createdAt: c.createdAt.toISOString(),
       updatedAt: c.updatedAt.toISOString(),
     };

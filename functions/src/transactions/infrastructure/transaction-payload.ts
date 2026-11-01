@@ -16,7 +16,6 @@ export function toTransactionPayload(transaction: Transaction) {
     amount: transaction.amount.toString(),
     reconciled: transaction.reconciled,
     pending: transaction.pending,
-    payment_method: transaction.paymentMethod,
     notes: transaction.notes,
     metadata: transaction.metadata || {},
     created_at: transaction.createdAt.toISOString(),

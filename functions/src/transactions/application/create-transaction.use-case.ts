@@ -12,7 +12,6 @@ export interface CreateTransactionCommand {
   amount: bigint;
   reconciled?: boolean;
   pending?: boolean;
-  paymentMethod?: string | null;
   notes?: string | null;
   metadata?: Record<string, any>;
   tagIds?: string[];
@@ -35,7 +34,6 @@ export class CreateTransactionUseCase {
       date: command.date,
       description: command.description,
       amount: command.amount,
-      paymentMethod: command.paymentMethod,
       notes: command.notes,
       metadata: command.metadata || {},
       reconciled: command.reconciled ?? false,

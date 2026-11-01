@@ -4,7 +4,7 @@ import { useAccountStore } from '@/features/accounts/model/use-account-store';
 import { useAnomalies } from '../api/use-anomalies';
 import { Anomaly } from '../model/types';
 import { useIgnoreAnomaly } from '../api/use-ignore-anomaly';
-import { AlertCircle, Copy, ArrowUpRight, TrendingUp, X, CheckCircle2 } from 'lucide-react';
+import { AlertCircle, Copy, ArrowUpRight, X, CheckCircle2 } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -77,7 +77,6 @@ export function AnomaliesWidget() {
     switch (type) {
       case 'duplicate': return <Copy className="w-4 h-4" />;
       case 'outlier': return <ArrowUpRight className="w-4 h-4" />;
-      case 'spike': return <TrendingUp className="w-4 h-4" />;
       default: return <AlertCircle className="w-4 h-4" />;
     }
   };

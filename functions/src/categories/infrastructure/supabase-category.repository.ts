@@ -12,7 +12,6 @@ interface CategoryRow {
   type: string;
   account_id: string;
   user_id: string;
-  budget: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -57,7 +56,6 @@ export class SupabaseCategoryRepository implements CategoryRepository {
       color: category.color,
       type: category.type,
       account_id: category.accountId,
-      budget: category.budget ? category.budget.toString() : null,
       created_at: category.createdAt.toISOString(),
       updated_at: category.updatedAt.toISOString(),
     });
@@ -82,7 +80,6 @@ export class SupabaseCategoryRepository implements CategoryRepository {
       color: row.color,
       type: row.type as CategoryType,
       accountId: row.account_id,
-      budget: row.budget ? BigInt(row.budget) : null,
       createdAt: new Date(row.created_at),
       updatedAt: new Date(row.updated_at),
     });

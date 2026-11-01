@@ -1,4 +1,4 @@
-# Entrées invalides : 400 (jamais 500 ni 201) pour calendrier, textes trop longs ou blancs, paymentMethod, pagination.
+# Entrées invalides : 400 (jamais 500 ni 201) pour calendrier, textes trop longs ou blancs, pagination.
 # Lancement : npx httpyac send --all http/entrees-invalides.http --var port=8080 --var anon=<NEXT_PUBLIC_SUPABASE_ANON_KEY de frontend/.env.local>
 # (la clé vient de la ligne de commande, jamais du fichier ; l'utilisateur est jetable, créé par le fichier)
 @baseUrl = http://localhost:{{port}}
@@ -113,25 +113,6 @@ GET {{baseUrl}}/{{account.id}}/transactions?search={{"x".repeat(201)}}
 Authorization: Bearer {{login.access_token}}
 
 ?? status == 400
-
-### Transaction avec un moyen de paiement inconnu : 400
-POST {{baseUrl}}/{{account.id}}/transactions
-Authorization: Bearer {{login.access_token}}
-Content-Type: application/json
-
-{ "date": "2026-03-01", "description": "Courses", "amount": "-1000", "paymentMethod": "bitcoin" }
-
-?? status == 400
-?? body contains paymentMethod must be one of the following values
-
-### Transaction avec un moyen de paiement valide : 201
-POST {{baseUrl}}/{{account.id}}/transactions
-Authorization: Bearer {{login.access_token}}
-Content-Type: application/json
-
-{ "date": "2026-03-01", "description": "Courses", "amount": "-1000", "paymentMethod": "cash" }
-
-?? status == 201
 
 ### limit=0 : 400
 GET {{baseUrl}}/{{account.id}}/transactions?limit=0

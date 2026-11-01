@@ -41,7 +41,6 @@ const fixtures = {
     description: null,
     color: '#111111',
     type: 'expense',
-    budget: null,
   }),
   tags: (accountId: string) => ({
     ...base(accountId),

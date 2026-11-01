@@ -236,29 +236,11 @@ describe('Request body validation (e2e)', () => {
       [
         ['accounts POST', 'post', '/accounts', 'initialBalance', 'name'],
         ['accounts PATCH', 'patch', `/accounts/${acc}`, 'initialBalance', ''],
-        [
-          'categories POST',
-          'post',
-          `/${acc}/categories`,
-          'budget',
-          'categorie',
-        ],
-        [
-          'categories PATCH',
-          'patch',
-          `/${acc}/categories/00000000-0000-4000-8000-000000000112`,
-          'budget',
-          '',
-        ],
       ];
 
     const payload = (kind: string, field: string, value: string) => {
       const extra: Record<string, unknown> =
-        kind === 'name'
-          ? { name: 'Courant' }
-          : kind === 'categorie'
-            ? { name: 'Courses', color: '#000000', type: 'expense' }
-            : {};
+        kind === 'name' ? { name: 'Courant' } : {};
       return { ...extra, [field]: value };
     };
 
@@ -768,7 +750,7 @@ describe('Request body validation (e2e)', () => {
       },
     );
 
-    it('PATCH categories: budget and description null remove the value, absent keeps it', async () => {
+    it('PATCH categories: description null removes the value, absent keeps it', async () => {
       const existing = {
         id: cat,
         accountId: acc,
@@ -776,20 +758,20 @@ describe('Request body validation (e2e)', () => {
         description: 'Alimentation',
         color: '#000000',
         type: 'expense',
-        budget: BigInt(5000),
         createdAt: new Date(),
         updatedAt: new Date(),
       };
       mocks.categories.findById.mockResolvedValueOnce(existing);
 
-      await http()
+      const res = await http()
         .patch(`/${acc}/categories/${cat}`)
         .set(auth())
-        .send({ budget: null, description: null })
+        .send({ description: null })
         .expect(200);
       expect(mocks.categories.save).toHaveBeenLastCalledWith(
-        expect.objectContaining({ budget: null, description: null }),
+        expect.objectContaining({ description: null }),
       );
+      expect(res.body).not.toHaveProperty('budget');
 
       mocks.categories.findById.mockResolvedValueOnce(existing);
       await http()
@@ -800,11 +782,35 @@ describe('Request body validation (e2e)', () => {
       expect(mocks.categories.save).toHaveBeenLastCalledWith(
         expect.objectContaining({
           name: 'Autre',
-          budget: BigInt(5000),
           description: 'Alimentation',
         }),
       );
     });
+
+    // Le plafond de catégorie n'existe plus (le budget est celui de la période).
+    it.each([
+      ['post', `/${acc}/categories`],
+      ['patch', `/${acc}/categories/${cat}`],
+    ] as const)(
+      '%s categories with a budget answers 400',
+      async (method, url) => {
+        const res = await http()
+          [method](url)
+          .set(auth())
+          .send({
+            name: 'Courses',
+            color: '#000000',
+            type: 'expense',
+            budget: '5000',
+          });
+
+        expect(res.status).toBe(400);
+        expect((res.body as { message: string[] }).message).toContain(
+          'property budget should not exist',
+        );
+        expectNothingWritten();
+      },
+    );
 
     it.each(['reconciled', 'pending', 'tagIds'])(
       'PATCH transactions/bulk data.%s null',
@@ -833,7 +839,6 @@ describe('Request body validation (e2e)', () => {
       ['transactions', `/${acc}/transactions/${id}`, 'categoryId'],
       ['transactions', `/${acc}/transactions/${id}`, 'periodId'],
       ['transactions', `/${acc}/transactions/${id}`, 'notes'],
-      ['transactions', `/${acc}/transactions/${id}`, 'paymentMethod'],
       ['transactions/bulk', `/${acc}/transactions/bulk`, 'categoryId'],
       ['recurring', `/${acc}/recurring/${rec}`, 'categoryId'],
       ['smart-rules', `/${acc}/smart-rules/${rule}`, 'categoryId'],
@@ -1069,61 +1074,56 @@ describe('Request body validation (e2e)', () => {
         .expect(200);
     });
 
-    describe('follow-up inputs (payment method, blank text, paging)', () => {
+    describe('follow-up inputs (removed fields, blank text, paging)', () => {
       const rule = '00000000-0000-4000-8000-000000000115';
       const blank = '   ';
+      const withPaymentMethod = {
+        date: '2026-03-01',
+        description: 'x',
+        amount: '-100',
+        paymentMethod: 'cash',
+      };
 
+      // Le moyen de paiement n'existe plus : même une ancienne valeur valide est refusée.
       it.each([
-        ['post', `/${acc}/transactions`],
-        ['patch', `/${acc}/transactions/${tx}`],
+        ['post', `/${acc}/transactions`, withPaymentMethod],
+        ['patch', `/${acc}/transactions/${tx}`, withPaymentMethod],
+        [
+          'post',
+          `/${acc}/transactions/bulk`,
+          { transactions: [withPaymentMethod] },
+        ],
       ] as const)(
-        '%s transaction with an unknown paymentMethod answers 400',
-        async (method, url) => {
-          await http()
-            [method](url)
-            .set(auth())
-            .send({
-              date: '2026-03-01',
-              description: 'x',
-              amount: '-100',
-              paymentMethod: 'bitcoin',
-            })
-            .expect(400);
+        '%s %s with a paymentMethod answers 400',
+        async (method, url, body) => {
+          const res = await http()[method](url).set(auth()).send(body);
+
+          expect(res.status).toBe(400);
+          expect(JSON.stringify(res.body)).toContain(
+            'paymentMethod should not exist',
+          );
         },
       );
 
-      it('POST transactions/bulk with an unknown paymentMethod answers 400', async () => {
+      // Aucune détection ne produit d'anomalie « spike ».
+      it('POST anomalies/ignore with the type spike answers 400', async () => {
         await http()
-          .post(`/${acc}/transactions/bulk`)
+          .post(`/${acc}/reporting/anomalies/ignore`)
           .set(auth())
-          .send({
-            transactions: [
-              {
-                date: '2026-03-01',
-                description: 'x',
-                amount: '-100',
-                paymentMethod: 'bitcoin',
-              },
-            ],
-          })
+          .send({ transactionIds: [tx], type: 'spike' })
           .expect(400);
       });
 
-      it.each([
-        'credit_card',
-        'direct_debit',
-        'transfer',
-        'check',
-        'cash',
-        'other',
-      ])('accepts paymentMethod %s', async (paymentMethod) => {
-        mocks.transactions.save.mockResolvedValue(undefined);
-        const res = await http()
-          .patch(`/${acc}/transactions/${tx}`)
-          .set(auth())
-          .send({ paymentMethod });
-        expect(res.status).not.toBe(400);
-      });
+      it.each(['duplicate', 'outlier'])(
+        'POST anomalies/ignore accepts the type %s',
+        async (type) => {
+          const res = await http()
+            .post(`/${acc}/reporting/anomalies/ignore`)
+            .set(auth())
+            .send({ transactionIds: [tx], type });
+          expect(res.status).not.toBe(400);
+        },
+      );
 
       const blankCases: [string, 'post' | 'patch', string, object][] = [
         [

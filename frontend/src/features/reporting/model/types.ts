@@ -62,7 +62,7 @@ export interface CalendarEvent {
 
 export interface Anomaly {
   id: string;
-  type: 'duplicate' | 'spike' | 'outlier' | 'unexpected_amount' | 'missing_recurring' | 'unusual_category';
+  type: 'duplicate' | 'outlier' | 'unexpected_amount' | 'missing_recurring' | 'unusual_category';
   title?: string;
   description: string;
   severity: 'low' | 'medium' | 'high';

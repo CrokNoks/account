@@ -13,7 +13,7 @@ import { ensureBelongsToAccount } from '../../shared/domain/account-ownership';
 
 export interface Anomaly {
   id: string;
-  type: 'duplicate' | 'spike' | 'outlier';
+  type: 'duplicate' | 'outlier';
   title: string;
   description: string;
   severity: 'medium' | 'high';

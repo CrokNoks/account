@@ -1,0 +1,122 @@
+# Suppression du plafond de catégorie, du moyen de paiement et de l'anomalie « spike » (CA2, CA3, CA4, CA5).
+# Lancement : npx httpyac send --all http/suppression-champs-inutiles.http --var port=8080 --var anon=<ANON_KEY de `supabase status`>
+# (la clé vient de la ligne de commande, jamais du fichier ; l'utilisateur est jetable, créé par le fichier)
+@baseUrl = http://localhost:{{port}}
+@authUrl = http://127.0.0.1:54321/auth/v1
+
+### Utilisateur jetable
+# @name login
+POST {{authUrl}}/signup
+apikey: {{anon}}
+Content-Type: application/json
+
+{ "email": "champs-inutiles-{{$timestamp}}@example.com", "password": "Password123!" }
+
+?? status == 200
+
+### Compte jetable
+# @name account
+POST {{baseUrl}}/accounts
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "name": "champs-inutiles-{{$timestamp}}", "initialBalance": "0" }
+
+?? status == 201
+
+### CA2 : catégorie avec un budget -> 400
+POST {{baseUrl}}/{{account.id}}/categories
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "name": "Courses", "color": "#000000", "type": "expense", "budget": "5000" }
+
+?? status == 400
+?? body contains property budget should not exist
+
+### CA2/CA5 : catégorie sans budget -> 201, pas de budget dans la réponse (écriture en base sans la colonne)
+# @name category
+POST {{baseUrl}}/{{account.id}}/categories
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "name": "Courses", "color": "#000000", "type": "expense" }
+
+?? status == 201
+?? js Object.keys(response.parsedBody).includes('budget') == false
+
+### CA2 : modification avec un budget -> 400
+PATCH {{baseUrl}}/{{account.id}}/categories/{{category.id}}
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "budget": "5000" }
+
+?? status == 400
+
+### CA2/CA5 : modification sans budget -> 200
+PATCH {{baseUrl}}/{{account.id}}/categories/{{category.id}}
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "name": "Alimentation" }
+
+?? status == 200
+?? js Object.keys(response.parsedBody).includes('budget') == false
+
+### CA3 : transaction avec un moyen de paiement -> 400
+POST {{baseUrl}}/{{account.id}}/transactions
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "date": "2026-03-01", "description": "Courses", "amount": "-1000", "paymentMethod": "cash" }
+
+?? status == 400
+?? body contains property paymentMethod should not exist
+
+### CA3/CA5 : transaction sans moyen de paiement -> 201 (upsert_transactions sans la colonne)
+# @name tx
+POST {{baseUrl}}/{{account.id}}/transactions
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "date": "2026-03-01", "description": "Courses", "amount": "-1000" }
+
+?? status == 201
+?? js Object.keys(response.parsedBody).includes('paymentMethod') == false
+
+### CA5 : import en lot -> 201 (insert_transactions sans la colonne)
+POST {{baseUrl}}/{{account.id}}/transactions/bulk
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "transactions": [{ "date": "2026-03-02", "description": "Boulangerie", "amount": "-250" }] }
+
+?? status == 201
+
+### CA5 : modification d'une transaction -> 200
+PATCH {{baseUrl}}/{{account.id}}/transactions/{{tx.id}}
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "notes": "ok" }
+
+?? status == 200
+
+### CA4 : ignorer une anomalie « spike » -> 400
+POST {{baseUrl}}/{{account.id}}/reporting/anomalies/ignore
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "transactionIds": ["{{tx.id}}"], "type": "spike" }
+
+?? status == 400
+
+### CA4 : ignorer une anomalie « outlier » -> 201
+POST {{baseUrl}}/{{account.id}}/reporting/anomalies/ignore
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "transactionIds": ["{{tx.id}}"], "type": "outlier" }
+
+?? status < 300

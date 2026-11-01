@@ -8,7 +8,6 @@ export interface CreateTransactionCommand {
   date: string;
   description: string;
   amount: string;
-  paymentMethod?: string | null;
   notes?: string | null;
   metadata?: Record<string, unknown> | null;
   pending?: boolean;

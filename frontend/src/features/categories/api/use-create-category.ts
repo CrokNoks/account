@@ -6,7 +6,6 @@ export interface CreateCategoryCommand {
   name: string;
   color: string;
   type: string;
-  budget?: string;
 }
 
 export function useCreateCategory() {

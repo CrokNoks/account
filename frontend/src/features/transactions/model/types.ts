@@ -8,7 +8,6 @@ export interface Transaction {
   amount: string;
   reconciled: boolean;
   pending: boolean;
-  paymentMethod: string | null;
   notes: string | null;
   metadata: Record<string, unknown> | null;
   tagIds: string[];

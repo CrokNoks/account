@@ -50,8 +50,8 @@ describe('getApiErrorMessage', () => {
     expect(
       getApiErrorMessage(apiError('each value in descriptions must be shorter than or equal to 50 characters'), 'fallback', t),
     ).toBe('Le champ « descriptions » ne peut pas dépasser 50 caractères');
-    expect(getApiErrorMessage(apiError('paymentMethod must be one of the following values: a, b'), 'fallback', t)).toBe(
-      'Le champ « moyen de paiement » a une valeur non autorisée',
+    expect(getApiErrorMessage(apiError('type must be one of the following values: a, b'), 'fallback', t)).toBe(
+      'Le champ « type » a une valeur non autorisée',
     );
     expect(getApiErrorMessage(apiError(['Description is required']), 'fallback', t)).toBe(
       'La description est obligatoire',

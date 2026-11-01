@@ -46,7 +46,6 @@ import {
   ArrayMaxSize,
   MaxLength,
   Matches,
-  IsIn,
   IsInt,
   Min,
   Max,
@@ -59,16 +58,6 @@ import { Inject } from '@nestjs/common';
 import { parseCents } from '../../shared/domain/cents';
 import { IsCents } from '../../shared/infrastructure/is-cents.decorator';
 import { IsCalendarDate } from '../../shared/infrastructure/is-calendar-date.decorator';
-
-// Mirrors the CHECK constraint on transactions.payment_method.
-export const PAYMENT_METHODS = [
-  'credit_card',
-  'direct_debit',
-  'transfer',
-  'check',
-  'cash',
-  'other',
-];
 
 export class CreateTransactionDto {
   @IsOptional()
@@ -109,11 +98,6 @@ export class CreateTransactionDto {
   @IsBoolean()
   @ApiProperty({ description: 'Pending status', required: false })
   pending?: boolean;
-
-  @IsOptional()
-  @IsIn(PAYMENT_METHODS)
-  @ApiProperty({ description: 'Payment method', required: false })
-  paymentMethod?: string;
 
   @IsOptional()
   @IsString()
@@ -243,9 +227,6 @@ export class TransactionResponseDto {
 
   @ApiProperty()
   pending: boolean;
-
-  @ApiProperty({ nullable: true })
-  paymentMethod: string | null;
 
   @ApiProperty({ nullable: true })
   notes: string | null;
@@ -627,7 +608,6 @@ export class TransactionsController {
       amount: t.amount.toString(),
       reconciled: t.reconciled,
       pending: t.pending,
-      paymentMethod: t.paymentMethod || null,
       notes: t.notes || null,
       metadata: t.metadata || {},
       tagIds: t.tagIds || [],

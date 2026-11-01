@@ -37,7 +37,6 @@ const rowOf = (t: Transaction, periodId: string | null) => ({
   amount: t.amount.toString(),
   reconciled: false,
   pending: false,
-  payment_method: null,
   notes: null,
   metadata: {},
   created_at: '2026-03-01T00:00:00Z',

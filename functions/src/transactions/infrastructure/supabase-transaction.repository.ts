@@ -24,7 +24,6 @@ interface TransactionRow {
   amount: string;
   reconciled: boolean;
   pending: boolean;
-  payment_method: string | null;
   notes: string | null;
   metadata: Record<string, any> | null;
   created_at: string;
@@ -321,7 +320,6 @@ export class SupabaseTransactionRepository implements TransactionRepository {
       amount: BigInt(row.amount),
       reconciled: row.reconciled,
       pending: row.pending,
-      paymentMethod: row.payment_method,
       notes: row.notes,
       metadata: row.metadata || {},
       tagIds: tagIds,
