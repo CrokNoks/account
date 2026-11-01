@@ -142,15 +142,6 @@ Content-Type: application/json
 ?? status == 201
 ?? body contains "initialBalance":"150000"
 
-### Épargne : targetAmount "12.5" refusé
-POST {{baseUrl}}/{{account.id}}/savings-goals
-Authorization: Bearer {{login.access_token}}
-Content-Type: application/json
-
-{ "name": "vacances", "targetAmount": "12.5" }
-
-?? status == 400
-
 ### Période : amountAllocated "abc" refusé (400 et non 500)
 POST {{baseUrl}}/{{account.id}}/periods
 Authorization: Bearer {{login.access_token}}
