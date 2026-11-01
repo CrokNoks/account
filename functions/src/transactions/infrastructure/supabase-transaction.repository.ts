@@ -7,6 +7,7 @@ import {
   FindAllTransactionsOptions,
   PaginatedResult,
 } from '../domain/transaction.repository.interface';
+import { buildSearchFilter } from './search-filter';
 import { toDomainError } from '../../shared/infrastructure/supabase-error';
 
 interface TransactionTagRow {
@@ -60,9 +61,7 @@ export class SupabaseTransactionRepository implements TransactionRepository {
       query = query.lte('date', options.endDate.toISOString().split('T')[0]);
     }
     if (options?.search) {
-      query = query.or(
-        `description.ilike.%${options.search}%,notes.ilike.%${options.search}%`,
-      );
+      query = query.or(buildSearchFilter(options.search));
     }
     if (options?.categoryId) {
       query = query.eq('category_id', options.categoryId);
@@ -127,9 +126,7 @@ export class SupabaseTransactionRepository implements TransactionRepository {
       query = query.lte('date', options.endDate.toISOString().split('T')[0]);
     }
     if (options?.search) {
-      query = query.or(
-        `description.ilike.%${options.search}%,notes.ilike.%${options.search}%`,
-      );
+      query = query.or(buildSearchFilter(options.search));
     }
     if (options?.categoryId) {
       query = query.eq('category_id', options.categoryId);

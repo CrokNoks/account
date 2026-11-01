@@ -1,0 +1,195 @@
+# Recherche de transactions : la saisie est cherchée telle quelle (sous-chaîne, insensible à la casse) dans description ou notes.
+# Virgule, parenthèses, %, _, *, guillemet, \ n'ont aucun sens spécial ; une saisie "x,amount.gt.0" ne rajoute aucune condition.
+# Lancement : npx httpyac send --all http/recherche-caracteres-speciaux.http --var port=8080 --var anon=<NEXT_PUBLIC_SUPABASE_ANON_KEY de frontend/.env.local>
+# (la clé vient de la ligne de commande, jamais du fichier ; l'utilisateur est jetable, créé par le fichier)
+@baseUrl = http://localhost:{{port}}
+@authUrl = http://127.0.0.1:54321/auth/v1
+
+### Utilisateur jetable
+# @name login
+POST {{authUrl}}/signup
+apikey: {{anon}}
+Content-Type: application/json
+
+{ "email": "recherche-{{$timestamp}}@example.com", "password": "Password123!" }
+
+?? status == 200
+
+### Compte jetable
+# @name account
+POST {{baseUrl}}/accounts
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "name": "recherche-{{$timestamp}}", "initialBalance": "0" }
+
+?? status == 201
+
+### Données : virgule
+POST {{baseUrl}}/{{account.id}}/transactions
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "date": "2026-10-01", "description": "Courses, Carrefour", "amount": "-1500" }
+
+?? status == 201
+
+### Données : parenthèses
+POST {{baseUrl}}/{{account.id}}/transactions
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "date": "2026-10-01", "description": "Cafe (test)", "amount": "-300" }
+
+?? status == 201
+
+### Données : pourcentage littéral (et un leurre qui répondrait au joker)
+POST {{baseUrl}}/{{account.id}}/transactions
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "date": "2026-10-01", "description": "Remise 100% bio", "amount": "-200" }
+
+?? status == 201
+
+### Données : leurre pour le pourcentage
+POST {{baseUrl}}/{{account.id}}/transactions
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "date": "2026-10-01", "description": "Remise 1000 euros", "amount": "-100" }
+
+?? status == 201
+
+### Données : underscore littéral
+POST {{baseUrl}}/{{account.id}}/transactions
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "date": "2026-10-01", "description": "fichier a_b", "amount": "-400" }
+
+?? status == 201
+
+### Données : leurre pour l'underscore
+POST {{baseUrl}}/{{account.id}}/transactions
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "date": "2026-10-01", "description": "fichier axb", "amount": "-450" }
+
+?? status == 201
+
+### Données : guillemets, dans les notes
+POST {{baseUrl}}/{{account.id}}/transactions
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "date": "2026-10-01", "description": "Note guillemets", "amount": "-500", "notes": "il a dit \"bonjour\"" }
+
+?? status == 201
+
+### Données : antislash
+POST {{baseUrl}}/{{account.id}}/transactions
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "date": "2026-10-01", "description": "dossier c:\\temp", "amount": "-600" }
+
+?? status == 201
+
+### Données : étoile littérale
+POST {{baseUrl}}/{{account.id}}/transactions
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "date": "2026-10-01", "description": "Promo 2*3", "amount": "-700" }
+
+?? status == 201
+
+### Données : leurre pour l'étoile
+POST {{baseUrl}}/{{account.id}}/transactions
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "date": "2026-10-01", "description": "Promo 2x3", "amount": "-750" }
+
+?? status == 201
+
+### Données : montant positif (cible de l'injection)
+POST {{baseUrl}}/{{account.id}}/transactions
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "date": "2026-10-01", "description": "Salaire", "amount": "250000" }
+
+?? status == 201
+
+### Virgule : 1 résultat (search = "courses, carrefour", casse ignorée)
+GET {{baseUrl}}/{{account.id}}/transactions?search=COURSES%2C%20carrefour
+Authorization: Bearer {{login.access_token}}
+
+?? status == 200
+?? js response.parsedBody.meta.total == 1
+
+### Parenthèses : 1 résultat (search = "(test)")
+GET {{baseUrl}}/{{account.id}}/transactions?search=%28test%29
+Authorization: Bearer {{login.access_token}}
+
+?? status == 200
+?? js response.parsedBody.meta.total == 1
+
+### Pourcentage : seulement le libellé qui contient "%" (search = "%")
+GET {{baseUrl}}/{{account.id}}/transactions?search=%25
+Authorization: Bearer {{login.access_token}}
+
+?? status == 200
+?? js response.parsedBody.meta.total == 1
+
+### Pourcentage collé à un chiffre : pas de joker (search = "100%")
+GET {{baseUrl}}/{{account.id}}/transactions?search=100%25
+Authorization: Bearer {{login.access_token}}
+
+?? status == 200
+?? js response.parsedBody.meta.total == 1
+
+### Underscore : pas de joker (search = "a_b", "axb" exclu)
+GET {{baseUrl}}/{{account.id}}/transactions?search=a_b
+Authorization: Bearer {{login.access_token}}
+
+?? status == 200
+?? js response.parsedBody.meta.total == 1
+
+### Guillemet, trouvé dans les notes (search = "\"bonjour\"")
+GET {{baseUrl}}/{{account.id}}/transactions?search=%22bonjour%22
+Authorization: Bearer {{login.access_token}}
+
+?? status == 200
+?? js response.parsedBody.meta.total == 1
+
+### Antislash (search = "c:\temp")
+GET {{baseUrl}}/{{account.id}}/transactions?search=c%3A%5Ctemp
+Authorization: Bearer {{login.access_token}}
+
+?? status == 200
+?? js response.parsedBody.meta.total == 1
+
+### Étoile : pas de joker (search = "2*3", "2x3" exclu)
+GET {{baseUrl}}/{{account.id}}/transactions?search=2%2A3
+Authorization: Bearer {{login.access_token}}
+
+?? status == 200
+?? js response.parsedBody.meta.total == 1
+
+### Injection : "x,amount.gt.0" ne rajoute aucune condition, 0 résultat
+GET {{baseUrl}}/{{account.id}}/transactions?search=x%2Camount.gt.0
+Authorization: Bearer {{login.access_token}}
+
+?? status == 200
+?? js response.parsedBody.meta.total == 0
+
+### Sans filtre : les 11 transactions sont bien là (rien n'a changé en base)
+GET {{baseUrl}}/{{account.id}}/transactions
+Authorization: Bearer {{login.access_token}}
+
+?? status == 200
+?? js response.parsedBody.meta.total == 11
