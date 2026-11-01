@@ -11,6 +11,7 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "test:sql": "bash scripts/test-sql.sh",
     "release:patch": "node scripts/release.js patch",
     "release:minor": "node scripts/release.js minor",
     "release:major": "node scripts/release.js major",

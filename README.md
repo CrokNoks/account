@@ -101,6 +101,20 @@ npm run dev
 npm run start:dev
 ```
 
+### 6. Full Verification
+Run before any release (all commands must pass):
+```bash
+# Frontend
+cd frontend && npx tsc --noEmit && npx vitest run && npm run lint
+
+# Backend
+cd functions && npx tsc --noEmit -p tsconfig.json && npx jest && npx jest --config ./test/jest-e2e.json && npx eslint test
+
+# SQL tests (prerequisite: local Supabase started with `supabase start`, and `psql` installed)
+npm run test:sql
+```
+`npm run test:sql` runs every `supabase/tests/*_test.sql`, names the failing files and exits non-zero if any failed. `SQL_TEST_DB_URL` overrides the database URL (default: local Supabase, port 54322; only `127.0.0.1` or `localhost` accepted). `SQL_TEST_DIR` overrides the folder of test files (default: `supabase/tests`).
+
 ## 🚢 Deployment
 
 The project is configured for deployment via Firebase.
