@@ -177,11 +177,6 @@
       "select_two": "Select two periods to compare the results.",
       "gap": "Gap"
     },
-    "sankey": {
-      "title": "Cash flow (Sankey)",
-      "no_data": "Not enough data to build the diagram.",
-      "amount": "Amount"
-    },
     "top_expenses": {
       "title": "Top expenses",
       "none_title": "No expense",

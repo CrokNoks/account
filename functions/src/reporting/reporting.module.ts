@@ -10,7 +10,6 @@ import { GetPeriodStatsUseCase } from './application/get-period-stats.use-case';
 import { GetBudgetBreakdownUseCase } from './application/get-budget-breakdown.use-case';
 import { GetEvolutionUseCase } from './application/get-evolution.use-case';
 import { GetPeriodComparisonUseCase } from './application/get-period-comparison.use-case';
-import { GetSankeyDataUseCase } from './application/get-sankey-data.use-case';
 import { GetCashflowForecastUseCase } from './application/get-cashflow-forecast.use-case';
 import { GetTagsSummaryUseCase } from './application/get-tags-summary.use-case';
 import { GetTagDetailsUseCase } from './application/get-tag-details.use-case';
@@ -36,7 +35,6 @@ import { ReportingController } from './infrastructure/reporting.controller';
     GetBudgetBreakdownUseCase,
     GetEvolutionUseCase,
     GetPeriodComparisonUseCase,
-    GetSankeyDataUseCase,
     GetCashflowForecastUseCase,
     GetTagsSummaryUseCase,
     GetTagDetailsUseCase,

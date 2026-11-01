@@ -1,7 +1,6 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import { SankeyChart } from "@/features/reporting/ui/sankey-chart";
 import { PeriodComparison } from "@/features/reporting/ui/period-comparison";
 import { useAccountStore } from "@/features/accounts/model/use-account-store";
 
@@ -18,13 +17,7 @@ export default function FluxPage() {
         </p>
       </div>
 
-      <div className="space-y-12">
-        <SankeyChart accountId={activeAccountId} periodId={activePeriodId} />
-        
-        <div className="grid grid-cols-1 gap-8 border-t pt-12">
-          <PeriodComparison accountId={activeAccountId} periodId={activePeriodId} />
-        </div>
-      </div>
+      <PeriodComparison accountId={activeAccountId} periodId={activePeriodId} />
     </div>
   );
 }

@@ -34,10 +34,6 @@ import {
   PeriodComparisonResponse,
 } from '../application/get-period-comparison.use-case';
 import {
-  GetSankeyDataUseCase,
-  SankeyDataResponse,
-} from '../application/get-sankey-data.use-case';
-import {
   GetCashflowForecastUseCase,
   CashflowForecastResponse,
 } from '../application/get-cashflow-forecast.use-case';
@@ -249,7 +245,6 @@ export class ReportingController {
     private readonly getBudgetBreakdownUseCase: GetBudgetBreakdownUseCase,
     private readonly getEvolutionUseCase: GetEvolutionUseCase,
     private readonly getPeriodComparisonUseCase: GetPeriodComparisonUseCase,
-    private readonly getSankeyDataUseCase: GetSankeyDataUseCase,
     private readonly getCashflowForecastUseCase: GetCashflowForecastUseCase,
     private readonly getTagsSummaryUseCase: GetTagsSummaryUseCase,
     private readonly getTagDetailsUseCase: GetTagDetailsUseCase,
@@ -333,15 +328,6 @@ export class ReportingController {
       compareWithId,
       periodId,
     );
-  }
-
-  @Get('periods/:periodId/reporting/sankey')
-  @ApiOperation({ summary: 'Get data for Sankey diagram' })
-  async getSankey(
-    @Param('accountId') accountId: string,
-    @Param('periodId') periodId: string,
-  ): Promise<SankeyDataResponse> {
-    return this.getSankeyDataUseCase.execute(accountId, periodId);
   }
 
   @Get('reporting/cashflow')

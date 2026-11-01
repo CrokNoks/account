@@ -177,11 +177,6 @@
       "select_two": "Sélectionnez deux périodes pour comparer les résultats.",
       "gap": "Écart"
     },
-    "sankey": {
-      "title": "Flux de trésorerie (Sankey)",
-      "no_data": "Pas assez de données pour générer le diagramme.",
-      "amount": "Montant"
-    },
     "top_expenses": {
       "title": "Top Dépenses",
       "none_title": "Aucune dépense",

@@ -51,23 +51,6 @@ export interface CashflowForecastResponse {
   events: CashflowEvent[];
 }
 
-export interface SankeyNode {
-  id: string;
-  name: string;
-  color?: string;
-}
-
-export interface SankeyLink {
-  source: string;
-  target: string;
-  value: number;
-}
-
-export interface SankeyDataResponse {
-  nodes: SankeyNode[];
-  links: SankeyLink[];
-}
-
 export interface CalendarEvent {
   id: string;
   date: string;
