@@ -16,6 +16,7 @@ Mise à jour : 2026-10-30 · Commit : 157b272
 | Le token est vérifié avec un secret partagé (HS256) seulement si un secret est configuré ET que l'URL Supabase n'est pas locale ; sinon avec les clés publiques Supabase (JWKS) | `functions/src/auth/supabase.strategy.ts:23-26,39-49` | ❌ |
 | Un token sans identifiant utilisateur (`sub`) est refusé | `supabase.strategy.ts:62-67` | ❌ |
 | L'identité exposée est `{ id, email }` tirée du token | `supabase.strategy.ts:70-71`, `authenticated-request.interface.ts` | ❌ |
+| Les logs ne contiennent jamais l'email, ni le token : un refus d'authentification journalise seulement sa raison (ex. `jwt expired`), sans identifiant | `supabase-auth.guard.ts`, `supabase.strategy.ts`, test `supabase.strategy.spec.ts` | ✅ |
 | Le même token est recopié dans le client Supabase de la requête, donc la base applique les règles RLS de cet utilisateur | `functions/src/supabase/supabase.module.ts:27-37` | ❌ |
 | Sans token, le client Supabase est créé quand même avec la clé anonyme (le guard bloque avant, sur les routes protégées) | `supabase.module.ts:27-37` | ❌ |
 | Front : sans session, toute page redirige vers `/login` ; connecté sur `/login`, redirigé vers `/` | `frontend/src/shared/lib/supabase/middleware.ts:44-56` | ❌ |
@@ -36,4 +37,3 @@ Il n'y a ni middleware Nest d'authentification ni décorateur d'identité (`@Use
 - Aucune route de l'API n'est publique côté module `auth` ; les autres modules (hors périmètre ici) n'ont pas été vérifiés un par un pour la présence du guard.
 - Le front n'a pas d'inscription ni de réinitialisation de mot de passe : le code ne dit pas comment les utilisateurs sont créés.
 - Le contrôle de rôle/propriétaire n'est pas dans ce module : il est dans la base (RLS), voir `accounts.md`.
-- Le guard et la stratégie écrivent l'identifiant et l'email de l'utilisateur dans les logs (`console.log`) ; le code ne dit pas si c'est voulu.

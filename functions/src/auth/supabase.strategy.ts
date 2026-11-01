@@ -66,9 +66,6 @@ export class SupabaseStrategy extends PassportStrategy(Strategy) {
       return null;
     }
 
-    console.log(
-      `[SupabaseStrategy] Token validated for user: ${payload.sub} (${payload.email})`,
-    );
     return { id: payload.sub, email: payload.email };
   }
 }
