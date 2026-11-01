@@ -3,6 +3,10 @@ import request from 'supertest';
 import { App } from 'supertest/types';
 import { auth, createE2EApp, Mocks } from './e2e-app';
 import { ConflictError } from '../src/shared/domain/errors';
+import {
+  Category,
+  CategoryType,
+} from '../src/categories/domain/category.entity';
 import { RecurringTransaction } from '../src/recurring/domain/recurring-transaction.entity';
 
 describe('Request body validation (e2e)', () => {
@@ -17,7 +21,7 @@ describe('Request body validation (e2e)', () => {
   afterAll(() => app.close());
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    jest.resetAllMocks();
     for (const repo of ['categories', 'recurring', 'periods'] as const) {
       mocks[repo].save.mockResolvedValue(undefined);
     }
@@ -936,12 +940,6 @@ describe('Request body validation (e2e)', () => {
         `/${acc}/categories`,
         { name: long(256), color: '#000000', type: 'expense' },
       ],
-      [
-        'category name',
-        'patch',
-        `/${acc}/categories/${cat}`,
-        { name: long(256) },
-      ],
       ['tag name', 'post', `/${acc}/tags`, { name: long(51) }],
       ['tag name', 'patch', `/${acc}/tags/${tag}`, { name: long(51) }],
       [
@@ -992,6 +990,42 @@ describe('Request body validation (e2e)', () => {
         await http()[method](url).set(auth()).send(body).expect(400);
       },
     );
+
+    describe('PATCH category name length', () => {
+      // Mocks propres au test : la catégorie existe et appartient au compte.
+      const existing = () =>
+        new Category({
+          id: cat,
+          name: 'Courses',
+          color: '#000000',
+          type: CategoryType.EXPENSE,
+          accountId: acc,
+          createdAt: new Date('2026-01-01'),
+          updatedAt: new Date('2026-01-01'),
+        });
+
+      beforeEach(() => {
+        mocks.categories.findById.mockResolvedValue(existing());
+      });
+
+      it('answers 400 beyond 255 characters and writes nothing', async () => {
+        await http()
+          .patch(`/${acc}/categories/${cat}`)
+          .set(auth())
+          .send({ name: long(256) })
+          .expect(400);
+        expect(mocks.categories.save).not.toHaveBeenCalled();
+      });
+
+      it('accepts 255 characters', async () => {
+        await http()
+          .patch(`/${acc}/categories/${cat}`)
+          .set(auth())
+          .send({ name: long(255) })
+          .expect(200);
+        expect(mocks.categories.save).toHaveBeenCalledTimes(1);
+      });
+    });
 
     it.each([
       ['post', '/accounts'],

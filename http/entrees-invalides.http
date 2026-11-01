@@ -80,6 +80,34 @@ Content-Type: application/json
 
 ?? status == 400
 
+### Catégorie jetable pour la modification
+# @name category
+POST {{baseUrl}}/{{account.id}}/categories
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "name": "A modifier", "color": "#000000", "type": "expense" }
+
+?? status == 201
+
+### Modification : nom de 256 caractères : 400
+PATCH {{baseUrl}}/{{account.id}}/categories/{{category.id}}
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "name": "{{"x".repeat(256)}}" }
+
+?? status == 400
+
+### Modification : nom de 255 caractères : 200
+PATCH {{baseUrl}}/{{account.id}}/categories/{{category.id}}
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "name": "{{"x".repeat(255)}}" }
+
+?? status == 200
+
 ### Recherche de 201 caractères : 400
 GET {{baseUrl}}/{{account.id}}/transactions?search={{"x".repeat(201)}}
 Authorization: Bearer {{login.access_token}}

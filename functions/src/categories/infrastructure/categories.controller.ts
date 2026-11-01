@@ -74,6 +74,7 @@ export class UpdateCategoryDto {
   @IsOptionalNotNull()
   @IsString()
   @ApiProperty({ required: false })
+  @MaxLength(255)
   name?: string;
   @IsOptional()
   @IsString()
