@@ -75,9 +75,9 @@ async function createRelease() {
     execSync('git add package.json', { stdio: 'inherit' });
     execSync(`git commit -m "chore: bump version to ${newVersion}"`, { stdio: 'inherit' });
     
-    // Create and push tag
+    // Create tag, then push the version commit and the tag together (both or neither)
     execSync(`git tag -a ${tagName} -m "${tagMessage}"`, { stdio: 'inherit' });
-    execSync(`git push origin ${tagName}`, { stdio: 'inherit' });
+    execSync(`git push --atomic origin HEAD refs/tags/${tagName}`, { stdio: 'inherit' });
     
     console.log(`✅ Release ${tagName} created and pushed successfully!`);
     console.log('🚀 Deployment will start automatically...');
