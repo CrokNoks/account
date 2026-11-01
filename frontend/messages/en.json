@@ -175,7 +175,8 @@
       "period_b_label": "Period B:",
       "current_suffix": "(Current)",
       "select_two": "Select two periods to compare the results.",
-      "gap": "Gap"
+      "gap": "Gap",
+      "new": "New"
     },
     "top_expenses": {
       "title": "Top expenses",

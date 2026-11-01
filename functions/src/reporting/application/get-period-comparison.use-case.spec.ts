@@ -60,7 +60,7 @@ describe('GetPeriodComparisonUseCase', () => {
     expect(getBreakdown.execute).toHaveBeenCalledWith('acc-1', 'p2');
   });
 
-  it('computes the difference period2 - period1 and its percentage of |period1|', async () => {
+  it('computes the difference period2 - period1 and the change of the amount in % of |period1|', async () => {
     const { expenses, income } = await useCase.execute('acc-1', 'p1', 'p2');
 
     expect(expenses.find((c) => c.categoryId === 'courses')).toEqual({
@@ -69,7 +69,7 @@ describe('GetPeriodComparisonUseCase', () => {
       period1Real: '-45000',
       period2Real: '-30000',
       diff: '15000',
-      percentageDiff: 33.33,
+      percentageDiff: -33.33, // 300 € spent instead of 450 €: 33.33 % less
     });
     expect(income[0]).toMatchObject({ diff: '10000', percentageDiff: 4 });
   });
@@ -85,7 +85,7 @@ describe('GetPeriodComparisonUseCase', () => {
     expect(expenses.find((c) => c.categoryId === 'loisirs')).toMatchObject({
       period2Real: '0',
       diff: '10000',
-      percentageDiff: 100,
+      percentageDiff: -100,
     });
   });
 
@@ -97,6 +97,27 @@ describe('GetPeriodComparisonUseCase', () => {
       diff: '-80000',
       percentageDiff: 0,
     });
+  });
+
+  it('gives a positive % when an expense grows, a negative one when an income falls', async () => {
+    getBreakdown.execute.mockImplementation((_: string, periodId: string) =>
+      Promise.resolve(
+        periodId === 'p1'
+          ? breakdown({
+              income: [item('salaire', 250000)],
+              expenses: [item('dechets', -3683)],
+            })
+          : breakdown({
+              income: [item('salaire', 200000)],
+              expenses: [item('dechets', -3685)],
+            }),
+      ),
+    );
+
+    const { expenses, income } = await useCase.execute('acc-1', 'p1', 'p2');
+
+    expect(expenses[0]).toMatchObject({ diff: '-2', percentageDiff: 0.05 });
+    expect(income[0]).toMatchObject({ diff: '-50000', percentageDiff: -20 });
   });
 
   it('returns empty groups when both periods are empty', async () => {

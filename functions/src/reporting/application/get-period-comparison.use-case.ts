@@ -68,10 +68,10 @@ export class GetPeriodComparisonUseCase {
       const r2 = BigInt(c2?.real || '0');
       const diff = r2 - r1;
 
-      let percentageDiff = 0;
-      if (r1 !== BigInt(0)) {
-        percentageDiff = roundedPercentage(diff, r1 < BigInt(0) ? -r1 : r1, 2);
-      }
+      // Change of the amount (expenses are negative): -450 € → -300 € is -33.33 %.
+      const abs1 = r1 < BigInt(0) ? -r1 : r1;
+      const abs2 = r2 < BigInt(0) ? -r2 : r2;
+      const percentageDiff = roundedPercentage(abs2 - abs1, abs1, 2);
 
       return {
         categoryId: id,

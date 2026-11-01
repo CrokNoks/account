@@ -1,0 +1,107 @@
+# Écran Flux : l'écart entre deux périodes est la variation du montant ((|B| - |A|) / |A|), le Sankey n'existe plus.
+# Lancement : npx httpyac send --all http/ecart-comparaison.http --var port=8080 --var anon=<ANON_KEY de `supabase status`>
+# (la clé vient de la ligne de commande, jamais du fichier ; l'utilisateur est jetable, créé par le fichier)
+@baseUrl = http://localhost:{{port}}
+@authUrl = http://127.0.0.1:54321/auth/v1
+
+### Utilisateur jetable
+# @name login
+POST {{authUrl}}/signup
+apikey: {{anon}}
+Content-Type: application/json
+
+{ "email": "ecart-{{$timestamp}}@example.com", "password": "Password123!" }
+
+?? status == 200
+
+### Compte jetable
+# @name account
+POST {{baseUrl}}/accounts
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "name": "ecart-{{$timestamp}}", "initialBalance": "0" }
+
+?? status == 201
+
+### Catégorie Essence
+# @name essence
+POST {{baseUrl}}/{{account.id}}/categories
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "name": "Essence", "color": "#aabbcc", "type": "expense" }
+
+?? status == 201
+
+### Catégorie Restaurant
+# @name restaurant
+POST {{baseUrl}}/{{account.id}}/categories
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "name": "Restaurant", "color": "#aabbcc", "type": "expense" }
+
+?? status == 201
+
+### Août 2026
+# @name august
+POST {{baseUrl}}/{{account.id}}/periods
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "startDate": "2026-08-01", "endDate": "2026-08-31", "budgets": [] }
+
+?? status == 201
+
+### Septembre 2026
+# @name september
+POST {{baseUrl}}/{{account.id}}/periods
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "startDate": "2026-09-01", "endDate": "2026-09-30", "budgets": [] }
+
+?? status == 201
+
+### Essence août : -85,60 €
+POST {{baseUrl}}/{{account.id}}/transactions
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "categoryId": "{{essence.id}}", "date": "2026-08-10", "description": "Essence", "amount": "-8560" }
+
+?? status == 201
+
+### Essence septembre : -40,14 €
+POST {{baseUrl}}/{{account.id}}/transactions
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "categoryId": "{{essence.id}}", "date": "2026-09-10", "description": "Essence", "amount": "-4014" }
+
+?? status == 201
+
+### Restaurant septembre seulement : -151,70 €
+POST {{baseUrl}}/{{account.id}}/transactions
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "categoryId": "{{restaurant.id}}", "date": "2026-09-12", "description": "Restaurant", "amount": "-15170" }
+
+?? status == 201
+
+### Comparaison août -> septembre : Essence -53.11 %, Restaurant 0 (pas de base)
+GET {{baseUrl}}/{{account.id}}/periods/{{september.id}}/reporting/comparison?compareWith={{august.id}}
+Authorization: Bearer {{login.access_token}}
+
+?? status == 200
+?? js response.parsedBody.expenses.find(c => c.name === 'Essence').percentageDiff == -53.11
+?? js response.parsedBody.expenses.find(c => c.name === 'Restaurant').period1Real == 0
+?? js response.parsedBody.expenses.find(c => c.name === 'Restaurant').percentageDiff == 0
+
+### Sankey supprimé : 404
+GET {{baseUrl}}/{{account.id}}/periods/{{september.id}}/reporting/sankey
+Authorization: Bearer {{login.access_token}}
+
+?? status == 404

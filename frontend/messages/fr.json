@@ -175,7 +175,8 @@
       "period_b_label": "Période B :",
       "current_suffix": "(Actuelle)",
       "select_two": "Sélectionnez deux périodes pour comparer les résultats.",
-      "gap": "Écart"
+      "gap": "Écart",
+      "new": "Nouveau"
     },
     "top_expenses": {
       "title": "Top Dépenses",

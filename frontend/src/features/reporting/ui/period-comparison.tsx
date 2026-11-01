@@ -133,35 +133,45 @@ function ComparisonTable({ title, data, labelA, labelB, isExpense }: { title: st
           </TableRow>
         </TableHeader>
         <TableBody>
-          {data.map((item) => {
-            const diff = parseInt(item.diff, 10);
-            const isNegative = diff < 0;
-            const isNeutral = diff === 0;
-            
-            // For expenses, a negative diff (Period B < Period A) is GOOD (green)
-            const isGood = isExpense ? isNegative : !isNegative;
-
-            return (
-              <TableRow key={item.categoryId}>
-                <TableCell className="py-2 text-sm font-medium">{item.name}</TableCell>
-                <TableCell className="py-2 text-right text-xs text-muted-foreground">
-                  {formatCurrency(item.period1Real)}
-                </TableCell>
-                <TableCell className="py-2 text-right text-sm">
-                  {formatCurrency(item.period2Real)}
-                </TableCell>
-                <TableCell className={cn(
-                  "py-2 text-right text-xs font-bold flex items-center justify-end gap-1",
-                  isNeutral ? "text-muted-foreground" : (isGood ? "text-emerald-600" : "text-rose-600")
-                )}>
-                  {isNeutral ? <Minus className="w-3 h-3" /> : (isGood ? <ArrowDownRight className="w-3 h-3" /> : <ArrowUpRight className="w-3 h-3" />)}
-                  {item.percentageDiff}%
-                </TableCell>
-              </TableRow>
-            );
-          })}
+          {data.map((item) => (
+            <TableRow key={item.categoryId}>
+              <TableCell className="py-2 text-sm font-medium">{item.name}</TableCell>
+              <TableCell className="py-2 text-right text-xs text-muted-foreground">
+                {formatCurrency(item.period1Real)}
+              </TableCell>
+              <TableCell className="py-2 text-right text-sm">
+                {formatCurrency(item.period2Real)}
+              </TableCell>
+              <TableCell className="py-2 text-right">
+                <ComparisonGap item={item} isExpense={isExpense} />
+              </TableCell>
+            </TableRow>
+          ))}
         </TableBody>
       </Table>
     </div>
+  );
+}
+
+// percentageDiff is the change of the amount: positive means more money (spent or received).
+export function ComparisonGap({ item, isExpense }: { item: ComparisonPoint, isExpense?: boolean }) {
+  const t = useTranslations('Reporting.comparison');
+  const isNew = item.period1Real === '0' && item.period2Real !== '0';
+  const isUp = isNew || item.percentageDiff > 0;
+  const isNeutral = !isNew && item.percentageDiff === 0;
+  // More spending is bad, more income is good
+  const isGood = isExpense ? !isUp : isUp;
+
+  return (
+    <span
+      data-testid="comparison-gap"
+      className={cn(
+        "text-xs font-bold inline-flex items-center justify-end gap-1",
+        isNeutral ? "text-muted-foreground" : (isGood ? "text-emerald-600" : "text-rose-600")
+      )}
+    >
+      {isNeutral ? <Minus className="w-3 h-3" /> : (isUp ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />)}
+      {isNew ? t('new') : `${isUp ? '+' : ''}${item.percentageDiff}%`}
+    </span>
   );
 }
