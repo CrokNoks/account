@@ -1,12 +1,11 @@
 'use client';
 
 import { useState } from 'react';
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { Category, CategoryType } from '../model/types';
 import { useCategories } from '../api/use-categories';
 import { useUpdateCategory } from '../api/use-update-category';
 import { useAccountStore } from '@/features/accounts/model/use-account-store';
-import { formatCurrency } from '@/shared/lib/format';
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Pencil } from 'lucide-react';
@@ -79,7 +78,7 @@ export function CategoryList() {
               <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6">
                 {group.map((category) => (
                   <Card key={category.id} className={`group hover:border-primary transition-all relative border-2 ${bgColors[category.type] || ""}`}>
-                    <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0">
                       <CardTitle className="text-sm font-bold flex items-center gap-2 truncate pr-8">
                         <div 
                           className="w-3 h-3 rounded-full shrink-0 shadow-sm border border-black/10" 
@@ -98,13 +97,6 @@ export function CategoryList() {
                         </Button>
                       </div>
                     </CardHeader>
-                    <CardContent>
-                      <div className="flex items-center justify-between gap-2">
-                        <p className="text-xs font-semibold text-foreground/80">
-                          {formatCurrency('0')}
-                        </p>
-                      </div>
-                    </CardContent>
                   </Card>
                 ))}
               </div>

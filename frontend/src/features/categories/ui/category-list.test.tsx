@@ -18,14 +18,26 @@ vi.mock('@/features/accounts/model/use-account-store', () => ({
   useAccountStore: () => ({ activeAccountId: 'a1' }),
 }));
 
+function renderList() {
+  return render(
+    <NextIntlClientProvider locale="fr" messages={fr}>
+      <CategoryList />
+    </NextIntlClientProvider>,
+  );
+}
+
 describe('CategoryList', () => {
+  // Le montant affiché était écrit en dur à 0, reste du plafond de catégorie.
+  it('shows no amount on a category card', () => {
+    renderList();
+
+    expect(screen.getByText('Courses')).toBeTruthy();
+    expect(screen.queryByText(/€/)).toBeNull();
+  });
+
   // Le plafond de catégorie n'existe plus : le budget est celui de la période.
   it('edits a category without a budget field', () => {
-    render(
-      <NextIntlClientProvider locale="fr" messages={fr}>
-        <CategoryList />
-      </NextIntlClientProvider>,
-    );
+    renderList();
 
     fireEvent.click(screen.getByRole('button'));
 
