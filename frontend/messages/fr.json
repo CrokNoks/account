@@ -52,17 +52,12 @@
     "hide_mobile": "Masquer sur mobile",
     "show_mobile": "Afficher sur mobile",
     "widgets": {
-      "stat-start": "Solde initial",
-      "stat-income": "Revenus réels",
-      "stat-expenses": "Dépenses réelles",
+      "stat-income": "Revenus / Dépenses",
       "stat-bank": "Solde en banque",
       "stat-upcoming": "Solde à venir",
-      "stat-forecast": "Solde prévisionnel",
       "net-worth": "Patrimoine Net",
-      "pulse": "Le Pulse (vs M-1)",
       "anomalies": "Anomalies",
       "breakdown": "Répartition du budget",
-      "top-expenses": "Top Dépenses",
       "tags": "Statistiques par Tags",
       "upcoming": "Prochaines Échéances",
       "transactions": "Dernières transactions"
@@ -150,14 +145,6 @@
       "select_all": "Tout sélectionner",
       "deselect_all": "Tout désélectionner"
     },
-    "pulse": {
-      "title": "Le Pulse (vs mois dernier)",
-      "unavailable": "Indisponible",
-      "need_two_periods": "Besoin de deux périodes pour comparer",
-      "total_expenses": "Dépenses totales",
-      "saving": "Économie",
-      "surplus": "Surplus"
-    },
     "net_worth": {
       "title": "Patrimoine Net (Tous comptes)",
       "no_data": "Aucune donnée",
@@ -178,11 +165,6 @@
       "gap": "Écart",
       "new": "Nouveau"
     },
-    "top_expenses": {
-      "title": "Top Dépenses",
-      "none_title": "Aucune dépense",
-      "none_desc": "Pas de dépenses pour cette période"
-    },
     "deadlines": {
       "title": "Prochaines Échéances (7j)",
       "none": "Rien de prévu cette semaine",
@@ -195,7 +177,10 @@
       "detected": "Anomalies détectées ({count})",
       "ignore": "Ignorer cette alerte",
       "update_error": "Erreur lors de la mise à jour de l'anomalie"
-    }
+    },
+    "income_expenses": "Revenus / Dépenses",
+    "planned": "Prévu",
+    "end_of_period_forecast": "Fin de période prévue"
   },
   "Accounts": {
     "title": "Mes Comptes",

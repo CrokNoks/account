@@ -52,17 +52,12 @@
     "hide_mobile": "Hide on mobile",
     "show_mobile": "Show on mobile",
     "widgets": {
-      "stat-start": "Starting balance",
-      "stat-income": "Actual income",
-      "stat-expenses": "Actual expenses",
+      "stat-income": "Income / Expenses",
       "stat-bank": "Bank balance",
       "stat-upcoming": "Upcoming balance",
-      "stat-forecast": "Forecast balance",
       "net-worth": "Net worth",
-      "pulse": "The Pulse (vs M-1)",
       "anomalies": "Anomalies",
       "breakdown": "Budget breakdown",
-      "top-expenses": "Top expenses",
       "tags": "Tag statistics",
       "upcoming": "Upcoming deadlines",
       "transactions": "Latest transactions"
@@ -150,14 +145,6 @@
       "select_all": "Select all",
       "deselect_all": "Deselect all"
     },
-    "pulse": {
-      "title": "The Pulse (vs last month)",
-      "unavailable": "Unavailable",
-      "need_two_periods": "Two periods are needed to compare",
-      "total_expenses": "Total expenses",
-      "saving": "Saving",
-      "surplus": "Overspend"
-    },
     "net_worth": {
       "title": "Net worth (all accounts)",
       "no_data": "No data",
@@ -178,11 +165,6 @@
       "gap": "Gap",
       "new": "New"
     },
-    "top_expenses": {
-      "title": "Top expenses",
-      "none_title": "No expense",
-      "none_desc": "No expenses for this period"
-    },
     "deadlines": {
       "title": "Upcoming deadlines (7d)",
       "none": "Nothing planned this week",
@@ -195,7 +177,10 @@
       "detected": "Anomalies detected ({count})",
       "ignore": "Dismiss this alert",
       "update_error": "Error while updating the anomaly"
-    }
+    },
+    "income_expenses": "Income / Expenses",
+    "planned": "Planned",
+    "end_of_period_forecast": "Expected end of period"
   },
   "Accounts": {
     "title": "My Accounts",

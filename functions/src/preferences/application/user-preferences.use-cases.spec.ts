@@ -21,20 +21,20 @@ describe('User preferences use cases', () => {
       const prefs = UserPreferences.create('user-1');
 
       expect(prefs.userId).toBe('user-1');
-      expect(prefs.dashboardLayout.widgets.map((w) => w.id)).toEqual([
-        'stat-start',
-        'stat-income',
-        'stat-expenses',
-        'stat-bank',
-        'stat-upcoming',
-        'stat-forecast',
-        'net-worth',
-        'pulse',
-        'anomalies',
-        'breakdown',
-        'top-expenses',
-        'transactions',
-      ]);
+      // Même disposition que DEFAULT_WIDGETS (front) : 3 cartes de solde, 9 widgets.
+      expect(prefs.dashboardLayout.widgets.map((w) => [w.id, w.width])).toEqual(
+        [
+          ['stat-bank', 4],
+          ['stat-upcoming', 4],
+          ['stat-income', 4],
+          ['net-worth', 6],
+          ['upcoming', 6],
+          ['anomalies', 12],
+          ['breakdown', 6],
+          ['tags', 6],
+          ['transactions', 12],
+        ],
+      );
       expect(
         prefs.dashboardLayout.widgets.every(
           (w) => w.desktopVisible && w.mobileVisible,
@@ -46,7 +46,7 @@ describe('User preferences use cases', () => {
       const layout = {
         widgets: [
           {
-            id: 'pulse',
+            id: 'net-worth',
             width: 12,
             desktopVisible: true,
             mobileVisible: false,
@@ -78,7 +78,7 @@ describe('User preferences use cases', () => {
       );
 
       expect(prefs.userId).toBe('user-1');
-      expect(prefs.dashboardLayout.widgets).toHaveLength(12);
+      expect(prefs.dashboardLayout.widgets).toHaveLength(9);
       expect(repository.save).toHaveBeenCalledWith(prefs);
     });
   });
@@ -90,7 +90,7 @@ describe('User preferences use cases', () => {
         dashboardLayout: {
           widgets: [
             {
-              id: 'pulse',
+              id: 'net-worth',
               width: 6,
               desktopVisible: false,
               mobileVisible: true,
@@ -101,7 +101,12 @@ describe('User preferences use cases', () => {
 
       expect(prefs.userId).toBe('user-1');
       expect(prefs.dashboardLayout.widgets).toEqual([
-        { id: 'pulse', width: 6, desktopVisible: false, mobileVisible: true },
+        {
+          id: 'net-worth',
+          width: 6,
+          desktopVisible: false,
+          mobileVisible: true,
+        },
       ]);
       expect(repository.save).toHaveBeenCalledWith(prefs);
     });
@@ -111,7 +116,7 @@ describe('User preferences use cases', () => {
         userId: 'user-1',
         dashboardLayout: {
           widgets: [
-            { id: 'pulse', width: 6 } as DashboardWidgetConfig,
+            { id: 'net-worth', width: 6 } as DashboardWidgetConfig,
             {
               id: 'anomalies',
               width: 12,
@@ -122,7 +127,12 @@ describe('User preferences use cases', () => {
       });
 
       expect(prefs.dashboardLayout.widgets).toEqual([
-        { id: 'pulse', width: 6, desktopVisible: true, mobileVisible: true },
+        {
+          id: 'net-worth',
+          width: 6,
+          desktopVisible: true,
+          mobileVisible: true,
+        },
         {
           id: 'anomalies',
           width: 12,

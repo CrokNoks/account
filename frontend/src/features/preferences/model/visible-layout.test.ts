@@ -6,7 +6,7 @@ const known = ALL_AVAILABLE_WIDGETS.map((w) => w.id);
 
 // Disposition enregistrée avant la suppression des analyses IA : contient `insights`.
 const saved = [
-  { id: 'stat-start', width: 2, desktopVisible: true, mobileVisible: false },
+  { id: 'stat-bank', width: 2, desktopVisible: true, mobileVisible: false },
   { id: 'insights', width: 12, desktopVisible: true, mobileVisible: true },
   { id: 'breakdown', width: 6, desktopVisible: false, mobileVisible: true },
   { id: 'transactions', width: 12 },
@@ -14,7 +14,7 @@ const saved = [
 
 // Disposition enregistrée avant la suppression des objectifs d'épargne : contient `savings`.
 const savedWithSavings = [
-  { id: 'stat-start', width: 2, desktopVisible: true, mobileVisible: false },
+  { id: 'stat-bank', width: 2, desktopVisible: true, mobileVisible: false },
   { id: 'savings', width: 6, desktopVisible: true, mobileVisible: true },
   { id: 'breakdown', width: 6, desktopVisible: false, mobileVisible: true },
   { id: 'transactions', width: 12 },
@@ -46,5 +46,25 @@ describe('visibleLayout', () => {
     expect(active).toEqual([savedWithSavings[0], savedWithSavings[2], savedWithSavings[3]]);
     const addable = known.filter((id) => !active.map((w) => w.id).includes(id));
     expect(addable).not.toContain('savings');
+  });
+
+  // Réduction du tableau de bord : 6 cartes de solde → 3, Top Dépenses et Pulse retirés.
+  it('ignore les widgets retirés et garde la visibilité mobile des cartes conservées', () => {
+    const removed = ['stat-start', 'stat-expenses', 'stat-forecast', 'pulse', 'top-expenses'];
+    const savedBefore = [
+      { id: 'stat-start', width: 2, desktopVisible: true, mobileVisible: false },
+      { id: 'stat-income', width: 2, desktopVisible: true, mobileVisible: false },
+      { id: 'stat-bank', width: 2, desktopVisible: true, mobileVisible: true },
+      { id: 'stat-forecast', width: 2, desktopVisible: true, mobileVisible: false },
+      { id: 'top-expenses', width: 4, desktopVisible: true, mobileVisible: false },
+      { id: 'pulse', width: 6, desktopVisible: true, mobileVisible: true },
+      { id: 'upcoming', width: 4, desktopVisible: true, mobileVisible: true },
+    ];
+
+    for (const id of removed) {
+      expect(known).not.toContain(id);
+      expect(WIDGET_COMPONENTS[id]).toBeUndefined();
+    }
+    expect(visibleLayout(savedBefore, known)).toEqual([savedBefore[1], savedBefore[2], savedBefore[6]]);
   });
 });

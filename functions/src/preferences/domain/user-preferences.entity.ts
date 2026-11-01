@@ -29,41 +29,24 @@ export class UserPreferences {
   static create(userId: string, layout?: DashboardLayout): UserPreferences {
     return new UserPreferences({
       userId,
+      // Même disposition que DEFAULT_WIDGETS (front).
       dashboardLayout: layout || {
         widgets: [
           {
-            id: 'stat-start',
-            width: 2,
-            desktopVisible: true,
-            mobileVisible: true,
-          },
-          {
-            id: 'stat-income',
-            width: 2,
-            desktopVisible: true,
-            mobileVisible: true,
-          },
-          {
-            id: 'stat-expenses',
-            width: 2,
-            desktopVisible: true,
-            mobileVisible: true,
-          },
-          {
             id: 'stat-bank',
-            width: 2,
+            width: 4,
             desktopVisible: true,
             mobileVisible: true,
           },
           {
             id: 'stat-upcoming',
-            width: 2,
+            width: 4,
             desktopVisible: true,
             mobileVisible: true,
           },
           {
-            id: 'stat-forecast',
-            width: 2,
+            id: 'stat-income',
+            width: 4,
             desktopVisible: true,
             mobileVisible: true,
           },
@@ -73,7 +56,12 @@ export class UserPreferences {
             desktopVisible: true,
             mobileVisible: true,
           },
-          { id: 'pulse', width: 6, desktopVisible: true, mobileVisible: true },
+          {
+            id: 'upcoming',
+            width: 6,
+            desktopVisible: true,
+            mobileVisible: true,
+          },
           {
             id: 'anomalies',
             width: 12,
@@ -86,12 +74,7 @@ export class UserPreferences {
             desktopVisible: true,
             mobileVisible: true,
           },
-          {
-            id: 'top-expenses',
-            width: 6,
-            desktopVisible: true,
-            mobileVisible: true,
-          },
+          { id: 'tags', width: 6, desktopVisible: true, mobileVisible: true },
           {
             id: 'transactions',
             width: 12,

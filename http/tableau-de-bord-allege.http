@@ -1,0 +1,60 @@
+# Tableau de bord allégé (9 widgets) et prévisionnel qui compte les transactions sans catégorie.
+# Lancement : npx httpyac send --all http/tableau-de-bord-allege.http --var port=8080 --var anon=<ANON_KEY de `supabase status`>
+# (la clé vient de la ligne de commande, jamais du fichier ; l'utilisateur est jetable, créé par le fichier)
+@baseUrl = http://localhost:{{port}}
+@authUrl = http://127.0.0.1:54321/auth/v1
+
+### Utilisateur jetable
+# @name login
+POST {{authUrl}}/signup
+apikey: {{anon}}
+Content-Type: application/json
+
+{ "email": "tableau-de-bord-{{$timestamp}}@example.com", "password": "Password123!" }
+
+?? status == 200
+
+### Disposition par défaut d'un nouvel utilisateur : 9 widgets, 3 cartes de solde
+GET {{baseUrl}}/preferences
+Authorization: Bearer {{login.access_token}}
+
+?? status == 200
+?? js response.parsedBody.dashboardLayout.widgets.map(w => w.id).join(',') == stat-bank,stat-upcoming,stat-income,net-worth,upcoming,anomalies,breakdown,tags,transactions
+
+### Compte jetable, solde initial 1000,00 €
+# @name account
+POST {{baseUrl}}/accounts
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "name": "tableau-de-bord-{{$timestamp}}", "initialBalance": "100000" }
+
+?? status == 201
+
+### Période de novembre
+# @name period
+POST {{baseUrl}}/{{account.id}}/periods
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "startDate": "2026-11-01", "endDate": "2026-11-30", "budgets": [] }
+
+?? status == 201
+
+### Retrait de 200,00 € pas encore catégorisé
+POST {{baseUrl}}/{{account.id}}/transactions
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "date": "2026-11-02", "description": "Retrait DAB", "amount": "-20000", "periodId": "{{period.id}}" }
+
+?? status == 201
+
+### Le prévisionnel compte le retrait sans catégorie : 1000 − 200 = 800 €, comme le solde à venir
+GET {{baseUrl}}/{{account.id}}/periods/{{period.id}}/reporting/stats
+Authorization: Bearer {{login.access_token}}
+
+?? status == 200
+?? js response.parsedBody.forecastBalance == 80000
+?? js response.parsedBody.upcomingBalance == 80000
+?? js response.parsedBody.realExpenses == 0

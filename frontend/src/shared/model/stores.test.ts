@@ -121,14 +121,14 @@ describe('useDashboardStore', () => {
 
   beforeEach(() => {
     useDashboardStore.setState({
-      tempLayout: [widget('pulse'), widget('anomalies', 12)],
+      tempLayout: [widget('tags'), widget('anomalies', 12)],
     });
   });
 
   const layout = () => useDashboardStore.getState().tempLayout;
 
   it('removes a widget present in the layout', () => {
-    useDashboardStore.getState().toggleWidget('pulse');
+    useDashboardStore.getState().toggleWidget('tags');
 
     expect(layout()!.map((w) => w.id)).toEqual(['anomalies']);
   });
@@ -140,14 +140,14 @@ describe('useDashboardStore', () => {
   });
 
   it('changes the width of a widget', () => {
-    useDashboardStore.getState().updateWidgetWidth('pulse', 4);
+    useDashboardStore.getState().updateWidgetWidth('tags', 4);
 
     expect(layout()![0].width).toBe(4);
     expect(layout()![1].width).toBe(12);
   });
 
   it('toggles the visibility on one device only', () => {
-    useDashboardStore.getState().toggleDeviceVisibility('pulse', 'mobile');
+    useDashboardStore.getState().toggleDeviceVisibility('tags', 'mobile');
 
     expect(layout()![0]).toMatchObject({
       desktopVisible: true,
@@ -160,9 +160,9 @@ describe('useDashboardStore', () => {
     const { toggleWidget, updateWidgetWidth, toggleDeviceVisibility } =
       useDashboardStore.getState();
 
-    toggleWidget('pulse');
-    updateWidgetWidth('pulse', 4);
-    toggleDeviceVisibility('pulse', 'desktop');
+    toggleWidget('tags');
+    updateWidgetWidth('tags', 4);
+    toggleDeviceVisibility('tags', 'desktop');
 
     expect(layout()).toBeNull();
   });
