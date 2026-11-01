@@ -194,6 +194,39 @@ describe('GetPeriodStatsUseCase', () => {
     );
   });
 
+  it('adds uncategorized transactions (pending included) to max(real, planned) when planned exceeds real', async () => {
+    transactions.findAllByAccountUnpaginated.mockResolvedValue([
+      tx(100000, 'salaire'),
+      tx(-10000, 'courses'),
+      tx(-5000, null),
+      tx(-3000, null, { pending: true }),
+    ]);
+
+    const stats = await useCase.execute('acc-1', 'per-1');
+
+    // 120000 + max(100000, 250000) - max(10000, 40000) - 5000 - 3000
+    expect(stats.forecastBalance).toBe('322000');
+  });
+
+  // Un virement entre deux comptes : une transaction sans catégorie sur chaque compte, de signe opposé.
+  it.each([
+    ['sender account (outgoing transfer)', -70000, '50000'],
+    ['receiving account (incoming transfer)', 70000, '190000'],
+  ])(
+    'moves the forecast of the %s by the transfer amount',
+    async (_, amount, expected) => {
+      transactions.findAllByAccountUnpaginated.mockResolvedValue([
+        tx(amount, null),
+      ]);
+      budgets.findAllByPeriod.mockResolvedValue([]);
+
+      const stats = await useCase.execute('acc-1', 'per-1');
+
+      // 120000 + amount
+      expect(stats.forecastBalance).toBe(expected);
+    },
+  );
+
   it('returns only zeros on top of the start balance for an empty period', async () => {
     transactions.findAllByAccountUnpaginated.mockResolvedValue([]);
     budgets.findAllByPeriod.mockResolvedValue([]);
