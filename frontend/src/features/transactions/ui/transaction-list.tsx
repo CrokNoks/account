@@ -289,7 +289,7 @@ export function TransactionList({
         </div>
         <div className="flex items-center gap-2">
           {extraActions}
-          <Button size={compact ? "icon-xs" : "sm"} variant={compact ? "ghost" : "default"} className="gap-2" onClick={() => setCreateTransactionDrawerOpen(true)}>
+          <Button size={compact ? "icon-xs" : "sm"} variant={compact ? "ghost" : "default"} className="gap-2" onClick={() => setCreateTransactionDrawerOpen(true)} data-tour={compact ? 'add-transaction' : undefined}>
             <Plus className="w-4 h-4" />
             {!compact && <span className="hidden sm:inline">{t('add_transaction')}</span>}
           </Button>

@@ -5,16 +5,30 @@ import { useTranslations } from 'next-intl';
 import { Link } from '@/i18n/routing';
 import { FileUp } from 'lucide-react';
 import { Button } from "@/components/ui/button";
+import { useEffect } from 'react';
+import { useUiStore } from '@/shared/model/use-ui-store';
+import { HelpButton } from '@/shared/ui/tour/HelpButton';
 
 export default function TransactionsPage() {
   const t = useTranslations('Transactions');
+  const { startTour, completedTours } = useUiStore();
+
+  useEffect(() => {
+    if (completedTours['dashboard'] && !completedTours['transactions']) {
+      const timer = setTimeout(() => {
+        startTour('transactions');
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [completedTours, startTour]);
 
   return (
     <div className="flex flex-col gap-8">
-      <div className="flex flex-col gap-2">
+      <div className="flex items-center gap-2">
         <p className="text-muted-foreground">
           {t('description')}
         </p>
+        <HelpButton tour="transactions" className="h-8 w-8" />
       </div>
 
       <TransactionList 

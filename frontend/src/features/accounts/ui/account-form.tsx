@@ -40,7 +40,7 @@ export function AccountForm({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4 py-4">
-      <div className="space-y-2">
+      <div className="space-y-2" data-tour="account-name">
         <label className="text-sm font-medium">{t('fields.name')}</label>
         <Input 
           placeholder={t('fields.name_placeholder')} 
@@ -50,7 +50,7 @@ export function AccountForm({
         />
       </div>
 
-      <div className="space-y-2">
+      <div className="space-y-2" data-tour="account-balance">
         <label className="text-sm font-medium">{t('fields.balance')}</label>
         <AmountInput
           value={balance}

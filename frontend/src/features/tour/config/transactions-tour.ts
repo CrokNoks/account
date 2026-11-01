@@ -5,6 +5,7 @@ export const TRANSACTION_STEPS = (t: _Translator): Step[] => [
   {
     target: '[data-tour="tx-date"]',
     content: t('transactions.date'),
+    disableBeacon: true,
   },
   {
     target: '[data-tour="tx-description"]',

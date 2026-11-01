@@ -7,6 +7,8 @@ import { useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
 import { DASHBOARD_STEPS } from '@/features/tour/config/dashboard-tour';
 import { ACCOUNT_STEPS } from '@/features/tour/config/account-tour';
+import { nextIndexOnMissingTarget } from '@/features/tour/config/tour-flow';
+import { tourLocale, tourStyles } from '@/features/tour/config/tour-ui';
 import { TRANSACTION_STEPS } from '@/features/tour/config/transactions-tour';
 
 export function AppTour() {
@@ -21,8 +23,22 @@ export function AppTour() {
     setTourStepIndex, 
     stopTour, 
     completeTour,
-    setCreateAccountDialogOpen
+    setCreateAccountDialogOpen,
+    setCreateTransactionDrawerOpen
   } = useUiStore();
+
+  // La visite « transactions » s'appuie sur le tiroir de création : on l'ouvre au démarrage.
+  // Joyride ne réessaie pas une cible absente au démarrage : on ne lance la visite qu'une fois le tiroir rendu.
+  const [drawerReady, setDrawerReady] = React.useState(false);
+  React.useEffect(() => {
+    if (activeTour !== 'transactions' || !tourRun) return;
+    setCreateTransactionDrawerOpen(true);
+    const timer = setTimeout(() => setDrawerReady(true), 500);
+    return () => {
+      clearTimeout(timer);
+      setDrawerReady(false);
+    };
+  }, [activeTour, tourRun, setCreateTransactionDrawerOpen]);
 
   const getSteps = () => {
     switch (activeTour) {
@@ -59,6 +75,7 @@ export function AppTour() {
     }
 
     if (([STATUS.FINISHED, STATUS.SKIPPED] as string[]).includes(status)) {
+      if (activeTour === 'transactions') setCreateTransactionDrawerOpen(false);
       completeTour(activeTour);
     } else if (([EVENTS.STEP_AFTER, EVENTS.TARGET_NOT_FOUND] as string[]).includes(type)) {
       const nextStepIndex = index + (action === ACTIONS.PREV ? -1 : 1);
@@ -74,9 +91,16 @@ export function AppTour() {
           setTourStepIndex(nextStepIndex);
         }, 500);
       } else if (type === EVENTS.TARGET_NOT_FOUND) {
-        // If target not found, we might still be waiting for the dialog
-        // Don't auto-advance, maybe retry or just stay here
-        console.warn('Tour target not found, waiting...', data.step.target);
+        const skipTo = nextIndexOnMissingTarget(activeTour, index, action === ACTIONS.PREV ? 'prev' : 'next');
+        if (skipTo === null) {
+          // Étape qui attend l'ouverture d'un panneau : on reste sur place.
+          console.warn('Tour target not found, waiting...', data.step.target);
+        } else if (skipTo >= getSteps().length) {
+          if (activeTour === 'transactions') setCreateTransactionDrawerOpen(false);
+          completeTour(activeTour);
+        } else {
+          setTourStepIndex(Math.max(skipTo, 0));
+        }
       } else {
         setTourStepIndex(nextStepIndex);
       }
@@ -90,7 +114,7 @@ export function AppTour() {
   return (
     <Joyride
       steps={getSteps()}
-      run={tourRun}
+      run={tourRun && (activeTour !== 'transactions' || drawerReady)}
       stepIndex={tourStepIndex}
       continuous
       showProgress
@@ -98,35 +122,8 @@ export function AppTour() {
       scrollToFirstStep
       disableScrolling={false}
       callback={handleJoyrideCallback}
-      locale={{
-        back: tc('back') || 'Back',
-        close: tc('close') || 'Close',
-        last: tc('finish') || 'Finish',
-        next: tc('next') || 'Next',
-        skip: tc('skip') || 'Skip',
-      }}
-      styles={{
-        options: {
-          primaryColor: 'hsl(var(--primary))',
-          backgroundColor: theme === 'dark' ? '#1f2937' : '#fff',
-          textColor: theme === 'dark' ? '#f3f4f6' : '#1f2937',
-          arrowColor: theme === 'dark' ? '#1f2937' : '#fff',
-          overlayColor: 'rgba(0, 0, 0, 0.5)',
-          zIndex: 1000,
-        },
-        tooltip: {
-          borderRadius: '0.75rem',
-          padding: '1.25rem',
-        },
-        buttonNext: {
-          borderRadius: '0.5rem',
-          padding: '0.5rem 1rem',
-          fontWeight: 600,
-        },
-        buttonBack: {
-          marginRight: '0.75rem',
-        }
-      }}
+      locale={tourLocale(tc, t.raw('next_with_progress') as string)}
+      styles={tourStyles(theme === 'dark')}
     />
   );
 }

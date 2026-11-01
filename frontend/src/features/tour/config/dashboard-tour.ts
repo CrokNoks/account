@@ -13,11 +13,6 @@ export const DASHBOARD_STEPS = (t: _Translator): Step[] => [
     placement: 'top',
   },
   {
-    target: '[data-tour="evolution"]',
-    content: t('dashboard.evolution'),
-    placement: 'top',
-  },
-  {
     target: '[data-tour="budget-breakdown"]',
     content: t('dashboard.breakdown'),
     placement: 'top',

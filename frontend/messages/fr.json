@@ -482,13 +482,13 @@
     "retry": "Réessayer"
   },
   "Tour": {
+    "next_with_progress": "Suivant (étape {step} sur {steps})",
     "dashboard": {
       "welcome": "Bienvenue sur Account V2 ! Laissez-vous guider pour découvrir les fonctionnalités principales.",
       "stats": "Retrouvez ici votre solde en banque (opérations pointées) pour la période en cours.",
-      "evolution": "Suivez l'évolution de votre solde et comparez vos revenus et dépenses mois après mois.",
       "breakdown": "Visualisez en un coup d'œil la répartition de vos dépenses par catégorie par rapport à votre budget.",
       "transactions": "Consultez ici vos dernières opérations. Les couleurs indiquent si vous êtes dans le vert ou non.",
-      "add_btn": "Utilisez ce bouton (ou la touche Entrée) pour ajouter rapidement une nouvelle opération."
+      "add_btn": "Cliquez sur + pour ajouter une transaction."
     },
     "account": {
       "intro": "La configuration d'un compte se fait en plusieurs étapes pour assurer une gestion précise.",

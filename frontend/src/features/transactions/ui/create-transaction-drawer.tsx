@@ -95,7 +95,7 @@ export function CreateTransactionDrawer() {
           <div className="flex items-center justify-between">
             <SheetTitle>{mode === 'standard' ? t('new_transaction_title') : t('new_transfer_title')}</SheetTitle>
             
-            <div className="hidden lg:flex items-center gap-1 text-[10px] text-muted-foreground font-medium bg-muted/50 px-1.5 py-0.5 rounded border">
+            <div data-tour="tx-shortcuts" className="hidden lg:flex items-center gap-1 text-[10px] text-muted-foreground font-medium bg-muted/50 px-1.5 py-0.5 rounded border">
               <span className="opacity-70 mr-0.5 text-[9px] uppercase tracking-wider">{t('mode_shortcut')}</span>
               <kbd className="font-mono">⇧</kbd>
               <span>+</span>
