@@ -16,8 +16,7 @@ import {
   Tag,
   Repeat,
   LogOut,
-  Sparkles,
-  Target
+  Sparkles
 } from 'lucide-react';
 import { createClient } from '@/shared/lib/supabase/supabase-browser';
 import { useRouter } from '@/i18n/routing';
@@ -34,7 +33,6 @@ const menuItems = [
   { icon: Settings, labelKey: 'categories', href: '/categories' },
   { icon: Tag, labelKey: 'tags', href: '/tags' },
   { icon: Sparkles, labelKey: 'smart_rules', href: '/smart-rules' },
-  { icon: Target, labelKey: 'savings', href: '/savings' },
   { icon: Repeat, labelKey: 'recurring', href: '/recurring' },
   { icon: PieChart, labelKey: 'budgets', href: '/budgets' },
   { icon: Receipt, labelKey: 'transactions', href: '/transactions' },

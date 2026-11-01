@@ -21,12 +21,11 @@ describe('headerTitleKey', () => {
     expect(headerTitleKey('/calendar')).toBe('calendar');
     expect(headerTitleKey('/tags')).toBe('tags');
     expect(headerTitleKey('/smart-rules')).toBe('smart_rules');
-    expect(headerTitleKey('/savings')).toBe('savings');
     expect(headerTitleKey('/recurring')).toBe('recurring');
   });
 
   it('only returns keys that exist in both languages', () => {
-    for (const path of ['/', '/calendar', '/evolution', '/flux', '/cashflow', '/accounts', '/categories', '/tags', '/smart-rules', '/savings', '/recurring', '/budgets', '/transactions', '/transactions/import']) {
+    for (const path of ['/', '/calendar', '/evolution', '/flux', '/cashflow', '/accounts', '/categories', '/tags', '/smart-rules', '/recurring', '/budgets', '/transactions', '/transactions/import']) {
       const key = headerTitleKey(path) as keyof typeof fr.Navigation;
       expect(fr.Navigation[key], path).toBeTruthy();
       expect(en.Navigation[key], path).toBeTruthy();

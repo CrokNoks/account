@@ -12,7 +12,6 @@ import {
 import { AnomaliesWidget } from "@/features/reporting/ui/anomalies-widget";
 import { BudgetBreakdown } from "@/features/reporting/ui/budget-breakdown";
 import { TagStatsSummary } from "@/features/tags/ui/tag-stats-summary";
-import { SavingsGoalsWidget } from "@/features/savings/ui/savings-goals-widget";
 import { NetWorthWidget } from "@/features/reporting/ui/net-worth-widget";
 import { UpcomingDeadlinesWidget } from "@/features/reporting/ui/upcoming-deadlines-widget";
 import { MonthlyPulseWidget } from "@/features/reporting/ui/monthly-pulse-widget";
@@ -38,7 +37,6 @@ export const WIDGET_COMPONENTS: Record<string, React.ComponentType> = {
     </div>
   ),
   'tags': TagStatsSummary,
-  'savings': SavingsGoalsWidget,
   'transactions': () => (
     <div data-tour="transaction-list" className="h-full min-h-0">
       <Card className="border-2 shadow-sm h-full overflow-hidden flex flex-col pt-0">
@@ -61,7 +59,6 @@ export const ALL_AVAILABLE_WIDGETS = [
   { id: 'breakdown' },
   { id: 'top-expenses' },
   { id: 'tags' },
-  { id: 'savings' },
   { id: 'upcoming' },
   { id: 'transactions' },
 ];

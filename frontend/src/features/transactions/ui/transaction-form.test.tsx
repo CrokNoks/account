@@ -7,7 +7,6 @@ vi.mock('sonner', () => ({ toast: { error: vi.fn(), success: vi.fn(), info: vi.f
 vi.mock('@/features/tags/ui/tag-selector', () => ({ TagSelector: () => null }));
 vi.mock('@/features/categories/ui/category-selector', () => ({ CategorySelector: () => null }));
 vi.mock('@/features/accounts/api/use-accounts', () => ({ useAccounts: () => ({ data: [] }) }));
-vi.mock('@/features/savings/api/use-savings-goals', () => ({ useSavingsGoals: () => ({ data: [] }) }));
 vi.mock('../api/use-predict-category', () => ({ usePredictCategory: () => ({ mutate: vi.fn() }) }));
 
 describe('TransactionForm default date', () => {

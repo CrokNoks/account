@@ -9,7 +9,6 @@ const routeKeys: Record<string, string> = {
   '/categories': 'categories',
   '/tags': 'tags',
   '/smart-rules': 'smart_rules',
-  '/savings': 'savings',
   '/recurring': 'recurring',
   '/budgets': 'budgets',
   '/transactions': 'transactions',

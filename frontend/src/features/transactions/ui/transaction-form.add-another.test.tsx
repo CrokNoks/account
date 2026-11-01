@@ -46,10 +46,6 @@ vi.mock('@/features/transactions/api/use-predict-category', () => ({
   usePredictCategory: () => ({ mutate: vi.fn() }),
 }));
 
-vi.mock('@/features/savings/api/use-savings-goals', () => ({
-  useSavingsGoals: () => ({ data: [] }),
-}));
-
 vi.mock('@/features/categories/ui/category-selector', () => ({
   CategorySelector: ({ value, onChange }: { value: string; onChange: (v: string) => void }) => (
     <input

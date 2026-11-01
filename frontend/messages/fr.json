@@ -13,7 +13,6 @@
     "budgets": "Budgets",
     "recurring": "Récurrences",
     "smart_rules": "Règles",
-    "savings": "Épargne",
     "logout": "Déconnexion",
     "toggle_theme": "Changer de thème",
     "command": {
@@ -65,7 +64,6 @@
       "breakdown": "Répartition du budget",
       "top-expenses": "Top Dépenses",
       "tags": "Statistiques par Tags",
-      "savings": "Objectifs d'épargne",
       "upcoming": "Prochaines Échéances",
       "transactions": "Dernières transactions"
     }
@@ -280,8 +278,6 @@
     "form": {
       "description_placeholder_transfer": "Virement épargne, Loyer partagé...",
       "description_placeholder_standard": "Loyer, Courses, Salaire...",
-      "link_goal": "Lier à un objectif d'épargne (optionnel)",
-      "no_goal": "Aucun objectif lié",
       "destination_account": "Compte de destination",
       "select_destination": "Sélectionner le compte de destination...",
       "no_other_account": "Aucun autre compte disponible",
@@ -484,36 +480,6 @@
     "tag": "Tag",
     "edit_title": "Modifier la règle"
   },
-  "Savings": {
-    "title": "Objectifs d'Épargne",
-    "description": "Donnez du sens à votre épargne en fixant des objectifs précis.",
-    "add_goal": "Nouvel objectif",
-    "new_goal_title": "Créer un objectif d'épargne",
-    "fields": {
-      "name": "Nom de l'objectif",
-      "target_amount": "Montant cible",
-      "current_amount": "Montant actuel",
-      "deadline": "Échéance",
-      "color": "Couleur"
-    },
-    "empty": "Aucun objectif configuré",
-    "delete_confirm": "Voulez-vous vraiment supprimer cet objectif ?",
-    "deleted": "Objectif supprimé",
-    "contributed": "Contribution enregistrée",
-    "edit_goal": "Modifier l'objectif",
-    "of_target": "sur {amount}",
-    "no_deadline": "Pas d'échéance",
-    "contribute": "Épargner",
-    "contribute_to": "Contribuer à : {name}",
-    "amount_to_add": "Montant à ajouter",
-    "amount_hint": "Ce montant sera ajouté au solde actuel de l'objectif.",
-    "save_contribution": "Enregistrer la contribution",
-    "edit_title": "Modifier l'objectif d'épargne",
-    "name_placeholder": "Ex: Vacances d'été, Apport maison...",
-    "widget_title": "Objectifs d'épargne",
-    "widget_empty_title": "Aucun objectif",
-    "widget_empty_desc": "Définissez vos objectifs d'épargne"
-  },
   "Common": {
     "add": "Ajouter",
     "save": "Enregistrer",
@@ -605,7 +571,6 @@
       "end_date_after_start": "La date de fin doit être postérieure à la date de début",
       "invalid_category_type": "Type de catégorie invalide",
       "invalid_color": "Couleur invalide (format hexadécimal requis)",
-      "target_amount_positive": "Le montant cible doit être positif",
       "category_wrong_account": "Cette catégorie n'appartient pas à ce compte",
       "period_wrong_account": "Cette période n'appartient pas à ce compte",
       "tag_wrong_account": "Cette étiquette n'appartient pas à ce compte",
@@ -616,7 +581,6 @@
       "tag_not_found": "Étiquette introuvable",
       "transaction_not_found": "Transaction introuvable",
       "period_not_found": "Période introuvable",
-      "savings_goal_not_found": "Objectif d'épargne introuvable",
       "smart_rule_not_found": "Règle intelligente introuvable",
       "resource_not_found": "Élément introuvable",
       "owner_only_list_shares": "Seul le propriétaire peut voir les partages",

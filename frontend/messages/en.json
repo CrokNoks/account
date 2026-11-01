@@ -13,7 +13,6 @@
     "budgets": "Budgets",
     "recurring": "Recurring",
     "smart_rules": "Rules",
-    "savings": "Savings",
     "logout": "Logout",
     "toggle_theme": "Toggle theme",
     "command": {
@@ -65,7 +64,6 @@
       "breakdown": "Budget breakdown",
       "top-expenses": "Top expenses",
       "tags": "Tag statistics",
-      "savings": "Savings goals",
       "upcoming": "Upcoming deadlines",
       "transactions": "Latest transactions"
     }
@@ -280,8 +278,6 @@
     "form": {
       "description_placeholder_transfer": "Savings transfer, Shared rent...",
       "description_placeholder_standard": "Rent, Groceries, Salary...",
-      "link_goal": "Link to a savings goal (optional)",
-      "no_goal": "No linked goal",
       "destination_account": "Destination account",
       "select_destination": "Select the destination account...",
       "no_other_account": "No other account available",
@@ -484,36 +480,6 @@
     "tag": "Tag",
     "edit_title": "Edit rule"
   },
-  "Savings": {
-    "title": "Savings Goals",
-    "description": "Give meaning to your savings by setting precise objectives.",
-    "add_goal": "New Goal",
-    "new_goal_title": "Create savings goal",
-    "fields": {
-      "name": "Goal name",
-      "target_amount": "Target amount",
-      "current_amount": "Current amount",
-      "deadline": "Deadline",
-      "color": "Color"
-    },
-    "empty": "No goals configured",
-    "delete_confirm": "Do you really want to delete this goal?",
-    "deleted": "Goal deleted",
-    "contributed": "Contribution saved",
-    "edit_goal": "Edit goal",
-    "of_target": "of {amount}",
-    "no_deadline": "No deadline",
-    "contribute": "Save",
-    "contribute_to": "Contribute to: {name}",
-    "amount_to_add": "Amount to add",
-    "amount_hint": "This amount will be added to the goal's current balance.",
-    "save_contribution": "Save contribution",
-    "edit_title": "Edit savings goal",
-    "name_placeholder": "E.g. Summer holidays, House deposit...",
-    "widget_title": "Savings goals",
-    "widget_empty_title": "No goal",
-    "widget_empty_desc": "Set your savings goals"
-  },
   "Common": {
     "add": "Add",
     "save": "Save",
@@ -605,7 +571,6 @@
       "end_date_after_start": "End date must be after start date",
       "invalid_category_type": "Invalid category type",
       "invalid_color": "Invalid color (hexadecimal format required)",
-      "target_amount_positive": "Target amount must be positive",
       "category_wrong_account": "This category does not belong to this account",
       "period_wrong_account": "This period does not belong to this account",
       "tag_wrong_account": "This tag does not belong to this account",
@@ -616,7 +581,6 @@
       "tag_not_found": "Tag not found",
       "transaction_not_found": "Transaction not found",
       "period_not_found": "Period not found",
-      "savings_goal_not_found": "Savings goal not found",
       "smart_rule_not_found": "Smart rule not found",
       "resource_not_found": "Item not found",
       "owner_only_list_shares": "Only the owner can view shares",

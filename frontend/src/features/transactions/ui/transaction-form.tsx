@@ -12,7 +12,6 @@ import { CategorySelector } from '@/features/categories/ui/category-selector';
 import { useTranslations } from 'next-intl';
 import { useAccounts } from '@/features/accounts/api/use-accounts';
 import { usePredictCategory } from '../api/use-predict-category';
-import { useSavingsGoals } from '@/features/savings/api/use-savings-goals';
 import { Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -24,7 +23,6 @@ export interface TransactionFormValues {
   amount: string;
   pending: boolean;
   destinationAccountId?: string;
-  savingsGoalId?: string;
 }
 
 interface TransactionFormProps {
@@ -49,7 +47,6 @@ export function TransactionForm({
   const t = useTranslations('Transactions');
   const tc = useTranslations('Common');
   const { data: accounts } = useAccounts();
-  const { data: savingsGoals } = useSavingsGoals(accountId);
   const { mutate: predictCategory } = usePredictCategory();
 
   const [date, setDate] = useState(initialValues?.date || todayDateOnly());
@@ -59,7 +56,6 @@ export function TransactionForm({
   const [amount, setAmount] = useState(initialValues?.amount || '');
   const [pending, setPending] = useState(initialValues?.pending || false);
   const [destinationAccountId, setDestinationAccountId] = useState(initialValues?.destinationAccountId || '');
-  const [savingsGoalId, setSavingsGoalId] = useState(initialValues?.savingsGoalId || '');
 
   const predictionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const dateInputRef = useRef<HTMLInputElement>(null);
@@ -96,7 +92,6 @@ export function TransactionForm({
     amount,
     pending,
     destinationAccountId,
-    savingsGoalId: savingsGoalId === 'none' ? '' : savingsGoalId,
   };
 
   const handleFormSubmit = (e: React.FormEvent) => {
@@ -165,35 +160,6 @@ export function TransactionForm({
                 onChange={setTagIds} 
               />
             )}
-          </div>
-
-          <div className="space-y-2">
-            <label className="text-sm font-medium">{t('form.link_goal')}</label>
-            <Select value={savingsGoalId || 'none'} onValueChange={(v) => setSavingsGoalId(v === 'none' ? '' : (v || ''))}>
-              <SelectTrigger className="h-11 bg-background">
-                <SelectValue placeholder={t('form.no_goal')}>
-                  {savingsGoalId && savingsGoals?.find(g => g.id === savingsGoalId) ? (
-                    <div className="flex items-center gap-2">
-                      <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: savingsGoals.find(g => g.id === savingsGoalId)?.color }} />
-                      <span className="truncate">{savingsGoals.find(g => g.id === savingsGoalId)?.name}</span>
-                    </div>
-                  ) : <span className="text-muted-foreground">{t('form.no_goal')}</span>}
-                </SelectValue>
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">
-                  <span className="text-muted-foreground italic">{t('form.no_goal')}</span>
-                </SelectItem>
-                {savingsGoals?.map((goal) => (
-                  <SelectItem key={goal.id} value={goal.id}>
-                    <div className="flex items-center gap-2">
-                      <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: goal.color }} />
-                      <span className="truncate">{goal.name}</span>
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
           </div>
         </>
       )}

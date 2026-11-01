@@ -12,6 +12,14 @@ const saved = [
   { id: 'transactions', width: 12 },
 ];
 
+// Disposition enregistrée avant la suppression des objectifs d'épargne : contient `savings`.
+const savedWithSavings = [
+  { id: 'stat-start', width: 2, desktopVisible: true, mobileVisible: false },
+  { id: 'savings', width: 6, desktopVisible: true, mobileVisible: true },
+  { id: 'breakdown', width: 6, desktopVisible: false, mobileVisible: true },
+  { id: 'transactions', width: 12 },
+];
+
 describe('visibleLayout', () => {
   it('retire insights sans toucher ordre, largeur et visibilité des autres widgets', () => {
     expect(visibleLayout(saved, known)).toEqual([saved[0], saved[2], saved[3]]);
@@ -27,5 +35,16 @@ describe('visibleLayout', () => {
     const addable = known.filter((id) => !active.includes(id));
     expect(active).not.toContain('insights');
     expect(addable).not.toContain('insights');
+  });
+
+  it('savings enregistré : ignoré en affichage et en édition, les autres widgets restent intacts', () => {
+    expect(known).not.toContain('savings');
+    expect(WIDGET_COMPONENTS['savings']).toBeUndefined();
+
+    // L'édition part de cette liste et l'enregistrement renvoie `tempLayout` : savings n'y est plus.
+    const active = visibleLayout(savedWithSavings, known);
+    expect(active).toEqual([savedWithSavings[0], savedWithSavings[2], savedWithSavings[3]]);
+    const addable = known.filter((id) => !active.map((w) => w.id).includes(id));
+    expect(addable).not.toContain('savings');
   });
 });
