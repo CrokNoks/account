@@ -1,0 +1,124 @@
+# Suppression des objectifs d'épargne : plus de route, plus de champ, les écritures marchent (CA1, CA2, CA3, CA7).
+# Lancement : npx httpyac send --all http/suppression-epargne.http --var port=8080 --var anon=<ANON_KEY de `supabase status`>
+# (la clé vient de la ligne de commande, jamais du fichier ; l'utilisateur est jetable, créé par le fichier)
+@baseUrl = http://localhost:{{port}}
+@authUrl = http://127.0.0.1:54321/auth/v1
+
+### Utilisateur jetable
+# @name login
+POST {{authUrl}}/signup
+apikey: {{anon}}
+Content-Type: application/json
+
+{ "email": "epargne-{{$timestamp}}@example.com", "password": "Password123!" }
+
+?? status == 200
+
+### Compte jetable
+# @name account
+POST {{baseUrl}}/accounts
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "name": "epargne-{{$timestamp}}", "initialBalance": "0" }
+
+?? status == 201
+
+### Second compte (virement)
+# @name account2
+POST {{baseUrl}}/accounts
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "name": "epargne-bis-{{$timestamp}}", "initialBalance": "0" }
+
+?? status == 201
+
+### CA1 : GET /savings-goals n'existe plus
+GET {{baseUrl}}/{{account.id}}/savings-goals
+Authorization: Bearer {{login.access_token}}
+
+?? status == 404
+
+### CA1 : POST /savings-goals n'existe plus
+POST {{baseUrl}}/{{account.id}}/savings-goals
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "name": "Vacances", "targetAmount": "100000" }
+
+?? status == 404
+
+### CA3 : savingsGoalId refusé à la création
+POST {{baseUrl}}/{{account.id}}/transactions
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "date": "2026-10-01", "description": "avec objectif", "amount": "-1000", "savingsGoalId": "00000000-0000-0000-0000-000000000001" }
+
+?? status == 400
+
+### CA2 : transaction créée sans le champ, réponse sans savingsGoalId
+# @name tx
+POST {{baseUrl}}/{{account.id}}/transactions
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "date": "2026-10-01", "description": "sans objectif", "amount": "-1000" }
+
+?? status == 201
+?? js response.parsedBody.savingsGoalId == undefined
+?? body contains "amount":"-1000"
+
+### CA7 : modification (upsert_transactions)
+PATCH {{baseUrl}}/{{account.id}}/transactions/{{tx.id}}
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "description": "modifiée", "amount": "-2500" }
+
+?? status == 200
+?? body contains "amount":"-2500"
+?? js response.parsedBody.savingsGoalId == undefined
+
+### CA7 : virement (insert_transactions)
+POST {{baseUrl}}/{{account.id}}/transactions/transfer
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "destinationAccountId": "{{account2.id}}", "amount": "5000", "date": "2026-10-02", "description": "virement" }
+
+?? status == 201
+?? js response.parsedBody.length == 2
+
+### CA7 : import en lot
+POST {{baseUrl}}/{{account.id}}/transactions/bulk
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "transactions": [
+  { "date": "2026-10-03", "description": "lot 1", "amount": "-100" },
+  { "date": "2026-10-04", "description": "lot 2", "amount": "-200" },
+  { "date": "2026-10-05", "description": "lot 3", "amount": "300" }
+] }
+
+?? status == 201
+?? js response.parsedBody.length == 3
+
+### CA7 : récurrente pour la période
+POST {{baseUrl}}/{{account.id}}/recurring
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "description": "loyer", "amount": "-65000", "dayOfMonth": 5 }
+
+?? status == 201
+
+### CA7 : période avec injectRecurring (insert_transactions via create_period_with_budgets)
+POST {{baseUrl}}/{{account.id}}/periods
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "startDate": "2026-11-01", "endDate": "2026-11-30", "budgets": [], "injectRecurring": true }
+
+?? status == 201
