@@ -25,6 +25,7 @@ Mise à jour : 2026-10-31 · Commit : a010dfb
 | Accès en base : lecture avec l'accès **lecture** au compte (un partage en lecture seule voit les règles), création/modification/suppression avec l'accès **écriture** (4 règles RLS distinctes). Migration à pousser : `supabase db push` (par Lucas) | `20261101100000_smart_rules_read_access.sql` | ✅ `http/regles-lecture-seule.http` |
 | Suppression refusée : règle visible mais écriture non autorisée (partage en lecture seule) = 403, rien supprimé ; règle inexistante ou compte inaccessible = 404. La modification refusée répond déjà 403 (erreur RLS 42501) | `supabase-smart-rule.repository.ts` (`delete`) ; `smart-rules.controller.ts` | ✅ `supabase-smart-rule.repository.spec.ts`, `http/regles-lecture-seule.http` |
 | Tests du module : uniquement le dépôt (suppression) et l'entité ; contrôleur et cas d'usage de correspondance : voir lignes ci-dessus | `functions/src/smart-rules/**/*.spec.ts` | partiel |
+| `null` refusé en 400 sur `pattern`, `tagIds` et `priority` (création et modification ; absent = inchangé) ; `categoryId: null` = pas de catégorie | `smart-rules.controller.ts` (`@IsOptionalNotNull()`) | ✅ `functions/test/validation.e2e-spec.ts` (« null on a field that cannot be null »), `http/null-refuse.http` |
 
 ## Ce qu'on stocke
 Table `smart_rules` : id ; compte ; motif (texte) ; catégorie (peut être vide) ; étiquettes (liste d'identifiants, vide par défaut) ; priorité (entier, 0 par défaut) ; dates de création/modification (trigger `updated_at`, ligne 44). Aucun montant.

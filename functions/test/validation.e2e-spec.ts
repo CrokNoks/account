@@ -651,6 +651,200 @@ describe('Request body validation (e2e)', () => {
       },
     );
   });
+  describe('null on a field that cannot be null answers 400, nothing is written', () => {
+    const acc = '00000000-0000-4000-8000-000000000101';
+    const id = '00000000-0000-4000-8000-000000000111';
+    const cat = '00000000-0000-4000-8000-000000000112';
+    const per = '00000000-0000-4000-8000-000000000113';
+    const rec = '00000000-0000-4000-8000-000000000114';
+    const rule = '00000000-0000-4000-8000-000000000115';
+
+    const routes: [string, string, string[]][] = [
+      [
+        `/${acc}/transactions/${id}`,
+        'transaction',
+        [
+          'date',
+          'amount',
+          'description',
+          'reconciled',
+          'pending',
+          'metadata',
+          'tagIds',
+        ],
+      ],
+      [`/accounts/${acc}`, 'account', ['name', 'initialBalance']],
+      [`/${acc}/categories/${cat}`, 'category', ['name', 'color', 'type']],
+      [`/${acc}/tags/${id}`, 'tag', ['name', 'color']],
+      [
+        `/${acc}/recurring/${rec}`,
+        'recurring',
+        ['description', 'amount', 'dayOfMonth'],
+      ],
+      [
+        `/${acc}/smart-rules/${rule}`,
+        'smart rule',
+        ['pattern', 'tagIds', 'priority'],
+      ],
+      [
+        `/${acc}/periods/${per}`,
+        'period',
+        ['startDate', 'endDate', 'isActive'],
+      ],
+    ];
+    const cases = routes.flatMap(([url, name, fields]) =>
+      fields.map((field) => [name, field, url] as const),
+    );
+
+    const expectNothingWritten = () => {
+      for (const repo of Object.values(mocks)) {
+        for (const [fn, spy] of Object.entries(repo)) {
+          if (/^(save|update|delete|replace)/.test(fn)) {
+            expect(spy).not.toHaveBeenCalled();
+          }
+        }
+      }
+    };
+
+    it.each(cases)('PATCH %s: %s null', async (_name, field, url) => {
+      const res = await http()
+        .patch(url)
+        .set(auth())
+        .send({ [field]: null });
+
+      expect(res.status).toBe(400);
+      expectNothingWritten();
+    });
+
+    const tx = { date: '2026-03-01', description: 'x', amount: '-100' };
+    it.each([
+      ['transactions', `/${acc}/transactions`, { ...tx, reconciled: null }],
+      ['transactions', `/${acc}/transactions`, { ...tx, pending: null }],
+      ['transactions', `/${acc}/transactions`, { ...tx, metadata: null }],
+      ['transactions', `/${acc}/transactions`, { ...tx, tagIds: null }],
+      [
+        'transactions/bulk line',
+        `/${acc}/transactions/bulk`,
+        { transactions: [{ ...tx, reconciled: null }] },
+      ],
+      [
+        'transactions/bulk line',
+        `/${acc}/transactions/bulk`,
+        { transactions: [{ ...tx, tagIds: null }] },
+      ],
+      [
+        'smart-rules',
+        `/${acc}/smart-rules`,
+        { pattern: 'p', categoryId: null, tagIds: null },
+      ],
+      [
+        'smart-rules',
+        `/${acc}/smart-rules`,
+        { pattern: 'p', categoryId: null, priority: null },
+      ],
+      [
+        'periods',
+        `/${acc}/periods`,
+        {
+          startDate: '2026-03-01',
+          endDate: '2026-03-31',
+          budgets: [],
+          injectRecurring: null,
+        },
+      ],
+      ['accounts', '/accounts', { name: 'A', initialBalance: null }],
+      ['tags', `/${acc}/tags`, { name: 'T', color: null }],
+    ])(
+      'POST %s with null on a required-or-defaulted field',
+      async (_n, url, body) => {
+        const res = await http().post(url).set(auth()).send(body);
+
+        expect(res.status).toBe(400);
+        expectNothingWritten();
+      },
+    );
+
+    it('PATCH categories: budget and description null remove the value, absent keeps it', async () => {
+      const existing = {
+        id: cat,
+        accountId: acc,
+        name: 'Courses',
+        description: 'Alimentation',
+        color: '#000000',
+        type: 'expense',
+        budget: BigInt(5000),
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+      mocks.categories.findById.mockResolvedValueOnce(existing);
+
+      await http()
+        .patch(`/${acc}/categories/${cat}`)
+        .set(auth())
+        .send({ budget: null, description: null })
+        .expect(200);
+      expect(mocks.categories.save).toHaveBeenLastCalledWith(
+        expect.objectContaining({ budget: null, description: null }),
+      );
+
+      mocks.categories.findById.mockResolvedValueOnce(existing);
+      await http()
+        .patch(`/${acc}/categories/${cat}`)
+        .set(auth())
+        .send({ name: 'Autre' })
+        .expect(200);
+      expect(mocks.categories.save).toHaveBeenLastCalledWith(
+        expect.objectContaining({
+          name: 'Autre',
+          budget: BigInt(5000),
+          description: 'Alimentation',
+        }),
+      );
+    });
+
+    it.each(['reconciled', 'pending', 'tagIds'])(
+      'PATCH transactions/bulk data.%s null',
+      async (field) => {
+        const res = await http()
+          .patch(`/${acc}/transactions/bulk`)
+          .set(auth())
+          .send({ ids: [id], data: { [field]: null } });
+
+        expect(res.status).toBe(400);
+        expectNothingWritten();
+      },
+    );
+
+    it('PATCH preferences: a widget visibility set to null', async () => {
+      const res = await http()
+        .patch('/preferences')
+        .set(auth())
+        .send({ widgets: [{ id: 'w', width: 1, desktopVisible: null }] });
+
+      expect(res.status).toBe(400);
+      expectNothingWritten();
+    });
+
+    it.each([
+      ['transactions', `/${acc}/transactions/${id}`, 'categoryId'],
+      ['transactions', `/${acc}/transactions/${id}`, 'periodId'],
+      ['transactions', `/${acc}/transactions/${id}`, 'notes'],
+      ['transactions', `/${acc}/transactions/${id}`, 'paymentMethod'],
+      ['transactions/bulk', `/${acc}/transactions/bulk`, 'categoryId'],
+      ['recurring', `/${acc}/recurring/${rec}`, 'categoryId'],
+      ['smart-rules', `/${acc}/smart-rules/${rule}`, 'categoryId'],
+    ])(
+      'null stays accepted where it means "none": %s %s',
+      async (_n, url, f) => {
+        const body = url.endsWith('/bulk')
+          ? { ids: [id], data: { [f]: null } }
+          : { [f]: null };
+        const res = await http().patch(url).set(auth()).send(body);
+        expect(res.status).not.toBe(400);
+      },
+    );
+  });
+
   describe('unique violation raised by the repository', () => {
     it('POST /:accountId/tags answers 409 when the name already exists', async () => {
       mocks.tags.save.mockRejectedValue(

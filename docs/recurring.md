@@ -25,6 +25,7 @@ Mise à jour : 2026-10-30 · Commit : 157b272
 | Elles servent aussi à calculer le montant par défaut d'une catégorie dans le brouillon de période | `functions/src/periods/application/get-period-draft.use-case.ts:64-70` | ✅ (spec des périodes) |
 | Supprimer un compte supprime ses récurrentes ; accès en base selon l'accès au compte | `20260309000000_create_recurring_transactions.sql:4,17-31` | ❌ |
 | Aucun test dans ce module | (aucun `*.spec.ts` dans `functions/src/recurring/`) | ❌ |
+| `null` refusé en 400 sur `description`, `amount` et `dayOfMonth` en modification (absent = inchangé) ; `categoryId: null` retire la catégorie | `recurring.controller.ts` (`@IsOptionalNotNull()`) | ✅ `functions/test/validation.e2e-spec.ts` (« null on a field that cannot be null »), `http/null-refuse.http` |
 
 ## Ce qu'on stocke
 Table `recurring_transactions` : id ; compte ; catégorie (peut être vide) ; description (255 caractères max en base) ; montant (BIGINT, centimes) ; jour du mois (1-31) ; dates de création/modification (trigger `updated_at`, ligne 34).

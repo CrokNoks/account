@@ -27,6 +27,7 @@ import {
   IsHexColor,
   MaxLength,
 } from 'class-validator';
+import { IsOptionalNotNull } from '../../shared/infrastructure/is-optional-not-null.decorator';
 import { CategoryRepository } from '../domain/category.repository.interface';
 import { ensureBelongsToAccount } from '../../shared/domain/account-ownership';
 import { parseCents } from '../../shared/domain/cents';
@@ -70,13 +71,19 @@ export class CreateCategoryBodyDto extends OmitType(CreateCategoryDto, [
 ] as const) {}
 
 export class UpdateCategoryDto {
-  @IsOptional() @IsString() @ApiProperty({ required: false }) name?: string;
+  @IsOptionalNotNull()
+  @IsString()
+  @ApiProperty({ required: false })
+  name?: string;
   @IsOptional()
   @IsString()
   @ApiProperty({ required: false })
   description?: string;
-  @IsOptional() @IsHexColor() @ApiProperty({ required: false }) color?: string;
-  @IsOptional()
+  @IsOptionalNotNull()
+  @IsHexColor()
+  @ApiProperty({ required: false })
+  color?: string;
+  @IsOptionalNotNull()
   @IsEnum(CategoryType)
   @ApiProperty({ enum: CategoryType, required: false })
   type?: CategoryType;
@@ -138,11 +145,18 @@ export class CategoriesController {
     const updated = new Category({
       id: existing.id,
       name: dto.name ?? existing.name,
-      description: dto.description ?? existing.description,
+      // null retire la valeur, absent la laisse inchangée.
+      description:
+        dto.description === undefined ? existing.description : dto.description,
       color: dto.color ?? existing.color,
       type: dto.type ?? existing.type,
       accountId: existing.accountId,
-      budget: dto.budget ? parseCents(dto.budget) : existing.budget,
+      budget:
+        dto.budget === undefined
+          ? existing.budget
+          : dto.budget === null
+            ? null
+            : parseCents(dto.budget),
       createdAt: existing.createdAt,
       updatedAt: new Date(),
     });

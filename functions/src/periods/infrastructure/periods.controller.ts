@@ -32,10 +32,10 @@ import {
   IsString,
   IsArray,
   ValidateNested,
-  IsOptional,
   IsBoolean,
   IsUUID,
 } from 'class-validator';
+import { IsOptionalNotNull } from '../../shared/infrastructure/is-optional-not-null.decorator';
 import { Type } from 'class-transformer';
 import { ensureBelongsToAccount } from '../../shared/domain/account-ownership';
 import { parseCents } from '../../shared/domain/cents';
@@ -73,7 +73,7 @@ export class CreatePeriodDto {
   @ApiProperty({ type: [BudgetInitDto] })
   budgets: BudgetInitDto[];
 
-  @IsOptional()
+  @IsOptionalNotNull()
   @IsBoolean()
   @ApiProperty({ required: false })
   injectRecurring?: boolean;
@@ -85,15 +85,15 @@ export class CreatePeriodBodyDto extends OmitType(CreatePeriodDto, [
 ] as const) {}
 
 export class UpdatePeriodDto {
-  @IsOptional()
+  @IsOptionalNotNull()
   @IsCalendarDate()
   @ApiProperty({ required: false })
   startDate?: string;
-  @IsOptional()
+  @IsOptionalNotNull()
   @IsCalendarDate()
   @ApiProperty({ required: false })
   endDate?: string;
-  @IsOptional()
+  @IsOptionalNotNull()
   @IsBoolean()
   @ApiProperty({ required: false })
   isActive?: boolean;

@@ -1,0 +1,165 @@
+# null refusé (400, rien d'écrit) sur les champs qui ne peuvent pas être vides ; accepté là où il veut dire « aucun ».
+# Lancement : npx httpyac send --all http/null-refuse.http --var port=8080 --var anon=<NEXT_PUBLIC_SUPABASE_ANON_KEY de frontend/.env.local>
+# (la clé vient de la ligne de commande, jamais du fichier ; l'utilisateur est jetable, créé par le fichier)
+@baseUrl = http://localhost:{{port}}
+@authUrl = http://127.0.0.1:54321/auth/v1
+
+### Utilisateur jetable
+# @name login
+POST {{authUrl}}/signup
+apikey: {{anon}}
+Content-Type: application/json
+
+{ "email": "null-{{$timestamp}}@example.com", "password": "Password123!" }
+
+?? status == 200
+
+### Compte jetable
+# @name account
+POST {{baseUrl}}/accounts
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "name": "null-{{$timestamp}}", "initialBalance": "0" }
+
+?? status == 201
+
+### Catégorie avec budget
+# @name category
+POST {{baseUrl}}/{{account.id}}/categories
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "name": "Courses", "color": "#aabbcc", "type": "expense", "budget": "5000" }
+
+?? status == 201
+
+### Tag
+# @name tag
+POST {{baseUrl}}/{{account.id}}/tags
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "name": "T", "color": "#aabbcc" }
+
+?? status == 201
+
+### Transaction avec catégorie et tag
+# @name tx
+POST {{baseUrl}}/{{account.id}}/transactions
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "categoryId": "{{category.id}}", "date": "2026-10-10", "description": "Cafe", "amount": "-500", "tagIds": ["{{tag.id}}"] }
+
+?? status == 201
+
+### PATCH date null : 400
+PATCH {{baseUrl}}/{{account.id}}/transactions/{{tx.id}}
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "date": null }
+
+?? status == 400
+?? body contains date must not be null
+
+### PATCH amount null : 400
+PATCH {{baseUrl}}/{{account.id}}/transactions/{{tx.id}}
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "amount": null }
+
+?? status == 400
+?? body contains amount must not be null
+
+### PATCH tagIds null : 400
+PATCH {{baseUrl}}/{{account.id}}/transactions/{{tx.id}}
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "tagIds": null }
+
+?? status == 400
+
+### La transaction est intacte (date, montant, tag toujours là)
+GET {{baseUrl}}/{{account.id}}/transactions
+Authorization: Bearer {{login.access_token}}
+
+?? status == 200
+?? body contains "date":"2026-10-10
+?? body contains "amount":"-500"
+?? body contains {{tag.id}}
+
+### PATCH categoryId null : 200, catégorie retirée
+PATCH {{baseUrl}}/{{account.id}}/transactions/{{tx.id}}
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "categoryId": null }
+
+?? status == 200
+?? body contains "categoryId":null
+
+### POST transaction reconciled null : 400
+POST {{baseUrl}}/{{account.id}}/transactions
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "date": "2026-10-11", "description": "X", "amount": "-1", "reconciled": null }
+
+?? status == 400
+
+### POST compte initialBalance null : 400
+POST {{baseUrl}}/accounts
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "name": "autre-{{$timestamp}}", "initialBalance": null }
+
+?? status == 400
+
+### PATCH catégorie budget null : 200, budget retiré
+PATCH {{baseUrl}}/{{account.id}}/categories/{{category.id}}
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "budget": null }
+
+?? status == 200
+?? body contains "budget":null
+
+### Le budget est bien retiré en base
+GET {{baseUrl}}/{{account.id}}/categories
+Authorization: Bearer {{login.access_token}}
+
+?? status == 200
+?? body contains "budget":null
+?? body contains "name":"Courses"
+
+### Règle intelligente
+# @name rule
+POST {{baseUrl}}/{{account.id}}/smart-rules
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "pattern": "cafe", "categoryId": "{{category.id}}", "priority": 3 }
+
+?? status == 201
+
+### PATCH règle priority null : 400
+PATCH {{baseUrl}}/{{account.id}}/smart-rules/{{rule.id}}
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "priority": null }
+
+?? status == 400
+
+### La priorité est intacte
+GET {{baseUrl}}/{{account.id}}/smart-rules
+Authorization: Bearer {{login.access_token}}
+
+?? status == 200
+?? body contains "priority":3

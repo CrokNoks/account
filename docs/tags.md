@@ -21,6 +21,7 @@ Mise à jour : 2026-10-30 · Commit : 157b272
 | En base : lire les tags = accès `read` au compte ; créer/modifier/supprimer = accès `write` (propriétaire ou partagé `write`) | `20260313092403_create_tags_tables.sql:25-39` | ❌ |
 | En base : mêmes droits pour la liaison transaction-tag, via le compte de la transaction | `20260313092403_create_tags_tables.sql:43-79` | ❌ |
 | Poser des tags sur une transaction : voir `transactions.md` (remplacement complet à chaque enregistrement, atomique via `save_transaction`) | `supabase-transaction.repository.ts` (`save`) | ❌ |
+| `null` refusé en 400 sur `name` et `color` (création et modification ; absent = inchangé) | `tags.controller.ts` (`@IsOptionalNotNull()`) | ✅ `functions/test/validation.e2e-spec.ts` (« null on a field that cannot be null »), `http/null-refuse.http` |
 
 ## Ce qu'on stocke
 Tag (`tags`) : id, compte, nom (50 caractères max), couleur (7 caractères, `#RRGGBB`), dates de création/modification (mise à jour automatique par trigger `set_tags_updated_at`). Liaison `transaction_tags` (transaction, tag).

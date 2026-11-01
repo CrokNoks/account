@@ -19,8 +19,8 @@ import {
   IsString,
   IsBoolean,
   ValidateNested,
-  IsOptional,
 } from 'class-validator';
+import { IsOptionalNotNull } from '../../shared/infrastructure/is-optional-not-null.decorator';
 import { Type } from 'class-transformer';
 import { SupabaseAuthGuard } from '../../auth/supabase-auth.guard';
 import { type AuthenticatedRequest } from '../../auth/authenticated-request.interface';
@@ -41,12 +41,12 @@ class DashboardWidgetConfigDto implements DashboardWidgetConfig {
   width: number;
 
   @IsBoolean()
-  @IsOptional()
+  @IsOptionalNotNull()
   @ApiProperty({ required: false })
   desktopVisible: boolean;
 
   @IsBoolean()
-  @IsOptional()
+  @IsOptionalNotNull()
   @ApiProperty({ required: false })
   mobileVisible: boolean;
 }

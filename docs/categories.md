@@ -18,13 +18,14 @@ Mise à jour : 2026-10-31 · Commit : df46659
 | Le budget est facultatif | `category.entity.ts:15` | ✅ « should allow null budget » |
 | Le budget est reçu en chaîne d'entier de centimes signé dans ±(2^53 − 1) (`@IsCents` / `parseCents`, `shared/`), décimal, notation scientifique ou hors bornes → 400, « -0 » lu comme 0 (création et modification) | `categories.controller.ts` (DTO), `shared/domain/cents.ts` | ✅ e2e `validation.e2e-spec.ts` |
 | Le nom (création) est limité à 255 caractères (colonne `varchar(255)`) : sinon 400 « name must be shorter than or equal to 255 characters » (sans cela : 500). Un nom blanc reste refusé par l'entité (ligne ci-dessus) | `categories.controller.ts` (DTO) | ✅ e2e `validation.e2e-spec.ts`, `http/entrees-invalides.http` |
-| Modification partielle : un champ non envoyé garde sa valeur ; impossible de vider la description ou le budget (valeur vide ignorée) | `categories.controller.ts:122-132` | ❌ |
 | Le corps de la création est validé (`CreateCategoryBodyDto`, sans `accountId`) : nom, couleur `#RRGGBB`, type (enum), budget en centimes entiers (texte) ; champ inconnu ou `accountId` → 400, le compte vient uniquement de l'URL | `categories.controller.ts:64-66,144-156` | ✅ e2e `validation.e2e-spec.ts` |
 | Le type d'une catégorie peut être changé après création | `categories.controller.ts:70,127` | ❌ |
 | Création et lecture passent par des cas d'usage ; la modification passe directement par le dépôt, sans cas d'usage | `categories.controller.ts:119-134` | ❌ |
 | Accès en base : lecture si accès « read » au compte, écriture si « write » (propriétaire = tout) | `20251221_schema_complete.sql:208-225` (RLS), `:140` | ❌ |
 | Montant du budget stocké en centimes (BIGINT) | `20260307000000_migrate_to_v2.sql:35-36` | ❌ |
 | `updated_at` mis à jour automatiquement par la base | `20251221_schema_complete.sql:86` (trigger `handle_updated_at`) | ❌ |
+| Modification partielle : un champ non envoyé garde sa valeur | `categories.controller.ts` (`update`) | ✅ test « absent keeps it » |
+| `null` refusé en 400 sur `name`, `color` et `type` en modification. `description: null` et `budget: null` **retirent** la valeur ; champ absent = inchangé (remplace l'ancienne règle « impossible de vider ») | `categories.controller.ts` (`update`, `@IsOptionalNotNull()`) | ✅ `functions/test/validation.e2e-spec.ts` (« null on a field that cannot be null »), `http/null-refuse.http`, test « budget and description null remove the value » |
 
 ## Ce qu'on stocke
 Catégorie (table `categories`) : id ; nom ; description (texte, peut être vide) ; couleur (`#RRGGBB`) ; type ; compte propriétaire (`account_id`, supprimée avec le compte) ; budget (centimes, peut être vide) ; dates de création et modification. (`functions/src/categories/domain/category.entity.ts`, `supabase-category.repository.ts:6`)

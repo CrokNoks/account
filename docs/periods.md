@@ -30,6 +30,7 @@ Mise à jour : 2026-10-30 · Commit : 157b272
 | Une transaction ajoutée sans période reçoit automatiquement la période marquée active du compte | base : `supabase/migrations/20251229111000_add_period_id_to_expenses.sql:9-37` (trigger `assign_period_id`, renommé `set_transactions_period_id` dans `20260307000000_migrate_to_v2.sql`) | ❌ |
 | Supprimer une période supprime ses budgets ; ses transactions perdent leur période (restent) ; supprimer un compte supprime ses périodes | `20251229112000_create_budget_instances_table.sql:3` (CASCADE), `20251229111000...sql:3` (SET NULL), `20251229110500_create_periods_table.sql:3` | ❌ |
 | Accès en base : lecture/écriture selon l'accès au compte (propriétaire ou partage) | `20251229110500_create_periods_table.sql:16-30` | ❌ |
+| `null` refusé en 400 sur `startDate`, `endDate`, `isActive` en modification et sur `injectRecurring` à la création (absent = inchangé) ; une période ouverte (`end_date` NULL) n'est pas créable par l'API | `periods.controller.ts` (`@IsOptionalNotNull()`) | ✅ `functions/test/validation.e2e-spec.ts` (« null on a field that cannot be null »), `http/null-refuse.http` |
 
 ## Ce qu'on stocke
 Période (table `periods`) : id ; compte ; date de début ; date de fin (peut être vide) ; `estimated_end_date` (colonne présente en base, non utilisée par le code) ; active oui/non ; dates de création/modification. Dates enregistrées sans heure (`YYYY-MM-DD`, `supabase-period.repository.ts:69`). Budgets : voir `docs/budgets.md`.

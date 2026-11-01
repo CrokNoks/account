@@ -23,6 +23,7 @@ Code : back `functions/src/preferences/`, front `frontend/src/features/preferenc
 | Front : ajouter un widget l'ajoute en largeur 12, visible partout ; en retirer un le supprime de la liste. | `frontend/src/features/preferences/model/use-dashboard-store.ts:18-27` | ❌ |
 | Front : une disposition enregistrée est filtrée sur les widgets connus du catalogue : un id inconnu (ex. `insights`, retiré avec les analyses IA, ou `savings`, retiré avec les objectifs d'épargne) est ignoré à l'affichage et en édition, les autres gardent ordre, largeur et visibilité. Rien n'est réécrit en base tant que l'utilisateur n'enregistre pas. | `frontend/src/features/preferences/model/visible-layout.ts`, utilisé dans `app/[locale]/(dashboard)/page.tsx:64` | ✅ `visible-layout.test.ts` (dont une disposition enregistrée contenant `savings` : ignoré à l'affichage et à l'édition, non proposé à l'ajout, autres widgets intacts) |
 | Front : les modifications se font sur une copie temporaire (`tempLayout`), l'enregistrement passe par `useUpdateUserPreferences`. | `use-dashboard-store.ts`, `api/use-user-preferences.ts:30-43` | ❌ |
+| `null` refusé en 400 sur `desktopVisible` et `mobileVisible` d'un widget (absent = inchangé) | `preferences.controller.ts` (`@IsOptionalNotNull()`) | ✅ `functions/test/validation.e2e-spec.ts` (« null on a field that cannot be null »), `http/null-refuse.http` |
 
 Aucun test dans `preferences/` (back) ; côté front, seul `visible-layout.test.ts` existe.
 

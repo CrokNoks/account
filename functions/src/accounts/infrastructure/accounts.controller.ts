@@ -16,14 +16,8 @@ import { GetAccountsUseCase } from '../application/get-accounts.use-case';
 import { ShareAccountUseCase } from '../application/share-account.use-case';
 import { AccountRepository } from '../domain/account.repository.interface';
 import { AccountShareRepository } from '../domain/account-share.repository.interface';
-import {
-  IsString,
-  IsOptional,
-  IsEmail,
-  IsIn,
-  MaxLength,
-  Matches,
-} from 'class-validator';
+import { IsString, IsEmail, IsIn, MaxLength, Matches } from 'class-validator';
+import { IsOptionalNotNull } from '../../shared/infrastructure/is-optional-not-null.decorator';
 import { SupabaseAuthGuard } from '../../auth/supabase-auth.guard';
 import {
   ApiTags,
@@ -55,20 +49,20 @@ export class CreateAccountDto {
     example: '1000',
     required: false,
   })
-  @IsOptional()
+  @IsOptionalNotNull()
   @IsCents()
   initialBalance?: string; // DTO uses string for bigint input
 }
 
 export class UpdateAccountDto {
   @ApiProperty({ required: false })
-  @IsOptional()
+  @IsOptionalNotNull()
   @IsString()
   @MaxLength(255)
   @Matches(/\S/, { message: 'name must not be blank' })
   name?: string;
   @ApiProperty({ required: false })
-  @IsOptional()
+  @IsOptionalNotNull()
   @IsCents()
   initialBalance?: string;
 

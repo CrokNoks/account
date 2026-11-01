@@ -21,13 +21,8 @@ import { UpdateTagUseCase } from '../application/update-tag.usecase';
 import { DeleteTagUseCase } from '../application/delete-tag.usecase';
 import { FindAccountTagsUseCase } from '../application/find-account-tags.usecase';
 import { Tag } from '../domain/tag.entity';
-import {
-  IsString,
-  IsOptional,
-  IsHexColor,
-  MaxLength,
-  Matches,
-} from 'class-validator';
+import { IsString, IsHexColor, MaxLength, Matches } from 'class-validator';
+import { IsOptionalNotNull } from '../../shared/infrastructure/is-optional-not-null.decorator';
 
 export class CreateTagDto {
   @IsString()
@@ -36,7 +31,7 @@ export class CreateTagDto {
   @Matches(/\S/, { message: 'name must not be blank' })
   name: string;
 
-  @IsOptional()
+  @IsOptionalNotNull()
   @IsHexColor()
   @ApiProperty({
     required: false,
@@ -46,14 +41,14 @@ export class CreateTagDto {
 }
 
 export class UpdateTagDto {
-  @IsOptional()
+  @IsOptionalNotNull()
   @IsString()
   @ApiProperty({ required: false })
   @MaxLength(50)
   @Matches(/\S/, { message: 'name must not be blank' })
   name?: string;
 
-  @IsOptional()
+  @IsOptionalNotNull()
   @IsHexColor()
   @ApiProperty({ required: false })
   color?: string;

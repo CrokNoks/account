@@ -51,6 +51,8 @@ import {
   Min,
   Max,
 } from 'class-validator';
+import { IsOptionalNotNull } from '../../shared/infrastructure/is-optional-not-null.decorator';
+import { rejectNullFields } from '../../shared/infrastructure/reject-null-fields';
 import { Type, Transform } from 'class-transformer';
 import { PeriodRepository } from '../../periods/domain/period.repository.interface';
 import { Inject } from '@nestjs/common';
@@ -98,12 +100,12 @@ export class CreateTransactionDto {
   @ApiProperty({ description: 'Amount in cents' })
   amount: string;
 
-  @IsOptional()
+  @IsOptionalNotNull()
   @IsBoolean()
   @ApiProperty({ description: 'Reconciled status', required: false })
   reconciled?: boolean;
 
-  @IsOptional()
+  @IsOptionalNotNull()
   @IsBoolean()
   @ApiProperty({ description: 'Pending status', required: false })
   pending?: boolean;
@@ -118,12 +120,12 @@ export class CreateTransactionDto {
   @ApiProperty({ description: 'Notes', required: false })
   notes?: string;
 
-  @IsOptional()
+  @IsOptionalNotNull()
   @IsObject()
   @ApiProperty({ description: 'Additional metadata', required: false })
   metadata?: Record<string, any>;
 
-  @IsOptional()
+  @IsOptionalNotNull()
   @IsArray()
   @IsUUID(undefined, { each: true })
   @ApiProperty({
@@ -177,18 +179,18 @@ export class BulkUpdateTransactionsDataDto {
   @ApiProperty({ required: false, nullable: true })
   categoryId?: string | null;
 
-  @IsOptional()
+  @IsOptionalNotNull()
   @IsArray()
   @IsUUID(undefined, { each: true })
   @ApiProperty({ required: false, type: [String] })
   tagIds?: string[];
 
-  @IsOptional()
+  @IsOptionalNotNull()
   @IsBoolean()
   @ApiProperty({ required: false })
   reconciled?: boolean;
 
-  @IsOptional()
+  @IsOptionalNotNull()
   @IsBoolean()
   @ApiProperty({ required: false })
   pending?: boolean;
@@ -495,6 +497,17 @@ export class TransactionsController {
     @Param('id') id: string,
     @Body() dto: UpdateTransactionDto,
   ): Promise<TransactionResponseDto> {
+    // `null` n'a de sens que pour catégorie, période, moyen de paiement et notes.
+    rejectNullFields(dto, [
+      'date',
+      'amount',
+      'description',
+      'reconciled',
+      'pending',
+      'metadata',
+      'tagIds',
+    ]);
+
     const existing = ensureBelongsToAccount(
       await this.transactionRepository.findById(id),
       accountId,

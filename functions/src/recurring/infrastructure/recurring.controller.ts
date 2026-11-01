@@ -31,6 +31,7 @@ import {
   MaxLength,
   Matches,
 } from 'class-validator';
+import { IsOptionalNotNull } from '../../shared/infrastructure/is-optional-not-null.decorator';
 import { parseCents } from '../../shared/domain/cents';
 import { IsCents } from '../../shared/infrastructure/is-cents.decorator';
 
@@ -63,19 +64,19 @@ export class UpdateRecurringTransactionDto {
   @ApiProperty({ required: false, nullable: true })
   categoryId?: string | null;
 
-  @IsOptional()
+  @IsOptionalNotNull()
   @IsString()
   @ApiProperty({ required: false })
   @MaxLength(255)
   @Matches(/\S/, { message: 'Description is required' })
   description?: string;
 
-  @IsOptional()
+  @IsOptionalNotNull()
   @IsCents()
   @ApiProperty({ required: false, description: 'Amount in cents' })
   amount?: string;
 
-  @IsOptional()
+  @IsOptionalNotNull()
   @IsInt()
   @Min(1)
   @Max(31)

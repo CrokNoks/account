@@ -30,6 +30,7 @@ Mise à jour : 2026-10-31 · Commit : ac92968
 | En base : fonction `has_account_access(compte, 'read'|'write')` : vrai si propriétaire ; sinon si partage de même permission (un `write` donne aussi `read`). Utilisée par les règles des autres tables (transactions, tags) | `20260106081523_remote_schema.sql:48-70` | ❌ |
 | En base : les partages sont gérables/visibles par le propriétaire ; un utilisateur voit aussi les partages qui le concernent | `20260106081523_remote_schema.sql:75-95` | ❌ |
 | En base : `app_users` lisible par tout utilisateur connecté | `20251221_schema_complete.sql:321` | ❌ |
+| `null` refusé en 400 sur `name` et `initialBalance`, à la création comme à la modification (champ absent = inchangé) | `accounts.controller.ts` (`@IsOptionalNotNull()`) | ✅ `functions/test/validation.e2e-spec.ts` (« null on a field that cannot be null »), `http/null-refuse.http` |
 
 ## Ce qu'on stocke
 - Compte (`accounts`) : id, nom, propriétaire, solde initial (centimes, BIGINT depuis `20260307000000_migrate_to_v2.sql:14-15`), dates de création/modification. La colonne `description` a été supprimée par `20261031100000_drop_description_from_accounts.sql` (à appliquer après le déploiement du back qui ne l'écrit plus) ; le repository écrit exactement les colonnes du compte (test `supabase-account.repository.spec.ts`).

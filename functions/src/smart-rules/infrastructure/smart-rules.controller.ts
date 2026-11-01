@@ -28,6 +28,7 @@ import {
   MaxLength,
   Matches,
 } from 'class-validator';
+import { IsOptionalNotNull } from '../../shared/infrastructure/is-optional-not-null.decorator';
 import { Inject } from '@nestjs/common';
 
 class CreateSmartRuleDto {
@@ -42,20 +43,20 @@ class CreateSmartRuleDto {
   @ApiProperty({ required: false, nullable: true })
   categoryId: string | null;
 
-  @IsOptional()
+  @IsOptionalNotNull()
   @IsArray()
   @IsUUID(undefined, { each: true })
   @ApiProperty({ required: false, type: [String] })
   tagIds?: string[];
 
-  @IsOptional()
+  @IsOptionalNotNull()
   @IsNumber()
   @ApiProperty({ required: false })
   priority?: number;
 }
 
 class UpdateSmartRuleDto {
-  @IsOptional()
+  @IsOptionalNotNull()
   @IsString()
   @MaxLength(255)
   @Matches(/\S/, { message: 'pattern must not be blank' })
@@ -67,13 +68,13 @@ class UpdateSmartRuleDto {
   @ApiProperty({ required: false, nullable: true })
   categoryId?: string | null;
 
-  @IsOptional()
+  @IsOptionalNotNull()
   @IsArray()
   @IsUUID(undefined, { each: true })
   @ApiProperty({ required: false, type: [String] })
   tagIds?: string[];
 
-  @IsOptional()
+  @IsOptionalNotNull()
   @IsNumber()
   @ApiProperty({ required: false })
   priority?: number;
