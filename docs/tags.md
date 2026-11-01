@@ -34,7 +34,7 @@ Qui : connecté (token exigé, `@UseGuards(SupabaseAuthGuard)`, `tags.controller
 | Lister les tags d'un compte | `GET /:accountId/tags` | connecté + RLS | liste | `tags.controller.ts:69` |
 | Créer | `POST /:accountId/tags` (nom, couleur facultative) | connecté + RLS (`write`) | tag créé | `:79` |
 | Modifier | `PATCH /:accountId/tags/:id` | idem ; le compte de l'URL n'est pas comparé à celui du tag | tag mis à jour | `:93` |
-| Supprimer | `DELETE /:accountId/tags/:id` | idem | tag supprimé | `:107` |
+| Supprimer | `DELETE /:accountId/tags/:id` | idem | tag supprimé ; 204 sans corps | `:118` |
 | Récapitulatif par tag | `GET /:accountId/reporting/tags-summary?periodId=` | module `reporting` (hors périmètre) | utilisé par le front | `frontend/src/features/tags/api/use-tags-summary.ts` |
 | Détail d'un tag | `GET /:accountId/reporting/tags/:tagId?periodId=` | idem | idem | `use-tag-details.ts` |
 

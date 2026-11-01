@@ -9,6 +9,7 @@ import {
   Patch,
   Param,
   Delete,
+  HttpCode,
 } from '@nestjs/common';
 import { Request as ExpressRequest } from 'express';
 import { CreateAccountUseCase } from '../application/create-account.use-case';
@@ -127,16 +128,17 @@ export class AccountsController {
   }
 
   @Delete(':id/shares/:userId')
+  @HttpCode(204)
   @ApiOperation({ summary: 'Remove a share from an account' })
+  @ApiResponse({ status: 204 })
   async removeShare(
     @Param('id') id: string,
     @Param('userId') userId: string,
     @Request() req: AuthenticatedRequest,
-  ) {
+  ): Promise<void> {
     await this.assertOwner(id, req.user.id, 'Only owner can remove shares');
 
     await this.accountShareRepository.delete(id, userId);
-    return { success: true };
   }
 
   @Patch(':id')

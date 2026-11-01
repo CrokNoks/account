@@ -7,6 +7,7 @@ import {
   UseGuards,
   Delete,
   Patch,
+  HttpCode,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -159,6 +160,7 @@ export class RecurringController {
   }
 
   @Delete(':id')
+  @HttpCode(204)
   @ApiOperation({ summary: 'Delete a recurring transaction' })
   @ApiResponse({ status: 204 })
   async delete(

@@ -58,7 +58,8 @@ export function NetWorthWidget() {
         </div>
         
         <div className="h-12 w-full">
-          <ResponsiveContainer width="100%" height="100%">
+          {/* Hauteur fixe (= h-12) : mesurée, elle vaut -1 au 1er rendu, et 0 si le widget est masqué en CSS. */}
+          <ResponsiveContainer width="100%" height={48}>
             <LineChart data={chartData}>
               <Line 
                 type="monotone" 

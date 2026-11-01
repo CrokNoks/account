@@ -237,7 +237,7 @@ describe('Accounts and sharing routes (e2e)', () => {
           '/accounts/00000000-0000-4000-8000-000000000101/shares/00000000-0000-4000-8000-000000000105',
         )
         .set(auth())
-        .expect(200, { success: true });
+        .expect(204);
 
       expect(mocks.shares.delete).toHaveBeenCalledWith(
         '00000000-0000-4000-8000-000000000101',

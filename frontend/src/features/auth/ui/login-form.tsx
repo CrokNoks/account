@@ -35,8 +35,10 @@ export function LoginForm() {
       setError(t('error_generic'));
       setLoading(false);
     } else {
-      // Hard redirect to ensure middleware picks up the new session cookie
-      window.location.href = '/';
+      // Rechargement complet voulu (pas le routeur Next) : le middleware lit le cookie
+      // de session côté serveur, et le cache client ne doit rien garder de l'utilisateur précédent.
+      // URL absolue : même comportement que `href = '/'`, sans l'avertissement eslint.
+      window.location.assign(new URL('/', window.location.origin).href);
     }
   };
 

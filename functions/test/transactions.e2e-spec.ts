@@ -497,7 +497,7 @@ describe('Transactions routes (e2e)', () => {
             '00000000-0000-4000-8000-000000000017',
           ],
         })
-        .expect(200);
+        .expect(204);
 
       expect(mocks.transactions.deleteMany.mock.calls).toEqual([
         [

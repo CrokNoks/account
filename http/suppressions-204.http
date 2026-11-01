@@ -1,0 +1,183 @@
+# Toutes les suppressions (DELETE) répondent 204 sans corps, et suppriment bien l'objet.
+# Lancement : npx httpyac send --all http/suppressions-204.http --var port=8080 --var anon=<ANON_KEY de `supabase status`>
+# (la clé vient de la ligne de commande, jamais du fichier ; les utilisateurs sont jetables, créés par le fichier)
+@baseUrl = http://localhost:{{port}}
+@authUrl = http://127.0.0.1:54321/auth/v1
+
+### A : propriétaire
+# @name a
+POST {{authUrl}}/signup
+apikey: {{anon}}
+Content-Type: application/json
+
+{ "email": "s204-a-{{$timestamp}}@example.com", "password": "Password123!" }
+
+?? status == 200
+
+### B : destinataire du partage
+# @name b
+POST {{authUrl}}/signup
+apikey: {{anon}}
+Content-Type: application/json
+
+{ "email": "s204-b-{{$timestamp}}@example.com", "password": "Password123!" }
+
+?? status == 200
+
+### Compte jetable
+# @name account
+POST {{baseUrl}}/accounts
+Authorization: Bearer {{a.access_token}}
+Content-Type: application/json
+
+{ "name": "s204-{{$timestamp}}", "initialBalance": "0" }
+
+?? status == 201
+
+### Récurrente
+# @name rec
+POST {{baseUrl}}/{{account.id}}/recurring
+Authorization: Bearer {{a.access_token}}
+Content-Type: application/json
+
+{ "description": "Loyer", "amount": "-50000", "dayOfMonth": 5 }
+
+?? status == 201
+
+### Suppression de la récurrente : 204
+DELETE {{baseUrl}}/{{account.id}}/recurring/{{rec.id}}
+Authorization: Bearer {{a.access_token}}
+
+?? status == 204
+
+### La récurrente a disparu
+GET {{baseUrl}}/{{account.id}}/recurring
+Authorization: Bearer {{a.access_token}}
+
+?? status == 200
+
+?? js response.parsedBody.length == 0
+
+### Tag
+# @name tag
+POST {{baseUrl}}/{{account.id}}/tags
+Authorization: Bearer {{a.access_token}}
+Content-Type: application/json
+
+{ "name": "s204", "color": "#ff0000" }
+
+?? status == 201
+
+### Suppression du tag : 204
+DELETE {{baseUrl}}/{{account.id}}/tags/{{tag.id}}
+Authorization: Bearer {{a.access_token}}
+
+?? status == 204
+
+### Le tag a disparu
+GET {{baseUrl}}/{{account.id}}/tags
+Authorization: Bearer {{a.access_token}}
+
+?? status == 200
+
+?? js response.parsedBody.length == 0
+
+### Règle intelligente
+# @name rule
+POST {{baseUrl}}/{{account.id}}/smart-rules
+Authorization: Bearer {{a.access_token}}
+Content-Type: application/json
+
+{ "pattern": "netflix" }
+
+?? status == 201
+
+### Suppression de la règle : 204
+DELETE {{baseUrl}}/{{account.id}}/smart-rules/{{rule.id}}
+Authorization: Bearer {{a.access_token}}
+
+?? status == 204
+
+### La règle a disparu
+GET {{baseUrl}}/{{account.id}}/smart-rules
+Authorization: Bearer {{a.access_token}}
+
+?? status == 200
+
+?? js response.parsedBody.length == 0
+
+### Période
+# @name period
+POST {{baseUrl}}/{{account.id}}/periods
+Authorization: Bearer {{a.access_token}}
+Content-Type: application/json
+
+{ "startDate": "2026-11-01", "endDate": "2026-11-30", "budgets": [] }
+
+?? status == 201
+
+### Deux transactions
+# @name t1
+POST {{baseUrl}}/{{account.id}}/transactions
+Authorization: Bearer {{a.access_token}}
+Content-Type: application/json
+
+{ "date": "2026-11-02", "description": "un", "amount": "-100", "periodId": "{{period.id}}" }
+
+?? status == 201
+
+### Deux transactions (2)
+# @name t2
+POST {{baseUrl}}/{{account.id}}/transactions
+Authorization: Bearer {{a.access_token}}
+Content-Type: application/json
+
+{ "date": "2026-11-02", "description": "deux", "amount": "-200", "periodId": "{{period.id}}" }
+
+?? status == 201
+
+### Suppression en lot : 204
+DELETE {{baseUrl}}/{{account.id}}/transactions/bulk
+Authorization: Bearer {{a.access_token}}
+Content-Type: application/json
+
+{ "ids": ["{{t1.id}}", "{{t2.id}}"] }
+
+?? status == 204
+
+### Suppression d'une période : 204
+DELETE {{baseUrl}}/{{account.id}}/periods/{{period.id}}
+Authorization: Bearer {{a.access_token}}
+
+?? status == 204
+
+### La période a disparu
+GET {{baseUrl}}/{{account.id}}/periods
+Authorization: Bearer {{a.access_token}}
+
+?? status == 200
+
+?? js response.parsedBody.length == 0
+
+### A partage le compte à B
+POST {{baseUrl}}/accounts/{{account.id}}/shares
+Authorization: Bearer {{a.access_token}}
+Content-Type: application/json
+
+{ "email": "{{b.user.email}}", "permission": "read" }
+
+?? status == 201
+
+### Retrait du partage : 204
+DELETE {{baseUrl}}/accounts/{{account.id}}/shares/{{b.user.id}}
+Authorization: Bearer {{a.access_token}}
+
+?? status == 204
+
+### B ne voit plus le compte
+GET {{baseUrl}}/accounts
+Authorization: Bearer {{b.access_token}}
+
+?? status == 200
+
+?? js response.parsedBody.length == 0

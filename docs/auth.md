@@ -28,7 +28,7 @@ Rien dans ce module. Les comptes utilisateurs sont ceux de Supabase Auth ; la ta
 ## Ce qu'on peut faire
 | Action | Point d'entrée | Qui | Effet | Source |
 | --- | --- | --- | --- | --- |
-| Se connecter | formulaire `LoginForm` (email + mot de passe), appel direct à Supabase (pas l'API Nest) | personne (public) | session créée, redirection `/` | `frontend/src/features/auth/ui/login-form.tsx:19-38` |
+| Se connecter | formulaire `LoginForm` (email + mot de passe), appel direct à Supabase (pas l'API Nest) | personne (public) | session créée, puis rechargement complet vers `/` (`window.location.assign` avec URL absolue, voulu : le middleware lit le cookie de session côté serveur et le cache client ne doit rien garder de l'utilisateur précédent) | `frontend/src/features/auth/ui/login-form.tsx:19-40` ; ✅ `login-form.test.tsx` |
 | Protéger une route | `@UseGuards(SupabaseAuthGuard)` | connecté (token exigé) | `req.user` rempli | `functions/src/auth/auth.module.ts` |
 
 Il n'y a ni middleware Nest d'authentification ni décorateur d'identité (`@User`) : les contrôleurs lisent `req.user` posé par le guard. L'identité n'est donc lue que si le guard est présent sur la route.

@@ -7,6 +7,7 @@ import {
   UseGuards,
   Patch,
   Delete,
+  HttpCode,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -116,6 +117,7 @@ export class TagsController {
   }
 
   @Delete(':id')
+  @HttpCode(204)
   @ApiOperation({ summary: 'Delete a tag' })
   @ApiResponse({ status: 204 })
   async delete(

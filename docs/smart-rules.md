@@ -38,7 +38,7 @@ Qui : toutes les routes exigent un token de connexion valide (`@UseGuards(Supaba
 | Lister | `GET /:accountId/smart-rules` | triées par priorité décroissante | `smart-rules.controller.ts:79`, `supabase-smart-rule.repository.ts:29` |
 | Créer | `POST /:accountId/smart-rules` | crée | `smart-rules.controller.ts:86` |
 | Modifier | `PATCH /:accountId/smart-rules/:id` | modification partielle | `smart-rules.controller.ts:104` |
-| Supprimer | `DELETE /:accountId/smart-rules/:id` | supprime | `smart-rules.controller.ts:119` |
+| Supprimer | `DELETE /:accountId/smart-rules/:id` | supprime ; 204 sans corps | `smart-rules.controller.ts:151` |
 | Appliquer les règles | pas de route : cas d'usage interne `MatchSmartRulesUseCase` | utilisé par le module transactions | `match-smart-rules.use-case.ts:11` |
 
 Front (`frontend/src/features/smart-rules/`) : liste avec création/modification/suppression (confirmation navigateur) (`ui/smart-rules-list.tsx`), dialogue de création (`ui/create-smart-rule-dialog.tsx`). Hooks `useSmartRules`, `useCreateSmartRule`, `useUpdateSmartRule`, `useDeleteSmartRule` (clé `['smart-rules', accountId]`).

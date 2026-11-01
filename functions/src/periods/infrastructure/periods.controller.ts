@@ -9,6 +9,7 @@ import {
   Patch,
   Delete,
   Put,
+  HttpCode,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -219,11 +220,15 @@ export class PeriodsController {
   }
 
   @Delete(':id')
+  @HttpCode(204)
   @ApiOperation({ summary: 'Delete a period' })
-  @ApiResponse({ status: 200 })
-  async remove(@Param('accountId') accountId: string, @Param('id') id: string) {
+  @ApiResponse({ status: 204 })
+  async remove(
+    @Param('accountId') accountId: string,
+    @Param('id') id: string,
+  ): Promise<void> {
     await this.getOwnedPeriod(accountId, id);
-    return this.periodRepository.delete(id);
+    await this.periodRepository.delete(id);
   }
 
   private async getOwnedPeriod(accountId: string, id: string): Promise<Period> {

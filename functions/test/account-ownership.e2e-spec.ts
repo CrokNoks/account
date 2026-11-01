@@ -107,7 +107,7 @@ const routes: Route[] = [
     method: 'delete',
     url: '/00000000-0000-4000-8000-000000000101/recurring/00000000-0000-4000-8000-000000000107',
     writes: ['recurring.delete'],
-    okStatus: 200,
+    okStatus: 204,
   },
   {
     name: 'PATCH categories/:id',
@@ -133,7 +133,7 @@ const routes: Route[] = [
     method: 'delete',
     url: '/00000000-0000-4000-8000-000000000101/tags/00000000-0000-4000-8000-000000000107',
     writes: ['tags.delete'],
-    okStatus: 200,
+    okStatus: 204,
   },
   {
     name: 'PATCH smart-rules/:id',
@@ -150,7 +150,7 @@ const routes: Route[] = [
     method: 'delete',
     url: '/00000000-0000-4000-8000-000000000101/smart-rules/00000000-0000-4000-8000-000000000107',
     writes: ['smartRules.delete'],
-    okStatus: 200,
+    okStatus: 204,
   },
   {
     name: 'GET periods/:id',
@@ -175,7 +175,7 @@ const routes: Route[] = [
     method: 'delete',
     url: '/00000000-0000-4000-8000-000000000101/periods/00000000-0000-4000-8000-000000000107',
     writes: ['periods.delete'],
-    okStatus: 200,
+    okStatus: 204,
   },
   {
     name: 'GET periods/:id/budgets',

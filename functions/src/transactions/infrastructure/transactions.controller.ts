@@ -458,8 +458,9 @@ export class TransactionsController {
   }
 
   @Delete('bulk')
+  @HttpCode(204)
   @ApiOperation({ summary: 'Delete multiple transactions at once' })
-  @ApiResponse({ status: 200 })
+  @ApiResponse({ status: 204 })
   async deleteBulk(
     @Param('accountId') accountId: string,
     @Body() dto: BulkDeleteTransactionsDto,
@@ -532,6 +533,7 @@ export class TransactionsController {
   @Delete(':id')
   @HttpCode(204)
   @ApiOperation({ summary: 'Delete a transaction' })
+  @ApiResponse({ status: 204 })
   async delete(
     @Param('accountId') accountId: string,
     @Param('id') id: string,

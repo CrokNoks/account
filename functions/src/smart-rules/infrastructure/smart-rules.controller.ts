@@ -7,12 +7,14 @@ import {
   Param,
   UseGuards,
   Delete,
+  HttpCode,
 } from '@nestjs/common';
 import {
   ApiTags,
   ApiOperation,
   ApiBearerAuth,
   ApiProperty,
+  ApiResponse,
 } from '@nestjs/swagger';
 import { AccountReferencesService } from '../../shared/application/account-references.service';
 import { ensureBelongsToAccount } from '../../shared/domain/account-ownership';
@@ -149,7 +151,9 @@ export class SmartRulesController {
   }
 
   @Delete(':id')
+  @HttpCode(204)
   @ApiOperation({ summary: 'Delete a smart rule' })
+  @ApiResponse({ status: 204 })
   async remove(@Param('accountId') accountId: string, @Param('id') id: string) {
     ensureBelongsToAccount(
       await this.repository.findById(id),

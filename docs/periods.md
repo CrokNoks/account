@@ -47,7 +47,7 @@ Qui : toutes les routes exigent un token de connexion valide (`@UseGuards(Supaba
 | Remplacer les budgets | `PUT /:accountId/periods/:id/budgets` | voir règle | `periods.controller.ts:155` |
 | Lire une période | `GET /:accountId/periods/:id` | renvoie la période ; inexistante ou d'un autre compte : 404 | `periods.controller.ts:180` |
 | Modifier (dates, active) | `PATCH /:accountId/periods/:id` | met à jour ; réactiver une période alors qu'une autre est active renvoie 409 « Another period is already active for this account » (il faut d'abord clôturer l'autre) | `periods.controller.ts:190` |
-| Supprimer | `DELETE /:accountId/periods/:id` | supprime | `periods.controller.ts:221` |
+| Supprimer | `DELETE /:accountId/periods/:id` | supprime ; 204 sans corps | `periods.controller.ts:221` |
 | Créer avec budgets | `POST /:accountId/periods` | voir règles ; renvoie id, dates, nombre de budgets | `periods.controller.ts:237` |
 
 Front (`frontend/src/features/periods/`) : liste (`ui/period-list.tsx`) avec « clôturer » (PATCH `isActive:false`, après confirmation navigateur), édition des dates, suppression (confirmation), édition des budgets (`ui/edit-period-budgets-sheet.tsx`) et création (`ui/create-period-dialog.tsx`, pré-remplie par le brouillon, montants saisis convertis par `toCents` ; un budget illisible bloque l'envoi avec un message d'erreur, aussi à l'édition des budgets). Hooks : `usePeriods` (dans `features/budgets`), `usePeriodDraft`, `usePeriodBudgets`, `useCreatePeriod`, `useUpdatePeriod`, `useUpdatePeriodBudgets`, `useDeletePeriod`. Après création/modification, le front rafraîchit aussi les transactions et le reporting.

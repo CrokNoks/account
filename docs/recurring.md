@@ -38,7 +38,7 @@ Qui : toutes les routes exigent un token de connexion valide (`@UseGuards(Supaba
 | Lister | `GET /:accountId/recurring` | toutes celles du compte, sans tri défini | `recurring.controller.ts:110` |
 | Créer | `POST /:accountId/recurring` | crée et renvoie | `recurring.controller.ts:120` |
 | Modifier | `PATCH /:accountId/recurring/:id` | modification partielle | `recurring.controller.ts:135` |
-| Supprimer | `DELETE /:accountId/recurring/:id` | supprime ; annoncé 204 par la doc Swagger, mais aucun `@HttpCode` : le code réellement renvoyé est celui par défaut de Nest (non testé) | `recurring.controller.ts:161` |
+| Supprimer | `DELETE /:accountId/recurring/:id` | supprime ; répond 204 sans corps (`@HttpCode(204)`, comme toutes les suppressions) | `recurring.controller.ts:162` ; ✅ e2e `account-ownership.e2e-spec.ts`, `http/suppressions-204.http` |
 
 Front (`frontend/src/features/recurring/`) : liste avec modification en panneau et suppression après confirmation navigateur (`ui/recurring-transaction-list.tsx`), dialogue de création (`ui/create-recurring-dialog.tsx`, montant converti par `toCents` ; un montant illisible est refusé avec un message d'erreur, y compris à la modification). Hooks `useRecurringTransactions`, `useCreateRecurringTransaction`, `useUpdateRecurringTransaction`, `useDeleteRecurringTransaction` (clé `['recurring-transactions', accountId]`, notifications de succès ; en cas d'échec, la notification affiche le message renvoyé par l'API, à défaut un message traduit).
 
