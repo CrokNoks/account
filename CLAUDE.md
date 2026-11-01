@@ -13,7 +13,7 @@ Stack : NestJS + TypeScript (back), Next.js App Router (front), PostgreSQL, Kafk
 - Les règles métier critiques sont couvertes par un test écrit AVANT le code.
 - Montants en centimes entiers, jamais de flottants pour l'argent.
 - Parties sensibles (algorithme, calcul qui touche l'argent, concurrence, nouvelle brique d'architecture) : je valide la conception avant le code, puis le code avant le commit (skill `point-de-controle`). Le reste avance sans moi.
-- Commits significatifs et testables (skill `commit`) : 2 à 3 commits de code par cycle, une intention chacun, avec son test ; vérification rapide (types + tests liés) à chaque commit, vérification complète une seule fois avant le garde-fou ; jamais de commit pour un `;` ou une typo (`--fixup`). Jamais de `git push` sans mon accord.
+- Commits significatifs et testables (skill `commit`) : 2 à 3 commits de code par cycle, une intention chacun, avec son test ; vérification rapide (types + tests liés) à chaque commit, vérification complète une seule fois avant le garde-fou ; jamais de commit pour un `;` ou une typo (`--fixup`). Push, release (patch/minor) et supabase db push autorisés dans les projets perso après vérification complète au vert ; je préviens Lucas après coup. Jamais de push forcé.
 - Les vérifications en conditions réelles s'écrivent en fichiers `.http` (httpYac) et se committent avec la fonctionnalité si le projet l'autorise.
 - Un critère n'est « livré ✅ » que s'il a été vu fonctionner en réel (application lancée) quand le projet peut démarrer ; sinon on le dit.
 - Toujours lire un fichier avant de le modifier ; respecter les conventions déjà en place.
