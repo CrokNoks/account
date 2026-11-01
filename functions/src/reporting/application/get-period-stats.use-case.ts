@@ -56,12 +56,15 @@ export class GetPeriodStatsUseCase {
         endDate: period.endDate || undefined,
       });
 
-    // Categorize real sums by categoryId
+    // Categorize real sums by categoryId ; sans catégorie à part (pas de budget possible)
     const realByCategory = new Map<string, bigint>();
+    let uncategorized = BigInt(0);
     for (const t of periodTransactions) {
       if (t.categoryId) {
         const current = realByCategory.get(t.categoryId) || BigInt(0);
         realByCategory.set(t.categoryId, current + t.amount);
+      } else {
+        uncategorized += t.amount;
       }
     }
 
@@ -104,6 +107,7 @@ export class GetPeriodStatsUseCase {
 
     // 6. Forecast Balance
     // Formula: startBalance + max(realIncome, plannedIncome) - max(abs(realExpenses), abs(plannedExpenses))
+    //   + uncategorized (import pas encore trié, virement entre comptes : compté au réel)
     const absRealExpenses =
       realExpenses < BigInt(0) ? -realExpenses : realExpenses;
     const absPlannedExpenses =
@@ -115,7 +119,8 @@ export class GetPeriodStatsUseCase {
         ? absRealExpenses
         : absPlannedExpenses;
 
-    const forecastBalance = startBalance + maxIncome - maxAbsExpenses;
+    const forecastBalance =
+      startBalance + maxIncome - maxAbsExpenses + uncategorized;
 
     return {
       startBalance: startBalance.toString(),

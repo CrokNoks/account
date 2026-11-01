@@ -158,11 +158,28 @@ describe('GetPeriodStatsUseCase', () => {
     );
   });
 
-  it('forecasts start + max(real, planned income) - max(|real|, |planned| expenses)', async () => {
-    // 120000 + max(260000, 250000) - max(45000, 40000)
+  it('forecasts start + max(real, planned income) - max(|real|, |planned| expenses) + uncategorized', async () => {
+    // 120000 + max(260000, 250000) - max(45000, 40000) + (-5000 sans catégorie)
     expect((await useCase.execute('acc-1', 'per-1')).forecastBalance).toBe(
-      '335000',
+      '330000',
     );
+  });
+
+  // Sans catégorie (import pas encore trié, virement entre comptes) : compté au réel, sans budget.
+  it('counts uncategorized transactions at their real amount in the forecast, pending included', async () => {
+    transactions.findAllByAccountUnpaginated.mockResolvedValue([
+      tx(-20000, null),
+      tx(-50000, null, { pending: true }),
+      tx(30000, null),
+    ]);
+    budgets.findAllByPeriod.mockResolvedValue([]);
+
+    const stats = await useCase.execute('acc-1', 'per-1');
+
+    // 120000 - 20000 - 50000 + 30000
+    expect(stats.forecastBalance).toBe('80000');
+    expect(stats.realIncome).toBe('0');
+    expect(stats.realExpenses).toBe('0');
   });
 
   it('uses the planned amounts when they exceed the real ones', async () => {
