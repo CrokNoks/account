@@ -484,7 +484,7 @@
   "Tour": {
     "dashboard": {
       "welcome": "Welcome to Account V2! Let us guide you through the main features.",
-      "stats": "Find your balances here (bank, upcoming, and forecast) for the current period.",
+      "stats": "Find your bank balance (reconciled transactions) for the current period.",
       "evolution": "Track your balance evolution and compare income and expenses month after month.",
       "breakdown": "Visualize at a glance your spending distribution by category compared to your budget.",
       "transactions": "Check your latest operations here. Colors indicate if you're on track.",
