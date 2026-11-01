@@ -2,6 +2,7 @@ import { Injectable, Inject } from '@nestjs/common';
 import { SupabaseClient } from '@supabase/supabase-js';
 import { SmartRule } from '../domain/smart-rule.entity';
 import { SmartRuleRepository } from '../domain/smart-rule.repository.interface';
+import { ForbiddenError } from '../../shared/domain/errors';
 import { toDomainError } from '../../shared/infrastructure/supabase-error';
 
 interface SmartRuleRow {
@@ -62,11 +63,19 @@ export class SupabaseSmartRuleRepository implements SmartRuleRepository {
   }
 
   async delete(id: string): Promise<void> {
-    const { error } = await this.supabase
+    const { data, error } = await this.supabase
       .from('smart_rules')
       .delete()
-      .eq('id', id);
+      .eq('id', id)
+      .select('id');
     if (error) throw toDomainError(error);
+    // RLS filtre sans erreur une suppression non autorisée : 0 ligne = refus.
+    // L'appelant a déjà vérifié que la règle existe et lui est visible (404 sinon).
+    if (!data || data.length === 0) {
+      throw new ForbiddenError(
+        'You do not have permission to modify this resource',
+      );
+    }
   }
 
   private mapToDomain(row: SmartRuleRow): SmartRule {

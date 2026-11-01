@@ -1,0 +1,152 @@
+# Règles automatiques : un partage en lecture seule peut LIRE les règles, mais pas les écrire.
+# Lancement : npx httpyac send --all http/regles-lecture-seule.http --var port=8080 --var anon=<ANON_KEY de `supabase status`>
+# (la clé vient de la ligne de commande, jamais du fichier ; les utilisateurs sont jetables, créés par le fichier)
+@baseUrl = http://localhost:{{port}}
+@authUrl = http://127.0.0.1:54321/auth/v1
+
+### A : propriétaire
+# @name a
+POST {{authUrl}}/signup
+apikey: {{anon}}
+Content-Type: application/json
+
+{ "email": "rl-a-{{$timestamp}}@example.com", "password": "Password123!" }
+
+?? status == 200
+
+### B : partage en lecture seule
+# @name b
+POST {{authUrl}}/signup
+apikey: {{anon}}
+Content-Type: application/json
+
+{ "email": "rl-b-{{$timestamp}}@example.com", "password": "Password123!" }
+
+?? status == 200
+
+### C : sans partage
+# @name c
+POST {{authUrl}}/signup
+apikey: {{anon}}
+Content-Type: application/json
+
+{ "email": "rl-c-{{$timestamp}}@example.com", "password": "Password123!" }
+
+?? status == 200
+
+### A crée un compte
+# @name account
+POST {{baseUrl}}/accounts
+Authorization: Bearer {{a.access_token}}
+Content-Type: application/json
+
+{ "name": "rl-{{$timestamp}}", "initialBalance": "0" }
+
+?? status == 201
+
+### A crée une règle
+# @name rule
+POST {{baseUrl}}/{{account.id}}/smart-rules
+Authorization: Bearer {{a.access_token}}
+Content-Type: application/json
+
+{ "pattern": "netflix" }
+
+?? status == 201
+
+### A partage le compte à B en lecture
+POST {{baseUrl}}/accounts/{{account.id}}/shares
+Authorization: Bearer {{a.access_token}}
+Content-Type: application/json
+
+{ "email": "{{b.user.email}}", "permission": "read" }
+
+?? status == 201
+
+### B lit la règle (1 règle attendue)
+GET {{baseUrl}}/{{account.id}}/smart-rules
+Authorization: Bearer {{b.access_token}}
+
+?? status == 200
+?? js response.parsedBody.length == 1
+?? body contains netflix
+
+### B ne peut pas créer
+POST {{baseUrl}}/{{account.id}}/smart-rules
+Authorization: Bearer {{b.access_token}}
+Content-Type: application/json
+
+{ "pattern": "intrus" }
+
+?? status == 403
+
+### B ne peut pas modifier
+PATCH {{baseUrl}}/{{account.id}}/smart-rules/{{rule.id}}
+Authorization: Bearer {{b.access_token}}
+Content-Type: application/json
+
+{ "pattern": "pirate" }
+
+?? status == 403
+
+### B (lecture seule) ne peut pas supprimer : 403, la règle reste (vérifié par le GET suivant)
+DELETE {{baseUrl}}/{{account.id}}/smart-rules/{{rule.id}}
+Authorization: Bearer {{b.access_token}}
+
+?? status == 403
+
+### A voit la règle intacte (1 règle, netflix, pas intrus ni pirate)
+GET {{baseUrl}}/{{account.id}}/smart-rules
+Authorization: Bearer {{a.access_token}}
+
+?? status == 200
+?? js response.parsedBody.length == 1
+?? body contains netflix
+?? js !response.body.includes('pirate')
+
+### A modifie toujours
+PATCH {{baseUrl}}/{{account.id}}/smart-rules/{{rule.id}}
+Authorization: Bearer {{a.access_token}}
+Content-Type: application/json
+
+{ "pattern": "spotify" }
+
+?? status == 200
+?? body contains spotify
+
+### A crée toujours
+POST {{baseUrl}}/{{account.id}}/smart-rules
+Authorization: Bearer {{a.access_token}}
+Content-Type: application/json
+
+{ "pattern": "amazon" }
+
+?? status == 201
+
+### C (sans partage) ne peut pas supprimer : 404, la règle reste
+DELETE {{baseUrl}}/{{account.id}}/smart-rules/{{rule.id}}
+Authorization: Bearer {{c.access_token}}
+
+?? status == 404
+
+### A supprime toujours (la règle spotify)
+DELETE {{baseUrl}}/{{account.id}}/smart-rules/{{rule.id}}
+Authorization: Bearer {{a.access_token}}
+
+?? status == 200
+
+### C (sans partage) ne voit rien
+GET {{baseUrl}}/{{account.id}}/smart-rules
+Authorization: Bearer {{c.access_token}}
+
+?? status == 200
+?? js response.parsedBody.length == 0
+?? js !response.body.includes('amazon')
+
+### A : la règle supprimée a disparu, l'autre (amazon) reste
+GET {{baseUrl}}/{{account.id}}/smart-rules
+Authorization: Bearer {{a.access_token}}
+
+?? status == 200
+?? js response.parsedBody.length == 1
+?? js !response.body.includes('spotify')

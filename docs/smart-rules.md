@@ -22,14 +22,15 @@ Mise à jour : 2026-10-31 · Commit : a010dfb
 | Le motif doit contenir autre chose que des espaces et faire au plus 255 caractères (création et modification) : sinon 400 « pattern must not be blank » / « pattern must be shorter than or equal to 255 characters ». 255 est un plafond choisi (colonne `TEXT`, pas de limite en base), aligné sur les autres libellés. L'entité ne valide toujours rien ; le front bloque déjà le bouton si vide | `smart-rules.controller.ts` (DTO) ; `frontend/.../create-smart-rule-dialog.tsx:153` | ✅ e2e `validation.e2e-spec.ts` |
 | Modification partielle : seuls les champs envoyés changent ; règle absente = 404 | `smart-rules.controller.ts:107-113` | ❌ |
 | Supprimer un compte supprime ses règles ; supprimer une catégorie laisse la règle sans catégorie | `supabase/migrations/20260316000002_smart_rules_and_savings_goals.sql:7,9` | ❌ |
-| Accès en base : une seule règle RLS « FOR ALL » exigeant l'accès **écriture** au compte, donc la simple lecture d'un compte partagé en lecture seule est aussi refusée | `20260316000002_smart_rules_and_savings_goals.sql:19-21` | ❌ |
-| Aucun test dans ce module | (aucun `*.spec.ts` dans `functions/src/smart-rules/`) | ❌ |
+| Accès en base : lecture avec l'accès **lecture** au compte (un partage en lecture seule voit les règles), création/modification/suppression avec l'accès **écriture** (4 règles RLS distinctes). Migration à pousser : `supabase db push` (par Lucas) | `20261101100000_smart_rules_read_access.sql` | ✅ `http/regles-lecture-seule.http` |
+| Suppression refusée : règle visible mais écriture non autorisée (partage en lecture seule) = 403, rien supprimé ; règle inexistante ou compte inaccessible = 404. La modification refusée répond déjà 403 (erreur RLS 42501) | `supabase-smart-rule.repository.ts` (`delete`) ; `smart-rules.controller.ts` | ✅ `supabase-smart-rule.repository.spec.ts`, `http/regles-lecture-seule.http` |
+| Tests du module : uniquement le dépôt (suppression) et l'entité ; contrôleur et cas d'usage de correspondance : voir lignes ci-dessus | `functions/src/smart-rules/**/*.spec.ts` | partiel |
 
 ## Ce qu'on stocke
 Table `smart_rules` : id ; compte ; motif (texte) ; catégorie (peut être vide) ; étiquettes (liste d'identifiants, vide par défaut) ; priorité (entier, 0 par défaut) ; dates de création/modification (trigger `updated_at`, ligne 44). Aucun montant.
 
 ## Ce qu'on peut faire
-Qui : toutes les routes exigent un token de connexion valide (`@UseGuards(SupabaseAuthGuard)`, `smart-rules.controller.ts:71`). Pas de middleware ni de décorateur d'identité : le contrôleur ne lit pas l'utilisateur. Droits contrôlés uniquement en base (RLS), le client Supabase portant le token de l'utilisateur (`functions/src/supabase/supabase.module.ts:25-38`). En modification/suppression, la règle doit appartenir à `:accountId` (`account-ownership.ts`) : inexistante ou d'un autre compte = 404 identique, sans écriture.
+Qui : toutes les routes exigent un token de connexion valide (`@UseGuards(SupabaseAuthGuard)`, `smart-rules.controller.ts:71`). Pas de middleware ni de décorateur d'identité : le contrôleur ne lit pas l'utilisateur. Droits contrôlés en base (RLS) ; la suppression vérifie en plus qu'une ligne a bien été supprimée, le client Supabase portant le token de l'utilisateur (`functions/src/supabase/supabase.module.ts:25-38`). En modification/suppression, la règle doit appartenir à `:accountId` (`account-ownership.ts`) : inexistante ou d'un autre compte = 404 identique, sans écriture.
 
 | Action | Point d'entrée | Effet | Source |
 | --- | --- | --- | --- |
