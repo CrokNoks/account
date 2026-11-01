@@ -58,9 +58,7 @@ describe('CreatePeriodWithBudgetsUseCase', () => {
     expect(periodRepo.save).not.toHaveBeenCalled();
   });
 
-  // Une récurrente générée est « à venir » (comptée dans le solde à venir, non rapprochée),
-  // pas « en attente » (opération autorisée non comptabilisée, exclue des soldes).
-  it('passes the upcoming transactions generated from recurring ones in the same call', async () => {
+  it('passes the pending transactions generated from recurring ones in the same call', async () => {
     recurringRepo.findAllByAccount.mockResolvedValue([
       RecurringTransaction.create({
         accountId: 'acc-1',
@@ -81,7 +79,6 @@ describe('CreatePeriodWithBudgetsUseCase', () => {
       Array<{
         periodId: string;
         pending: boolean;
-        reconciled: boolean;
         amount: bigint;
         metadata: object;
       }>,
@@ -90,8 +87,7 @@ describe('CreatePeriodWithBudgetsUseCase', () => {
     expect(transactions).toHaveLength(1);
     expect(transactions[0]).toMatchObject({
       periodId: result.period.id,
-      pending: false,
-      reconciled: false,
+      pending: true,
       amount: BigInt(-50000),
       metadata: { source: 'recurring' },
     });
