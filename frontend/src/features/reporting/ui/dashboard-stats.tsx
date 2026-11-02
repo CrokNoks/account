@@ -27,6 +27,7 @@ export function ReportingStat({ type }: { type: 'bank' | 'upcoming' }) {
       value: stats.upcomingBalance,
       icon: <History className="w-4 h-4 text-muted-foreground" />,
       description: `${t('end_of_period_forecast')} : ${formatCurrency(stats.forecastBalance)}`,
+      descriptionClass: parseInt(stats.forecastBalance, 10) < 0 ? 'text-red-500' : 'text-green-500',
     },
   }[type];
 
@@ -36,6 +37,7 @@ export function ReportingStat({ type }: { type: 'bank' | 'upcoming' }) {
       value={config.value}
       icon={config.icon}
       description={config.description}
+      descriptionClass={'descriptionClass' in config ? config.descriptionClass : undefined}
     />
   );
 }
@@ -57,16 +59,16 @@ export function StatIncomeExpenses() {
     <Card className="border-2 shadow-sm h-full overflow-hidden">
       <CardHeader className="flex flex-row items-center justify-start gap-2 pb-3 space-y-0 bg-muted/10">
         <ArrowUpCircle className="w-4 h-4 text-muted-foreground" />
-        <CardTitle className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">{t('income_expenses')}</CardTitle>
+        <CardTitle className="text-[10px] max-lg:text-xs font-bold uppercase tracking-wider text-muted-foreground">{t('income_expenses')}</CardTitle>
       </CardHeader>
       <CardContent className="pt-2 space-y-1">
         {rows.map((row, i) => (
           <div key={i} className="flex items-baseline justify-between gap-2">
-            <span className={cn("flex items-center gap-1 text-base font-black tracking-tight", parseInt(row.real, 10) < 0 ? "text-red-500" : "text-green-500")}>
+            <span className={cn("flex items-center gap-1 text-base max-lg:text-lg font-black tracking-tight", parseInt(row.real, 10) < 0 ? "text-red-500" : "text-green-500")}>
               {row.icon}
               {formatCurrency(row.real)}
             </span>
-            <span className="text-[10px] text-muted-foreground truncate">
+            <span className="text-[10px] max-lg:text-xs text-muted-foreground truncate">
               {t('planned')} : {formatCurrency(row.planned)}
             </span>
           </div>
@@ -84,23 +86,24 @@ interface StatCardProps {
   value: string;
   icon: React.ReactNode;
   description: string;
+  descriptionClass?: string;
 }
 
-export function StatCard({ title, value, icon, description }: StatCardProps) {
+export function StatCard({ title, value, icon, description, descriptionClass }: StatCardProps) {
   const amount = parseInt(value, 10);
   const colorClass = amount < 0 ? "text-red-500" : "text-green-500";
 
   return (
-    <Card className="border-2 shadow-sm h-full overflow-hidden">
-      <CardHeader className="flex flex-row items-center justify-start gap-2 pb-3 space-y-0 bg-muted/10">
+    <Card className="border-2 shadow-sm h-full overflow-hidden max-lg:gap-2 max-lg:py-3">
+      <CardHeader className="flex flex-row items-center justify-start gap-2 pb-3 max-lg:pb-1 space-y-0 bg-muted/10">
         {icon}
-        <CardTitle className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">{title}</CardTitle>
+        <CardTitle className="text-[10px] max-lg:text-xs font-bold uppercase tracking-wider text-muted-foreground">{title}</CardTitle>
       </CardHeader>
-      <CardContent className="pt-2">
-        <div className={cn("text-xl font-black tracking-tight", colorClass)}>
+      <CardContent className="pt-2 max-lg:pt-0">
+        <div className={cn("text-xl max-lg:text-2xl font-black tracking-tight", colorClass)}>
           {formatCurrency(value)}
         </div>
-        <p className="text-[10px] text-muted-foreground mt-1 truncate">
+        <p className={cn("text-[10px] max-lg:text-xs mt-1 truncate", descriptionClass ?? "text-muted-foreground")}>
           {description}
         </p>
       </CardContent>

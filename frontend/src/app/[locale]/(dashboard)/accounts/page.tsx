@@ -21,14 +21,14 @@ export default function AccountsPage() {
   }, [completedTours, startTour]);
 
   return (
-    <div className="flex flex-col gap-8">
+    <div className="flex flex-col gap-4 lg:gap-8">
       <div className="flex items-center justify-between">
         <div className="flex flex-col gap-2">
           <div className="flex items-center gap-4">
-            <h2 className="text-3xl font-bold tracking-tight">{t('title')}</h2>
+            <h2 className="max-lg:hidden text-3xl font-bold tracking-tight">{t('title')}</h2>
             <HelpButton tour="account" className="h-8 w-8" />
           </div>
-          <p className="text-muted-foreground">
+          <p className="text-muted-foreground max-lg:hidden">
             {t('description')}
           </p>
         </div>

@@ -104,7 +104,7 @@ export function TransactionFilters({
           <Filter className="w-4 h-4" />
           <span className="hidden sm:inline">{t('filter_title')}</span>
           {activeFiltersCount > 0 && (
-            <Badge variant="destructive" className="absolute -top-2 -right-2 h-5 min-w-5 flex items-center justify-center p-0 rounded-full border-2 border-background text-[10px]">
+            <Badge variant="destructive" className="absolute -top-2 -right-2 h-5 min-w-5 flex items-center justify-center p-0 rounded-full border-2 border-background text-[10px] max-lg:text-xs">
               {activeFiltersCount}
             </Badge>
           )}
@@ -116,7 +116,7 @@ export function TransactionFilters({
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {/* Category */}
             <div className="space-y-1.5">
-              <label className="text-[10px] font-bold uppercase text-muted-foreground px-1">{t('fields.category')}</label>
+              <label className="text-[10px] max-lg:text-xs font-bold uppercase text-muted-foreground px-1">{t('fields.category')}</label>
               <CategorySelector 
                 key={activeAccountId}
                 accountId={activeAccountId}
@@ -129,7 +129,7 @@ export function TransactionFilters({
 
             {/* Tags */}
             <div className="space-y-1.5">
-              <label className="text-[10px] font-bold uppercase text-muted-foreground px-1">{t('filters.tags')}</label>
+              <label className="text-[10px] max-lg:text-xs font-bold uppercase text-muted-foreground px-1">{t('filters.tags')}</label>
               {activeAccountId && (
                 <TagSelector 
                   accountId={activeAccountId} 
@@ -141,7 +141,7 @@ export function TransactionFilters({
 
             {/* Status */}
             <div className="space-y-1.5">
-              <label className="text-[10px] font-bold uppercase text-muted-foreground px-1">{t('filter_status')}</label>
+              <label className="text-[10px] max-lg:text-xs font-bold uppercase text-muted-foreground px-1">{t('filter_status')}</label>
               <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as 'all' | 'reconciled' | 'not_reconciled')}>
                 <SelectTrigger className="h-10 bg-background">
                   <SelectValue>
@@ -158,7 +158,7 @@ export function TransactionFilters({
 
             {/* Amount Range */}
             <div className="space-y-1.5">
-              <label className="text-[10px] font-bold uppercase text-muted-foreground px-1">{t('amount_range')}</label>
+              <label className="text-[10px] max-lg:text-xs font-bold uppercase text-muted-foreground px-1">{t('amount_range')}</label>
               <div className="flex items-center gap-2">
                 <AmountInput
                   placeholder={t('filters.min')} 
@@ -180,7 +180,7 @@ export function TransactionFilters({
             {!periodId && (
               <>
                 <div className="space-y-1.5 sm:col-span-2">
-                  <label className="text-[10px] font-bold uppercase text-muted-foreground px-1">{t('date_range')}</label>
+                  <label className="text-[10px] max-lg:text-xs font-bold uppercase text-muted-foreground px-1">{t('date_range')}</label>
                   <div className="flex items-center gap-2">
                     <Input 
                       type="date" 
@@ -199,7 +199,7 @@ export function TransactionFilters({
                 </div>
 
                 <div className="space-y-1.5 sm:col-span-2">
-                  <label className="text-[10px] font-bold uppercase text-muted-foreground px-1">{t('budget_period')}</label>
+                  <label className="text-[10px] max-lg:text-xs font-bold uppercase text-muted-foreground px-1">{t('budget_period')}</label>
                   <Select value={effectivePeriodId} onValueChange={(v) => setSelectedPeriodId(v || 'all')}>
                     <SelectTrigger className="h-10 bg-background">
                       <SelectValue>
@@ -230,7 +230,7 @@ export function TransactionFilters({
             <Button 
               variant="ghost" 
               size="sm" 
-              className="h-9 text-[10px] font-bold uppercase tracking-wider gap-2 hover:bg-destructive/10 hover:text-destructive" 
+              className="h-9 text-[10px] max-lg:text-xs font-bold uppercase tracking-wider gap-2 hover:bg-destructive/10 hover:text-destructive" 
               onClick={onReset}
             >
               <X className="w-3 h-3" />
@@ -238,7 +238,7 @@ export function TransactionFilters({
             </Button>
             <Button 
               size="sm" 
-              className="h-9 text-[10px] font-bold uppercase tracking-wider gap-2 px-6" 
+              className="h-9 text-[10px] max-lg:text-xs font-bold uppercase tracking-wider gap-2 px-6" 
               onClick={onApply}
             >
               <Filter className="w-3 h-3" />

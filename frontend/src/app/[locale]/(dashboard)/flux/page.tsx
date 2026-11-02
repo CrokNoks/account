@@ -9,8 +9,8 @@ export default function FluxPage() {
   const { activeAccountId, activePeriodId } = useAccountStore();
 
   return (
-    <div className="flex flex-col gap-12">
-      <div className="flex flex-col gap-2">
+    <div className="flex flex-col gap-4 lg:gap-12">
+      <div className="flex flex-col gap-2 max-lg:hidden">
         <h2 className="text-3xl font-bold tracking-tight">{t('title')}</h2>
         <p className="text-muted-foreground">
           {t('desc')}

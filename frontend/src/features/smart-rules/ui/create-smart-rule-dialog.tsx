@@ -84,7 +84,7 @@ export function CreateSmartRuleDialog() {
         <form onSubmit={handleSubmit} className="flex-1 flex flex-col min-h-0">
           <div className="flex-1 overflow-y-auto p-6 space-y-6">
             <div className="space-y-2">
-              <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">{t('fields.pattern')}</label>
+              <label className="text-[10px] max-lg:text-xs font-bold uppercase tracking-wider text-muted-foreground">{t('fields.pattern')}</label>
               <Input 
                 placeholder={t('pattern_placeholder')} 
                 value={pattern}
@@ -92,14 +92,14 @@ export function CreateSmartRuleDialog() {
                 className="h-11 font-medium"
                 required
               />
-              <p className="text-[10px] text-muted-foreground italic">
+              <p className="text-[10px] max-lg:text-xs text-muted-foreground italic">
                 {t('pattern_hint')}
               </p>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">{t('fields.category')}</label>
+                <label className="text-[10px] max-lg:text-xs font-bold uppercase tracking-wider text-muted-foreground">{t('fields.category')}</label>
                 <CategorySelector 
                   key={activeAccountId}
                   accountId={activeAccountId}
@@ -109,7 +109,7 @@ export function CreateSmartRuleDialog() {
               </div>
 
               <div className="space-y-2">
-                <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">{t('fields.priority')}</label>
+                <label className="text-[10px] max-lg:text-xs font-bold uppercase tracking-wider text-muted-foreground">{t('fields.priority')}</label>
                 <Input 
                   type="number" 
                   value={priority}
@@ -120,10 +120,10 @@ export function CreateSmartRuleDialog() {
             </div>
 
             <div className="space-y-3">
-              <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">{t('fields.tags')}</label>
+              <label className="text-[10px] max-lg:text-xs font-bold uppercase tracking-wider text-muted-foreground">{t('fields.tags')}</label>
               <div className="flex flex-wrap gap-2 p-3 bg-muted/30 rounded-xl border border-dashed">
                 {tags?.length === 0 ? (
-                  <p className="text-[10px] text-muted-foreground italic">{t('no_tags')}</p>
+                  <p className="text-[10px] max-lg:text-xs text-muted-foreground italic">{t('no_tags')}</p>
                 ) : (
                   tags?.map((tag) => (
                     <Badge

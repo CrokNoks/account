@@ -45,7 +45,7 @@ export function PeriodComparison({ accountId, periodId }: PeriodComparisonProps)
         
         <div className="flex flex-wrap items-center gap-4">
           <div className="flex items-center gap-2">
-            <span className="text-[10px] font-bold uppercase text-muted-foreground italic">{t('base')}</span>
+            <span className="text-[10px] max-lg:text-xs font-bold uppercase text-muted-foreground italic">{t('base')}</span>
             <Select value={periodAId || ''} onValueChange={setPeriodAId}>
               <SelectTrigger className="w-[160px] h-8 text-xs font-medium bg-muted/30">
                 <SelectValue placeholder={t('period_a_placeholder')}>
@@ -63,7 +63,7 @@ export function PeriodComparison({ accountId, periodId }: PeriodComparisonProps)
           </div>
 
           <div className="flex items-center gap-2">
-            <span className="text-[10px] font-bold uppercase text-muted-foreground italic">{t('target')}</span>
+            <span className="text-[10px] max-lg:text-xs font-bold uppercase text-muted-foreground italic">{t('target')}</span>
             <Select value={periodBId || ''} onValueChange={setPeriodBId}>
               <SelectTrigger className="w-[160px] h-8 text-xs font-medium bg-primary/5 border-primary/20">
                 <SelectValue placeholder={t('period_b_placeholder')}>
@@ -92,7 +92,7 @@ export function PeriodComparison({ accountId, periodId }: PeriodComparisonProps)
           </div>
         ) : (
           <div className="space-y-8">
-            <div className="flex flex-col sm:flex-row gap-4 p-3 bg-primary/5 rounded-lg border border-primary/10 text-[10px] sm:text-xs">
+            <div className="flex flex-col sm:flex-row gap-4 p-3 bg-primary/5 rounded-lg border border-primary/10 text-[10px] max-lg:text-xs sm:text-xs">
               <div className="flex items-center gap-2">
                 <div className="w-2 h-2 rounded-full bg-muted-foreground" />
                 <span className="font-semibold text-muted-foreground uppercase">{t('period_a_label')}</span> {periodA ? `${format(new Date(periodA.startDate), 'dd/MM/yy')} - ${format(new Date(periodA.endDate), 'dd/MM/yy')}` : ''}

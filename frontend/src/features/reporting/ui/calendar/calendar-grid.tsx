@@ -34,7 +34,7 @@ export function CalendarGrid({
     <>
       <div className="grid grid-cols-7 border-b bg-muted/5">
         {(['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as const).map((day) => (
-          <div key={day} className="py-3 text-center text-[10px] font-black uppercase tracking-widest text-muted-foreground">
+          <div key={day} className="py-3 text-center text-[10px] max-lg:text-xs font-black uppercase tracking-widest text-muted-foreground">
             {t(`weekdays.${day}`)}
           </div>
         ))}
@@ -71,12 +71,19 @@ export function CalendarGrid({
                   {format(day, 'd')}
                 </span>
                 {dayTotal !== BigInt(0) && (
-                  <span className={cn(
-                    "text-[9px] font-black tracking-tighter",
-                    dayTotal < BigInt(0) ? "text-red-500" : "text-green-500"
-                  )}>
-                    {formatCurrency(dayTotal.toString())}
-                  </span>
+                  <>
+                    {/* Mobile, month view: a 50 px cell cannot hold an amount at 12 px: a colour dot, the amount is in the day detail */}
+                    {view === 'month' && (
+                      <span aria-hidden className={cn("lg:hidden w-2 h-2 rounded-full", dayTotal < BigInt(0) ? "bg-red-500" : "bg-green-500")} />
+                    )}
+                    <span className={cn(
+                      "text-[9px] max-lg:text-xs font-black tracking-tighter",
+                      view === 'month' && "max-lg:hidden",
+                      dayTotal < BigInt(0) ? "text-red-500" : "text-green-500"
+                    )}>
+                      {formatCurrency(dayTotal.toString())}
+                    </span>
+                  </>
                 )}
               </div>
 
@@ -85,7 +92,7 @@ export function CalendarGrid({
                   <div 
                     key={event.id} 
                     className={cn(
-                      "text-[9px] px-1.5 py-1 rounded-md truncate border flex items-center gap-2",
+                      "text-[9px] max-lg:text-xs px-1.5 py-1 rounded-md truncate border flex items-center gap-2",
                       event.type === 'recurring' ? "border-dashed bg-muted/30" : "bg-card shadow-sm border-muted/50"
                     )}
                   >
@@ -107,7 +114,7 @@ export function CalendarGrid({
                   </div>
                 ))}
                 {dayEvents.length > (view === 'week' ? 15 : 3) && (
-                  <div className="text-[8px] text-center text-muted-foreground font-bold italic py-1">
+                  <div className="text-[8px] max-lg:text-xs text-center text-muted-foreground font-bold italic py-1">
                     + {dayEvents.length - (view === 'week' ? 15 : 3)} {t('others')}
                   </div>
                 )}

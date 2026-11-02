@@ -50,7 +50,7 @@ export function CalendarDayDetail({
             <div className="p-6 space-y-6">
               <div className="grid grid-cols-2 gap-4">
                 <div className="p-4 rounded-xl border bg-muted/10 space-y-1">
-                  <span className="text-[10px] font-bold text-muted-foreground uppercase">{t('day_balance')}</span>
+                  <span className="text-[10px] max-lg:text-xs font-bold text-muted-foreground uppercase">{t('day_balance')}</span>
                   <div className={cn(
                     "text-xl font-black",
                     dayTotal < BigInt(0) ? "text-red-500" : "text-green-500"
@@ -59,7 +59,7 @@ export function CalendarDayDetail({
                   </div>
                 </div>
                 <div className="p-4 rounded-xl border bg-muted/10 space-y-1">
-                  <span className="text-[10px] font-bold text-muted-foreground uppercase">{t('operations')}</span>
+                  <span className="text-[10px] max-lg:text-xs font-bold text-muted-foreground uppercase">{t('operations')}</span>
                   <div className="text-xl font-black">
                     {dayEvents.length}
                   </div>
@@ -92,10 +92,10 @@ export function CalendarDayDetail({
                           <div>
                             <p className="text-sm font-bold leading-none">{event.description}</p>
                             <div className="flex items-center gap-2 mt-1">
-                              <Badge variant="secondary" className="text-[9px] py-0 px-1.5 h-4 font-normal">
+                              <Badge variant="secondary" className="text-[9px] max-lg:text-xs py-0 px-1.5 h-4 font-normal">
                                 {event.type === 'recurring' ? t('forecast') : t('real')}
                               </Badge>
-                              <span className="text-[10px] text-muted-foreground">
+                              <span className="text-[10px] max-lg:text-xs text-muted-foreground">
                                 {categories?.find(c => c.id === event.categoryId)?.name || t('no_category')}
                               </span>
                             </div>
@@ -116,7 +116,7 @@ export function CalendarDayDetail({
               {dayEvents.some(e => e.type === 'recurring') && (
                 <div className="p-4 rounded-xl border border-primary/20 bg-primary/5 flex gap-3 items-start">
                   <Info className="w-4 h-4 text-primary shrink-0 mt-0.5" />
-                  <p className="text-[11px] text-primary/80 leading-relaxed italic">
+                  <p className="text-[11px] max-lg:text-xs text-primary/80 leading-relaxed italic">
                     {t('forecast_note')}
                   </p>
                 </div>

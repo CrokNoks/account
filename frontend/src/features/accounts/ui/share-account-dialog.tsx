@@ -110,7 +110,7 @@ export function ShareAccountDialog({ accountId, accountName, open, onOpenChange 
                   <div key={s.userId} className="p-3 flex items-center justify-between gap-4">
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium truncate">{s.userEmail}</p>
-                      <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                      <div className="flex items-center gap-1 text-[10px] max-lg:text-xs text-muted-foreground">
                         {s.permission === 'write' ? <ShieldCheck className="w-3 h-3 text-green-600" /> : <Shield className="w-3 h-3" />}
                         {s.permission === 'write' ? t('share_permission_write') : t('share_permission_read')}
                       </div>

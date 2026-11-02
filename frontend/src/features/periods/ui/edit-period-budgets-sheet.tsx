@@ -108,7 +108,7 @@ export function EditPeriodBudgetsSheet({ periodId, open, onOpenChange }: EditPer
                           />
                           <p className="text-sm font-medium truncate">{cat.name}</p>
                         </div>
-                        <p className="text-[10px] text-muted-foreground mt-0.5 capitalize">
+                        <p className="text-[10px] max-lg:text-xs text-muted-foreground mt-0.5 capitalize">
                           {cat.type}
                         </p>
                       </div>

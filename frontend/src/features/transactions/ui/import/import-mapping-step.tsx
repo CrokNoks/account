@@ -59,11 +59,11 @@ export function ImportMappingStep({
 
         <div className="grid grid-cols-1 md:grid-cols-5 gap-4 bg-muted/20 p-6 rounded-xl border">
           <div className="space-y-2">
-            <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">{t('header_row')}</label>
+            <label className="text-[10px] max-lg:text-xs font-bold uppercase tracking-wider text-muted-foreground">{t('header_row')}</label>
             <Input type="number" min="0" value={headerRowIndex} onChange={(e) => handleHeaderRowChange(parseInt(e.target.value, 10) || 0)} className="h-10" />
           </div>
           <div className="space-y-2">
-            <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">{t('date_column')}</label>
+            <label className="text-[10px] max-lg:text-xs font-bold uppercase tracking-wider text-muted-foreground">{t('date_column')}</label>
             <Select value={mapping.date || ''} onValueChange={(v) => setMapping({...mapping, date: v || ''})}>
               <SelectTrigger className="h-10">
                 <SelectValue placeholder={t('date')}>
@@ -74,7 +74,7 @@ export function ImportMappingStep({
             </Select>
           </div>
           <div className="space-y-2 md:col-span-1">
-            <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">{t('description_column')}</label>
+            <label className="text-[10px] max-lg:text-xs font-bold uppercase tracking-wider text-muted-foreground">{t('description_column')}</label>
             <Select value={mapping.description || ''} onValueChange={(v) => setMapping({...mapping, description: v || ''})}>
               <SelectTrigger className="h-10">
                 <SelectValue placeholder={t('description')}>
@@ -87,7 +87,7 @@ export function ImportMappingStep({
           
           {amountMode === 'single' ? (
             <div className="space-y-2 md:col-span-2 text-primary">
-              <label className="text-[10px] font-bold uppercase tracking-wider">{t('amount_column')}</label>
+              <label className="text-[10px] max-lg:text-xs font-bold uppercase tracking-wider">{t('amount_column')}</label>
               <Select value={mapping.amount || ''} onValueChange={(v) => setMapping({...mapping, amount: v || ''})}>
                 <SelectTrigger className="h-10 border-primary/30">
                   <SelectValue placeholder={t('amount')}>
@@ -100,7 +100,7 @@ export function ImportMappingStep({
           ) : (
             <>
               <div className="space-y-2 text-red-500">
-                <label className="text-[10px] font-bold uppercase tracking-wider">{t('debit_column')}</label>
+                <label className="text-[10px] max-lg:text-xs font-bold uppercase tracking-wider">{t('debit_column')}</label>
                 <Select value={mapping.debit || ''} onValueChange={(v) => setMapping({...mapping, debit: v || ''})}>
                   <SelectTrigger className="h-10 border-red-200">
                     <SelectValue placeholder={t('debit')}>
@@ -111,7 +111,7 @@ export function ImportMappingStep({
                 </Select>
               </div>
               <div className="space-y-2 text-green-500">
-                <label className="text-[10px] font-bold uppercase tracking-wider">{t('credit_column')}</label>
+                <label className="text-[10px] max-lg:text-xs font-bold uppercase tracking-wider">{t('credit_column')}</label>
                 <Select value={mapping.credit || ''} onValueChange={(v) => setMapping({...mapping, credit: v || ''})}>
                   <SelectTrigger className="h-10 border-green-200">
                     <SelectValue placeholder={t('credit')}>
@@ -127,9 +127,9 @@ export function ImportMappingStep({
       </div>
 
       <div className="border rounded-lg overflow-hidden shadow-sm">
-        <div className="bg-muted/50 px-4 py-2 text-[10px] font-bold uppercase tracking-widest border-b flex justify-between items-center">
+        <div className="bg-muted/50 px-4 py-2 text-[10px] max-lg:text-xs font-bold uppercase tracking-widest border-b flex justify-between items-center">
           <span>{t('preview')}</span>
-          <span className="text-[9px] font-normal text-muted-foreground">{t('active_columns')}</span>
+          <span className="text-[9px] max-lg:text-xs font-normal text-muted-foreground">{t('active_columns')}</span>
         </div>
         <Table>
           <TableBody>
@@ -139,12 +139,12 @@ export function ImportMappingStep({
               const activeCols = [mapping.date, mapping.description, amountMode === 'single' ? mapping.amount : null, mapping.debit, mapping.credit].filter(Boolean);
               return (
                 <TableRow key={actualIndex} className={isHeader ? "bg-primary/5" : ""}>
-                  <TableCell className="w-12 text-[9px] font-mono text-muted-foreground border-r bg-muted/5 text-center">{actualIndex}</TableCell>
+                  <TableCell className="w-12 text-[9px] max-lg:text-xs font-mono text-muted-foreground border-r bg-muted/5 text-center">{actualIndex}</TableCell>
                   {rowArr.map((cell, j) => {
                     const headerName = csvHeaders[j];
                     const isActive = activeCols.includes(headerName);
                     return (
-                      <TableCell key={j} className={`text-[11px] truncate max-w-[200px] ${isActive && isHeader ? 'font-bold text-primary underline decoration-2' : isActive ? 'bg-primary/5 font-medium' : 'opacity-40'}`}>
+                      <TableCell key={j} className={`text-[11px] max-lg:text-xs truncate max-w-[200px] ${isActive && isHeader ? 'font-bold text-primary underline decoration-2' : isActive ? 'bg-primary/5 font-medium' : 'opacity-40'}`}>
                         {cell}
                       </TableCell>
                     );

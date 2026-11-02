@@ -9,9 +9,9 @@ export default function SmartRulesPage() {
   const t = useTranslations('SmartRules');
 
   return (
-    <div className="flex flex-col gap-8">
-      <div className="flex items-center justify-between">
-        <div className="flex flex-col gap-2">
+    <div className="flex flex-col gap-4 lg:gap-8">
+      <div className="flex items-center justify-between max-lg:justify-end">
+        <div className="flex flex-col gap-2 max-lg:hidden">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-primary/10 rounded-lg text-primary">
               <Sparkles className="w-6 h-6" />

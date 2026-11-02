@@ -20,7 +20,7 @@ export function EvolutionTooltip({ active, payload, label }: CustomTooltipProps)
         <p className="text-xs font-bold mb-2 border-b pb-1">{label}</p>
         <div className="space-y-1">
           {payload.map((entry, index: number) => (
-            <div key={index} className="flex items-center justify-between gap-4 text-[11px]">
+            <div key={index} className="flex items-center justify-between gap-4 text-[11px] max-lg:text-xs">
               <div className="flex items-center gap-2">
                 <div className="w-2 h-2 rounded-full" style={{ backgroundColor: entry.color || entry.fill }} />
                 <span className="text-muted-foreground">{entry.name}:</span>

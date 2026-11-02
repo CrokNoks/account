@@ -18,7 +18,7 @@ export function NetWorthWidget() {
 
   const header = (
     <CardHeader className="pb-3 bg-muted/10">
-      <CardTitle className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+      <CardTitle className="text-[10px] max-lg:text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
         <Landmark className="w-4 h-4 text-primary" />
         {t('title')}
       </CardTitle>
@@ -47,7 +47,7 @@ export function NetWorthWidget() {
   return (
     <Card className="h-full border-2 shadow-sm overflow-hidden">
       <CardHeader className="pb-3 bg-muted/10">
-        <CardTitle className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+        <CardTitle className="text-[10px] max-lg:text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
           <Landmark className="w-4 h-4 text-primary" />
           {t('title')}
         </CardTitle>
@@ -73,7 +73,7 @@ export function NetWorthWidget() {
                 content={({ active, payload }) => {
                   if (active && payload && payload.length) {
                     return (
-                      <div className="bg-background border rounded p-1 text-[10px] shadow-sm">
+                      <div className="bg-background border rounded p-1 text-[10px] max-lg:text-xs shadow-sm">
                         {formatCurrency(Math.round(Number(payload[0].value) * 100))}
                       </div>
                     );

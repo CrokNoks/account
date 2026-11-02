@@ -1,6 +1,7 @@
 'use client';
 
 import { Badge } from '@/components/ui/badge';
+import { tintedBadgeStyle } from '@/shared/lib/badge-color';
 import { CheckCircle2, Circle, Clock } from 'lucide-react';
 import { format } from 'date-fns';
 import { formatCurrency } from '@/shared/lib/format';
@@ -63,7 +64,7 @@ export function TransactionMobileList({
                 />
               )}
             </div>
-            <div className="flex-1 space-y-3">
+            <div className="flex-1 min-w-0 space-y-3">
               <div className="flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2 min-w-0">
                   <button 
@@ -81,14 +82,11 @@ export function TransactionMobileList({
                     )}
                   </button>
                   <div className="flex flex-col min-w-0">
-                    <span className="text-sm font-bold truncate">{transaction.description}</span>
+                    <span className="text-sm font-bold lg:truncate max-lg:line-clamp-2 max-lg:break-words">{transaction.description}</span>
                     <div className="flex items-center gap-2">
-                      <span className="text-[10px] text-muted-foreground">{format(new Date(transaction.date), 'dd MMM')}</span>
+                      <span className="text-[10px] max-lg:text-xs text-muted-foreground">{format(new Date(transaction.date), 'dd MMM')}</span>
                       {transaction.categoryId && (
-                        <Badge variant="outline" className="h-5 px-1.5 text-[10px] py-0" style={{ 
-                          borderColor: categories?.find(c => c.id === transaction.categoryId)?.color,
-                          color: categories?.find(c => c.id === transaction.categoryId)?.color 
-                        }}>
+                        <Badge variant="outline" className="h-5 px-1.5 text-[10px] max-lg:text-xs py-0 text-foreground" style={tintedBadgeStyle(categories?.find(c => c.id === transaction.categoryId)?.color)}>
                           {categories?.find(c => c.id === transaction.categoryId)?.name}
                         </Badge>
                       )}
@@ -105,7 +103,7 @@ export function TransactionMobileList({
                   {transaction.pending && (
                     <div className="flex items-center gap-1 text-orange-500 font-medium">
                       <Clock className="w-3 h-3 animate-pulse" />
-                      <span className="text-[9px] uppercase tracking-wider">{t('pending_short')}</span>
+                      <span className="text-[9px] max-lg:text-xs uppercase tracking-wider">{t('pending_short')}</span>
                     </div>
                   )}
                 </div>
@@ -118,12 +116,8 @@ export function TransactionMobileList({
                       <Badge 
                         key={tagId} 
                         variant="secondary" 
-                        className="h-4 px-1 text-[9px] py-0 cursor-pointer hover:brightness-90 transition-all"
-                        style={{ 
-                          backgroundColor: tag?.color ? `${tag.color}20` : undefined,
-                          color: tag?.color,
-                          borderColor: tag?.color ? `${tag.color}40` : undefined
-                        }}
+                        className="h-4 max-lg:h-5 px-1 text-[9px] max-lg:text-xs py-0 text-foreground cursor-pointer hover:brightness-90 transition-all"
+                        style={tintedBadgeStyle(tag?.color)}
                         onClick={(e) => {
                           e.stopPropagation();
                           onTagClick(tagId);

@@ -109,7 +109,7 @@ export function TagDetailDrawer() {
                         </div>
                         <div className="flex items-center gap-2">
                           <Progress value={cat.percentage} className="h-1.5" />
-                          <span className="text-[10px] text-muted-foreground w-8 text-right font-medium">
+                          <span className="text-[10px] max-lg:text-xs text-muted-foreground w-8 text-right font-medium">
                             {cat.percentage}%
                           </span>
                         </div>
@@ -135,7 +135,7 @@ export function TagDetailDrawer() {
                       <div key={tx.id} className="flex items-center justify-between p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors cursor-default">
                         <div className="min-w-0 flex-1">
                           <p className="text-sm font-medium truncate">{tx.description}</p>
-                          <p className="text-[10px] text-muted-foreground">
+                          <p className="text-[10px] max-lg:text-xs text-muted-foreground">
                             {format(new Date(tx.date), 'dd MMM yyyy')}
                           </p>
                         </div>

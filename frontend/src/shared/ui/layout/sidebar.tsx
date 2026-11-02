@@ -111,7 +111,7 @@ export function Sidebar() {
               <span className="font-medium flex-1">{t(item.labelKey)}</span>
               {'shortcut' in item && (
                 <span className={cn(
-                  "text-[10px] font-mono px-1.5 py-0.5 rounded border transition-colors",
+                  "text-[10px] max-lg:text-xs font-mono px-1.5 py-0.5 rounded border transition-colors",
                   isActive
                     ? "border-primary-foreground/30 text-primary-foreground/70"
                     : "border-muted text-muted-foreground/50 group-hover:text-muted-foreground group-hover:border-muted-foreground/30"

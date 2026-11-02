@@ -28,7 +28,7 @@ export function CategoryFilterSidebar({
         <span className="text-sm font-semibold">{t('filters')}</span>
         <button 
           onClick={onToggleAll}
-          className="text-[10px] text-primary hover:underline font-medium"
+          className="text-[10px] max-lg:text-xs text-primary hover:underline font-medium"
         >
           {isAllSelected ? t('deselect_all') : t('select_all')}
         </button>
@@ -49,7 +49,7 @@ export function CategoryFilterSidebar({
                 <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: cat.color }} />
                 <span className="truncate">{cat.name}</span>
               </div>
-              <span className="text-[9px] text-muted-foreground shrink-0 font-mono">
+              <span className="text-[9px] max-lg:text-xs text-muted-foreground shrink-0 font-mono">
                 ±{formatCurrency((cat.variance || 0).toString())}
               </span>
             </label>

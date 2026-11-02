@@ -38,7 +38,7 @@ export function UpcomingDeadlinesWidget() {
   return (
     <Card className="h-full border-2 shadow-sm overflow-hidden flex flex-col">
       <CardHeader className="pb-3 bg-muted/10 shrink-0">
-        <CardTitle className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+        <CardTitle className="text-[10px] max-lg:text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
           <Clock className="w-4 h-4 text-primary" />
           {t('title')}
         </CardTitle>
@@ -48,25 +48,25 @@ export function UpcomingDeadlinesWidget() {
           {!upcoming || upcoming.length === 0 ? (
             <div className="h-24 flex flex-col items-center justify-center text-muted-foreground gap-2">
               <CalendarDays className="w-8 h-8 opacity-20" />
-              <p className="text-xs italic">{t('none')}</p>
+              <p className="text-xs max-lg:text-sm italic">{t('none')}</p>
             </div>
           ) : (
             upcoming.map((event) => (
               <div key={event.id} className="flex items-center justify-between gap-4 p-2 rounded-lg hover:bg-muted/50 transition-colors border border-transparent hover:border-border">
                 <div className="flex items-center gap-3 min-w-0">
-                  <div className="flex flex-col items-center justify-center w-10 h-10 rounded-xl bg-primary/10 text-primary shrink-0">
-                    <span className="text-[10px] uppercase font-bold">{format(parseISO(event.date), 'EEE', { locale: dateLocale })}</span>
-                    <span className="text-sm font-black leading-none">{format(parseISO(event.date), 'd')}</span>
+                  <div className="flex flex-col items-center justify-center w-10 h-10 max-lg:w-12 max-lg:h-12 rounded-xl bg-primary/10 text-primary shrink-0">
+                    <span className="text-[10px] max-lg:text-xs uppercase font-bold">{format(parseISO(event.date), 'EEE', { locale: dateLocale })}</span>
+                    <span className="text-sm max-lg:text-base font-black leading-none">{format(parseISO(event.date), 'd')}</span>
                   </div>
                   <div className="flex flex-col min-w-0">
-                    <span className="text-xs font-bold truncate">{event.description}</span>
-                    <span className="text-[10px] text-muted-foreground uppercase tracking-widest font-medium">
+                    <span className="text-xs max-lg:text-sm font-bold truncate">{event.description}</span>
+                    <span className="text-[10px] max-lg:text-xs text-muted-foreground uppercase tracking-widest font-medium">
                       {event.type === 'recurring' ? t('recurring') : t('planned')}
                     </span>
                   </div>
                 </div>
                 <span className={cn(
-                  "text-xs font-black tracking-tight shrink-0",
+                  "text-xs max-lg:text-sm font-black tracking-tight shrink-0",
                   parseInt(event.amount, 10) < 0 ? "text-red-500" : "text-green-500"
                 )}>
                   {formatCurrency(event.amount)}

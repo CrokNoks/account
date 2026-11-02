@@ -9,8 +9,8 @@ export default function CashflowPage() {
   const { activeAccountId } = useAccountStore();
 
   return (
-    <div className="flex flex-col gap-8">
-      <div className="flex flex-col gap-2">
+    <div className="flex flex-col gap-4 lg:gap-8">
+      <div className="flex flex-col gap-2 max-lg:hidden">
         <h2 className="text-3xl font-bold tracking-tight">{t('page_title')}</h2>
         <p className="text-muted-foreground">
           {t('page_desc')}

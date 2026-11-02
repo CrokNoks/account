@@ -22,7 +22,7 @@ export function TagStatsSummary() {
   
   const header = (
     <CardHeader className="pb-3 bg-muted/10 shrink-0">
-      <CardTitle className="text-[10px] font-bold flex items-center gap-2 uppercase tracking-wider text-muted-foreground">
+      <CardTitle className="text-[10px] max-lg:text-xs font-bold flex items-center gap-2 uppercase tracking-wider text-muted-foreground">
         <BarChart3 className="w-4 h-4 text-primary" />
         {t('top_title')}
       </CardTitle>
@@ -59,7 +59,7 @@ export function TagStatsSummary() {
                 style={{ backgroundColor: tag.color }} 
               />
               <span className="text-sm font-medium truncate">{tag.name}</span>
-              <Badge variant="secondary" className="h-4 px-1 text-[9px] font-normal opacity-70">
+              <Badge variant="secondary" className="h-4 max-lg:h-5 px-1 text-[9px] max-lg:text-xs font-normal opacity-70">
                 {t('ops_short', { count: tag.transactionCount })}
               </Badge>
             </div>

@@ -199,7 +199,7 @@ export function TransactionForm({
           <span className="absolute right-3 top-2.5 text-sm text-muted-foreground">€</span>
         </div>
         {mode === 'standard' && (
-          <p className="text-[10px] text-muted-foreground italic">{t('expense_hint')}</p>
+          <p className="text-[10px] max-lg:text-xs text-muted-foreground italic">{t('expense_hint')}</p>
         )}
       </div>
 
@@ -213,7 +213,7 @@ export function TransactionForm({
           <label htmlFor="pending-field" className="text-sm font-medium cursor-pointer select-none flex-1">
             {t('fields.pending')}
           </label>
-          <p className="text-[10px] text-muted-foreground">{t('form.excluded_from_forecast')}</p>
+          <p className="text-[10px] max-lg:text-xs text-muted-foreground">{t('form.excluded_from_forecast')}</p>
         </div>
       )}
 

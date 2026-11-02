@@ -29,7 +29,7 @@ export function NoDataState({
           {title}
         </h3>
         {description && (
-          <p className="text-[10px] text-muted-foreground/40 font-medium italic">
+          <p className="text-[10px] max-lg:text-xs text-muted-foreground/40 font-medium italic">
             {description}
           </p>
         )}

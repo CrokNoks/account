@@ -71,7 +71,7 @@ export function CategoryList() {
             <div key={type} className="space-y-4">
               <h3 className="text-lg font-bold flex items-center gap-2 px-1">
                 <span className="capitalize">{t(`types.${type}`)}</span>
-                <Badge variant="secondary" className="rounded-full h-5 min-w-5 flex items-center justify-center p-0 text-[10px]">
+                <Badge variant="secondary" className="rounded-full h-5 min-w-5 flex items-center justify-center p-0 text-[10px] max-lg:text-xs">
                   {group.length}
                 </Badge>
               </h3>

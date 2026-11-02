@@ -30,15 +30,15 @@ export function Header() {
   };
 
   return (
-    <header className="sticky top-0 z-10 flex h-14 items-center gap-4 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-4 lg:px-6 lg:h-[60px] mb-8 -mx-4 lg:-mx-8">
+    <header className="sticky top-0 z-10 flex h-14 items-center gap-2 lg:gap-4 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-4 lg:px-6 lg:h-[60px] mb-4 lg:mb-8 -mx-4 lg:-mx-8">
       <div className="flex-1 min-w-0">
-        <h1 className="text-lg font-semibold md:text-xl truncate">{label}</h1>
+        <h1 className="text-base lg:text-xl font-semibold truncate">{label}</h1>
       </div>
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-1 lg:gap-4">
         <ThemeToggle />
         <Select value={locale} onValueChange={handleLocaleChange}>
-          <SelectTrigger className="w-[70px] border-none bg-transparent hover:bg-accent transition-colors">
-            <SelectValue />
+          <SelectTrigger className="w-[44px] lg:w-[70px] max-lg:px-1.5 max-lg:justify-center max-lg:[&>svg]:hidden border-none bg-transparent hover:bg-accent transition-colors">
+            <SelectValue className="max-lg:flex-none" />
           </SelectTrigger>
           <SelectContent>
             {routing.locales.map((l) => (
@@ -48,7 +48,7 @@ export function Header() {
             ))}
           </SelectContent>
         </Select>
-        <div className="h-6 w-px bg-border" />
+        <div className="hidden lg:block h-6 w-px bg-border" />
         <AccountSelector />
       </div>
     </header>

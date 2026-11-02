@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import { tintedBadgeStyle } from '@/shared/lib/badge-color';
 import { Check, ChevronsUpDown, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -87,12 +88,8 @@ export function TagSelector({ accountId, selectedTagIds, onChange }: TagSelector
                     <Badge
                       key={tag.id}
                       variant="secondary"
-                      className="mr-1 mb-1"
-                      style={{ 
-                        backgroundColor: tag.color ? `${tag.color}20` : undefined,
-                        color: tag.color,
-                        borderColor: tag.color ? `${tag.color}40` : undefined
-                      }}
+                      className="mr-1 mb-1 text-foreground"
+                      style={tintedBadgeStyle(tag.color)}
                       onClick={(e) => {
                         e.stopPropagation();
                         handleUnselect(tag.id);

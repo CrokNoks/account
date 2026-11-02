@@ -195,7 +195,7 @@ export function CreateRecurringDialog({
             disabled={isPending}
           >
             <span>{isPending ? tc('loading') : tt('save_another')}</span>
-            <kbd className="pointer-events-none inline-flex h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground opacity-100">
+            <kbd className="pointer-events-none inline-flex h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] max-lg:text-xs font-medium text-muted-foreground opacity-100">
               Enter
             </kbd>
           </Button>
@@ -205,7 +205,7 @@ export function CreateRecurringDialog({
             disabled={isPending}
           >
             <span>{isPending ? tc('loading') : tc('save')}</span>
-            <kbd className="pointer-events-none inline-flex h-5 select-none items-center gap-1 rounded border bg-primary-foreground/20 px-1.5 font-mono text-[10px] font-medium text-primary-foreground opacity-100">
+            <kbd className="pointer-events-none inline-flex h-5 select-none items-center gap-1 rounded border bg-primary-foreground/20 px-1.5 font-mono text-[10px] max-lg:text-xs font-medium text-primary-foreground opacity-100">
               <span className="text-xs">⇧</span> Enter
             </kbd>
           </Button>

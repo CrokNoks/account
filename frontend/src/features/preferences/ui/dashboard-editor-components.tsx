@@ -62,7 +62,7 @@ export function MiniWidget({
       </div>
 
       <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-10">
-        <button onPointerDown={(e) => { e.stopPropagation(); toggleWidth(e); }} className="flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-black uppercase tracking-wider bg-background hover:bg-muted text-muted-foreground rounded-full border border-border/50 shadow-sm transition-colors">
+        <button onPointerDown={(e) => { e.stopPropagation(); toggleWidth(e); }} className="flex items-center gap-1.5 px-3 py-1.5 text-[10px] max-lg:text-xs font-black uppercase tracking-wider bg-background hover:bg-muted text-muted-foreground rounded-full border border-border/50 shadow-sm transition-colors">
           <div className="flex gap-0.5 items-center justify-center w-4 h-3">
             <div className={cn("bg-current rounded-full transition-all", width === 2 ? "w-1 h-1" : width === 3 ? "w-1.5 h-1.5" : width === 4 ? "w-2 h-1.5" : width === 6 ? "w-3 h-1.5" : "w-4 h-1.5")} />
           </div>
@@ -93,7 +93,7 @@ export function ManagementItem({ id, label, onAdd, onRemove, isActive = false }:
       {...(isActive ? listeners : {})}
     >
       {isActive && <GripVertical className="w-3 h-3 opacity-50" />}
-      <span className="text-[10px] font-black uppercase tracking-wider">{label}</span>
+      <span className="text-[10px] max-lg:text-xs font-black uppercase tracking-wider">{label}</span>
       {isActive && (
         <button onClick={(e) => { e.stopPropagation(); onRemove?.(); }} className="ml-1 hover:bg-primary-foreground/20 rounded-full p-0.5">
           <X className="w-3 h-3" />

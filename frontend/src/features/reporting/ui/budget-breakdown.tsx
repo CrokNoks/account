@@ -26,7 +26,7 @@ export function BudgetBreakdown() {
     <CardHeader className="bg-muted/10 pb-3 shrink-0">
       <div className="flex items-center gap-2">
         <PieChart className="w-4 h-4 text-primary" />
-        <h2 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">{t('breakdown')}</h2>
+        <h2 className="text-[10px] max-lg:text-xs font-bold uppercase tracking-wider text-muted-foreground">{t('breakdown')}</h2>
       </div>
     </CardHeader>
   );
@@ -113,7 +113,7 @@ function BudgetGroup({ title, items, isExpense }: { title: string, items: Budget
                     style={{ width: `${percentage}%` }}
                  />
               </div>
-              <div className="flex justify-between text-[10px] text-muted-foreground uppercase tracking-wider">
+              <div className="flex justify-between text-[10px] max-lg:text-xs text-muted-foreground uppercase tracking-wider">
                 <span>{item.percentage}%</span>
                 {remaining < 0 ? (
                   <span

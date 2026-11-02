@@ -229,7 +229,7 @@ export default function ImportTransactionsPage() {
             <ArrowLeft className="w-5 h-5" />
           </Button>
           <div>
-            <h2 className="text-3xl font-bold tracking-tight">{t('title')}</h2>
+            <h2 className="max-lg:hidden text-3xl font-bold tracking-tight">{t('title')}</h2>
             <p className="text-muted-foreground">
               {step === 'upload' && t('subtitle_upload')}
               {step === 'mapping' && t('subtitle_mapping')}

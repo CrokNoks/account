@@ -153,11 +153,11 @@ export default function Home() {
   const currentPeriod = periods?.find(p => p.id === activePeriodId);
 
   return (
-    <div className="flex flex-col gap-12">
+    <div className="flex flex-col gap-6 lg:gap-12">
       <div className="flex items-center justify-between">
         <div className="flex flex-col gap-2">
           <div className="flex items-center gap-4">
-            <h2 className="text-3xl font-bold tracking-tight">{t('title')}</h2>
+            <h2 className="hidden lg:block text-3xl font-bold tracking-tight">{t('title')}</h2>
             <HelpButton tour="dashboard" className="h-8 w-8" />
             <Select value={activePeriodId || ""} onValueChange={setActivePeriodId}>
               <SelectTrigger className="h-8 rounded-full bg-primary/10 text-primary border-primary/20 px-4 hover:bg-primary/20 transition-colors">
@@ -177,7 +177,7 @@ export default function Home() {
               </SelectContent>
             </Select>
           </div>
-          <p className="text-muted-foreground">
+          <p className="hidden lg:block text-muted-foreground">
             {t('welcome')}
           </p>
         </div>
@@ -245,7 +245,7 @@ export default function Home() {
       )}
       
       {!isEditing && (
-      <div className="grid grid-cols-12 gap-8">
+      <div className="grid grid-cols-12 gap-4 lg:gap-8">
         {layout.map((widget) => {
           const widgetId = widget.id;
           const WidgetComponent = WIDGET_COMPONENTS[widgetId];

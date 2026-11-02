@@ -154,7 +154,7 @@ export function CreatePeriodDialog() {
                       <div key={cat.categoryId} className="p-4 flex items-center justify-between gap-4">
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-bold truncate">{cat.name}</p>
-                          <div className="flex gap-2 text-[10px] text-muted-foreground mt-1">
+                          <div className="flex gap-2 text-[10px] max-lg:text-xs text-muted-foreground mt-1">
                             <span>{t('stats_hint', { 
                               min: formatCurrency(cat.minReal), 
                               avg: formatCurrency(cat.avgReal), 

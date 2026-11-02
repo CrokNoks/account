@@ -23,9 +23,9 @@ export default function TransactionsPage() {
   }, [completedTours, startTour]);
 
   return (
-    <div className="flex flex-col gap-8">
+    <div className="flex flex-col gap-4 lg:gap-8">
       <div className="flex items-center gap-2">
-        <p className="text-muted-foreground">
+        <p className="text-muted-foreground max-lg:hidden">
           {t('description')}
         </p>
         <HelpButton tour="transactions" className="h-8 w-8" />

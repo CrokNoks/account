@@ -94,7 +94,7 @@ export function CashflowForecast({ accountId }: CashflowForecastProps) {
 
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-muted/50 pb-4">
                       <div className="min-w-0">
-                        <p className="text-[10px] font-bold uppercase text-muted-foreground tracking-tight">
+                        <p className="text-[10px] max-lg:text-xs font-bold uppercase text-muted-foreground tracking-tight">
                           {getDayLabel(event.date)}
                         </p>
                         <p className="text-sm font-semibold truncate">{event.description}</p>
@@ -107,7 +107,7 @@ export function CashflowForecast({ accountId }: CashflowForecastProps) {
                           </span>
                         </div>
                         <div className="flex flex-col items-end bg-muted/30 px-3 py-1 rounded-md min-w-[100px]">
-                          <span className="text-[10px] text-muted-foreground leading-none mb-1">{t('estimated_balance')}</span>
+                          <span className="text-[10px] max-lg:text-xs text-muted-foreground leading-none mb-1">{t('estimated_balance')}</span>
                           <span className="text-xs font-mono font-bold leading-none">
                             {formatCurrency(event.projectedBalance)}
                           </span>

@@ -1,5 +1,7 @@
 'use client';
 
+import { tintedBadgeStyle } from '@/shared/lib/badge-color';
+
 import { 
   Table, 
   TableBody, 
@@ -127,12 +129,8 @@ export function TransactionTable({
                             <Badge 
                               key={tagId} 
                               variant="secondary" 
-                              className="h-4 px-1 text-[9px] py-0 font-normal cursor-pointer hover:brightness-90 transition-all"
-                              style={{ 
-                                backgroundColor: tag?.color ? `${tag.color}20` : undefined,
-                                color: tag?.color,
-                                borderColor: tag?.color ? `${tag.color}40` : undefined
-                              }}
+                              className="h-4 max-lg:h-5 px-1 text-[9px] max-lg:text-xs py-0 font-normal text-foreground cursor-pointer hover:brightness-90 transition-all"
+                              style={tintedBadgeStyle(tag?.color)}
                               onClick={(e) => {
                                 e.stopPropagation();
                                 onTagClick(tagId);
@@ -149,10 +147,7 @@ export function TransactionTable({
                 <TableCell>
                   <div className="truncate max-w-full">
                     {transaction.categoryId ? (
-                      <Badge variant="outline" className="gap-1.5" style={{ 
-                        borderColor: categories?.find(c => c.id === transaction.categoryId)?.color,
-                        color: categories?.find(c => c.id === transaction.categoryId)?.color 
-                      }}>
+                      <Badge variant="outline" className="gap-1.5 text-foreground" style={tintedBadgeStyle(categories?.find(c => c.id === transaction.categoryId)?.color)}>
                         <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: categories?.find(c => c.id === transaction.categoryId)?.color }} />
                         {categories?.find(c => c.id === transaction.categoryId)?.name}
                       </Badge>
@@ -168,7 +163,7 @@ export function TransactionTable({
                   <div className="flex flex-col items-end gap-0.5">
                     {formatCurrency(transaction.amount)}
                     {transaction.pending && (
-                      <span className="text-[8px] uppercase tracking-widest text-orange-500 font-bold bg-orange-500/10 px-1 rounded">{t('pending_short')}</span>
+                      <span className="text-[8px] max-lg:text-xs uppercase tracking-widest text-orange-500 font-bold bg-orange-500/10 px-1 rounded">{t('pending_short')}</span>
                     )}
                   </div>
                 </TableCell>

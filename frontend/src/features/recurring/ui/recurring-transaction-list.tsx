@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { tintedBadgeStyle } from '@/shared/lib/badge-color';
 import { useAccountStore } from '@/features/accounts/model/use-account-store';
 import { RecurringTransaction } from '../model/types';
 import { useRecurringTransactions } from '../api/use-recurring-transactions';
@@ -75,10 +76,7 @@ export function RecurringTransactionList() {
                   <TableCell>{tr.description}</TableCell>
                   <TableCell>
                     {tr.categoryId ? (
-                      <Badge variant="outline" style={{ 
-                        borderColor: categories?.find(c => c.id === tr.categoryId)?.color,
-                        color: categories?.find(c => c.id === tr.categoryId)?.color 
-                      }}>
+                      <Badge variant="outline" className="text-foreground" style={tintedBadgeStyle(categories?.find(c => c.id === tr.categoryId)?.color)}>
                         {categories?.find(c => c.id === tr.categoryId)?.name || t('categorized')}
                       </Badge>
                     ) : (

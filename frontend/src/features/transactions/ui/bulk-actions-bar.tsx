@@ -26,7 +26,7 @@ export function BulkActionsBar({
       <div className="bg-primary text-primary-foreground px-4 py-2 rounded-2xl shadow-2xl flex items-center gap-4 border border-primary-foreground/20 ring-4 ring-primary/10">
         <div className="flex items-center gap-2 px-2 border-r border-primary-foreground/20 mr-2">
           <span className="text-sm font-black tabular-nums">{selectedCount}</span>
-          <span className="text-[10px] font-bold uppercase tracking-wider opacity-80">{t('bulk.selected')}</span>
+          <span className="text-[10px] max-lg:text-xs font-bold uppercase tracking-wider opacity-80">{t('bulk.selected')}</span>
         </div>
         
         <div className="flex items-center gap-1">

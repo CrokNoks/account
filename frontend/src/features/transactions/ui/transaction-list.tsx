@@ -285,7 +285,7 @@ export function TransactionList({
       <div className={cn("flex items-center justify-between shrink-0", compact && "bg-muted/10 px-6 py-3 border-b")}>
         <div className="flex items-center gap-2">
           {compact && <Receipt className="w-4 h-4 text-primary" />}
-          <h2 className={cn("font-bold tracking-tight", compact ? "text-[10px] uppercase tracking-wider text-muted-foreground" : "text-3xl")}>{t('title')}</h2>
+          <h2 className={cn("font-bold tracking-tight", compact ? "text-[10px] max-lg:text-xs uppercase tracking-wider text-muted-foreground" : "text-3xl max-lg:hidden")}>{t('title')}</h2>
         </div>
         <div className="flex items-center gap-2">
           {extraActions}
@@ -341,7 +341,7 @@ export function TransactionList({
       {!compact && transactions && transactions.meta.totalPages >= 1 && (
         <div className="flex flex-col sm:flex-row items-center justify-between px-4 py-4 border-t bg-muted/5 rounded-b-xl mt-4 gap-4">
           <div className="flex items-center gap-6">
-            <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest whitespace-nowrap">
+            <div className="text-[10px] max-lg:text-xs font-bold text-muted-foreground uppercase tracking-widest whitespace-nowrap">
               {transactions.meta.total} {t('title').toLowerCase()}
             </div>
             {/* Limit Selector could be extracted too but it's small */}
@@ -352,7 +352,7 @@ export function TransactionList({
               <PaginationItem>
                 <PaginationPrevious 
                   label={tc('back')}
-                  className={cn("h-8 text-[10px] font-bold uppercase tracking-widest cursor-pointer", transactions.meta.page === 1 && "pointer-events-none opacity-50")}
+                  className={cn("h-8 text-[10px] max-lg:text-xs font-bold uppercase tracking-widest cursor-pointer", transactions.meta.page === 1 && "pointer-events-none opacity-50")}
                   onClick={(e) => { e.preventDefault(); setPage(p => Math.max(1, p - 1)); }}
                 />
               </PaginationItem>
@@ -372,7 +372,7 @@ export function TransactionList({
               <PaginationItem>
                 <PaginationNext 
                   label={tc('next')}
-                  className={cn("h-8 text-[10px] font-bold uppercase tracking-widest cursor-pointer", (transactions.meta.page === transactions.meta.totalPages || transactions.meta.totalPages === 0) && "pointer-events-none opacity-50")}
+                  className={cn("h-8 text-[10px] max-lg:text-xs font-bold uppercase tracking-widest cursor-pointer", (transactions.meta.page === transactions.meta.totalPages || transactions.meta.totalPages === 0) && "pointer-events-none opacity-50")}
                   onClick={(e) => { e.preventDefault(); setPage(p => Math.min(transactions.meta.totalPages, p + 1)); }}
                 />
               </PaginationItem>
