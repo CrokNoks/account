@@ -11,8 +11,18 @@ if ! command -v psql >/dev/null 2>&1; then
   exit 1
 fi
 
+# Seulement hôte:port dans les messages (l'URL contient le mot de passe).
+hostport="${DB_URL#*://}"
+hostport="${hostport##*@}"
+hostport="${hostport%%[/?]*}"
+host="${hostport%%:*}"
+if [ "$host" != "127.0.0.1" ] && [ "$host" != "localhost" ]; then
+  echo "Refusé : SQL_TEST_DB_URL doit viser 127.0.0.1 ou localhost (hôte reçu : $host). Ces tests ne s'exécutent qu'en local." >&2
+  exit 1
+fi
+
 if ! psql "$DB_URL" -v ON_ERROR_STOP=1 -q -c 'select 1' >/dev/null 2>&1; then
-  echo "Base injoignable ($DB_URL) : démarrez Supabase local (supabase start)." >&2
+  echo "Base injoignable ($hostport) : démarrez Supabase local (supabase start)." >&2
   exit 1
 fi
 
