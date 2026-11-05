@@ -8,11 +8,13 @@ import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAx
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAccountStore } from '@/features/accounts/model/use-account-store';
-import { useCategories } from '@/features/categories/api/use-categories';
+import { CategoryType } from '@/features/categories/model/types';
+import { CategorySelector } from '@/features/categories/ui/category-selector';
 import { usePeriods } from '@/features/budgets/api/use-periods';
 import { useCategoryOverrunsChart } from '../api/use-overruns';
 import { closedPeriodsChronological, defaultOverrunsRange, isRangeInverted } from '../model/overruns-range';
 
+const CHOICE_TYPES = [CategoryType.EXPENSE, CategoryType.SAVINGS];
 const triggerClass = 'w-[160px] h-8 text-xs font-medium bg-muted/30';
 
 export function CategoryOverrunsChart() {
@@ -20,14 +22,9 @@ export function CategoryOverrunsChart() {
   const locale = useLocale();
   const dateLocale = locale === 'fr' ? fr : enUS;
   const { activeAccountId } = useAccountStore();
-  const { data: categories } = useCategories(activeAccountId);
   const { data: periods } = usePeriods(activeAccountId);
 
   const closed = useMemo(() => closedPeriodsChronological(periods), [periods]);
-  const choices = useMemo(
-    () => (categories ?? []).filter((c) => c.type === 'expense' || c.type === 'savings'),
-    [categories],
-  );
   const defaults = useMemo(() => defaultOverrunsRange(closed), [closed]);
 
   const [categoryId, setCategoryId] = useState('');
@@ -66,18 +63,15 @@ export function CategoryOverrunsChart() {
         ) : (
           <>
             <div className="flex flex-wrap gap-3 items-center">
-              <Select value={categoryId} onValueChange={(v) => setCategoryId(v ?? '')}>
-                <SelectTrigger aria-label={t('overruns_category')} className="w-[200px] h-8 text-xs font-medium bg-muted/30">
-                  <SelectValue placeholder={t('overruns_choose_category')}>
-                    {choices.find((c) => c.id === categoryId)?.name}
-                  </SelectValue>
-                </SelectTrigger>
-                <SelectContent>
-                  {choices.map((c) => (
-                    <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <CategorySelector
+                accountId={activeAccountId}
+                value={categoryId}
+                onChange={setCategoryId}
+                types={CHOICE_TYPES}
+                placeholder={t('overruns_choose_category')}
+                aria-label={t('overruns_category')}
+                className="w-[200px] h-8 text-xs font-medium bg-muted/30"
+              />
               <Select value={startId} onValueChange={(v) => setStartOverride(v)}>
                 <SelectTrigger aria-label={t('overruns_from')} className={triggerClass}>
                   <SelectValue>{startId ? label(startId) : undefined}</SelectValue>

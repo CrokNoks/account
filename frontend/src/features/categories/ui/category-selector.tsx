@@ -16,6 +16,8 @@ import { useCategories } from '@/features/categories/api/use-categories';
 import { cn } from "@/lib/utils";
 import { useTranslations } from 'next-intl';
 
+type Category = NonNullable<ReturnType<typeof useCategories>['data']>[number];
+
 interface CategorySelectorProps {
   accountId: string | null;
   value: string;
@@ -23,6 +25,8 @@ interface CategorySelectorProps {
   placeholder?: string;
   className?: string;
   disabled?: boolean;
+  /** Restrict the list to these category types (all types when omitted). */
+  types?: readonly Category['type'][];
   'aria-label'?: string;
 }
 
@@ -34,7 +38,6 @@ function normalize(text: string) {
   return text.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase();
 }
 
-type Category = NonNullable<ReturnType<typeof useCategories>['data']>[number];
 interface SortedEntry {
   category: Category;
   key: string;
@@ -61,6 +64,7 @@ export function CategorySelector({
   placeholder,
   className,
   disabled,
+  types,
   'aria-label': ariaLabel,
 }: CategorySelectorProps) {
   const t = useTranslations('Categories');
@@ -73,9 +77,10 @@ export function CategorySelector({
   const visibleCategories = React.useMemo(() => {
     const query = normalize(search.trim());
     return getSorted(categories ?? EMPTY)
+      .filter((e) => !types || types.includes(e.category.type))
       .filter((e) => !query || e.key.includes(query))
       .map((e) => e.category);
-  }, [categories, search]);
+  }, [categories, search, types]);
 
   const handleOpenChange = (next: boolean) => {
     setOpen(next);

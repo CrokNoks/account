@@ -1,7 +1,7 @@
 import userEvent from '@testing-library/user-event';
 import { render, screen, within } from '@testing-library/react';
 import { NextIntlClientProvider } from 'next-intl';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeAll, describe, expect, it, vi } from 'vitest';
 import fr from '../../../../messages/fr.json';
 import { CategoryOverrunsChart } from './category-overruns-chart';
 
@@ -12,15 +12,20 @@ vi.mock('@/features/accounts/model/use-account-store', () => ({ useAccountStore:
 vi.mock('@/features/categories/api/use-categories', () => ({
   useCategories: () => ({
     data: [
-      { id: 'e', name: 'Courses', type: 'expense' },
-      { id: 's', name: 'Livret', type: 'savings' },
-      { id: 'i', name: 'Salaire', type: 'income' },
-      { id: 't', name: 'Virement', type: 'transfer' },
+      { id: 'e', name: 'Courses', type: 'expense', color: '#111' },
+      { id: 's', name: 'Livret', type: 'savings', color: '#222' },
+      { id: 'i', name: 'Salaire', type: 'income', color: '#333' },
+      { id: 't', name: 'Virement', type: 'transfer', color: '#444' },
     ],
   }),
 }));
 vi.mock('@/features/budgets/api/use-periods', () => ({ usePeriods: () => ({ data: periods }) }));
 vi.mock('../api/use-overruns', () => ({ useCategoryOverrunsChart: (...a: unknown[]) => chartHook(...a) }));
+
+beforeAll(() => {
+  globalThis.ResizeObserver ??= class { observe() {} unobserve() {} disconnect() {} } as unknown as typeof ResizeObserver;
+  Element.prototype.scrollIntoView ??= () => {};
+});
 
 const mk = (n: number, isActive = false) => ({
   id: `p${n}`,
@@ -31,15 +36,13 @@ const mk = (n: number, isActive = false) => ({
 const show = () => render(<NextIntlClientProvider locale="fr" messages={fr}><CategoryOverrunsChart /></NextIntlClientProvider>);
 
 const user = userEvent.setup();
+const chooseCategory = async (name: string) => {
+  await user.click(screen.getByLabelText('Catégorie'));
+  await user.click(await screen.findByRole('option', { name }));
+};
 const choose = async (trigger: string, option: string) => {
   await user.click(screen.getByLabelText(trigger));
   await user.click(within(await screen.findByRole('listbox')).getByText(option));
-};
-const optionsOf = async (trigger: string) => {
-  await user.click(screen.getByLabelText(trigger));
-  const texts = within(await screen.findByRole('listbox')).getAllByRole('option').map((o) => o.textContent);
-  await user.keyboard('{Escape}');
-  return texts;
 };
 
 describe('CategoryOverrunsChart', () => {
@@ -53,8 +56,22 @@ describe('CategoryOverrunsChart', () => {
     periods = [mk(1), mk(2)];
     show();
     expect(screen.getByLabelText('Catégorie').textContent).toContain('Choisir une catégorie');
-    expect(await optionsOf('Catégorie')).toEqual(['Courses', 'Livret']);
+    await user.click(screen.getByLabelText('Catégorie'));
+    const names = (await screen.findAllByRole('option')).map((o) => o.textContent);
+    expect(names.some((n) => /Courses/.test(n ?? '')) && names.some((n) => /Livret/.test(n ?? ''))).toBe(true);
+    expect(names.some((n) => /Salaire|Virement/.test(n ?? ''))).toBe(false);
+    await user.keyboard('{Escape}');
     expect(chartHook.mock.calls.at(-1)).toEqual(['acc-1', null, 'p1', 'p2']);
+  });
+
+  it('offers a search field to filter categories', async () => {
+    periods = [mk(1), mk(2)];
+    show();
+    await user.click(screen.getByLabelText('Catégorie'));
+    await user.type(await screen.findByPlaceholderText(/recherch/i), 'liv');
+    const names = screen.getAllByRole('option').map((o) => o.textContent);
+    expect(names.some((n) => /Courses/.test(n ?? ''))).toBe(false);
+    expect(names.some((n) => /Livret/.test(n ?? ''))).toBe(true);
   });
 
   it('defaults P2 to the last closed period and P1 six ranks before', async () => {
@@ -67,7 +84,7 @@ describe('CategoryOverrunsChart', () => {
   it('refuses P1 after P2 and does not query', async () => {
     periods = [mk(1), mk(2), mk(3)];
     show();
-    await choose('Catégorie', 'Courses');
+    await chooseCategory('Courses');
     await choose('Période de début', 'mars 26');
     await choose('Période de fin', 'janv. 26');
     expect(screen.getByRole('alert').textContent).toContain('antérieure');
