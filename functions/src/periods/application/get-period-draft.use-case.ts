@@ -1,8 +1,8 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { PeriodRepository } from '../domain/period.repository.interface';
 import { BudgetRepository } from '../../budgets/domain/budget.repository.interface';
 import { CategoryRepository } from '../../categories/domain/category.repository.interface';
-import { RecurringTransactionRepository } from '../../recurring/domain/recurring-transaction.repository.interface';
+import { proposedAmountForPeriod } from '../../budgets/domain/proposed-amount';
 import {
   addDaysDateOnly,
   addMonthsDateOnly,
@@ -28,8 +28,9 @@ export class GetPeriodDraftUseCase {
     private readonly periodRepository: PeriodRepository,
     private readonly budgetRepository: BudgetRepository,
     private readonly categoryRepository: CategoryRepository,
-    private readonly recurringRepository: RecurringTransactionRepository,
   ) {}
+
+  private readonly logger = new Logger(GetPeriodDraftUseCase.name);
 
   async execute(accountId: string): Promise<PeriodDraft> {
     // 1. Suggested dates
@@ -52,27 +53,17 @@ export class GetPeriodDraftUseCase {
     const categories =
       await this.categoryRepository.findAllByAccount(accountId);
 
-    // 4. Get recurring transactions to predict initial amounts
-    const recurringTransactions =
-      await this.recurringRepository.findAllByAccount(accountId);
+    // 4. Montants fixes configurés pour le compte (le montant proposé ne vient que d'eux)
+    const templates =
+      await this.budgetRepository.findTemplatesByAccount(accountId);
+    const configured = new Map(templates.map((t) => [t.categoryId, t.amount]));
 
     const categoriesWithStats = categories.map((cat) => {
       const catStat = stats.find((s) => s.categoryId === cat.id);
       const min = catStat?.minReal || BigInt(0);
       const max = catStat?.maxReal || BigInt(0);
       const avg = catStat?.avgReal || BigInt(0);
-
-      const categoryRecurringTxs = recurringTransactions.filter(
-        (rt) => rt.categoryId === cat.id,
-      );
-
-      let defaultAllocated = avg;
-      if (categoryRecurringTxs.length > 0) {
-        defaultAllocated = categoryRecurringTxs.reduce(
-          (sum, rt) => sum + rt.amount,
-          BigInt(0),
-        );
-      }
+      const defaultAllocated = proposedAmountForPeriod(configured.get(cat.id));
 
       return {
         categoryId: cat.id,
@@ -82,6 +73,15 @@ export class GetPeriodDraftUseCase {
         avgReal: avg.toString(),
         defaultAllocated: defaultAllocated.toString(),
       };
+    });
+
+    this.logger.log({
+      event: 'period_draft_built',
+      accountId,
+      categories: categories.length,
+      configuredNonZero: categoriesWithStats.filter(
+        (c) => c.defaultAllocated !== '0',
+      ).length,
     });
 
     return {

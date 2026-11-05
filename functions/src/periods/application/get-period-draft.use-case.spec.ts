@@ -3,16 +3,13 @@ import { GetPeriodDraftUseCase } from './get-period-draft.use-case';
 import { PeriodRepository } from '../domain/period.repository.interface';
 import { BudgetRepository } from '../../budgets/domain/budget.repository.interface';
 import { CategoryRepository } from '../../categories/domain/category.repository.interface';
-import { RecurringTransactionRepository } from '../../recurring/domain/recurring-transaction.repository.interface';
 import { Period } from '../domain/period.entity';
-import { RecurringTransaction } from '../../recurring/domain/recurring-transaction.entity';
 
 describe('GetPeriodDraftUseCase', () => {
   let useCase: GetPeriodDraftUseCase;
   let periodRepo: PeriodRepository;
   let budgetRepo: BudgetRepository;
   let categoryRepo: CategoryRepository;
-  let recurringRepo: RecurringTransactionRepository;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -24,14 +21,13 @@ describe('GetPeriodDraftUseCase', () => {
         },
         {
           provide: BudgetRepository,
-          useValue: { getHistoricalStatsByAccount: jest.fn() },
+          useValue: {
+            getHistoricalStatsByAccount: jest.fn(),
+            findTemplatesByAccount: jest.fn(),
+          },
         },
         {
           provide: CategoryRepository,
-          useValue: { findAllByAccount: jest.fn() },
-        },
-        {
-          provide: RecurringTransactionRepository,
           useValue: { findAllByAccount: jest.fn() },
         },
       ],
@@ -41,9 +37,6 @@ describe('GetPeriodDraftUseCase', () => {
     periodRepo = module.get<PeriodRepository>(PeriodRepository);
     budgetRepo = module.get<BudgetRepository>(BudgetRepository);
     categoryRepo = module.get<CategoryRepository>(CategoryRepository);
-    recurringRepo = module.get<RecurringTransactionRepository>(
-      RecurringTransactionRepository,
-    );
   });
 
   it('should suggest dates based on last period (1 month minus 1 day)', async () => {
@@ -55,7 +48,7 @@ describe('GetPeriodDraftUseCase', () => {
     (periodRepo.findLastByAccount as jest.Mock).mockResolvedValue(lastPeriod);
     (budgetRepo.getHistoricalStatsByAccount as jest.Mock).mockResolvedValue([]);
     (categoryRepo.findAllByAccount as jest.Mock).mockResolvedValue([]);
-    (recurringRepo.findAllByAccount as jest.Mock).mockResolvedValue([]);
+    (budgetRepo.findTemplatesByAccount as jest.Mock).mockResolvedValue([]);
 
     const result = await useCase.execute('acc-1');
 
@@ -64,71 +57,96 @@ describe('GetPeriodDraftUseCase', () => {
     expect(result.suggestedEndDate).toEqual(new Date('2026-02-10'));
   });
 
-  it('should include category stats and use avgReal when no recurring transactions exist', async () => {
+  const stat = {
+    categoryId: 'cat-1',
+    minReal: BigInt(-100),
+    maxReal: BigInt(-500),
+    avgReal: BigInt(30000),
+  };
+
+  function givenAccount(opts: {
+    templates?: Array<{ categoryId: string; amount: bigint }>;
+    stats?: unknown[];
+    categories?: Array<{ id: string; name: string }>;
+  }) {
     (periodRepo.findLastByAccount as jest.Mock).mockResolvedValue(null);
-    (budgetRepo.getHistoricalStatsByAccount as jest.Mock).mockResolvedValue([
-      {
-        categoryId: 'cat-1',
-        minReal: BigInt(-100),
-        maxReal: BigInt(-500),
-        avgReal: BigInt(-300),
-      },
-    ]);
-    (categoryRepo.findAllByAccount as jest.Mock).mockResolvedValue([
-      { id: 'cat-1', name: 'Food' },
-    ]);
-    (recurringRepo.findAllByAccount as jest.Mock).mockResolvedValue([]);
+    (budgetRepo.findTemplatesByAccount as jest.Mock).mockResolvedValue(
+      opts.templates ?? [],
+    );
+    (budgetRepo.getHistoricalStatsByAccount as jest.Mock).mockResolvedValue(
+      opts.stats ?? [],
+    );
+    (categoryRepo.findAllByAccount as jest.Mock).mockResolvedValue(
+      opts.categories ?? [{ id: 'cat-1', name: 'Food' }],
+    );
+  }
+
+  it('uses the configured amount, stats stay indicative (CA1)', async () => {
+    givenAccount({
+      templates: [{ categoryId: 'cat-1', amount: 50000n }],
+      stats: [stat],
+    });
 
     const result = await useCase.execute('acc-1');
 
-    expect(result.categoriesWithStats).toHaveLength(1);
-    expect(result.categoriesWithStats[0].name).toBe('Food');
-    expect(result.categoriesWithStats[0].avgReal).toBe('-300');
-    expect(result.categoriesWithStats[0].defaultAllocated).toBe('-300'); // defaults to avgReal
+    const c = result.categoriesWithStats[0];
+    expect(c.defaultAllocated).toBe('50000');
+    expect(c.avgReal).toBe('30000');
+    expect(c.minReal).toBe('-100');
+    expect(c.maxReal).toBe('-500');
   });
 
-  it('should prioritize recurring transactions sum over avgReal for defaultAllocated', async () => {
-    (periodRepo.findLastByAccount as jest.Mock).mockResolvedValue(null);
-    (budgetRepo.getHistoricalStatsByAccount as jest.Mock).mockResolvedValue([
-      {
-        categoryId: 'cat-1',
-        minReal: BigInt(-100),
-        maxReal: BigInt(-500),
-        avgReal: BigInt(-300),
-      },
-    ]);
-    (categoryRepo.findAllByAccount as jest.Mock).mockResolvedValue([
-      { id: 'cat-1', name: 'Food' },
-    ]);
+  it('proposes 0 when not configured, whatever the history (CA2)', async () => {
+    givenAccount({ stats: [stat] });
 
-    // Simulate 2 recurring transactions for cat-1
-    const recTx1 = RecurringTransaction.create({
-      accountId: 'acc-1',
-      categoryId: 'cat-1',
-      description: 't1',
-      amount: BigInt(-200),
-      dayOfMonth: 1,
-    });
-    const recTx2 = RecurringTransaction.create({
-      accountId: 'acc-1',
-      categoryId: 'cat-1',
-      description: 't2',
-      amount: BigInt(-150),
-      dayOfMonth: 5,
+    const result = await useCase.execute('acc-1');
+
+    expect(result.categoriesWithStats[0].defaultAllocated).toBe('0');
+    expect(result.categoriesWithStats[0].avgReal).toBe('30000');
+  });
+
+  it('proposes 0 for every category of an account without period nor configuration (CA2)', async () => {
+    givenAccount({
+      categories: [
+        { id: 'cat-1', name: 'Food' },
+        { id: 'cat-2', name: 'Rent' },
+      ],
     });
 
-    (recurringRepo.findAllByAccount as jest.Mock).mockResolvedValue([
-      recTx1,
-      recTx2,
+    const result = await useCase.execute('acc-1');
+
+    expect(result.categoriesWithStats.map((c) => c.defaultAllocated)).toEqual([
+      '0',
+      '0',
     ]);
+  });
+
+  it('proposes 0 for a line configured at 0', async () => {
+    givenAccount({
+      templates: [{ categoryId: 'cat-1', amount: 0n }],
+      stats: [stat],
+    });
+
+    const result = await useCase.execute('acc-1');
+
+    expect(result.categoriesWithStats[0].defaultAllocated).toBe('0');
+  });
+
+  it('keeps a negative configured amount', async () => {
+    givenAccount({ templates: [{ categoryId: 'cat-1', amount: -8000n }] });
+
+    const result = await useCase.execute('acc-1');
+
+    expect(result.categoriesWithStats[0].defaultAllocated).toBe('-8000');
+  });
+
+  it('ignores the configuration of a category that no longer exists', async () => {
+    givenAccount({ templates: [{ categoryId: 'deleted', amount: 100n }] });
 
     const result = await useCase.execute('acc-1');
 
     expect(result.categoriesWithStats).toHaveLength(1);
-    expect(result.categoriesWithStats[0].name).toBe('Food');
-    expect(result.categoriesWithStats[0].avgReal).toBe('-300');
-    // Sum of recurring is -350
-    expect(result.categoriesWithStats[0].defaultAllocated).toBe('-350');
+    expect(result.categoriesWithStats[0].defaultAllocated).toBe('0');
   });
 
   it('suggests today (calendar date in the business time zone) when there is no period yet', async () => {
@@ -136,7 +154,7 @@ describe('GetPeriodDraftUseCase', () => {
     (periodRepo.findLastByAccount as jest.Mock).mockResolvedValue(null);
     (budgetRepo.getHistoricalStatsByAccount as jest.Mock).mockResolvedValue([]);
     (categoryRepo.findAllByAccount as jest.Mock).mockResolvedValue([]);
-    (recurringRepo.findAllByAccount as jest.Mock).mockResolvedValue([]);
+    (budgetRepo.findTemplatesByAccount as jest.Mock).mockResolvedValue([]);
 
     const result = await useCase.execute('acc-1');
     jest.useRealTimers();
