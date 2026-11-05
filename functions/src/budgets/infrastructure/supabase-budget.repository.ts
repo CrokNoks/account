@@ -2,6 +2,7 @@ import { Injectable, Inject } from '@nestjs/common';
 import { SupabaseClient } from '@supabase/supabase-js';
 import {
   BudgetRepository,
+  BudgetTemplate,
   CategoryStats,
 } from '../domain/budget.repository.interface';
 import { BudgetInstance } from '../domain/budget-instance.entity';
@@ -22,6 +23,11 @@ interface CategoryStatsRow {
   min_real: string;
   max_real: string;
   avg_real: number;
+}
+
+interface BudgetTemplateRow {
+  category_id: string;
+  amount_base: string | number;
 }
 
 /** Code Postgres d'une violation de contrainte d'unicité. */
@@ -124,6 +130,39 @@ export class SupabaseBudgetRepository implements BudgetRepository {
       maxReal: BigInt(row.max_real),
       avgReal: BigInt(Math.round(row.avg_real)),
     }));
+  }
+
+  async findTemplatesByAccount(accountId: string): Promise<BudgetTemplate[]> {
+    const { data, error } = await this.supabase
+      .from('budget_templates')
+      .select('category_id, amount_base')
+      .eq('account_id', accountId)
+      .returns<BudgetTemplateRow[]>();
+
+    if (error) throw new Error(error.message);
+
+    return (data || []).map((row) => ({
+      categoryId: row.category_id,
+      amount: BigInt(row.amount_base),
+    }));
+  }
+
+  async saveTemplates(
+    accountId: string,
+    items: BudgetTemplate[],
+  ): Promise<void> {
+    if (items.length === 0) return;
+    // Un seul upsert = un seul ordre SQL : tout ou rien.
+    const { error } = await this.supabase.from('budget_templates').upsert(
+      items.map((item) => ({
+        account_id: accountId,
+        category_id: item.categoryId,
+        amount_base: item.amount.toString(),
+      })),
+      { onConflict: 'account_id,category_id' },
+    );
+
+    if (error) throw toDomainError(error);
   }
 
   private mapToDomain(row: BudgetInstanceRow): BudgetInstance {

@@ -7,6 +7,11 @@ export interface CategoryStats {
   avgReal: bigint;
 }
 
+export interface BudgetTemplate {
+  categoryId: string;
+  amount: bigint;
+}
+
 export abstract class BudgetRepository {
   abstract findAllByPeriod(periodId: string): Promise<BudgetInstance[]>;
   abstract findById(id: string): Promise<BudgetInstance | null>;
@@ -29,4 +34,16 @@ export abstract class BudgetRepository {
   abstract getHistoricalStatsByAccount(
     accountId: string,
   ): Promise<CategoryStats[]>;
+
+  /** Montants fixes configurés pour le compte (une ligne par catégorie configurée). */
+  abstract findTemplatesByAccount(accountId: string): Promise<BudgetTemplate[]>;
+
+  /**
+   * Enregistre les montants fixes du compte en un seul `upsert` (un seul ordre SQL :
+   * tout ou rien) sur (compte, catégorie).
+   */
+  abstract saveTemplates(
+    accountId: string,
+    items: BudgetTemplate[],
+  ): Promise<void>;
 }

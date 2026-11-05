@@ -1,5 +1,5 @@
 import { SupabaseClient } from '@supabase/supabase-js';
-import { ConflictError } from '../../shared/domain/errors';
+import { ConflictError, ForbiddenError } from '../../shared/domain/errors';
 import { BudgetInstance } from '../domain/budget-instance.entity';
 import { SupabaseBudgetRepository } from './supabase-budget.repository';
 
@@ -95,5 +95,80 @@ describe('SupabaseBudgetRepository.replaceForPeriod', () => {
     await expect(repository.replaceForPeriod('per-1', [])).rejects.toThrow(
       'rls',
     );
+  });
+});
+
+describe('SupabaseBudgetRepository budget templates', () => {
+  it('reads the configured amounts of the account as bigint', async () => {
+    const returns = jest.fn().mockResolvedValue({
+      data: [
+        { category_id: 'cat-1', amount_base: 50000 },
+        { category_id: 'cat-2', amount_base: '-8000' },
+      ],
+      error: null,
+    });
+    const eq = jest.fn().mockReturnValue({ returns });
+    const select = jest.fn().mockReturnValue({ eq });
+    const from = jest.fn().mockReturnValue({ select });
+    const repository = new SupabaseBudgetRepository({
+      from,
+    } as unknown as SupabaseClient);
+
+    const result = await repository.findTemplatesByAccount('acc-1');
+
+    expect(from).toHaveBeenCalledWith('budget_templates');
+    expect(eq).toHaveBeenCalledWith('account_id', 'acc-1');
+    expect(result).toEqual([
+      { categoryId: 'cat-1', amount: BigInt(50000) },
+      { categoryId: 'cat-2', amount: BigInt(-8000) },
+    ]);
+  });
+
+  it('saves all lines in one single upsert on (account, category)', async () => {
+    const upsert = jest.fn().mockResolvedValue({ error: null });
+    const from = jest.fn().mockReturnValue({ upsert });
+    const repository = new SupabaseBudgetRepository({
+      from,
+    } as unknown as SupabaseClient);
+
+    await repository.saveTemplates('acc-1', [
+      { categoryId: 'cat-1', amount: BigInt(100) },
+      { categoryId: 'cat-2', amount: BigInt(0) },
+    ]);
+
+    expect(upsert).toHaveBeenCalledTimes(1);
+    expect(upsert).toHaveBeenCalledWith(
+      [
+        { account_id: 'acc-1', category_id: 'cat-1', amount_base: '100' },
+        { account_id: 'acc-1', category_id: 'cat-2', amount_base: '0' },
+      ],
+      { onConflict: 'account_id,category_id' },
+    );
+  });
+
+  it('does not call the database for an empty list', async () => {
+    const from = jest.fn();
+    const repository = new SupabaseBudgetRepository({
+      from,
+    } as unknown as SupabaseClient);
+
+    await repository.saveTemplates('acc-1', []);
+
+    expect(from).not.toHaveBeenCalled();
+  });
+
+  it('turns a permission error into a ForbiddenError', async () => {
+    const upsert = jest
+      .fn()
+      .mockResolvedValue({ error: { code: '42501', message: 'rls' } });
+    const repository = new SupabaseBudgetRepository({
+      from: jest.fn().mockReturnValue({ upsert }),
+    } as unknown as SupabaseClient);
+
+    await expect(
+      repository.saveTemplates('acc-1', [
+        { categoryId: 'cat-1', amount: BigInt(1) },
+      ]),
+    ).rejects.toBeInstanceOf(ForbiddenError);
   });
 });
