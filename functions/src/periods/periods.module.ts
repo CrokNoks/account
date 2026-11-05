@@ -10,6 +10,8 @@ import { CreatePeriodWithBudgetsUseCase } from './application/create-period-with
 import { UpdatePeriodBudgetsUseCase } from './application/update-period-budgets.use-case';
 import { AccountReferencesModule } from '../shared/account-references.module';
 import { PeriodsController } from './infrastructure/periods.controller';
+import { BudgetTemplatesController } from './infrastructure/budget-templates.controller';
+import { SaveBudgetTemplatesUseCase } from './application/save-budget-templates.use-case';
 
 @Module({
   imports: [
@@ -21,11 +23,12 @@ import { PeriodsController } from './infrastructure/periods.controller';
     RecurringModule,
     AccountReferencesModule,
   ],
-  controllers: [PeriodsController],
+  controllers: [PeriodsController, BudgetTemplatesController],
   providers: [
     GetPeriodDraftUseCase,
     CreatePeriodWithBudgetsUseCase,
     UpdatePeriodBudgetsUseCase,
+    SaveBudgetTemplatesUseCase,
   ],
   exports: [
     PeriodRepositoryModule,
