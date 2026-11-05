@@ -1,6 +1,6 @@
 # Périodes — découper la vie d'un compte en périodes (souvent un mois), avec un budget par catégorie et des transactions récurrentes injectées
 
-Mise à jour : 2026-11-01 · Commit : fc285ef
+Mise à jour : 2026-11-05 · Commit : 83587d9
 
 ## Vocabulaire
 | Mot | Ce que ça veut dire ici |
@@ -8,7 +8,7 @@ Mise à jour : 2026-11-01 · Commit : fc285ef
 | Période | Intervalle de dates d'un compte (début, fin). Sert à regrouper les transactions et les budgets. |
 | Période active | La période en cours : une seule à la fois par compte (voir règles). |
 | Budget de période | Montant alloué à une catégorie pour la période (module `budgets`, voir `docs/budgets.md`). |
-| Brouillon (draft) | Proposition calculée pour préparer la prochaine période : dates suggérées + statistiques et montant par défaut par catégorie. |
+| Brouillon (draft) | Proposition calculée pour préparer la prochaine période : dates suggérées + statistiques indicatives et montant proposé par catégorie (le montant fixe configuré du compte, voir `docs/budgets.md`). |
 | Transaction récurrente | Modèle de transaction mensuelle (voir `docs/recurring.md`) ; peut être transformé en vraies transactions à la création d'une période. |
 
 ## Règles métier
@@ -21,7 +21,10 @@ Mise à jour : 2026-11-01 · Commit : fc285ef
 | Les transactions générées sont « en attente » (`pending`), non rapprochées, avec la mention d'origine `{source:'recurring', recurringId}`. Voulu (Lucas) : `pending` = facture à venir (ex. une récurrente générée) : affichée, exclue du solde à venir et du solde en banque, mais comptée dans le solde prévisionnel (« ça force à ranger les transactions ») ; non rapprochée et non `pending` = CB/prélèvement déjà fait, en attente d'exécution, compté dans le solde à venir (calculs : `docs/reporting.md`). Ne pas générer les récurrentes en `pending: false` | `create-period-with-budgets.use-case.ts:82-84` | ✅ partielle : `create-period-with-budgets.use-case.spec.ts` (« passes the pending transactions generated from recurring ones… ») |
 | Création : chaque catégorie citée par un budget doit appartenir au compte de l'URL, sinon 400 sans écriture (`AccountReferencesService.ensureCategories`) | `create-period-with-budgets.use-case.ts:33-36` | ✅ `create-period-with-budgets.use-case.spec.ts` (« refuses a budget category of another account without any write »), e2e `cross-account-references.e2e-spec.ts` |
 | Brouillon : début suggéré = lendemain de la fin de la dernière période (ou de son début si elle n'a pas de fin), sinon aujourd'hui ; fin suggérée = début + 1 mois - 1 jour ; la « dernière période » est celle dont la date de fin est la plus récente (`findLastByAccount`, tri sur `end_date`) | `get-period-draft.use-case.ts:34-45`, `supabase-period.repository.ts:62-70` | ✅ `get-period-draft.use-case.spec.ts` « should suggest dates… » |
-| Brouillon : montant par défaut d'une catégorie = moyenne historique ; s'il existe des récurrentes dans cette catégorie, = somme de leurs montants à la place | `get-period-draft.use-case.ts:59-75` | ✅ « …use avgReal when no recurring… » et « …prioritize recurring transactions sum… » |
+| Brouillon : montant proposé (`defaultAllocated`) d'une catégorie = son montant fixe configuré pour le compte (table `budget_templates`), sinon 0 ; une ligne configurée à 0 donne 0 ; un montant négatif est gardé. Plus aucune moyenne historique ni somme de récurrentes. Les statistiques min/moyenne/max restent renvoyées à titre indicatif, sans influence sur le montant proposé. Un montant configuré pour une catégorie supprimée est ignoré | `get-period-draft.use-case.ts:56-67`, `budgets/domain/proposed-amount.ts:7-12` | ✅ `get-period-draft.use-case.spec.ts` (« uses the configured amount… », « proposes 0 when not configured… », « …line configured at 0 », « keeps a negative… », « ignores the configuration of a category that no longer exists »), `proposed-amount.spec.ts` ; réel : `http/budgets-fixes.http` (CA1, CA2, CA8) |
+| Brouillon : à chaque appel un log structuré `period_draft_built` (compte, nombre de catégories, nombre de catégories proposées à un montant non nul) | `get-period-draft.use-case.ts:78-85` | ❌ |
+| Le brouillon ne modifie jamais la configuration, et saisir un autre montant à la création ne la modifie pas non plus : la période prend le montant saisi (le POST reçoit des montants du client) | `create-period-with-budgets.use-case.ts` | ✅ réel : `http/budgets-fixes.http` (CA6) ; ❌ test unitaire |
+| Budgets fixes : configuration du compte lue et enregistrée par `GET/PUT /:accountId/budget-templates` (voir plus bas et `docs/budgets.md`) ; changer la configuration ne change pas les budgets des périodes déjà créées | `budget-templates.controller.ts:50-75` | ✅ réel : `http/budgets-fixes.http` (CA8) |
 | Brouillon : toutes les catégories du compte sont listées (stat à 0 si aucun historique) | `get-period-draft.use-case.ts:51-53,59-85` | ✅ « should include category stats… » |
 | Remplacer les budgets : supprime tous les budgets de la période puis recrée ceux fournis (montants égaux à 0 ignorés, `update-period-budgets.use-case.ts:32`), en une seule transaction via la fonction SQL `replace_period_budgets(p_period_id, p_budgets)` (`BudgetRepository.replaceForPeriod`) ; si l'insertion échoue (catégorie en double → 409, RLS), les anciens budgets sont conservés | `update-period-budgets.use-case.ts`, `supabase/migrations/20261030100200_atomic_replace_period_budgets.sql` | ✅ `update-period-budgets.use-case.spec.ts`, `supabase-budget.repository.spec.ts` |
 | À la création le montant 0 n'est PAS filtré (contrairement au remplacement) | `create-period-with-budgets.use-case.ts:46-52` | ❌ |
@@ -37,20 +40,37 @@ Mise à jour : 2026-11-01 · Commit : fc285ef
 Période (table `periods`) : id ; compte ; date de début ; date de fin (peut être vide) ; `estimated_end_date` (colonne présente en base, non utilisée par le code) ; active oui/non ; dates de création/modification. Dates enregistrées sans heure (`YYYY-MM-DD`, `supabase-period.repository.ts:96-98,118-120`). Budgets : voir `docs/budgets.md`.
 
 ## Ce qu'on peut faire
-Qui : toutes les routes exigent un token de connexion valide (`@UseGuards(SupabaseAuthGuard)`, `periods.controller.ts:112` ; stratégie JWT `functions/src/auth/supabase.strategy.ts:61`). Pas de middleware global ni de décorateur d'identité : le contrôleur ne lit pas l'utilisateur. Les droits sont contrôlés uniquement en base (RLS) car le client Supabase porte le token de l'utilisateur (`functions/src/supabase/supabase.module.ts:25-40`). Les routes `GET/PATCH/DELETE :id` et `GET/PUT :id/budgets` vérifient que la période appartient à `:accountId` (`account-ownership.ts`) : inexistante ou d'un autre compte = 404 identique, sans écriture.
+Qui : toutes les routes (y compris `budget-templates`, `budget-templates.controller.ts:49`) exigent un token de connexion valide (`@UseGuards(SupabaseAuthGuard)`, `periods.controller.ts:112` ; stratégie JWT `functions/src/auth/supabase.strategy.ts:61`). Pas de middleware global ni de décorateur d'identité : le contrôleur ne lit pas l'utilisateur. Les droits sont contrôlés uniquement en base (RLS) car le client Supabase porte le token de l'utilisateur (`functions/src/supabase/supabase.module.ts:25-40`). Les routes `GET/PATCH/DELETE :id` et `GET/PUT :id/budgets` vérifient que la période appartient à `:accountId` (`account-ownership.ts`) : inexistante ou d'un autre compte = 404 identique, sans écriture.
 
 | Action | Point d'entrée | Effet | Source |
 | --- | --- | --- | --- |
 | Lister les périodes | `GET /:accountId/periods` | tri par début décroissant | `periods.controller.ts:123`, `supabase-period.repository.ts:79-85` |
-| Brouillon | `GET /:accountId/periods/draft-init` | dates suggérées + stats par catégorie | `periods.controller.ts:130` |
+| Brouillon | `GET /:accountId/periods/draft-init` | dates suggérées + stats indicatives + montant proposé par catégorie (montant fixe configuré, sinon 0) | `periods.controller.ts:130` |
 | Budgets d'une période | `GET /:accountId/periods/:id/budgets` | liste (id, catégorie, montant) | `periods.controller.ts:139` |
 | Remplacer les budgets | `PUT /:accountId/periods/:id/budgets` | voir règle | `periods.controller.ts:155` |
 | Lire une période | `GET /:accountId/periods/:id` | renvoie la période ; inexistante ou d'un autre compte : 404 | `periods.controller.ts:180` |
 | Modifier (dates, active) | `PATCH /:accountId/periods/:id` | met à jour ; réactiver une période alors qu'une autre est active renvoie 409 « Another period is already active for this account » (il faut d'abord clôturer l'autre) | `periods.controller.ts:190` |
 | Supprimer | `DELETE /:accountId/periods/:id` | supprime ; 204 sans corps | `periods.controller.ts:221` |
 | Créer avec budgets | `POST /:accountId/periods` | voir règles ; renvoie id, dates, nombre de budgets | `periods.controller.ts:237` |
+| Lire les budgets fixes du compte | `GET /:accountId/budget-templates` | toutes les catégories du compte avec leur montant (voir « Budgets fixes du compte ») ; 403 sans accès au compte | `budget-templates.controller.ts:57` |
+| Enregistrer les budgets fixes | `PUT /:accountId/budget-templates` | corps `{items:[{categoryId, amount}]}` (≤ 500, `amount` = centimes en texte) ; 204 sans corps | `budget-templates.controller.ts:69` |
 
-Front (`frontend/src/features/periods/`) : liste (`ui/period-list.tsx`) avec « clôturer » (PATCH `isActive:false`, après confirmation navigateur), édition des dates, suppression (confirmation), édition des budgets (`ui/edit-period-budgets-sheet.tsx`) et création (`ui/create-period-dialog.tsx`, pré-remplie par le brouillon, montants saisis convertis par `toCents` ; un budget illisible bloque l'envoi avec un message d'erreur, aussi à l'édition des budgets). Hooks : `usePeriods` (dans `features/budgets`), `usePeriodDraft`, `usePeriodBudgets`, `useCreatePeriod`, `useUpdatePeriod`, `useUpdatePeriodBudgets`, `useDeletePeriod`. Après création/modification, le front rafraîchit aussi les transactions et le reporting.
+Front (`frontend/src/features/periods/`) : liste (`ui/period-list.tsx`) avec « clôturer » (PATCH `isActive:false`, après confirmation navigateur), édition des dates, suppression (confirmation), édition des budgets (`ui/edit-period-budgets-sheet.tsx`) et création (`ui/create-period-dialog.tsx`, pré-remplie par le brouillon, montants saisis convertis par `toCents` ; un budget illisible bloque l'envoi avec un message d'erreur, aussi à l'édition des budgets). Écran des budgets fixes : `/budgets/fixed` (voir « Budgets fixes du compte »). Hooks : `usePeriods` (dans `features/budgets`), `usePeriodDraft`, `usePeriodBudgets`, `useCreatePeriod`, `useUpdatePeriod`, `useUpdatePeriodBudgets`, `useDeletePeriod`. Après création/modification, le front rafraîchit aussi les transactions et le reporting.
+
+## Budgets fixes du compte
+Un « budget fixe » est le montant que Lucas veut voir proposé pour une catégorie à chaque nouvelle période (ex. loyer). Il est stocké une fois par (compte, catégorie) dans `budget_templates` (détail : `docs/budgets.md`). Routes dans le module `periods` (`periods.module.ts`, contrôleur `BudgetTemplatesController`), même garde de connexion que les périodes ; pas de décorateur d'identité, les droits viennent de la RLS.
+
+| Règle | Source | Testée |
+| --- | --- | --- |
+| Lecture : une ligne par catégorie du compte, `amount` en centimes (texte) et `isProposal`. Si un montant non nul est configuré il est renvoyé (`isProposal:false`) ; sinon (pas de ligne ou ligne à 0) la somme des récurrentes de la catégorie, `isProposal:true` si cette somme n'est pas 0 ; sinon 0. La proposition n'est jamais enregistrée par la lecture. 0 = « non configuré » | `get-budget-templates.use-case.ts:28-54`, `proposed-amount.ts:15-22` | ✅ `get-budget-templates.use-case.spec.ts`, `proposed-amount.spec.ts` ; réel : CA3 |
+| Lecture sans accès au compte (inconnu ou ni propriétaire ni partagé) : 403 « No access to this account », rien d'autre n'est lu. Lecture seule partagée : lecture permise | `get-budget-templates.use-case.ts:29-33` | ✅ « refuses (403)… » ; réel : CA7 |
+| Enregistrement tout ou rien : doublon de catégorie dans le lot -> 400 ; chaque catégorie doit appartenir au compte de l'URL (inconnue, supprimée ou d'un autre compte -> 400, rien n'est écrit) ; puis un seul upsert sur (compte, catégorie). Les catégories absentes du lot ne sont pas touchées ; un lot vide n'écrit rien | `save-budget-templates.use-case.ts:23-35`, `supabase-budget.repository.ts:150-166` | ✅ `save-budget-templates.use-case.spec.ts` (4 cas), `supabase-budget.repository.spec.ts` ; réel : tout ou rien, doublon |
+| Enregistrement par un compte partagé en lecture seule : 403 (refus de la RLS, code 42501 traduit par `toDomainError`) ; par un utilisateur sans accès au compte : 400 « Category does not belong to this account » (ses catégories lui sont invisibles), sans écriture | `supabase-error.ts:23,40`, `account-references.service.ts:31-44` | ✅ réel : `http/budgets-fixes.http` (CA7) ; ❌ test unitaire |
+| `categoryId` UUID, `amount` entier de centimes en texte (décimal comme `12.5` -> 400), tableau de 500 au plus ; anonyme -> 401 | `budget-templates.controller.ts:28-47` | ✅ réel : `http/budgets-fixes.http` |
+
+Front : écran `/budgets/fixed` (`frontend/src/app/[locale]/(dashboard)/budgets/fixed/page.tsx`), lien depuis `/budgets` (`budgets/page.tsx:23`). Le formulaire (`features/periods/ui/budget-templates-form.tsx`) liste toutes les catégories avec leur montant, signale les propositions non enregistrées (`isProposal`), bloque l'envoi si un montant est illisible, et enregistre toutes les lignes d'un coup (`PUT`, montants convertis par `toCents`). Test : `budget-templates-form.test.tsx`. Hooks : `useBudgetTemplates`, `useSaveBudgetTemplates`.
+
+Reprise des données : la migration `supabase/migrations/20261105100000_reset_budget_templates.sql` vide d'abord `budget_templates` (anciens restes inutilisés, sans sauvegarde, à ne jamais rejouer), puis `20261105100100_backfill_budget_templates.sql` remplit `budget_templates` à partir des budgets de la période la plus récente de chaque compte. Détail dans `docs/budgets.md`.
 
 ## Statuts et transitions
 Active / inactive (`is_active`). Création : la nouvelle est active, les autres actives passent inactives. Clôture : active -> inactive via PATCH. Réactiver une période par PATCH est possible seulement si aucune autre n'est active (voir « Une seule période active »).
@@ -65,6 +85,7 @@ Avant `supabase db push` en production : `select account_id from periods where i
 
 ## Zones d'ombre
 - Les `categoryId` des budgets reçus en body doivent être des UUID : sinon 400 (voir `transactions.md`). Ceux de la route (`:accountId`, `:id`) le sont aussi (voir `transactions.md`).
+- `end_date` peut être NULL dans `periods` (colonne sans NOT NULL). `findLastByAccount` trie sur `end_date` décroissant, ce qui place les NULL en premier par défaut dans PostgreSQL : une période ouverte serait donc la « dernière » pour le brouillon (début suggéré = lendemain de son début). Aucun test ne couvre ce cas ; l'API ne crée pas de période ouverte, mais la base peut en contenir.
 - Pourquoi le montant 0 est filtré au remplacement mais pas à la création : inconnu.
 - La date du jour du brouillon est la date calendaire du fuseau métier (`APP_TIME_ZONE`, `Europe/Paris` par défaut), identique quel que soit le fuseau du serveur (`shared/domain/date-only.ts`).
 - Les erreurs « Period not found » sont des `NotFoundError` levée par `ensureBelongsToAccount` (`periods.controller.ts:229-234`) → 404.
