@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Get,
   HttpCode,
   Param,
   Put,
@@ -16,6 +17,10 @@ import {
 import { ArrayMaxSize, IsArray, IsUUID, ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
 import { SupabaseAuthGuard } from '../../auth/supabase-auth.guard';
+import {
+  GetBudgetTemplatesUseCase,
+  BudgetTemplateView,
+} from '../application/get-budget-templates.use-case';
 import { SaveBudgetTemplatesUseCase } from '../application/save-budget-templates.use-case';
 import { parseCents } from '../../shared/domain/cents';
 import { IsCents } from '../../shared/infrastructure/is-cents.decorator';
@@ -44,7 +49,22 @@ export class SaveBudgetTemplatesDto {
 @UseGuards(SupabaseAuthGuard)
 @Controller(':accountId/budget-templates')
 export class BudgetTemplatesController {
-  constructor(private readonly saveUseCase: SaveBudgetTemplatesUseCase) {}
+  constructor(
+    private readonly saveUseCase: SaveBudgetTemplatesUseCase,
+    private readonly getUseCase: GetBudgetTemplatesUseCase,
+  ) {}
+
+  @Get()
+  @ApiOperation({
+    summary:
+      'List every category with its fixed amount (or a proposal from recurring transactions)',
+  })
+  @ApiResponse({ status: 200 })
+  async list(
+    @Param('accountId') accountId: string,
+  ): Promise<BudgetTemplateView[]> {
+    return this.getUseCase.execute(accountId);
+  }
 
   @Put()
   @HttpCode(204)
