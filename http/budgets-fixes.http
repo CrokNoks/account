@@ -1,0 +1,158 @@
+# Budgets fixes du compte : écriture de la configuration (CA3, CA6, CA7) et tout ou rien.
+# Lancement : npx httpyac send --all http/budgets-fixes.http --var port=8080 --var anon=<ANON_KEY de functions/.env>
+# (la clé vient de la ligne de commande, jamais du fichier ; les utilisateurs sont jetables, créés par le fichier)
+# Les lignes de budget_templates se vérifient en base (la lecture par l'API arrive avec le calcul du montant proposé) :
+#   docker exec supabase_db_account-v2 psql -U postgres -c "select category_id, amount_base from budget_templates where account_id = '<id>'"
+@baseUrl = http://localhost:{{port}}
+@authUrl = http://127.0.0.1:54321/auth/v1
+
+### A : propriétaire
+# @name a
+POST {{authUrl}}/signup
+apikey: {{anon}}
+Content-Type: application/json
+
+{ "email": "bf-a-{{$timestamp}}@example.com", "password": "Password123!" }
+
+?? status == 200
+
+### B : partage en lecture seule
+# @name b
+POST {{authUrl}}/signup
+apikey: {{anon}}
+Content-Type: application/json
+
+{ "email": "bf-b-{{$timestamp}}@example.com", "password": "Password123!" }
+
+?? status == 200
+
+### C : sans partage
+# @name c
+POST {{authUrl}}/signup
+apikey: {{anon}}
+Content-Type: application/json
+
+{ "email": "bf-c-{{$timestamp}}@example.com", "password": "Password123!" }
+
+?? status == 200
+
+### A crée un compte
+# @name account
+POST {{baseUrl}}/accounts
+Authorization: Bearer {{a.access_token}}
+Content-Type: application/json
+
+{ "name": "bf-{{$timestamp}}", "initialBalance": "0" }
+
+?? status == 201
+
+### A partage le compte à B en lecture
+POST {{baseUrl}}/accounts/{{account.id}}/shares
+Authorization: Bearer {{a.access_token}}
+Content-Type: application/json
+
+{ "email": "{{b.user.email}}", "permission": "read" }
+
+?? status == 201
+
+### A crée la catégorie 1
+# @name cat1
+POST {{baseUrl}}/{{account.id}}/categories
+Authorization: Bearer {{a.access_token}}
+Content-Type: application/json
+
+{ "name": "Courses", "color": "#112233", "type": "expense" }
+
+?? status == 201
+
+### A crée la catégorie 2
+# @name cat2
+POST {{baseUrl}}/{{account.id}}/categories
+Authorization: Bearer {{a.access_token}}
+Content-Type: application/json
+
+{ "name": "Loyer", "color": "#445566", "type": "expense" }
+
+?? status == 201
+
+### CA3 : A enregistre deux lignes en un appel (50000 et -8000 centimes)
+PUT {{baseUrl}}/{{account.id}}/budget-templates
+Authorization: Bearer {{a.access_token}}
+Content-Type: application/json
+
+{ "items": [
+  { "categoryId": "{{cat1.id}}", "amount": "50000" },
+  { "categoryId": "{{cat2.id}}", "amount": "-8000" }
+] }
+
+?? status == 204
+
+### CA7 : B (lecture seule) ne peut pas écrire
+PUT {{baseUrl}}/{{account.id}}/budget-templates
+Authorization: Bearer {{b.access_token}}
+Content-Type: application/json
+
+{ "items": [ { "categoryId": "{{cat1.id}}", "amount": "1" } ] }
+
+?? status >= 400
+?? status < 500
+
+### CA7 : C (sans accès) ne peut pas écrire
+PUT {{baseUrl}}/{{account.id}}/budget-templates
+Authorization: Bearer {{c.access_token}}
+Content-Type: application/json
+
+{ "items": [ { "categoryId": "{{cat1.id}}", "amount": "2" } ] }
+
+?? status >= 400
+?? status < 500
+
+### Anonyme : refusé
+PUT {{baseUrl}}/{{account.id}}/budget-templates
+Content-Type: application/json
+
+{ "items": [ { "categoryId": "{{cat1.id}}", "amount": "3" } ] }
+
+?? status == 401
+
+### Tout ou rien : une catégorie inconnue refuse tout le lot (400)
+PUT {{baseUrl}}/{{account.id}}/budget-templates
+Authorization: Bearer {{a.access_token}}
+Content-Type: application/json
+
+{ "items": [
+  { "categoryId": "{{cat1.id}}", "amount": "999" },
+  { "categoryId": "00000000-0000-4000-8000-000000000000", "amount": "5" }
+] }
+
+?? status == 400
+
+### Doublon de catégorie : 400
+PUT {{baseUrl}}/{{account.id}}/budget-templates
+Authorization: Bearer {{a.access_token}}
+Content-Type: application/json
+
+{ "items": [
+  { "categoryId": "{{cat1.id}}", "amount": "1" },
+  { "categoryId": "{{cat1.id}}", "amount": "2" }
+] }
+
+?? status == 400
+
+### Montant non entier (12.5) : 400
+PUT {{baseUrl}}/{{account.id}}/budget-templates
+Authorization: Bearer {{a.access_token}}
+Content-Type: application/json
+
+{ "items": [ { "categoryId": "{{cat1.id}}", "amount": "12.5" } ] }
+
+?? status == 400
+
+### CA6 : créer une période avec un montant saisi (12345) ne modifie pas la configuration
+POST {{baseUrl}}/{{account.id}}/periods
+Authorization: Bearer {{a.access_token}}
+Content-Type: application/json
+
+{ "startDate": "2026-01-01", "endDate": "2026-01-31", "budgets": [ { "categoryId": "{{cat1.id}}", "amountAllocated": "12345" } ] }
+
+?? status == 201
