@@ -6,6 +6,8 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
+  /* 60rem = 960px: « site pour ordinateur » des navigateurs mobiles rend à ~980px (défaut Tailwind 64rem = 1024px) */
+  --breakpoint-lg: 60rem;
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-sans);

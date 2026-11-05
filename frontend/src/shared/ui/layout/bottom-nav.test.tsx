@@ -46,3 +46,12 @@ describe('titres de page en mobile', () => {
     }
   });
 });
+
+describe('mode « site pour ordinateur » des navigateurs mobiles', () => {
+  it('the lg breakpoint (menu on the left) is reached by a 980px viewport', () => {
+    const css = readFileSync(join(__dirname, '../../../app/[locale]/globals.css'), 'utf8');
+    const m = css.match(/--breakpoint-lg:\s*([\d.]+)(rem|px)/);
+    const px = m ? parseFloat(m[1]) * (m[2] === 'rem' ? 16 : 1) : 1024; // Tailwind default: 64rem
+    expect(px).toBeLessThanOrEqual(980);
+  });
+});
