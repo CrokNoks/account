@@ -95,3 +95,35 @@ export interface PeriodComparisonResponse {
   savings: ComparisonPoint[];
   transfers: ComparisonPoint[];
 }
+
+export interface CategoryOverrunItem {
+  categoryId: string;
+  name: string;
+  budget: string;
+  real: string;
+  overrun: string;
+}
+
+export interface PeriodOverruns {
+  periodId: string;
+  startDate: string;
+  endDate: string;
+  overruns: CategoryOverrunItem[];
+}
+
+export interface OverrunsByPeriodResponse {
+  periods: PeriodOverruns[];
+}
+
+export interface CategoryOverrunChartPoint {
+  periodId: string;
+  startDate: string;
+  endDate: string;
+  budget: string;
+  overrun: string;
+}
+
+export interface CategoryOverrunsChartResponse {
+  categoryId: string;
+  points: CategoryOverrunChartPoint[];
+}

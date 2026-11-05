@@ -38,7 +38,7 @@ describe('barre du bas (mobile)', () => {
 describe('titres de page en mobile', () => {
   it('each page hides its h2 below lg (the title is in the header)', () => {
     const dir = join(__dirname, '../../../app/[locale]/(dashboard)');
-    for (const page of ['calendar', 'cashflow', 'evolution', 'flux', 'budgets', 'categories', 'tags', 'recurring', 'smart-rules', 'accounts', 'transactions/import']) {
+    for (const page of ['calendar', 'cashflow', 'evolution', 'depassements', 'flux', 'budgets', 'categories', 'tags', 'recurring', 'smart-rules', 'accounts', 'transactions/import']) {
       const src = readFileSync(join(dir, page, 'page.tsx'), 'utf8');
       const h2 = src.match(/<h2[^>]*>/)![0];
       const wrapperHidden = /className="flex flex-col gap-2 max-lg:hidden">\s*(<div className="flex items-center gap-3">[\s\S]*?<\/div>\s*)?<h2/.test(src);

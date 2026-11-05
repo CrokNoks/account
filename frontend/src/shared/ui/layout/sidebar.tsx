@@ -16,7 +16,8 @@ import {
   Tag,
   Repeat,
   LogOut,
-  Sparkles
+  Sparkles,
+  AlertTriangle
 } from 'lucide-react';
 import { createClient } from '@/shared/lib/supabase/supabase-browser';
 import { useRouter } from '@/i18n/routing';
@@ -26,6 +27,7 @@ const menuItems = [
   { icon: LayoutDashboard, labelKey: 'dashboard', href: '/', shortcut: 'F2' },
   { icon: Calendar, labelKey: 'calendar', href: '/calendar', shortcut: 'F3' },
   { icon: TrendingUp, labelKey: 'evolution', href: '/evolution', shortcut: 'F4' },
+  { icon: AlertTriangle, labelKey: 'overruns', href: '/depassements' },
   { icon: GitBranch, labelKey: 'flux', href: '/flux', shortcut: 'F5' },
   { icon: Calendar, labelKey: 'prevision', href: '/cashflow', shortcut: 'F6' },
   { isSeparator: true },

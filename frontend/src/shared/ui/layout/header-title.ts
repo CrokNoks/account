@@ -3,6 +3,7 @@ const routeKeys: Record<string, string> = {
   '/': 'dashboard',
   '/calendar': 'calendar',
   '/evolution': 'evolution',
+  '/depassements': 'overruns',
   '/flux': 'flux',
   '/cashflow': 'prevision',
   '/accounts': 'accounts',

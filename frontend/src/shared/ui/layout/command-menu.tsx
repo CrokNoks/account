@@ -13,6 +13,7 @@ import {
   Search,
   User,
   Calculator,
+  AlertTriangle,
 } from 'lucide-react';
 import {
   CommandDialog,
@@ -72,6 +73,10 @@ export function CommandMenu() {
           <CommandItem onSelect={() => runCommand(() => router.push('/evolution'))}>
             <TrendingUp className="mr-2 h-4 w-4" />
             <span>{tn('evolution')}</span>
+          </CommandItem>
+          <CommandItem onSelect={() => runCommand(() => router.push('/depassements'))}>
+            <AlertTriangle className="mr-2 h-4 w-4" />
+            <span>{tn('overruns')}</span>
           </CommandItem>
           <CommandItem onSelect={() => runCommand(() => router.push('/calendar'))}>
             <Calendar className="mr-2 h-4 w-4" />
