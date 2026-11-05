@@ -194,6 +194,32 @@ describe('GetPeriodStatsUseCase', () => {
     );
   });
 
+  it('sums planned amounts by absolute value whatever the sign each budget is stored with', async () => {
+    const b = (categoryId: string, amount: number) =>
+      BudgetInstance.create({
+        periodId: 'per-1',
+        categoryId,
+        amountAllocated: BigInt(amount),
+      });
+    categories.findAllByAccount.mockResolvedValue([
+      category('salaire', CategoryType.INCOME),
+      category('courses', CategoryType.EXPENSE),
+      category('loyer', CategoryType.EXPENSE),
+      category('virement', CategoryType.TRANSFER),
+    ]);
+    budgets.findAllByPeriod.mockResolvedValue([
+      b('salaire', 250000),
+      b('virement', -10000),
+      b('courses', -40000),
+      b('loyer', 30000),
+    ]);
+
+    const stats = await useCase.execute('acc-1', 'per-1');
+
+    expect(stats.plannedExpenses).toBe('70000');
+    expect(stats.plannedIncome).toBe('260000');
+  });
+
   it('adds uncategorized transactions (pending included) to max(real, planned) when planned exceeds real', async () => {
     transactions.findAllByAccountUnpaginated.mockResolvedValue([
       tx(100000, 'salaire'),

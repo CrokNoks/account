@@ -79,7 +79,10 @@ export class GetPeriodStatsUseCase {
     for (const cat of categories) {
       const catReal = realByCategory.get(cat.id) || BigInt(0);
       const budget = budgets.find((b) => b.categoryId === cat.id);
-      const catBudget = budget?.amountAllocated || BigInt(0);
+      // Signe du budget non imposé : on le compte toujours en valeur absolue
+      // (comme get-budget-breakdown).
+      const rawBudget = budget?.amountAllocated || BigInt(0);
+      const catBudget = rawBudget < BigInt(0) ? -rawBudget : rawBudget;
 
       const isIncome =
         cat.type === CategoryType.INCOME || cat.type === CategoryType.TRANSFER;

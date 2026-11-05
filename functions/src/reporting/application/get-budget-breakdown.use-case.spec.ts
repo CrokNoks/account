@@ -178,6 +178,28 @@ describe('GetBudgetBreakdownUseCase', () => {
     expect(transfers[0].remaining).toBe('6000');
   });
 
+  // Des budgets de dépenses sont enregistrés en négatif (même signe que le réel).
+  it('reports no overrun when an expense equals its negative budget', async () => {
+    budgets.findAllByPeriod.mockResolvedValue([
+      budget('courses', -45000),
+      budget('loisirs', -1000),
+    ]);
+
+    const { expenses } = await useCase.execute('acc-1', 'per-1');
+
+    expect(expenses[0]).toMatchObject({ remaining: '0', percentage: 100 });
+    expect(expenses[1]).toMatchObject({ remaining: '-1000', percentage: 200 });
+  });
+
+  it('reports no overrun for an expense not yet spent on a negative budget', async () => {
+    budgets.findAllByPeriod.mockResolvedValue([budget('courses', -15000)]);
+    transactions.findAllByAccountUnpaginated.mockResolvedValue([]);
+
+    const { expenses } = await useCase.execute('acc-1', 'per-1');
+
+    expect(expenses[0]).toMatchObject({ remaining: '15000', percentage: 0 });
+  });
+
   it('rejects a period of another account like an unknown one', async () => {
     await expect(useCase.execute('acc-other', 'per-1')).rejects.toThrow(
       'Period not found',

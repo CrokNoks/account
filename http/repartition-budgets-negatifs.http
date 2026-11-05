@@ -1,0 +1,84 @@
+# Répartition budgétaire et stats avec des budgets de dépense enregistrés en négatif : pas de faux dépassement.
+# Lancement : npx httpyac send --all http/repartition-budgets-negatifs.http --var port=8080 --var anon=<SUPABASE_ANON_KEY de functions/.env>
+# (la clé vient de la ligne de commande, jamais du fichier ; l'utilisateur est jetable, créé par le fichier)
+@baseUrl = http://localhost:{{port}}
+@authUrl = http://127.0.0.1:54321/auth/v1
+
+### Utilisateur jetable
+# @name login
+POST {{authUrl}}/signup
+apikey: {{anon}}
+Content-Type: application/json
+
+{ "email": "budgets-negatifs-{{$timestamp}}@example.com", "password": "Password123!" }
+
+?? status == 200
+
+### Compte jetable
+# @name account
+POST {{baseUrl}}/accounts
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "name": "budgets-negatifs-{{$timestamp}}", "initialBalance": "100000" }
+
+?? status == 201
+
+### Catégorie EDF (rien dépensé)
+# @name edf
+POST {{baseUrl}}/{{account.id}}/categories
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "name": "EDF", "color": "#112233", "type": "expense" }
+
+?? status == 201
+
+### Catégorie Prêt (dépensé = budget)
+# @name pret
+POST {{baseUrl}}/{{account.id}}/categories
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "name": "Pret", "color": "#445566", "type": "expense" }
+
+?? status == 201
+
+### Période avec deux budgets de dépense négatifs : EDF -150,00 €, Prêt -502,58 €
+# @name period
+POST {{baseUrl}}/{{account.id}}/periods
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "startDate": "2026-11-01", "endDate": "2026-11-30", "budgets": [
+  { "categoryId": "{{edf.id}}", "amountAllocated": "-15000" },
+  { "categoryId": "{{pret.id}}", "amountAllocated": "-50258" }
+] }
+
+?? status == 201
+
+### Prêt prélevé : 502,58 €
+POST {{baseUrl}}/{{account.id}}/transactions
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "date": "2026-11-02", "description": "Prelevement pret", "amount": "-50258", "categoryId": "{{pret.id}}", "periodId": "{{period.id}}" }
+
+?? status == 201
+
+### EDF : rien dépensé, reste 150,00 €, 0 %, pas de dépassement ; Prêt : 100 %, reste 0
+GET {{baseUrl}}/{{account.id}}/periods/{{period.id}}/reporting/budget-breakdown
+Authorization: Bearer {{login.access_token}}
+
+?? status == 200
+?? js response.parsedBody.expenses.find(e => e.name == 'EDF').remaining == 15000
+?? js response.parsedBody.expenses.find(e => e.name == 'EDF').percentage == 0
+?? js response.parsedBody.expenses.find(e => e.name == 'Pret').remaining == 0
+?? js response.parsedBody.expenses.find(e => e.name == 'Pret').percentage == 100
+
+### Stats : dépenses prévues = 150,00 + 502,58 = 652,58 €
+GET {{baseUrl}}/{{account.id}}/periods/{{period.id}}/reporting/stats
+Authorization: Bearer {{login.access_token}}
+
+?? status == 200
+?? js response.parsedBody.plannedExpenses == 65258

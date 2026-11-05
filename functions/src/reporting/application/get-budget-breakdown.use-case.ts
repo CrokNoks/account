@@ -73,17 +73,20 @@ export class GetBudgetBreakdownUseCase {
       const budgetInstance = budgets.find((b) => b.categoryId === cat.id);
       const budget = budgetInstance?.amountAllocated || BigInt(0);
 
-      // Dépenses et épargne : budget positif, réel négatif => budget + réel.
+      // Le budget est enregistré avec l'un ou l'autre signe (les dépenses sont
+      // parfois en négatif) : on compare toujours à sa valeur absolue.
+      const limit = budget < BigInt(0) ? -budget : budget;
+      // Dépenses et épargne : réel négatif => |budget| + réel.
       // Revenus et virements (comptés comme des revenus, cf. docs/reporting.md) :
-      // budget et réel positifs => reste à percevoir = budget - réel.
+      // réel positif => reste à percevoir = |budget| - réel.
       const remaining =
         cat.type === CategoryType.INCOME || cat.type === CategoryType.TRANSFER
-          ? budget - real
-          : budget + real;
+          ? limit - real
+          : limit + real;
       let percentage = 0;
-      if (budget !== BigInt(0)) {
-        percentage = roundedPercentage(real, budget);
-        if (cat.type === CategoryType.EXPENSE) percentage = -percentage; // invert for expenses
+      if (limit !== BigInt(0)) {
+        percentage = roundedPercentage(real, limit);
+        if (cat.type === CategoryType.EXPENSE) percentage = 0 - percentage; // invert for expenses
       }
 
       const item: BudgetCategoryBreakdown = {
