@@ -412,6 +412,15 @@
     "delete_period": "Supprimer la période",
     "close_confirm": "Clôturer la période ?"
   },
+  "BudgetTemplates": {
+    "title": "Budgets fixes du compte",
+    "description": "Montant de départ proposé pour chaque catégorie à la création d'une période. Les périodes déjà créées ne changent pas.",
+    "link": "Budgets fixes",
+    "saved": "Configuration enregistrée",
+    "save_failed": "Enregistrement impossible : la liste des catégories a changé, elle a été rechargée.",
+    "no_categories": "Aucune catégorie disponible.",
+    "proposal_hint": "Proposition d'après vos récurrentes, non enregistrée"
+  },
   "Recurring": {
     "title": "Opérations Récurrentes",
     "description": "Gérez vos abonnements, loyers et revenus réguliers.",

@@ -68,3 +68,16 @@ export interface UpdatePeriodData {
   id: string;
   data: Partial<Period>;
 }
+
+/** Une ligne de l'écran « budgets fixes » : montant configuré, ou proposition (non enregistrée). */
+export interface BudgetTemplateLine {
+  categoryId: string;
+  name: string;
+  amount: string;
+  isProposal: boolean;
+}
+
+export interface SaveBudgetTemplatesData {
+  accountId: string;
+  items: Array<{ categoryId: string; amount: string }>;
+}

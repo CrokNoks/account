@@ -412,6 +412,15 @@
     "delete_period": "Delete period",
     "close_confirm": "Close the period?"
   },
+  "BudgetTemplates": {
+    "title": "Account fixed budgets",
+    "description": "Starting amount suggested for each category when a period is created. Periods already created do not change.",
+    "link": "Fixed budgets",
+    "saved": "Configuration saved",
+    "save_failed": "Could not save: the category list changed and was reloaded.",
+    "no_categories": "No category available.",
+    "proposal_hint": "Suggested from your recurring operations, not saved yet"
+  },
   "Recurring": {
     "title": "Recurring Operations",
     "description": "Manage your subscriptions, rent, and regular income.",

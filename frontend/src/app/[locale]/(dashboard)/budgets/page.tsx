@@ -3,9 +3,12 @@
 import { CreatePeriodDialog } from "@/features/periods/ui/create-period-dialog";
 import { PeriodList } from "@/features/periods/ui/period-list";
 import { useTranslations } from 'next-intl';
+import { Link } from '@/i18n/routing';
+import { Button } from '@/components/ui/button';
 
 export default function PeriodsPage() {
   const t = useTranslations('Budgets');
+  const tf = useTranslations('BudgetTemplates');
 
   return (
     <div className="flex flex-col gap-4 lg:gap-8">
@@ -16,7 +19,12 @@ export default function PeriodsPage() {
             {t('description')}
           </p>
         </div>
-        <CreatePeriodDialog />
+        <div className="flex items-center gap-2">
+          <Link href="/budgets/fixed">
+            <Button variant="outline">{tf('link')}</Button>
+          </Link>
+          <CreatePeriodDialog />
+        </div>
       </div>
 
       <PeriodList />
