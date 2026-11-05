@@ -60,6 +60,14 @@ import {
   NetWorthResponse,
 } from '../application/get-net-worth.use-case';
 import {
+  GetOverrunsByPeriodUseCase,
+  OverrunsByPeriodResponse,
+} from '../application/get-overruns-by-period.use-case';
+import {
+  GetCategoryOverrunsChartUseCase,
+  CategoryOverrunsChartResponse,
+} from '../application/get-category-overruns-chart.use-case';
+import {
   IsArray,
   IsString,
   IsIn,
@@ -98,6 +106,20 @@ export class CompareWithQueryDto {
   @IsUUID()
   @ApiProperty({ format: 'uuid' })
   compareWith: string;
+}
+
+export class OverrunsChartQueryDto {
+  @IsUUID()
+  @ApiProperty({ format: 'uuid' })
+  categoryId: string;
+
+  @IsUUID()
+  @ApiProperty({ format: 'uuid' })
+  startPeriodId: string;
+
+  @IsUUID()
+  @ApiProperty({ format: 'uuid' })
+  endPeriodId: string;
 }
 
 export class CashflowQueryDto {
@@ -251,7 +273,35 @@ export class ReportingController {
     private readonly getAnomaliesUseCase: GetAnomaliesUseCase,
     private readonly ignoreAnomalyUseCase: IgnoreAnomalyUseCase,
     private readonly getNetWorthUseCase: GetNetWorthUseCase,
+    private readonly getOverrunsByPeriodUseCase: GetOverrunsByPeriodUseCase,
+    private readonly getCategoryOverrunsChartUseCase: GetCategoryOverrunsChartUseCase,
   ) {}
+
+  @Get('reporting/overruns')
+  @ApiOperation({
+    summary: 'Category overruns for each closed period (latest first)',
+  })
+  async getOverruns(
+    @Param('accountId') accountId: string,
+  ): Promise<OverrunsByPeriodResponse> {
+    return this.getOverrunsByPeriodUseCase.execute(accountId);
+  }
+
+  @Get('reporting/overruns-chart')
+  @ApiOperation({
+    summary: 'Budget and overrun of one category over closed periods P1..P2',
+  })
+  async getOverrunsChart(
+    @Param('accountId') accountId: string,
+    @Query() { categoryId, startPeriodId, endPeriodId }: OverrunsChartQueryDto,
+  ): Promise<CategoryOverrunsChartResponse> {
+    return this.getCategoryOverrunsChartUseCase.execute(
+      accountId,
+      categoryId,
+      startPeriodId,
+      endPeriodId,
+    );
+  }
 
   @Post('reporting/anomalies/ignore')
   @ApiOperation({ summary: 'Ignore specific anomalies for given transactions' })

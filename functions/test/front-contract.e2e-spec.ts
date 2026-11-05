@@ -176,6 +176,48 @@ describe('Front/back contract (e2e)', () => {
         .expect(404));
   });
 
+  describe('overruns', () => {
+    const ACC = '00000000-0000-4000-8000-000000000101';
+    const CAT = '00000000-0000-4000-8000-000000000201';
+    const P1 = '00000000-0000-4000-8000-000000000301';
+    const P2 = '00000000-0000-4000-8000-000000000302';
+
+    beforeEach(() => {
+      mocks.periods.findAllByAccount.mockResolvedValue([]);
+      mocks.categories.findAllByAccount.mockResolvedValue([]);
+    });
+
+    it('answers to the list GET sent by the front', async () => {
+      const res = await http()
+        .get(`/${ACC}/reporting/overruns`)
+        .set(auth())
+        .expect(200);
+      expect(res.body).toEqual({ periods: [] });
+    });
+
+    it('answers 400 for the chart without valid UUID parameters', async () => {
+      await http()
+        .get(`/${ACC}/reporting/overruns-chart`)
+        .query({ categoryId: 'x', startPeriodId: P1, endPeriodId: P2 })
+        .set(auth())
+        .expect(400);
+      await http()
+        .get(`/${ACC}/reporting/overruns-chart`)
+        .query({ categoryId: CAT, startPeriodId: P1 })
+        .set(auth())
+        .expect(400);
+    });
+
+    it('answers 404 for a period that does not belong to the account', async () => {
+      mocks.periods.findById.mockResolvedValue(null);
+      await http()
+        .get(`/${ACC}/reporting/overruns-chart`)
+        .query({ categoryId: CAT, startPeriodId: P1, endPeriodId: P2 })
+        .set(auth())
+        .expect(404);
+    });
+  });
+
   describe('removed AI routes', () => {
     it.each([
       [

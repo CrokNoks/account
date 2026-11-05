@@ -1,0 +1,330 @@
+# Dépassements par période : liste (CA1 à CA5, CA7, CA8) et graphique d'une catégorie (CA6, CA7, CA8).
+# Lancement : npx httpyac send --all http/depassements-par-periode.http --var port=8080 --var anon=<SUPABASE_ANON_KEY de functions/.env>
+# (la clé vient de la ligne de commande, jamais du fichier ; les utilisateurs sont jetables, créés par le fichier)
+@baseUrl = http://localhost:{{port}}
+@authUrl = http://127.0.0.1:54321/auth/v1
+
+### Utilisateur jetable
+# @name login
+POST {{authUrl}}/signup
+apikey: {{anon}}
+Content-Type: application/json
+
+{ "email": "depassements-{{$timestamp}}@example.com", "password": "Password123!" }
+
+?? status == 200
+
+### Autre utilisateur jetable (CA8)
+# @name other
+POST {{authUrl}}/signup
+apikey: {{anon}}
+Content-Type: application/json
+
+{ "email": "depassements-autre-{{$timestamp}}@example.com", "password": "Password123!" }
+
+?? status == 200
+
+### Compte jetable
+# @name account
+POST {{baseUrl}}/accounts
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "name": "depassements-{{$timestamp}}", "initialBalance": "0" }
+
+?? status == 201
+
+### Catégorie Courses (dépense)
+# @name courses
+POST {{baseUrl}}/{{account.id}}/categories
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "name": "Courses", "color": "#112233", "type": "expense" }
+
+?? status == 201
+
+### Catégorie Loisirs (dépense, budget 0)
+# @name loisirs
+POST {{baseUrl}}/{{account.id}}/categories
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "name": "Loisirs", "color": "#445566", "type": "expense" }
+
+?? status == 201
+
+### Catégorie Salaire (revenu)
+# @name salaire
+POST {{baseUrl}}/{{account.id}}/categories
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "name": "Salaire", "color": "#778899", "type": "income" }
+
+?? status == 201
+
+### Catégorie Livret (épargne)
+# @name livret
+POST {{baseUrl}}/{{account.id}}/categories
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "name": "Livret", "color": "#aabbcc", "type": "savings" }
+
+?? status == 201
+
+### P1 (janvier) : Courses -100,00 (budget négatif), Loisirs 0, Salaire 10,00, Livret 50,00
+# @name p1
+POST {{baseUrl}}/{{account.id}}/periods
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "startDate": "2026-01-01", "endDate": "2026-01-31", "budgets": [
+  { "categoryId": "{{courses.id}}", "amountAllocated": "-10000" },
+  { "categoryId": "{{loisirs.id}}", "amountAllocated": "0" },
+  { "categoryId": "{{salaire.id}}", "amountAllocated": "1000" },
+  { "categoryId": "{{livret.id}}", "amountAllocated": "5000" }
+] }
+
+?? status == 201
+
+### P2 (février) : aucun budget Courses ; Livret 50,00
+# @name p2
+POST {{baseUrl}}/{{account.id}}/periods
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "startDate": "2026-02-01", "endDate": "2026-02-28", "budgets": [
+  { "categoryId": "{{livret.id}}", "amountAllocated": "5000" }
+] }
+
+?? status == 201
+
+### P3 (mars) : Courses 80,00
+# @name p3
+POST {{baseUrl}}/{{account.id}}/periods
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "startDate": "2026-03-01", "endDate": "2026-03-31", "budgets": [
+  { "categoryId": "{{courses.id}}", "amountAllocated": "8000" }
+] }
+
+?? status == 201
+
+### P4 (avril) : période active (n'apparaît pas) ; P3 passe inactive
+# @name p4
+POST {{baseUrl}}/{{account.id}}/periods
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "startDate": "2026-04-01", "endDate": "2026-04-30", "budgets": [
+  { "categoryId": "{{courses.id}}", "amountAllocated": "1000" }
+] }
+
+?? status == 201
+
+### Courses P1 : -120,00 (dépasse de 20,00)
+POST {{baseUrl}}/{{account.id}}/transactions
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "date": "2026-01-10", "description": "Courses p1", "amount": "-12000", "categoryId": "{{courses.id}}", "periodId": "{{p1.id}}" }
+
+?? status == 201
+
+### Courses P1 en attente : -999,00 (ignorée, CA5)
+POST {{baseUrl}}/{{account.id}}/transactions
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "date": "2026-01-11", "description": "Courses pending", "amount": "-99900", "categoryId": "{{courses.id}}", "periodId": "{{p1.id}}", "pending": true }
+
+?? status == 201
+
+### Loisirs P1 : -50,00 avec budget 0 (jamais listée, CA3)
+POST {{baseUrl}}/{{account.id}}/transactions
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "date": "2026-01-12", "description": "Loisirs p1", "amount": "-5000", "categoryId": "{{loisirs.id}}", "periodId": "{{p1.id}}" }
+
+?? status == 201
+
+### Salaire P1 : +500,00 au-dessus du budget 10,00 (jamais listé, CA4)
+POST {{baseUrl}}/{{account.id}}/transactions
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "date": "2026-01-13", "description": "Salaire p1", "amount": "50000", "categoryId": "{{salaire.id}}", "periodId": "{{p1.id}}" }
+
+?? status == 201
+
+### Livret P1 : -50,00 = budget (égalité, pas de dépassement, CA2)
+POST {{baseUrl}}/{{account.id}}/transactions
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "date": "2026-01-14", "description": "Livret p1", "amount": "-5000", "categoryId": "{{livret.id}}", "periodId": "{{p1.id}}" }
+
+?? status == 201
+
+### Livret P2 : -80,00 (épargne, dépasse de 30,00)
+POST {{baseUrl}}/{{account.id}}/transactions
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "date": "2026-02-10", "description": "Livret p2", "amount": "-8000", "categoryId": "{{livret.id}}", "periodId": "{{p2.id}}" }
+
+?? status == 201
+
+### Courses P2 sans budget : -70,00 (jamais listée, CA3) ; period_id = P1 mais date en P2 (rattachée par date)
+POST {{baseUrl}}/{{account.id}}/transactions
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "date": "2026-02-12", "description": "Courses p2", "amount": "-7000", "categoryId": "{{courses.id}}", "periodId": "{{p1.id}}" }
+
+?? status == 201
+
+### Courses P3 : -80,00 = budget (égalité)
+POST {{baseUrl}}/{{account.id}}/transactions
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "date": "2026-03-10", "description": "Courses p3", "amount": "-8000", "categoryId": "{{courses.id}}", "periodId": "{{p3.id}}" }
+
+?? status == 201
+
+### Courses P4 (active) : -500,00 (n'apparaît pas, CA1)
+POST {{baseUrl}}/{{account.id}}/transactions
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "date": "2026-04-10", "description": "Courses p4", "amount": "-50000", "categoryId": "{{courses.id}}", "periodId": "{{p4.id}}" }
+
+?? status == 201
+
+### CA1 + CA2 + CA3 + CA4 + CA5 : trois périodes fermées (récente d'abord), la période active absente
+# @name list
+GET {{baseUrl}}/{{account.id}}/reporting/overruns
+Authorization: Bearer {{login.access_token}}
+
+?? status == 200
+?? js response.parsedBody.periods.length == 3
+?? js response.parsedBody.periods[0].periodId == {{p3.id}}
+?? js response.parsedBody.periods[1].periodId == {{p2.id}}
+?? js response.parsedBody.periods[2].periodId == {{p1.id}}
+
+### CA2 : P1 liste uniquement Courses (budget 10000, réel -12000, excédent 2000) ; pending, Loisirs, Salaire, Livret (égalité) absents
+GET {{baseUrl}}/{{account.id}}/reporting/overruns
+Authorization: Bearer {{login.access_token}}
+
+?? js response.parsedBody.periods[2].overruns.length == 1
+?? js response.parsedBody.periods[2].overruns[0].name == Courses
+?? js response.parsedBody.periods[2].overruns[0].budget == 10000
+?? js response.parsedBody.periods[2].overruns[0].real == -12000
+?? js response.parsedBody.periods[2].overruns[0].overrun == 2000
+
+### CA2 + CA3 : P2 liste Livret (excédent 3000) mais pas Courses (sans budget, rattachée par date)
+GET {{baseUrl}}/{{account.id}}/reporting/overruns
+Authorization: Bearer {{login.access_token}}
+
+?? js response.parsedBody.periods[1].overruns.length == 1
+?? js response.parsedBody.periods[1].overruns[0].name == Livret
+?? js response.parsedBody.periods[1].overruns[0].overrun == 3000
+
+### CA7 : P3 (égalité) sans dépassement, section présente avec liste vide
+GET {{baseUrl}}/{{account.id}}/reporting/overruns
+Authorization: Bearer {{login.access_token}}
+
+?? js response.parsedBody.periods[0].overruns.length == 0
+
+### CA6 : graphique Courses de P1 à P3, une barre par période fermée en ordre chronologique
+# @name chart
+GET {{baseUrl}}/{{account.id}}/reporting/overruns-chart?categoryId={{courses.id}}&startPeriodId={{p1.id}}&endPeriodId={{p3.id}}
+Authorization: Bearer {{login.access_token}}
+
+?? status == 200
+?? js response.parsedBody.points.length == 3
+?? js response.parsedBody.points[0].periodId == {{p1.id}}
+?? js response.parsedBody.points[0].budget == 10000
+?? js response.parsedBody.points[0].overrun == 2000
+?? js response.parsedBody.points[1].periodId == {{p2.id}}
+?? js response.parsedBody.points[1].budget == 0
+?? js response.parsedBody.points[1].overrun == 0
+?? js response.parsedBody.points[2].periodId == {{p3.id}}
+?? js response.parsedBody.points[2].budget == 8000
+?? js response.parsedBody.points[2].overrun == 0
+
+### CA6 : même dépassement que la liste (Livret P2 = 3000)
+GET {{baseUrl}}/{{account.id}}/reporting/overruns-chart?categoryId={{livret.id}}&startPeriodId={{p2.id}}&endPeriodId={{p2.id}}
+Authorization: Bearer {{login.access_token}}
+
+?? status == 200
+?? js response.parsedBody.points.length == 1
+?? js response.parsedBody.points[0].overrun == 3000
+
+### P1 après P2 : refusé (400), jamais permuté
+GET {{baseUrl}}/{{account.id}}/reporting/overruns-chart?categoryId={{courses.id}}&startPeriodId={{p3.id}}&endPeriodId={{p1.id}}
+Authorization: Bearer {{login.access_token}}
+
+?? status == 400
+
+### Période active dans la plage : refusée (400)
+GET {{baseUrl}}/{{account.id}}/reporting/overruns-chart?categoryId={{courses.id}}&startPeriodId={{p1.id}}&endPeriodId={{p4.id}}
+Authorization: Bearer {{login.access_token}}
+
+?? status == 400
+
+### Paramètre non UUID : 400
+GET {{baseUrl}}/{{account.id}}/reporting/overruns-chart?categoryId=abc&startPeriodId={{p1.id}}&endPeriodId={{p3.id}}
+Authorization: Bearer {{login.access_token}}
+
+?? status == 400
+
+### CA7 : compte sans période fermée, liste vide
+# @name account2
+POST {{baseUrl}}/accounts
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "name": "depassements-vide-{{$timestamp}}", "initialBalance": "0" }
+
+?? status == 201
+
+###
+GET {{baseUrl}}/{{account2.id}}/reporting/overruns
+Authorization: Bearer {{login.access_token}}
+
+?? status == 200
+?? js response.parsedBody.periods.length == 0
+
+### CA8 : un autre utilisateur ne reçoit rien (liste)
+GET {{baseUrl}}/{{account.id}}/reporting/overruns
+Authorization: Bearer {{other.access_token}}
+
+?? js response.statusCode >= 400 || response.parsedBody.periods.length == 0
+
+### CA8 : un autre utilisateur ne reçoit rien (graphique)
+GET {{baseUrl}}/{{account.id}}/reporting/overruns-chart?categoryId={{courses.id}}&startPeriodId={{p1.id}}&endPeriodId={{p3.id}}
+Authorization: Bearer {{other.access_token}}
+
+?? status >= 400
+
+### CA8 : période d'un autre compte (compte 2 de l'appelant, périodes du compte 1) : 404
+GET {{baseUrl}}/{{account2.id}}/reporting/overruns-chart?categoryId={{courses.id}}&startPeriodId={{p1.id}}&endPeriodId={{p3.id}}
+Authorization: Bearer {{login.access_token}}
+
+?? status == 404
+
+### CA8 : anonyme refusé (liste)
+GET {{baseUrl}}/{{account.id}}/reporting/overruns
+
+?? status == 401
+
+### CA8 : anonyme refusé (graphique)
+GET {{baseUrl}}/{{account.id}}/reporting/overruns-chart?categoryId={{courses.id}}&startPeriodId={{p1.id}}&endPeriodId={{p3.id}}
+
+?? status == 401
