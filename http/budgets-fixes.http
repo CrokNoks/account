@@ -1,8 +1,6 @@
-# Budgets fixes du compte : écriture de la configuration (CA3, CA6, CA7) et tout ou rien.
+# Budgets fixes du compte : CA1 à CA3 et CA6 à CA8 en réel (CA4/CA5, la reprise, sont vérifiés par npm run test:sql).
 # Lancement : npx httpyac send --all http/budgets-fixes.http --var port=8080 --var anon=<ANON_KEY de functions/.env>
 # (la clé vient de la ligne de commande, jamais du fichier ; les utilisateurs sont jetables, créés par le fichier)
-# Les lignes de budget_templates se vérifient en base (la lecture par l'API arrive avec le calcul du montant proposé) :
-#   docker exec supabase_db_account-v2 psql -U postgres -c "select category_id, amount_base from budget_templates where account_id = '<id>'"
 @baseUrl = http://localhost:{{port}}
 @authUrl = http://127.0.0.1:54321/auth/v1
 
@@ -55,7 +53,7 @@ Content-Type: application/json
 
 ?? status == 201
 
-### A crée la catégorie 1
+### A crée la catégorie 1 (Courses)
 # @name cat1
 POST {{baseUrl}}/{{account.id}}/categories
 Authorization: Bearer {{a.access_token}}
@@ -65,7 +63,7 @@ Content-Type: application/json
 
 ?? status == 201
 
-### A crée la catégorie 2
+### A crée la catégorie 2 (Loyer)
 # @name cat2
 POST {{baseUrl}}/{{account.id}}/categories
 Authorization: Bearer {{a.access_token}}
@@ -75,17 +73,122 @@ Content-Type: application/json
 
 ?? status == 201
 
-### CA3 : A enregistre deux lignes en un appel (50000 et -8000 centimes)
+### A crée la catégorie 3 (Sport)
+# @name cat3
+POST {{baseUrl}}/{{account.id}}/categories
+Authorization: Bearer {{a.access_token}}
+Content-Type: application/json
+
+{ "name": "Sport", "color": "#778899", "type": "expense" }
+
+?? status == 201
+
+### A crée la catégorie 4 (Divers, sans récurrente)
+# @name cat4
+POST {{baseUrl}}/{{account.id}}/categories
+Authorization: Bearer {{a.access_token}}
+Content-Type: application/json
+
+{ "name": "Divers", "color": "#aabbcc", "type": "expense" }
+
+?? status == 201
+
+### Récurrente 12000 sur Courses
+POST {{baseUrl}}/{{account.id}}/recurring
+Authorization: Bearer {{a.access_token}}
+Content-Type: application/json
+
+{ "categoryId": "{{cat1.id}}", "description": "abo courses", "amount": "12000", "dayOfMonth": 5 }
+
+?? status == 201
+
+### Récurrente 12000 sur Loyer
+POST {{baseUrl}}/{{account.id}}/recurring
+Authorization: Bearer {{a.access_token}}
+Content-Type: application/json
+
+{ "categoryId": "{{cat2.id}}", "description": "loyer 1", "amount": "12000", "dayOfMonth": 1 }
+
+?? status == 201
+
+### Récurrente 3050 sur Loyer
+POST {{baseUrl}}/{{account.id}}/recurring
+Authorization: Bearer {{a.access_token}}
+Content-Type: application/json
+
+{ "categoryId": "{{cat2.id}}", "description": "loyer 2", "amount": "3050", "dayOfMonth": 2 }
+
+?? status == 201
+
+### CA2 : sans configuration, la création de période propose 0 partout (malgré les récurrentes)
+GET {{baseUrl}}/{{account.id}}/periods/draft-init
+Authorization: Bearer {{a.access_token}}
+
+?? status == 200
+?? js response.parsedBody.categoriesWithStats.length == 4
+?? js response.parsedBody.categoriesWithStats.every(c => c.defaultAllocated === "0") == true
+
+### CA3 : écran vide de configuration, proposition = somme des récurrentes (Courses 12000, Loyer 15050), Sport et Divers à 0
+GET {{baseUrl}}/{{account.id}}/budget-templates
+Authorization: Bearer {{a.access_token}}
+
+?? status == 200
+?? js response.parsedBody.length == 4
+?? js (response.parsedBody.find(c => c.name === "Courses").amount === "12000") == true
+?? js response.parsedBody.find(c => c.name === "Courses").isProposal == true
+?? js (response.parsedBody.find(c => c.name === "Loyer").amount === "15050") == true
+?? js response.parsedBody.find(c => c.name === "Loyer").isProposal == true
+?? js (response.parsedBody.find(c => c.name === "Sport").amount === "0") == true
+?? js response.parsedBody.find(c => c.name === "Divers").isProposal == false
+
+### CA3 : la lecture n'a rien enregistré, la création de période propose toujours 0
+GET {{baseUrl}}/{{account.id}}/periods/draft-init
+Authorization: Bearer {{a.access_token}}
+
+?? status == 200
+?? js response.parsedBody.categoriesWithStats.every(c => c.defaultAllocated === "0") == true
+
+### CA3 : A enregistre deux lignes en un appel (Courses 50000, Sport 7000)
 PUT {{baseUrl}}/{{account.id}}/budget-templates
 Authorization: Bearer {{a.access_token}}
 Content-Type: application/json
 
 { "items": [
   { "categoryId": "{{cat1.id}}", "amount": "50000" },
-  { "categoryId": "{{cat2.id}}", "amount": "-8000" }
+  { "categoryId": "{{cat3.id}}", "amount": "7000" }
 ] }
 
 ?? status == 204
+
+### CA3 : réouverture, le montant enregistré l'emporte sur la somme des récurrentes (Courses), Loyer reste une proposition
+GET {{baseUrl}}/{{account.id}}/budget-templates
+Authorization: Bearer {{a.access_token}}
+
+?? status == 200
+?? js (response.parsedBody.find(c => c.name === "Courses").amount === "50000") == true
+?? js response.parsedBody.find(c => c.name === "Courses").isProposal == false
+?? js (response.parsedBody.find(c => c.name === "Sport").amount === "7000") == true
+?? js (response.parsedBody.find(c => c.name === "Loyer").amount === "15050") == true
+?? js response.parsedBody.find(c => c.name === "Loyer").isProposal == true
+
+### CA1 : la création de période propose le montant configuré (même avec récurrente), 0 sinon
+# @name draft1
+GET {{baseUrl}}/{{account.id}}/periods/draft-init
+Authorization: Bearer {{a.access_token}}
+
+?? status == 200
+?? js (response.parsedBody.categoriesWithStats.find(c => c.name === "Courses").defaultAllocated === "50000") == true
+?? js (response.parsedBody.categoriesWithStats.find(c => c.name === "Sport").defaultAllocated === "7000") == true
+?? js (response.parsedBody.categoriesWithStats.find(c => c.name === "Loyer").defaultAllocated === "0") == true
+?? js (response.parsedBody.categoriesWithStats.find(c => c.name === "Divers").defaultAllocated === "0") == true
+?? js (response.parsedBody.categoriesWithStats.find(c => c.name === "Courses").avgReal === "0") == true
+
+### CA7 : B (lecture seule) peut lire la configuration
+GET {{baseUrl}}/{{account.id}}/budget-templates
+Authorization: Bearer {{b.access_token}}
+
+?? status == 200
+?? js (response.parsedBody.find(c => c.name === "Courses").amount === "50000") == true
 
 ### CA7 : B (lecture seule) ne peut pas écrire
 PUT {{baseUrl}}/{{account.id}}/budget-templates
@@ -94,8 +197,13 @@ Content-Type: application/json
 
 { "items": [ { "categoryId": "{{cat1.id}}", "amount": "1" } ] }
 
-?? status >= 400
-?? status < 500
+?? status == 403
+
+### CA7 : C (sans accès) ne peut pas lire
+GET {{baseUrl}}/{{account.id}}/budget-templates
+Authorization: Bearer {{c.access_token}}
+
+?? status == 403
 
 ### CA7 : C (sans accès) ne peut pas écrire
 PUT {{baseUrl}}/{{account.id}}/budget-templates
@@ -104,16 +212,27 @@ Content-Type: application/json
 
 { "items": [ { "categoryId": "{{cat1.id}}", "amount": "2" } ] }
 
-?? status >= 400
-?? status < 500
+?? js (response.statusCode === 400 || response.statusCode === 404) == true
 
-### Anonyme : refusé
+### Anonyme : lecture refusée
+GET {{baseUrl}}/{{account.id}}/budget-templates
+
+?? status == 401
+
+### Anonyme : écriture refusée
 PUT {{baseUrl}}/{{account.id}}/budget-templates
 Content-Type: application/json
 
 { "items": [ { "categoryId": "{{cat1.id}}", "amount": "3" } ] }
 
 ?? status == 401
+
+### CA7 : aucune écriture par les refus (Courses toujours 50000)
+GET {{baseUrl}}/{{account.id}}/budget-templates
+Authorization: Bearer {{a.access_token}}
+
+?? status == 200
+?? js (response.parsedBody.find(c => c.name === "Courses").amount === "50000") == true
 
 ### Tout ou rien : une catégorie inconnue refuse tout le lot (400)
 PUT {{baseUrl}}/{{account.id}}/budget-templates
@@ -126,6 +245,13 @@ Content-Type: application/json
 ] }
 
 ?? status == 400
+
+### Tout ou rien : Courses n'a pas bougé
+GET {{baseUrl}}/{{account.id}}/budget-templates
+Authorization: Bearer {{a.access_token}}
+
+?? status == 200
+?? js (response.parsedBody.find(c => c.name === "Courses").amount === "50000") == true
 
 ### Doublon de catégorie : 400
 PUT {{baseUrl}}/{{account.id}}/budget-templates
@@ -148,7 +274,8 @@ Content-Type: application/json
 
 ?? status == 400
 
-### CA6 : créer une période avec un montant saisi (12345) ne modifie pas la configuration
+### CA6 : créer une période avec un montant saisi (12345) pour Courses
+# @name period1
 POST {{baseUrl}}/{{account.id}}/periods
 Authorization: Bearer {{a.access_token}}
 Content-Type: application/json
@@ -156,3 +283,40 @@ Content-Type: application/json
 { "startDate": "2026-01-01", "endDate": "2026-01-31", "budgets": [ { "categoryId": "{{cat1.id}}", "amountAllocated": "12345" } ] }
 
 ?? status == 201
+
+### CA6 : la période a pris le montant saisi
+GET {{baseUrl}}/{{account.id}}/periods/{{period1.id}}/budgets
+Authorization: Bearer {{a.access_token}}
+
+?? status == 200
+?? body contains "12345"
+
+### CA6 : la configuration n'a pas été modifiée (Courses toujours 50000)
+GET {{baseUrl}}/{{account.id}}/budget-templates
+Authorization: Bearer {{a.access_token}}
+
+?? status == 200
+?? js (response.parsedBody.find(c => c.name === "Courses").amount === "50000") == true
+
+### CA8 : A modifie la configuration (Courses 60000)
+PUT {{baseUrl}}/{{account.id}}/budget-templates
+Authorization: Bearer {{a.access_token}}
+Content-Type: application/json
+
+{ "items": [ { "categoryId": "{{cat1.id}}", "amount": "60000" } ] }
+
+?? status == 204
+
+### CA8 : la période suivante propose le nouveau montant
+GET {{baseUrl}}/{{account.id}}/periods/draft-init
+Authorization: Bearer {{a.access_token}}
+
+?? status == 200
+?? js (response.parsedBody.categoriesWithStats.find(c => c.name === "Courses").defaultAllocated === "60000") == true
+
+### CA8 : le budget de la période déjà créée n'a pas changé
+GET {{baseUrl}}/{{account.id}}/periods/{{period1.id}}/budgets
+Authorization: Bearer {{a.access_token}}
+
+?? status == 200
+?? body contains "12345"
