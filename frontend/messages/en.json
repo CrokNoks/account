@@ -444,8 +444,8 @@
     }
   },
   "Budgets": {
-    "title": "Financial Periods",
-    "description": "Define your budget cycles and analyze your performance.",
+    "title": "Budgets",
+    "description": "Track what each category has used over the period.",
     "new_period": "New Period",
     "new_period_title": "Create Financial Period",
     "new_period_desc": "Define dates and initial budgets based on your history.",
@@ -665,5 +665,19 @@
     "select": "Select a period",
     "active_suffix": "(Active)",
     "all": "All periods"
+  },
+  "BudgetsScreen": {
+    "closed_warning": "This period is closed: changing its budgets changes past overruns.",
+    "forecast": "End-of-period forecast",
+    "planned_income": "Planned income",
+    "total_budgeted": "Total budgeted",
+    "category": "Category",
+    "real": "Actual",
+    "remaining": "Left",
+    "budget": "Budget",
+    "left": "{amount} left",
+    "over": "Over by {amount}",
+    "empty": "No category for this period.",
+    "manage_periods": "Manage periods"
   }
 }

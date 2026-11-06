@@ -444,8 +444,8 @@
     }
   },
   "Budgets": {
-    "title": "Périodes Financières",
-    "description": "Définissez vos cycles budgétaires et analysez vos performances.",
+    "title": "Budgets",
+    "description": "Suivez ce que chaque catégorie a consommé sur la période.",
     "new_period": "Nouvelle période",
     "new_period_title": "Créer une période financière",
     "new_period_desc": "Définissez les dates et les budgets initiaux basés sur votre historique.",
@@ -665,5 +665,19 @@
     "select": "Sélectionner une période",
     "active_suffix": "(Active)",
     "all": "Toutes les périodes"
+  },
+  "BudgetsScreen": {
+    "closed_warning": "Cette période est fermée : modifier ses budgets change les dépassements passés.",
+    "forecast": "Prévu en fin de période",
+    "planned_income": "Revenus prévus",
+    "total_budgeted": "Total budgété",
+    "category": "Catégorie",
+    "real": "Réel",
+    "remaining": "Reste",
+    "budget": "Budget",
+    "left": "{amount} restants",
+    "over": "Dépassement {amount}",
+    "empty": "Aucune catégorie pour cette période.",
+    "manage_periods": "Gérer les périodes"
   }
 }
