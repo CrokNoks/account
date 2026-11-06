@@ -1,6 +1,6 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import { NextIntlClientProvider } from 'next-intl';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import fr from '../../../../messages/fr.json';
 import en from '../../../../messages/en.json';
 import Home from './page';
@@ -80,6 +80,34 @@ describe('Écran Aujourd\'hui', () => {
     for (const target of ['stats', 'budget-breakdown', 'to-handle', 'add-transaction']) {
       expect(container.querySelector(`[data-tour="${target}"]`)).not.toBeNull();
     }
+  });
+
+  describe('visite guidée', () => {
+    beforeEach(() => {
+      vi.useFakeTimers();
+      state.startTour.mockReset();
+      state.completedTours = { account: true };
+    });
+    afterEach(() => vi.useRealTimers());
+
+    it('démarre quand une période existe et que chaque cible est à l\'écran', () => {
+      const { container } = renderHome();
+      act(() => { vi.advanceTimersByTime(1100); });
+
+      expect(state.startTour).toHaveBeenCalledWith('dashboard');
+      for (const target of ['stats', 'budget-breakdown', 'to-handle', 'add-transaction']) {
+        expect(container.querySelector(`[data-tour="${target}"]`)).not.toBeNull();
+      }
+    });
+
+    it('ne démarre pas sans aucune période (les cibles sont absentes)', () => {
+      state.periods = [];
+      const { container } = renderHome();
+      act(() => { vi.advanceTimersByTime(1100); });
+
+      expect(state.startTour).not.toHaveBeenCalled();
+      expect(container.querySelector('[data-tour="to-handle"]')).toBeNull();
+    });
   });
 
   it('« Nouvelle opération » ouvre le formulaire de saisie', () => {

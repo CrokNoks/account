@@ -50,13 +50,15 @@ export default function Home() {
   }, [periods, activePeriodId, setActivePeriodId]);
 
   useEffect(() => {
-    if (!completedTours['dashboard'] && completedTours['account']) {
+    // La visite cible des blocs qui n'existent qu'avec une période : pas de visite sans période.
+    const hasPeriod = !isLoadingPeriods && !!periods && periods.length > 0;
+    if (hasPeriod && !completedTours['dashboard'] && completedTours['account']) {
       const timer = setTimeout(() => {
         startTour('dashboard');
       }, 1000);
       return () => clearTimeout(timer);
     }
-  }, [completedTours, startTour]);
+  }, [completedTours, startTour, periods, isLoadingPeriods]);
 
   const currentPeriod = periods?.find(p => p.id === activePeriodId);
 
