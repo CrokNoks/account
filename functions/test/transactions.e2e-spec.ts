@@ -204,6 +204,38 @@ describe('Transactions routes (e2e)', () => {
       );
     });
 
+    it('passes the ids filter to the repository', async () => {
+      mocks.transactions.findAllByAccount.mockResolvedValue({
+        data: [],
+        meta: { total: 0, page: 1, limit: 1000, totalPages: 0 },
+      });
+      const ids = [
+        '00000000-0000-4000-8000-000000000016',
+        '00000000-0000-4000-8000-000000000017',
+      ];
+
+      await http()
+        .get('/00000000-0000-4000-8000-000000000101/transactions')
+        .query({ ids: ids.join(',') })
+        .set(auth())
+        .expect(200);
+
+      expect(mocks.transactions.findAllByAccount).toHaveBeenCalledWith(
+        '00000000-0000-4000-8000-000000000101',
+        expect.objectContaining({ ids }),
+      );
+    });
+
+    it('answers 400 without querying for an invalid uuid in ids', async () => {
+      await http()
+        .get('/00000000-0000-4000-8000-000000000101/transactions')
+        .query({ ids: '00000000-0000-4000-8000-000000000016,pas-un-uuid' })
+        .set(auth())
+        .expect(400);
+
+      expect(mocks.transactions.findAllByAccount).not.toHaveBeenCalled();
+    });
+
     it('answers 404 for an unknown period', async () => {
       mocks.periods.findById.mockResolvedValue(null);
 

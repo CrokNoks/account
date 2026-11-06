@@ -6,6 +6,7 @@ export interface FindAllTransactionsOptions {
   search?: string;
   categoryId?: string;
   tagIds?: string[];
+  ids?: string[];
   minAmount?: bigint;
   maxAmount?: bigint;
   reconciled?: boolean;

@@ -315,3 +315,51 @@ describe('SupabaseTransactionRepository returns the rows as stored', () => {
     await expect(repository.save(t)).resolves.toBe(t);
   });
 });
+
+describe('SupabaseTransactionRepository ids filter', () => {
+  // Chaîne de requête enregistrant les filtres appliqués, puis résolue.
+  const listChain = () => {
+    const calls: Array<[string, ...unknown[]]> = [];
+    const result = { data: [], count: 0, error: null };
+    const chain: Record<string, unknown> = {};
+    for (const name of ['select', 'eq', 'in', 'order', 'range']) {
+      chain[name] = (...args: unknown[]) => {
+        calls.push([name, ...args]);
+        return chain;
+      };
+    }
+    chain.returns = () => Promise.resolve(result);
+    const repository = new SupabaseTransactionRepository({
+      from: () => chain,
+    } as unknown as SupabaseClient);
+    return { repository, calls };
+  };
+
+  const ids = ['id-1', 'id-2'];
+
+  it('restricts the paginated list to the ids, always within the account', async () => {
+    const { repository, calls } = listChain();
+
+    await repository.findAllByAccount('acc-1', { ids });
+
+    expect(calls).toContainEqual(['eq', 'account_id', 'acc-1']);
+    expect(calls).toContainEqual(['in', 'id', ids]);
+  });
+
+  it('restricts the unpaginated list to the ids, always within the account', async () => {
+    const { repository, calls } = listChain();
+
+    await repository.findAllByAccountUnpaginated('acc-1', { ids });
+
+    expect(calls).toContainEqual(['eq', 'account_id', 'acc-1']);
+    expect(calls).toContainEqual(['in', 'id', ids]);
+  });
+
+  it('adds no id filter without ids', async () => {
+    const { repository, calls } = listChain();
+
+    await repository.findAllByAccount('acc-1', {});
+
+    expect(calls.some(([n, col]) => n === 'in' && col === 'id')).toBe(false);
+  });
+});

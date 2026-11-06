@@ -307,6 +307,20 @@ export class FindTransactionsQueryDto {
   tagIds?: string[];
 
   @IsOptional()
+  @Transform(({ value }): string[] | undefined => {
+    if (!value) return undefined;
+    if (Array.isArray(value)) return value as string[];
+    if (typeof value === 'string') {
+      return value.includes(',') ? value.split(',') : [value];
+    }
+    return [String(value)];
+  })
+  @IsArray()
+  @IsUUID(undefined, { each: true })
+  @ApiProperty({ required: false, type: [String] })
+  ids?: string[];
+
+  @IsOptional()
   @IsCents()
   minAmount?: string;
 
@@ -428,6 +442,7 @@ export class TransactionsController {
         search: query.search,
         categoryId: query.categoryId,
         tagIds: query.tagIds,
+        ids: query.ids,
         minAmount: query.minAmount ? parseCents(query.minAmount) : undefined,
         maxAmount: query.maxAmount ? parseCents(query.maxAmount) : undefined,
         reconciled: query.reconciled,

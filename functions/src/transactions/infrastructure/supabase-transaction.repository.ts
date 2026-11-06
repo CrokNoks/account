@@ -67,6 +67,9 @@ export class SupabaseTransactionRepository implements TransactionRepository {
     if (options?.tagIds && options.tagIds.length > 0) {
       query = query.in('transaction_tags.tag_id', options.tagIds);
     }
+    if (options?.ids && options.ids.length > 0) {
+      query = query.in('id', options.ids);
+    }
     if (options?.minAmount !== undefined) {
       query = query.gte('amount', options.minAmount.toString());
     }
@@ -131,6 +134,9 @@ export class SupabaseTransactionRepository implements TransactionRepository {
     }
     if (options?.tagIds && options.tagIds.length > 0) {
       query = query.in('transaction_tags.tag_id', options.tagIds);
+    }
+    if (options?.ids && options.ids.length > 0) {
+      query = query.in('id', options.ids);
     }
     if (options?.minAmount !== undefined) {
       query = query.gte('amount', options.minAmount.toString());
