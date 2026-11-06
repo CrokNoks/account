@@ -7,6 +7,8 @@ import { format } from 'date-fns';
 import { formatCurrency } from '@/shared/lib/format';
 import { cn } from "@/lib/utils";
 import { Checkbox } from "@/components/ui/checkbox";
+import { AnomalyBadges } from './anomaly-badges';
+import { AnomalyMark } from '../model/anomaly-marks';
 import { Transaction } from '../model/types';
 import { Category } from '@/features/categories/model/types';
 import { Tag } from '@/features/tags/model/types';
@@ -23,6 +25,8 @@ interface TransactionMobileListProps {
   onTagClick: (tagId: string) => void;
   compact?: boolean;
   isUpdating?: boolean;
+  /** Marques d'anomalie par identifiant de transaction. */
+  anomalyMarks?: Record<string, AnomalyMark[]>;
   t: ReturnType<typeof useTranslations>;
 }
 
@@ -37,6 +41,7 @@ export function TransactionMobileList({
   onTagClick,
   compact,
   isUpdating,
+  anomalyMarks,
   t
 }: TransactionMobileListProps) {
   return (
@@ -108,6 +113,11 @@ export function TransactionMobileList({
                   )}
                 </div>
               </div>
+              {anomalyMarks?.[transaction.id] && (
+                <div className="flex flex-wrap gap-1">
+                  <AnomalyBadges marks={anomalyMarks[transaction.id]} t={t} />
+                </div>
+              )}
               {transaction.tagIds && transaction.tagIds.length > 0 && (
                 <div className="flex flex-wrap gap-1">
                   {transaction.tagIds.map(tagId => {

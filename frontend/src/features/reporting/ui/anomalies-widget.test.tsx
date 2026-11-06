@@ -26,10 +26,10 @@ vi.mock('../api/use-ignore-anomaly', () => ({
   useIgnoreAnomaly: () => ({ mutate: ignoreAnomaly }),
 }));
 
-function renderWidget() {
+function renderWidget(embedded = false) {
   return render(
     <NextIntlClientProvider locale="fr" messages={fr}>
-      <AnomaliesWidget />
+      <AnomaliesWidget embedded={embedded} />
     </NextIntlClientProvider>,
   );
 }
@@ -59,5 +59,17 @@ describe('AnomaliesWidget ignore error', () => {
 
     expect(toast.error).toHaveBeenCalledTimes(1);
     expect(toast.error).toHaveBeenCalledWith(fr.Reporting.anomalies.update_error);
+  });
+});
+
+describe('AnomaliesWidget link', () => {
+  it('mène aux opérations filtrées sur exactement les transactions de l\'anomalie, toutes périodes', () => {
+    renderWidget(true);
+
+    const href = screen.getByRole('link', { name: 'Doublon' }).getAttribute('href')!;
+    const params = new URL(href, 'http://x').searchParams;
+    expect(params.get('ids')).toBe('t1,t2');
+    expect(params.get('period')).toBe('all');
+    expect(params.get('state')).toBeNull();
   });
 });

@@ -17,6 +17,8 @@ import { CheckCircle2, Circle, Pencil, Trash2, Repeat } from 'lucide-react';
 import { format } from 'date-fns';
 import { formatCurrency } from '@/shared/lib/format';
 import { cn } from "@/lib/utils";
+import { AnomalyBadges } from './anomaly-badges';
+import { AnomalyMark } from '../model/anomaly-marks';
 import { Transaction } from '../model/types';
 import { Category } from '@/features/categories/model/types';
 import { Tag } from '@/features/tags/model/types';
@@ -36,6 +38,8 @@ interface TransactionTableProps {
   onTagClick: (tagId: string) => void;
   compact?: boolean;
   isUpdating?: boolean;
+  /** Marques d'anomalie par identifiant de transaction. */
+  anomalyMarks?: Record<string, AnomalyMark[]>;
   t: ReturnType<typeof useTranslations>; // Translation function
 }
 
@@ -53,6 +57,7 @@ export function TransactionTable({
   onTagClick,
   compact,
   isUpdating,
+  anomalyMarks,
   t
 }: TransactionTableProps) {
   return (
@@ -123,6 +128,7 @@ export function TransactionTable({
                     <div className="flex flex-col gap-1">
                       <span className="truncate font-bold">{transaction.description}</span>
                       <div className="flex gap-1 flex-wrap">
+                        <AnomalyBadges marks={anomalyMarks?.[transaction.id]} t={t} />
                         {transaction.tagIds?.map(tagId => {
                           const tag = tags?.find(t => t.id === tagId);
                           return (

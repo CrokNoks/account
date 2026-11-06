@@ -9,6 +9,7 @@ import { useAccountStore } from '@/features/accounts/model/use-account-store';
 import { useAnomalies } from '../api/use-anomalies';
 import { useBudgetBreakdown } from '../api/use-budget-breakdown';
 import { useReportingStats } from '../api/use-reporting-stats';
+import { operationsHref } from '@/features/transactions/model/operations-link';
 import { currentOverruns } from '../model/current-overruns';
 import { AnomaliesWidget } from './anomalies-widget';
 
@@ -62,7 +63,7 @@ export function ToHandle() {
         )}
         <AnomaliesWidget embedded />
         {cardCount > 0 && (
-          <Link href="/transactions" className={rowClass}>
+          <Link href={operationsHref({ state: 'a_pointer' })} className={rowClass}>
             <span className="flex items-center gap-2">
               <CreditCard className="w-4 h-4 text-primary" />
               {t('todo_card', { count: cardCount })}
@@ -71,7 +72,7 @@ export function ToHandle() {
           </Link>
         )}
         {overruns.map((overrun) => (
-          <Link key={overrun.categoryId} href="/budgets" className={rowClass}>
+          <Link key={overrun.categoryId} href={operationsHref({ categoryId: overrun.categoryId })} className={rowClass}>
             <span className="flex items-center gap-2 min-w-0 text-red-600 dark:text-red-400">
               <TrendingUp className="w-4 h-4 shrink-0" />
               {t('todo_overrun', { name: overrun.name, amount: formatCurrency(overrun.amount) })}

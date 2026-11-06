@@ -9,17 +9,37 @@ import { useTranslations } from 'next-intl';
 import { Link } from '@/i18n/routing';
 import { FileUp } from 'lucide-react';
 import { Button } from "@/components/ui/button";
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
+import { readOperationsLink } from '@/features/transactions/model/operations-link';
 import { useUiStore } from '@/shared/model/use-ui-store';
 import { HelpButton } from '@/shared/ui/tour/HelpButton';
 
+// useSearchParams demande une frontière Suspense (lecture de l'URL côté client).
 export default function TransactionsPage() {
+  return (
+    <Suspense fallback={<div className="h-64 bg-muted animate-pulse rounded-xl" />}>
+      <TransactionsContent />
+    </Suspense>
+  );
+}
+
+function TransactionsContent() {
+  const searchParams = useSearchParams();
+  const link = readOperationsLink(searchParams);
   const t = useTranslations('Transactions');
   const { startTour, completedTours } = useUiStore();
   const { activeAccountId, activePeriodId, setActivePeriodId } = useAccountStore();
   const { data: periods } = usePeriods(activeAccountId);
   // « Toutes les périodes » reste propre à cet écran : la période active, partagée avec Aujourd'hui, ne change pas.
-  const [allPeriods, setAllPeriods] = useState(false);
+  const [allPeriods, setAllPeriods] = useState(link.allPeriods);
+  // Un nouveau lien (même page, autre URL) reprend sa propre portée de période (réinitialisation pendant le rendu).
+  const query = searchParams.toString();
+  const [seenQuery, setSeenQuery] = useState(query);
+  if (seenQuery !== query) {
+    setSeenQuery(query);
+    setAllPeriods(link.allPeriods);
+  }
 
   useEffect(() => {
     if (periods && periods.length > 0 && !activePeriodId) {
@@ -64,7 +84,10 @@ export default function TransactionsPage() {
       <OperationsBalances hasPeriod={hasPeriod} />
 
       <TransactionList 
+        // Un autre lien (autres filtres) repart d'une liste neuve.
+        key={searchParams.toString()}
         period={listPeriod}
+        initialFilters={{ ids: link.ids, categoryId: link.categoryId }}
         extraActions={
           <Link href="/transactions/import">
             <Button variant="outline" size="sm" className="gap-2">

@@ -39,16 +39,21 @@ import { TransactionMobileList } from './transaction-mobile-list';
 import { TransactionFilters } from './transaction-filters';
 import { BulkActionsBar } from './bulk-actions-bar';
 import { Transaction } from '../model/types';
+import { useAnomalies } from '@/features/reporting/api/use-anomalies';
+import { anomalyMarks } from '../model/anomaly-marks';
 
 export function TransactionList({ 
   periodId, 
   period,
+  initialFilters,
   compact = false,
   extraActions
 }: { 
   periodId?: string, 
   /** Période pilotée par l'écran (sélecteur de tête) : un identifiant ou `all`. Le filtre de période du panneau disparaît. */
   period?: string,
+  /** Filtres venus d'un lien (identifiants exacts, catégorie). */
+  initialFilters?: { ids?: string[]; categoryId?: string },
   compact?: boolean,
   extraActions?: React.ReactNode
 }) {
@@ -85,7 +90,7 @@ export function TransactionList({
 
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [search, setSearch] = useState('');
-  const [selectedCategoryId, setSelectedCategoryId] = useState<string | 'all'>('all');
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string | 'all'>(initialFilters?.categoryId ?? 'all');
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
   const [minAmount, setMinAmount] = useState('');
   const [maxAmount, setMaxAmount] = useState('');
@@ -93,8 +98,9 @@ export function TransactionList({
   const [endDate, setEndDate] = useState('');
 
   const [appliedFilters, setAppliedFilters] = useState({
+    ids: initialFilters?.ids ?? ([] as string[]),
     search: '',
-    categoryId: 'all',
+    categoryId: initialFilters?.categoryId ?? 'all',
     selectedTagIds: [] as string[],
     statusFilter: 'all',
     minAmount: '',
@@ -105,6 +111,7 @@ export function TransactionList({
 
   const filterOptions = useMemo(() => ({
     periodId: effectivePeriodId === 'all' ? undefined : (effectivePeriodId || undefined),
+    ids: appliedFilters.ids.length > 0 ? appliedFilters.ids.join(',') : undefined,
     search: appliedFilters.search || undefined,
     categoryId: appliedFilters.categoryId === 'all' ? undefined : appliedFilters.categoryId,
     tagIds: appliedFilters.selectedTagIds.length > 0 ? appliedFilters.selectedTagIds.join(',') : undefined,
@@ -120,6 +127,8 @@ export function TransactionList({
   const handleApplyFilters = () => {
     setPage(1);
     setAppliedFilters({
+      // Les identifiants d'un lien ne s'éditent pas ici : ils tiennent jusqu'à la réinitialisation.
+      ids: appliedFilters.ids,
       search,
       categoryId: selectedCategoryId,
       selectedTagIds,
@@ -133,6 +142,7 @@ export function TransactionList({
 
   const handleResetFilters = () => {
     const defaultFilters = {
+      ids: [] as string[],
       search: '',
       categoryId: 'all',
       selectedTagIds: [],
@@ -156,6 +166,7 @@ export function TransactionList({
 
   const activeFiltersCount = useMemo(() => {
     return [
+      appliedFilters.ids.length > 0,
       appliedFilters.search,
       appliedFilters.categoryId !== 'all',
       appliedFilters.selectedTagIds.length > 0,
@@ -168,6 +179,9 @@ export function TransactionList({
   }, [appliedFilters]);
 
   const { data: transactions, isLoading } = useTransactions(activeAccountId, filterOptions);
+  // Anomalies de la période partagée avec Aujourd'hui (ignorées exclues par le back) : marques sur les lignes.
+  const { data: anomalies } = useAnomalies(activeAccountId, activePeriodId);
+  const marks = useMemo(() => anomalyMarks(anomalies), [anomalies]);
 
   // La sélection appartient à un « scope » (compte, page, période, filtres, recherche) :
   // dès que le scope change elle est vidée (réinitialisation pendant le rendu, comme
@@ -334,7 +348,7 @@ export function TransactionList({
               categories={categories} tags={tags}
               selectedIds={selectedIds} onToggleSelect={toggleSelect}
               onEdit={setEditingTransaction} onToggleReconciliation={toggleReconciliation}
-              onTagClick={setTagDetailId} compact={compact} isUpdating={isUpdating} t={t}
+              onTagClick={setTagDetailId} compact={compact} isUpdating={isUpdating} anomalyMarks={marks} t={t}
             />
             <TransactionTable 
               transactions={transactions.data}
@@ -342,7 +356,7 @@ export function TransactionList({
               selectedIds={selectedIds} onToggleSelect={toggleSelect} onToggleSelectAll={toggleSelectAll}
               onEdit={setEditingTransaction} onDelete={handleDelete} onToggleReconciliation={toggleReconciliation}
               onMakeRecurring={setTransactionToMakeRecurring} onTagClick={setTagDetailId}
-              compact={compact} isUpdating={isUpdating} t={t}
+              compact={compact} isUpdating={isUpdating} anomalyMarks={marks} t={t}
             />
           </>
         )}

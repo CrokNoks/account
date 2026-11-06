@@ -307,6 +307,10 @@
       "to_reconcile": "Left to reconcile",
       "to_reconcile_count": "{count, plural, =0 {No card payment} one {# card payment} other {# card payments}}",
       "no_period": "These balances are computed over a period: create or pick a period to see them. The list stays usable."
+    },
+    "anomaly": {
+      "duplicate": "Possible duplicate",
+      "outlier": "Unusual expense"
     }
   },
   "Import": {

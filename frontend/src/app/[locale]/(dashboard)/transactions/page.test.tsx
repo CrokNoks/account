@@ -8,8 +8,11 @@ const state = vi.hoisted(() => ({
   setActivePeriodId: vi.fn(),
   listPeriod: undefined as string | undefined,
   hasPeriod: undefined as boolean | undefined,
+  query: '',
+  initialFilters: undefined as unknown,
 }));
 
+vi.mock('next/navigation', () => ({ useSearchParams: () => new URLSearchParams(state.query) }));
 vi.mock('next-intl', () => ({ useTranslations: () => (key: string) => key }));
 vi.mock('@/i18n/routing', () => ({ Link: ({ children }: { children: React.ReactNode }) => <a>{children}</a> }));
 vi.mock('@/features/accounts/model/use-account-store', () => ({
@@ -25,8 +28,9 @@ vi.mock('@/features/transactions/ui/operations-balances', () => ({
   },
 }));
 vi.mock('@/features/transactions/ui/transaction-list', () => ({
-  TransactionList: ({ period }: { period?: string }) => {
+  TransactionList: ({ period, initialFilters }: { period?: string; initialFilters?: unknown }) => {
     state.listPeriod = period;
+    state.initialFilters = initialFilters;
     return null;
   },
 }));
@@ -48,6 +52,7 @@ describe('Page Opérations', () => {
     ];
     state.activePeriodId = 'p1';
     state.setActivePeriodId.mockReset();
+    state.query = '';
   });
 
   it('démarre la liste sur la période choisie', () => {
@@ -78,5 +83,21 @@ describe('Page Opérations', () => {
 
     expect(state.listPeriod).toBe('all');
     expect(state.hasPeriod).toBe(false);
+  });
+
+  it('lien d\'anomalie : toutes périodes et identifiants exacts', () => {
+    state.query = 'ids=t1,t2&period=all';
+    render(<TransactionsPage />);
+
+    expect(state.listPeriod).toBe('all');
+    expect(state.initialFilters).toEqual({ ids: ['t1', 't2'], categoryId: undefined });
+  });
+
+  it('lien de dépassement : la catégorie, sur la période choisie', () => {
+    state.query = 'categoryId=cat-1';
+    render(<TransactionsPage />);
+
+    expect(state.listPeriod).toBe('p1');
+    expect(state.initialFilters).toEqual({ ids: [], categoryId: 'cat-1' });
   });
 });

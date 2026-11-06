@@ -20,6 +20,7 @@ export interface FindTransactionsOptions {
   search?: string;
   categoryId?: string | null;
   tagIds?: string; // Comma-separated string
+  ids?: string; // Comma-separated transaction ids (exact selection)
   minAmount?: string;
   maxAmount?: string;
   reconciled?: boolean;

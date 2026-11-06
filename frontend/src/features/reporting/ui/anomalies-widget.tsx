@@ -13,6 +13,7 @@ import { toast } from 'sonner';
 import { getApiErrorMessage } from '@/shared/api/mutation-error';
 import { useTranslations } from 'next-intl';
 import { Link } from '@/i18n/routing';
+import { operationsHref } from '@/features/transactions/model/operations-link';
 
 /**
  * `embedded` : seulement les lignes (bloc À traiter de l'écran Aujourd'hui) ; rien s'il n'y a
@@ -103,7 +104,7 @@ export function AnomaliesWidget({ embedded = false }: { embedded?: boolean }) {
             <div className="flex-1 min-w-0 pr-8">
               <h4 className="text-sm font-bold truncate">
                 {embedded ? (
-                  <Link href="/transactions" className="hover:underline">{anomaly.title}</Link>
+                  <Link href={operationsHref({ ids: anomaly.transactionIds, allPeriods: true })} className="hover:underline">{anomaly.title}</Link>
                 ) : (
                   anomaly.title
                 )}

@@ -21,6 +21,7 @@ vi.mock('@/shared/model/use-ui-store', () => ({
 }));
 vi.mock('@/features/budgets/api/use-periods', () => ({ usePeriods: () => ({ data: [] }) }));
 vi.mock('@/features/categories/api/use-categories', () => ({ useCategories: () => ({ data: [] }) }));
+vi.mock('@/features/reporting/api/use-anomalies', () => ({ useAnomalies: () => ({ data: [] }) }));
 vi.mock('@/features/tags/api/use-tags', () => ({ useTags: () => ({ data: [] }) }));
 vi.mock('../api/use-transactions', () => ({
   useTransactions: (...args: unknown[]) => useTransactions(...args),
@@ -200,5 +201,23 @@ describe('TransactionList period', () => {
   it('sends no period for « all periods »', () => {
     render(<TransactionList period="all" />);
     expect(lastOptions().periodId).toBeUndefined();
+  });
+});
+
+describe('TransactionList filters from a link', () => {
+  beforeEach(() => {
+    useTransactions.mockReset();
+    useTransactions.mockReturnValue({ data: undefined, isLoading: false });
+  });
+
+  it('starts filtered on the exact ids and the category of the link', () => {
+    render(<TransactionList initialFilters={{ ids: ['t1', 't2'], categoryId: 'cat-1' }} />);
+    expect(lastOptions().ids).toBe('t1,t2');
+    expect(lastOptions().categoryId).toBe('cat-1');
+  });
+
+  it('sends no ids without a link', () => {
+    render(<TransactionList />);
+    expect(lastOptions().ids).toBeUndefined();
   });
 });

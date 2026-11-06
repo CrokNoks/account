@@ -59,10 +59,10 @@ describe('Bloc À traiter', () => {
     expect(screen.queryByText('Tout est à jour')).toBeNull();
     expect(text()).toContain('2CBàpointer');
     expect(text()).toContain('-12,50€');
-    expect(screen.getByRole('link', { name: /CB à pointer/ }).getAttribute('href')).toBe('/transactions');
+    expect(screen.getByRole('link', { name: /CB à pointer/ }).getAttribute('href')).toBe('/transactions?state=a_pointer');
   });
 
-  it('liste les dépassements en cours avec le même montant que le bloc Budgets et mène aux budgets', () => {
+  it('liste les dépassements en cours avec le même montant que le bloc Budgets et mène aux opérations de la catégorie', () => {
     state.breakdown = {
       expenses: [{ categoryId: 'e1', name: 'Courses', real: '-60000', budget: '50000', remaining: '-10000', percentage: 120 }],
       income: [],
@@ -73,16 +73,21 @@ describe('Bloc À traiter', () => {
 
     expect(text()).toContain('Courses');
     expect(text()).toContain('100,00€');
-    expect(screen.getByRole('link', { name: /Courses/ }).getAttribute('href')).toBe('/budgets');
+    expect(screen.getByRole('link', { name: /Courses/ }).getAttribute('href')).toBe('/transactions?categoryId=e1');
   });
 
   it('liste les anomalies avec un lien vers les opérations', () => {
     state.anomalies = [
-      { id: 'an-1', type: 'duplicate', severity: 'high', title: 'Doublon', description: 'Deux fois', transactionIds: ['t1'] },
+      { id: 'an-1', type: 'duplicate', severity: 'high', title: 'Doublon', description: 'Deux fois', transactionIds: ['t1', 't2'] },
     ];
     renderBlock();
 
-    expect(screen.getByRole('link', { name: 'Doublon' }).getAttribute('href')).toBe('/transactions');
+    const href = screen.getByRole('link', { name: 'Doublon' }).getAttribute('href')!;
+    const params = new URL(href, 'http://x').searchParams;
+    expect(href.startsWith('/transactions?')).toBe(true);
+    expect(params.get('ids')).toBe('t1,t2');
+    expect(params.get('period')).toBe('all');
+    expect(params.get('state')).toBeNull();
     expect(screen.queryByText('Tout est à jour')).toBeNull();
   });
 
