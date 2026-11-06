@@ -22,25 +22,25 @@ describe('ComparisonGap', () => {
   it('shows an expense that went down as a green decrease', () => {
     const cell = gap(point('-8560', '-4014', -53.11), true);
     expect(cell.textContent).toBe('-53.11%');
-    expect(cell.className).toContain('text-emerald-600');
+    expect(cell.className).toContain('text-primary');
   });
 
   it('shows an expense that went up as a red increase', () => {
     const cell = gap(point('-3683', '-3685', 0.05), true);
     expect(cell.textContent).toBe('+0.05%');
-    expect(cell.className).toContain('text-rose-600');
+    expect(cell.className).toContain('text-destructive');
   });
 
   it('shows an income that went up as a green increase', () => {
     const cell = gap(point('250000', '260000', 4));
     expect(cell.textContent).toBe('+4%');
-    expect(cell.className).toContain('text-emerald-600');
+    expect(cell.className).toContain('text-primary');
   });
 
   it('shows a category absent from the base period as new, red for an expense', () => {
     const cell = gap(point('0', '-16410', 0), true);
     expect(cell.textContent).toBe('new');
-    expect(cell.className).toContain('text-rose-600');
+    expect(cell.className).toContain('text-destructive');
   });
 
   it('shows an unchanged amount as neutral', () => {

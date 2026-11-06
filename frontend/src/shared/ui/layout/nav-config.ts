@@ -1,8 +1,6 @@
 import {
-  AlertTriangle,
   Calendar,
   CreditCard,
-  GitBranch,
   LayoutDashboard,
   PieChart,
   Receipt,
@@ -19,7 +17,7 @@ import {
 export const NAV_ENTRIES = [
   { icon: LayoutDashboard, labelKey: 'today', href: '/', shortcut: 'F2' },
   { icon: Receipt, labelKey: 'operations', href: '/transactions', shortcut: 'F3' },
-  { icon: TrendingUp, labelKey: 'analysis', href: '/evolution', shortcut: 'F4' },
+  { icon: TrendingUp, labelKey: 'analysis', href: '/analyses', shortcut: 'F4' },
   { icon: PieChart, labelKey: 'budgets', href: '/budgets', shortcut: 'F5' },
   { icon: Calendar, labelKey: 'due_dates', href: '/calendar', shortcut: 'F6' },
   { icon: Settings, labelKey: 'settings', href: '/settings' },
@@ -39,9 +37,11 @@ const ROUTES: readonly Route[] = [
   { path: '/', entry: '/', titleKey: 'today' },
   { path: '/transactions', entry: '/transactions', titleKey: 'operations' },
   { path: '/transactions/import', entry: '/transactions', titleKey: 'import' },
-  { path: '/evolution', entry: '/evolution', titleKey: 'analysis' },
-  { path: '/flux', entry: '/evolution', titleKey: 'flux' },
-  { path: '/depassements', entry: '/evolution', titleKey: 'overruns' },
+  { path: '/analyses', entry: '/analyses', titleKey: 'analysis' },
+  // Anciennes adresses : elles affichent l'écran Analyses sur leur onglet (sans redirection).
+  { path: '/evolution', entry: '/analyses', titleKey: 'analysis' },
+  { path: '/flux', entry: '/analyses', titleKey: 'analysis' },
+  { path: '/depassements', entry: '/analyses', titleKey: 'analysis' },
   { path: '/budgets', entry: '/budgets', titleKey: 'budgets' },
   { path: '/budgets/fixed', entry: '/budgets', titleKey: 'budgets' },
   { path: '/calendar', entry: '/calendar', titleKey: 'due_dates' },
@@ -54,13 +54,8 @@ const ROUTES: readonly Route[] = [
   { path: '/recurring', entry: '/settings', titleKey: 'recurring' },
 ];
 
-/** Onglets reliant les pages d'un même groupe (libellé = nom propre de la page). */
+/** Onglets reliant les pages d'un même groupe (libellé = nom propre de la page). Analyses a ses onglets dans l'écran. */
 const TABS: Record<string, readonly { href: string; labelKey: string; icon: LucideIcon }[]> = {
-  '/evolution': [
-    { href: '/evolution', labelKey: 'evolution', icon: TrendingUp },
-    { href: '/flux', labelKey: 'flux', icon: GitBranch },
-    { href: '/depassements', labelKey: 'overruns', icon: AlertTriangle },
-  ],
   '/calendar': [
     { href: '/calendar', labelKey: 'calendar', icon: Calendar },
     { href: '/cashflow', labelKey: 'prevision', icon: TrendingUp },
@@ -81,7 +76,7 @@ export function tabsFor(entryHref: string) {
 }
 
 /** Pages rattachées proposées par la palette Ctrl/Cmd + K en plus des entrées. */
-export const ATTACHED_PAGES = [...TABS['/evolution'].slice(1), ...TABS['/calendar'].slice(1)];
+export const ATTACHED_PAGES = TABS['/calendar'].slice(1);
 
 function stripLocale(pathname: string): string {
   return pathname.replace(/^\/(fr|en)(?=\/|$)/, '').replace(/\/+$/, '') || '/';

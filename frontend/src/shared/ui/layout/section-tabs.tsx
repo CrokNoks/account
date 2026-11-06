@@ -6,14 +6,14 @@ import { useTranslations } from 'next-intl';
 import { cn } from '@/lib/utils';
 import { tabsFor } from './nav-config';
 
-/** Barre d'onglets reliant les pages d'un même groupe (Analyses, Échéances). */
-export function SectionTabs({ entry }: { entry: '/evolution' | '/calendar' }) {
+/** Barre d'onglets reliant les pages d'un même groupe (Échéances). */
+export function SectionTabs({ entry }: { entry: '/calendar' }) {
   const pathname = usePathname();
   const t = useTranslations('Navigation');
   const path = pathname.replace(/^\/(fr|en)(?=\/|$)/, '').replace(/\/+$/, '') || '/';
 
   return (
-    <nav aria-label={t(entry === '/evolution' ? 'analysis' : 'due_dates')} className="flex gap-1 border-b">
+    <nav aria-label={t('due_dates')} className="flex gap-1 border-b">
       {tabsFor(entry).map(({ href, labelKey }) => (
         <Link
           key={href}

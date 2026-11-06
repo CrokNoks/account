@@ -7,9 +7,6 @@
     "settings": "Réglages",
     "dashboard": "Tableau de bord",
     "calendar": "Calendrier",
-    "evolution": "Évolution",
-    "overruns": "Dépassements",
-    "flux": "Flux",
     "prevision": "Prévisions",
     "accounts": "Comptes",
     "categories": "Catégories",
@@ -84,20 +81,6 @@
     "pace_empty": "Aucune donnée à afficher pour l'instant"
   },
   "Reporting": {
-    "overruns_title": "Dépassements",
-    "overruns_desc": "Les catégories qui dépassent leur budget, période fermée par période fermée (transactions en attente exclues).",
-    "overruns_category": "Catégorie",
-    "overruns_budget": "Budget",
-    "overruns_real": "Réel",
-    "overruns_excess": "Dépassement",
-    "overruns_no_period": "Aucune période fermée : rien à afficher.",
-    "overruns_none": "Aucun dépassement sur cette période.",
-    "overruns_chart_title": "Évolution budget et dépassement d'une catégorie",
-    "overruns_choose_category": "Choisir une catégorie",
-    "overruns_from": "Période de début",
-    "overruns_to": "Période de fin",
-    "overruns_range_inverted": "La période de début doit être antérieure ou égale à la période de fin.",
-    "overruns_pick_category": "Choisissez une catégorie pour afficher le graphique.",
     "breakdown": "Répartition budgétaire",
     "real_income": "Revenus réels",
     "planned_income": "Revenus prévus",
@@ -116,10 +99,6 @@
     "remaining": "Restant",
     "over_budget_expense": "{amount} de dépassement",
     "over_budget_income": "+{amount} au-delà du budget",
-    "evolution_title": "Évolution",
-    "evolution_desc": "Suivez l'évolution de votre solde et de vos revenus/dépenses au fil du temps.",
-    "balance_evolution": "Évolution du solde en banque",
-    "income_vs_expenses": "Revenus vs Dépenses",
     "calendar": {
       "page_title": "Calendrier Financier",
       "page_desc": "Visualisez vos flux de trésorerie passés et prévus.",
@@ -152,7 +131,6 @@
         "sun": "dim"
       }
     },
-    "evolution_no_data": "Aucune donnée d'évolution disponible",
     "category_breakdown_title": "Répartition des dépenses par catégorie",
     "no_data_title": "Aucune donnée",
     "no_data_desc": "Aucune donnée budgétaire pour cette période",
@@ -168,27 +146,7 @@
       "no_recurring": "Aucune opération récurrente configurée pour les prévisions.",
       "estimated_balance": "Solde estimé"
     },
-    "flux": {
-      "title": "Flux de trésorerie",
-      "desc": "Visualisation des entrées et sorties d'argent pour la période sélectionnée."
-    },
-    "evolution": {
-      "filters": "Filtres",
-      "select_all": "Tout sélectionner",
-      "deselect_all": "Tout désélectionner"
-    },
     "comparison": {
-      "title": "Comparaison de périodes",
-      "base": "Base (A) :",
-      "target": "Cible (B) :",
-      "period_a": "Période A",
-      "period_b": "Période B",
-      "period_a_placeholder": "Période A...",
-      "period_b_placeholder": "Période B...",
-      "period_a_label": "Période A :",
-      "period_b_label": "Période B :",
-      "current_suffix": "(Actuelle)",
-      "select_two": "Sélectionnez deux périodes pour comparer les résultats.",
       "gap": "Écart",
       "new": "Nouveau"
     },
@@ -206,7 +164,58 @@
       "ignore": "Ignorer cette alerte",
       "update_error": "Erreur lors de la mise à jour de l'anomalie"
     },
-    "planned": "Prévu"
+    "planned": "Prévu",
+    "analyses": {
+      "title": "Analyses",
+      "desc": "Répartition des dépenses, évolution et dépassements des périodes fermées, sur un seul écran.",
+      "tabs_label": "Sections d'analyse",
+      "tab_breakdown": "Répartition",
+      "tab_evolution": "Évolution",
+      "tab_overruns": "Dépassements",
+      "no_closed_period": "Aucune période fermée : il n'y a encore rien à analyser. Les analyses portent sur les périodes terminées.",
+      "in_progress": "en cours",
+      "breakdown": {
+        "period": "Période affichée",
+        "compare_with": "Comparée à",
+        "choose_compare": "Aucune comparaison",
+        "total_spent": "Total dépensé",
+        "compare_total": "{amount} sur la période de comparaison",
+        "first_period": "Première période disponible : aucune comparaison.",
+        "category": "Catégorie",
+        "amount": "Montant",
+        "gap": "Écart",
+        "none": "Aucune dépense sur cette période.",
+        "legend": "Écart = variation du montant par rapport à la période de comparaison : ↗ et + si la dépense monte, ↘ et − si elle baisse, « Nouveau » si elle était à 0. Dépenses et épargne.",
+        "error": "Impossible de charger la comparaison."
+      },
+      "evolution": {
+        "total_title": "Dépenses par période",
+        "total_legend": "Barres : total des dépenses et de l'épargne de chaque période fermée, factures en attente comprises.",
+        "total_series": "Total dépensé",
+        "category_title": "Réel et budget d'une catégorie",
+        "category_legend": "Barre pleine : réel de la catégorie ; barre claire : budget. Factures en attente exclues ; « Dépassement » marque une période où le réel dépasse le budget (même règle que l'onglet Dépassements).",
+        "choose_category": "Choisir une catégorie",
+        "pick_category": "Choisissez une catégorie de dépense ou d'épargne pour afficher son réel face à son budget.",
+        "category_select": "Catégorie",
+        "period": "Période",
+        "real": "Réel",
+        "budget": "Budget",
+        "overrun_mark": "Dépassement",
+        "balance_title": "Solde en banque",
+        "balance_legend": "Courbe : solde pointé en banque à la fin de chaque période fermée.",
+        "balance_series": "Solde en banque"
+      },
+      "overruns": {
+        "category": "Catégorie",
+        "total": "Total",
+        "none": "Aucun dépassement sur les périodes fermées.",
+        "legend": "Chaque case est l'excédent de la catégorie sur la période : « — » s'il n'y en a pas. Les factures en attente sont exclues et la période en cours n'apparaît pas. Les 6 dernières périodes fermées au plus.",
+        "link_hint": "Sélectionner une catégorie ouvre ses opérations, toutes périodes et factures en attente comprises : la liste peut donc dépasser le montant du tableau.",
+        "open_operations": "Voir les opérations de {name}",
+        "no_excess": "aucun dépassement",
+        "error": "Impossible de charger les dépassements."
+      }
+    }
   },
   "Accounts": {
     "title": "Mes Comptes",

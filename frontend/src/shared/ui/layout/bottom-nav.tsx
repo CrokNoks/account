@@ -12,7 +12,7 @@ import { activeEntryHref } from './nav-config';
 const navItems = [
   { icon: LayoutDashboard, labelKey: 'today', href: '/' },
   { icon: Receipt, labelKey: 'operations', href: '/transactions' },
-  { icon: TrendingUp, labelKey: 'analysis', href: '/evolution' },
+  { icon: TrendingUp, labelKey: 'analysis', href: '/analyses' },
 ];
 
 export function BottomNav() {

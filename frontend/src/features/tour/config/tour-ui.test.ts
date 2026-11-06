@@ -72,7 +72,7 @@ describe('cibles des visites guidées', () => {
     expect(targets).not.toContain('[data-tour="nav-recurring"]');
   });
 
-  it("la visite du tableau de bord n'inclut pas l'étape évolution (page Évolution seulement)", () => {
+  it("la visite du tableau de bord n'inclut pas l'étape évolution (la cible a disparu avec l'ancien graphique d'évolution)", () => {
     const targets = DASHBOARD_STEPS(((k: string) => k) as unknown as Parameters<typeof DASHBOARD_STEPS>[0]).map((s) => s.target);
     expect(targets).not.toContain('[data-tour="evolution"]');
   });

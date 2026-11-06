@@ -25,6 +25,8 @@ describe('barre du bas (mobile)', () => {
     expect(items).toHaveLength(4);
     expect(Array.from(items).map((i) => i.textContent)).toEqual(['today', 'operations', '', 'analysis']);
     expect(items[2]).toBe(plus);
+    // Analyses pointe vers le nouvel écran, plus vers /evolution.
+    expect(screen.getByRole('link', { name: 'analysis' }).getAttribute('href')).toBe('/analyses');
 
     fireEvent.click(plus);
     expect(setOpen).toHaveBeenCalledWith(true);
@@ -39,12 +41,17 @@ describe('barre du bas (mobile)', () => {
 describe('titres de page en mobile', () => {
   it('each page hides its h2 below lg (the title is in the header)', () => {
     const dir = join(__dirname, '../../../app/[locale]/(dashboard)');
-    for (const page of ['calendar', 'cashflow', 'evolution', 'depassements', 'flux', 'budgets', 'categories', 'tags', 'recurring', 'smart-rules', 'accounts', 'settings', 'transactions/import']) {
+    for (const page of ['calendar', 'cashflow', 'budgets', 'categories', 'tags', 'recurring', 'smart-rules', 'accounts', 'settings', 'transactions/import']) {
       const src = readFileSync(join(dir, page, 'page.tsx'), 'utf8');
       const h2 = src.match(/<h2[^>]*>/)![0];
       const wrapperHidden = /className="flex flex-col gap-2 max-lg:hidden">\s*(<div className="flex items-center gap-3">[\s\S]*?<\/div>\s*)?<h2/.test(src);
       expect(h2.includes('max-lg:hidden') || wrapperHidden, page).toBe(true);
     }
+  });
+
+  it("l'écran Analyses (et donc ses trois adresses) masque son h2 sous lg", () => {
+    const src = readFileSync(join(__dirname, '../../../features/reporting/ui/analyses-screen.tsx'), 'utf8');
+    expect(/className="flex flex-col gap-2 max-lg:hidden">\s*<h2/.test(src)).toBe(true);
   });
 });
 

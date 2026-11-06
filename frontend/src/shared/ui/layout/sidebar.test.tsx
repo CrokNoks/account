@@ -24,7 +24,7 @@ describe('sidebar : 6 entrées', () => {
   it('liste Aujourd\'hui, Opérations, Analyses, Budgets, Échéances, Réglages puis Déconnexion', () => {
     render(<Sidebar />);
     const links = screen.getAllByRole('link');
-    expect(links.map((l) => l.getAttribute('href'))).toEqual(['/', '/transactions', '/evolution', '/budgets', '/calendar', '/settings']);
+    expect(links.map((l) => l.getAttribute('href'))).toEqual(['/', '/transactions', '/analyses', '/budgets', '/calendar', '/settings']);
     expect(links.map((l) => l.textContent)).toEqual([
       'todayF2', 'operationsF3', 'analysisF4', 'budgetsF5', 'due_datesF6', 'settings',
     ]);
@@ -44,7 +44,7 @@ describe('sidebar : F2 à F6', () => {
   it.each([
     ['F2', '/'],
     ['F3', '/transactions'],
-    ['F4', '/evolution'],
+    ['F4', '/analyses'],
     ['F5', '/budgets'],
     ['F6', '/calendar'],
   ])('%s va sur %s', (key, href) => {
@@ -67,8 +67,10 @@ describe('sidebar : F2 à F6', () => {
 describe('sidebar : entrée active par groupe', () => {
   it.each([
     ['/fr', '/'],
-    ['/fr/flux', '/evolution'],
-    ['/en/depassements', '/evolution'],
+    ['/fr/analyses', '/analyses'],
+    ['/fr/evolution', '/analyses'],
+    ['/fr/flux', '/analyses'],
+    ['/en/depassements', '/analyses'],
     ['/fr/cashflow', '/calendar'],
     ['/fr/transactions/import', '/transactions'],
     ['/fr/budgets/fixed', '/budgets'],

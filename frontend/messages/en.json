@@ -7,9 +7,6 @@
     "settings": "Settings",
     "dashboard": "Dashboard",
     "calendar": "Calendar",
-    "evolution": "Evolution",
-    "overruns": "Overruns",
-    "flux": "Flow",
     "prevision": "Forecast",
     "accounts": "Accounts",
     "categories": "Categories",
@@ -84,20 +81,6 @@
     "pace_empty": "Nothing to show yet"
   },
   "Reporting": {
-    "overruns_title": "Overruns",
-    "overruns_desc": "Categories over budget, closed period by closed period (pending transactions excluded).",
-    "overruns_category": "Category",
-    "overruns_budget": "Budget",
-    "overruns_real": "Actual",
-    "overruns_excess": "Overrun",
-    "overruns_no_period": "No closed period: nothing to show.",
-    "overruns_none": "No overrun in this period.",
-    "overruns_chart_title": "Budget and overrun of a category over time",
-    "overruns_choose_category": "Choose a category",
-    "overruns_from": "Start period",
-    "overruns_to": "End period",
-    "overruns_range_inverted": "The start period must be on or before the end period.",
-    "overruns_pick_category": "Pick a category to display the chart.",
     "breakdown": "Budget Breakdown",
     "real_income": "Real Income",
     "planned_income": "Planned Income",
@@ -116,10 +99,6 @@
     "remaining": "Remaining",
     "over_budget_expense": "{amount} over budget",
     "over_budget_income": "+{amount} beyond budget",
-    "evolution_title": "Evolution",
-    "evolution_desc": "Track your balance and income/expenses evolution over time.",
-    "balance_evolution": "Bank Balance Evolution",
-    "income_vs_expenses": "Income vs Expenses",
     "calendar": {
       "page_title": "Financial Calendar",
       "page_desc": "View your past and forecast cash flows.",
@@ -152,7 +131,6 @@
         "sun": "Sun"
       }
     },
-    "evolution_no_data": "No evolution data available",
     "category_breakdown_title": "Expense breakdown by category",
     "no_data_title": "No data",
     "no_data_desc": "No budget data for this period",
@@ -168,27 +146,7 @@
       "no_recurring": "No recurring transaction configured for the forecast.",
       "estimated_balance": "Estimated balance"
     },
-    "flux": {
-      "title": "Cash flow",
-      "desc": "Overview of money in and out for the selected period."
-    },
-    "evolution": {
-      "filters": "Filters",
-      "select_all": "Select all",
-      "deselect_all": "Deselect all"
-    },
     "comparison": {
-      "title": "Period comparison",
-      "base": "Base (A):",
-      "target": "Target (B):",
-      "period_a": "Period A",
-      "period_b": "Period B",
-      "period_a_placeholder": "Period A...",
-      "period_b_placeholder": "Period B...",
-      "period_a_label": "Period A:",
-      "period_b_label": "Period B:",
-      "current_suffix": "(Current)",
-      "select_two": "Select two periods to compare the results.",
       "gap": "Gap",
       "new": "New"
     },
@@ -206,7 +164,58 @@
       "ignore": "Dismiss this alert",
       "update_error": "Error while updating the anomaly"
     },
-    "planned": "Planned"
+    "planned": "Planned",
+    "analyses": {
+      "title": "Analysis",
+      "desc": "Breakdown of spending, trends and overruns of closed periods, on a single screen.",
+      "tabs_label": "Analysis sections",
+      "tab_breakdown": "Breakdown",
+      "tab_evolution": "Trends",
+      "tab_overruns": "Overruns",
+      "no_closed_period": "No closed period: there is nothing to analyse yet. Analysis covers finished periods.",
+      "in_progress": "current",
+      "breakdown": {
+        "period": "Period shown",
+        "compare_with": "Compared with",
+        "choose_compare": "No comparison",
+        "total_spent": "Total spent",
+        "compare_total": "{amount} in the comparison period",
+        "first_period": "First available period: no comparison.",
+        "category": "Category",
+        "amount": "Amount",
+        "gap": "Change",
+        "none": "No spending in this period.",
+        "legend": "Change = variation of the amount against the comparison period: ↗ and + if spending goes up, ↘ and − if it goes down, \"New\" if it was 0. Expenses and savings.",
+        "error": "Unable to load the comparison."
+      },
+      "evolution": {
+        "total_title": "Spending by period",
+        "total_legend": "Bars: total expenses and savings of each closed period, pending bills included.",
+        "total_series": "Total spent",
+        "category_title": "Actual and budget of a category",
+        "category_legend": "Solid bar: actual of the category; light bar: budget. Pending bills excluded; \"Overrun\" marks a period where the actual exceeds the budget (same rule as the Overruns tab).",
+        "choose_category": "Choose a category",
+        "pick_category": "Choose an expense or savings category to show its actual against its budget.",
+        "category_select": "Category",
+        "period": "Period",
+        "real": "Actual",
+        "budget": "Budget",
+        "overrun_mark": "Overrun",
+        "balance_title": "Bank balance",
+        "balance_legend": "Line: reconciled bank balance at the end of each closed period.",
+        "balance_series": "Bank balance"
+      },
+      "overruns": {
+        "category": "Category",
+        "total": "Total",
+        "none": "No overrun in closed periods.",
+        "legend": "Each cell is the category's excess for the period: \"—\" when there is none. Pending bills are excluded and the current period is not shown. At most the last 6 closed periods.",
+        "link_hint": "Selecting a category opens its transactions, all periods and pending bills included: the list can therefore exceed the amount in the table.",
+        "open_operations": "See transactions of {name}",
+        "no_excess": "no overrun",
+        "error": "Unable to load overruns."
+      }
+    }
   },
   "Accounts": {
     "title": "My Accounts",
