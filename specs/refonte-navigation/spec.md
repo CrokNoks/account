@@ -14,7 +14,7 @@ Le menu a 13 entrées : Transactions, l'écran le plus utilisé, est la 13e, et 
 - [ ] CA8 — Étant donné le thème clair ou sombre, quand j'ouvre n'importe quelle page, alors les couleurs de base (fond, surface, texte, texte atténué, bordure, accent, alerte, séries, fond doux, prévu) prennent les valeurs de `.t-light` et `.t-dark` de la maquette, sans retoucher les pages une par une ; la bascule du header continue de fonctionner.
 
 ## Règle critique
-Aucune page existante ne devient inaccessible : chaque route actuelle du dossier `(dashboard)` est atteignable depuis une entrée du menu, un onglet ou la page Réglages. Test avant le code : table « ancienne route → entrée / onglet / Réglages » vérifiée contre la liste des routes de `docs/navigation.md`.
+Aucune page existante ne devient inaccessible : chaque route actuelle du dossier `(dashboard)` est atteignable depuis une entrée du menu, un onglet ou la page Réglages. Test avant le code : table « ancienne route → entrée / onglet / Réglages » vérifiée contre les routes lues dans les `page.tsx` du dossier `(dashboard)` (donc aussi `/budgets/fixed` et `/settings`).
 
 ## Mesure d'impact
 - Indicateur : clics pour atteindre les écrans clés. Transactions passe de la 13e à la 2e entrée ; menu de 13 à 6 entrées.
