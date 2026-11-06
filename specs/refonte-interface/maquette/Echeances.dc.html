@@ -1,0 +1,245 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Échéances</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;family=Geist+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+.t-light{--bg:#F7F7F5;--surface:#FFFFFF;--ink:#15181C;--muted:#5B636D;--line:#E3E4E0;--accent:#2450C8;--on-accent:#FFFFFF;--warn:#B4530A;--soft:#EEF0EC}
+.t-dark{--bg:#111316;--surface:#181B1F;--ink:#ECEEF0;--muted:#A0A7B0;--line:#2A2F35;--accent:#6C90E8;--on-accent:#111316;--warn:#CC7A36;--soft:#22262B}
+a{color:inherit;text-decoration:none}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.num{font-family:'Geist Mono',ui-monospace,Menlo,monospace;font-variant-numeric:tabular-nums}
+.nav{display:flex;align-items:center;gap:12px;min-height:44px;padding:0 12px;border-radius:8px;color:var(--muted);font-size:14px;font-weight:500}
+.nav:hover{background:var(--soft);color:var(--ink)}
+.nav svg{flex:none}
+</style>
+</helmet>
+<div class="{{themeClass}}" style="min-height: 100vh; background: var(--bg); color: var(--ink); font-family: 'Geist', system-ui, -apple-system, sans-serif; font-size: 14px; line-height: 1.45; display: flex; flex-wrap: wrap; align-items: stretch">
+
+  <nav aria-label="Navigation principale" style="flex: 1 1 232px; max-width: 100%; box-sizing: border-box; padding: 20px 16px; border-right: 1px solid var(--line); display: flex; flex-direction: column; gap: 20px">
+    <div style="display: flex; flex-direction: column; gap: 2px; padding: 0 12px">
+      <span style="font-size: 12px; color: var(--muted)">Compte</span>
+      <button type="button" style="display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 32px; padding: 0; font-size: 15px; font-weight: 600; text-align: left">Compte commun
+        <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"></path></svg>
+      </button>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 2px">
+      <a class="nav" href="Main.dc.html">
+        <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path></svg>
+        Aujourd'hui</a>
+      <a class="nav" href="Operations.dc.html">
+        <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h16M4 18h10"></path></svg>
+        Opérations</a>
+      <a class="nav" href="Analyses.dc.html">
+        <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-7M21 20H3"></path></svg>
+        Analyses</a>
+      <a class="nav" href="Budgets.dc.html">
+        <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="M12 3v9l6.5 6"></path></svg>
+        Budgets</a>
+      <a class="nav" href="Echeances.dc.html" aria-current="page" style="background: var(--soft); color: var(--ink)">
+        <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="16" rx="2"></rect><path d="M8 3v4M16 3v4M4 10h16"></path></svg>
+        Échéances</a>
+    </div>
+    <a class="nav" href="#reglages" style="margin-top: auto">
+      <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"></path><circle cx="16" cy="7" r="2"></circle><circle cx="8" cy="17" r="2"></circle></svg>
+      Réglages</a>
+  </nav>
+
+  <main style="flex: 999 1 560px; min-width: 0; box-sizing: border-box; padding: 24px clamp(16px, 3vw, 40px) 40px">
+    <div style="max-width: 1120px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px">
+
+      <header style="display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px">
+        <h1 style="margin: 0; font-size: 26px; line-height: 1.2; font-weight: 600; letter-spacing: -0.01em">Échéances</h1>
+        <span style="color: var(--muted)">Vos opérations récurrentes à venir</span>
+      </header>
+
+      <section aria-labelledby="flow-t" style="background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 20px; display: flex; flex-direction: column; gap: 14px">
+        <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start; gap: 12px 24px">
+          <div style="display: flex; flex-direction: column; gap: 2px">
+            <h2 id="flow-t" style="margin: 0; font-size: 16px; font-weight: 600">{{lowTitle}}</h2>
+            <p style="margin: 0; color: var(--muted)">Solde du jour et récurrences uniquement, dépenses courantes non comprises.</p>
+          </div>
+          <div style="display: flex; gap: 4px" role="group" aria-label="Choisir l'horizon">
+            <sc-for list="{{ranges}}" as="r" hint-placeholder-count="3">
+              <button type="button" onClick="{{r.pick}}" aria-pressed="{{r.pressed}}" style="min-width: 44px; min-height: 44px; padding: 0 10px; border-radius: 8px; border: 1px solid {{r.rule}}; background: {{r.bg}}; color: {{r.ink}}; font-weight: 500">{{r.label}}</button>
+            </sc-for>
+          </div>
+        </div>
+        <div style="position: relative; height: 220px" onMouseLeave="{{clearDay}}">
+          <svg aria-hidden="true" viewBox="0 0 300 220" preserveAspectRatio="none" style="position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible">
+            <path d="{{flowPath}}" fill="none" stroke="var(--accent)" stroke-width="2" vector-effect="non-scaling-stroke"></path>
+          </svg>
+          <div aria-hidden="true" style="position: absolute; left: {{lowLeft}}; top: {{lowTop}}; width: 10px; height: 10px; margin: -5px 0 0 -5px; border-radius: 50%; background: var(--warn); box-shadow: 0 0 0 2px var(--surface)"></div>
+          <sc-if value="{{hasDay}}" hint-placeholder-val="{{ false }}">
+            <div style="position: absolute; top: 0; bottom: 0; left: {{day.left}}; border-left: 1px solid var(--muted)"></div>
+            <div style="position: absolute; top: 12px; left: {{day.left}}; transform: translateX({{day.shift}}); min-width: 150px; padding: 8px 10px; background: var(--ink); color: var(--bg); border-radius: 8px; font-size: 13px; display: flex; flex-direction: column; gap: 2px; pointer-events: none">
+              <span style="font-weight: 600">{{day.label}}</span>
+              <span class="num">{{day.value}}</span>
+            </div>
+          </sc-if>
+          <div style="position: absolute; inset: 0; display: flex">
+            <sc-for list="{{days}}" as="d" hint-placeholder-count="31">
+              <div onMouseEnter="{{d.hover}}" style="flex: 1 1 0; height: 100%"></div>
+            </sc-for>
+          </div>
+        </div>
+        <div class="num" style="display: flex; justify-content: space-between; font-size: 12px; color: var(--muted)">
+          <span>{{startLabel}}</span><span>{{midLabel}}</span><span>{{endLabel}}</span>
+        </div>
+      </section>
+
+      <div style="display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-start">
+        <section aria-labelledby="cal-t" style="flex: 2 1 480px; min-width: 0; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 20px; display: flex; flex-direction: column; gap: 12px">
+          <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px 16px">
+            <h2 id="cal-t" style="margin: 0; font-size: 16px; font-weight: 600">{{monthName}}</h2>
+            <div style="display: flex; gap: 4px" role="group" aria-label="Choisir le mois">
+              <sc-for list="{{months}}" as="m" hint-placeholder-count="2">
+                <button type="button" onClick="{{m.pick}}" aria-pressed="{{m.pressed}}" style="min-height: 44px; padding: 0 12px; border-radius: 8px; border: 1px solid {{m.rule}}; background: {{m.bg}}; color: {{m.ink}}; font-weight: 500">{{m.label}}</button>
+              </sc-for>
+            </div>
+          </div>
+          <div style="overflow-x: auto">
+            <div style="min-width: 490px; display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 2px">
+              <sc-for list="{{weekdays}}" as="w" hint-placeholder-count="7">
+                <span style="padding: 2px 6px; font-size: 13px; color: var(--muted)">{{w}}</span>
+              </sc-for>
+              <sc-for list="{{cells}}" as="c" hint-placeholder-count="35">
+                <div style="min-height: 64px; box-sizing: border-box; padding: 6px; border-radius: 4px; background: {{c.bg}}; border: 2px solid {{c.rule}}; display: flex; flex-direction: column; justify-content: space-between; gap: 4px">
+                  <span class="num" style="font-size: 13px; color: {{c.dayInk}}">{{c.day}}</span>
+                  <span class="num" style="font-size: 12px; font-weight: 500; color: {{c.ink}}; text-align: right">{{c.net}}</span>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </section>
+
+        <section aria-labelledby="list-t" style="flex: 1 1 300px; min-width: 0; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 20px; display: flex; flex-direction: column; gap: 6px">
+          <h2 id="list-t" style="margin: 0 0 4px; font-size: 16px; font-weight: 600">À venir en {{monthShort}}</h2>
+          <sc-for list="{{items}}" as="i" hint-placeholder-count="5">
+            <div style="display: flex; justify-content: space-between; gap: 12px; min-height: 44px; align-items: center; border-top: 1px solid var(--line)">
+              <span style="display: flex; flex-direction: column; min-width: 0">
+                <span style="font-weight: 500">{{i.name}}</span>
+                <span style="color: var(--muted); font-size: 13px">{{i.date}} · {{i.state}}</span>
+              </span>
+              <span class="num" style="white-space: nowrap; color: {{i.ink}}">{{i.amount}}</span>
+            </div>
+          </sc-for>
+          <a href="#reglages" style="min-height: 44px; display: flex; align-items: center; border-top: 1px solid var(--line); color: var(--accent); font-weight: 500">Gérer les récurrences</a>
+        </section>
+      </div>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["clair","sombre"],"default":"clair"},"$preview":{"width":1440,"height":1180}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { range: 30, month: 10, day: null };
+  }
+  renderVals() {
+    const eur = (c) => (c / 100).toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €';
+    const signed = (c) => (c > 0 ? '+' : '−') + eur(Math.abs(c));
+    const short = (c) => (c > 0 ? '+' : '−') + Math.round(Math.abs(c) / 100).toLocaleString('fr-FR');
+    const dateAt = (i) => new Date(Date.UTC(2026, 10, 6 + i));
+    const fmt = (d) => d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', timeZone: 'UTC' });
+    const recurring = [
+      { day: 1, name: 'Loyer', cents: -85000 }, { day: 1, name: 'Charges', cents: -13000 },
+      { day: 2, name: 'Assurance habitation', cents: -5800 }, { day: 8, name: 'Salle de sport', cents: -2999 },
+      { day: 12, name: 'Électricité', cents: -9200 }, { day: 15, name: 'Internet', cents: -4000 },
+      { day: 18, name: 'Mobile', cents: -3500 }, { day: 25, name: 'Salaire', cents: 320000 },
+    ];
+    const { range, month } = this.state;
+    const choice = (active) => ({
+      pressed: active ? 'true' : 'false',
+      rule: active ? 'var(--ink)' : 'var(--line)',
+      bg: active ? 'var(--ink)' : 'transparent',
+      ink: active ? 'var(--bg)' : 'var(--ink)',
+    });
+
+    const series = [];
+    let balance = 258873;
+    for (let i = 0; i <= range; i += 1) {
+      if (i > 0) {
+        const dom = dateAt(i).getUTCDate();
+        balance += recurring.filter((r) => r.day === dom).reduce((s, r) => s + r.cents, 0);
+      }
+      series.push(balance);
+    }
+    const max = Math.max(...series) * 1.1;
+    const X = (i) => (i / range) * 300;
+    const Y = (v) => 220 - (v / max) * 210;
+    const flowPath = series.reduce((p, v, i) => {
+      const y = Y(v).toFixed(1);
+      if (i === 0) return 'M0 ' + y;
+      return p + ' L' + X(i).toFixed(1) + ' ' + Y(series[i - 1]).toFixed(1) + ' L' + X(i).toFixed(1) + ' ' + y;
+    }, '');
+    const low = Math.min(...series);
+    const lowIndex = series.indexOf(low);
+
+    const hover = this.state.day;
+    const hasDay = hover !== null && hover < series.length;
+    const left = hasDay ? ((hover + 0.5) / series.length) * 100 : 0;
+    const day = hasDay ? { left: left + '%', shift: left > 60 ? 'calc(-100% - 8px)' : '8px', label: fmt(dateAt(hover)), value: eur(series[hover]) } : {};
+
+    const year = 2026;
+    const daysIn = new Date(Date.UTC(year, month + 1, 0)).getUTCDate();
+    const lead = (new Date(Date.UTC(year, month, 1)).getUTCDay() + 6) % 7;
+    const isFuture = (d) => month > 10 || d > 6;
+    const cells = [];
+    for (let i = 0; i < lead; i += 1) cells.push({ day: '', net: '', bg: 'transparent', rule: 'transparent', dayInk: 'var(--muted)', ink: 'var(--ink)' });
+    for (let d = 1; d <= daysIn; d += 1) {
+      const today = month === 10 && d === 6;
+      const total = recurring.filter((r) => r.day === d).reduce((s, r) => s + r.cents, 0);
+      const show = isFuture(d) && total !== 0;
+      cells.push({
+        day: String(d),
+        net: show ? short(total) : '',
+        bg: show ? 'var(--soft)' : 'transparent',
+        rule: today ? 'var(--accent)' : 'transparent',
+        dayInk: isFuture(d) || today ? 'var(--ink)' : 'var(--muted)',
+        ink: total > 0 ? 'var(--accent)' : 'var(--ink)',
+      });
+    }
+
+    const items = recurring.filter((r) => isFuture(r.day)).sort((a, b) => a.day - b.day).map((r) => ({
+      name: r.name,
+      date: r.day + (month === 10 ? ' nov.' : ' déc.'),
+      state: month === 10 && r.day <= 24 ? 'Facture en attente' : 'Prévue',
+      amount: signed(r.cents),
+      ink: r.cents > 0 ? 'var(--accent)' : 'var(--ink)',
+    }));
+
+    return {
+      themeClass: this.props.theme === 'sombre' ? 't-dark' : 't-light',
+      lowTitle: 'Point bas : ' + eur(low) + ' le ' + fmt(dateAt(lowIndex)),
+      ranges: [30, 60, 90].map((r) => ({ label: r + ' j', ...choice(r === range), pick: () => this.setState({ range: r, day: null }) })),
+      flowPath,
+      lowLeft: (lowIndex / range) * 100 + '%',
+      lowTop: Y(low) + 'px',
+      hasDay, day,
+      days: series.map((_, i) => ({ hover: () => this.setState({ day: i }) })),
+      clearDay: () => this.setState({ day: null }),
+      startLabel: fmt(dateAt(0)),
+      midLabel: fmt(dateAt(Math.round(range / 2))),
+      endLabel: fmt(dateAt(range)),
+      monthName: month === 10 ? 'Novembre 2026' : 'Décembre 2026',
+      monthShort: month === 10 ? 'novembre' : 'décembre',
+      months: [[10, 'Nov.'], [11, 'Déc.']].map(([id, label]) => ({ label, ...choice(id === month), pick: () => this.setState({ month: id }) })),
+      weekdays: ['Lun.', 'Mar.', 'Mer.', 'Jeu.', 'Ven.', 'Sam.', 'Dim.'],
+      cells,
+      items,
+    };
+  }
+}
+</script>
+</body>
+</html>

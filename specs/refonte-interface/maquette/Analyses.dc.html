@@ -1,0 +1,307 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Analyses</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;family=Geist+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+.t-light{--bg:#F7F7F5;--surface:#FFFFFF;--ink:#15181C;--muted:#5B636D;--line:#E3E4E0;--accent:#2450C8;--on-accent:#FFFFFF;--warn:#B4530A;--s3:#A9BEF0;--soft:#EEF0EC}
+.t-dark{--bg:#111316;--surface:#181B1F;--ink:#ECEEF0;--muted:#A0A7B0;--line:#2A2F35;--accent:#6C90E8;--on-accent:#111316;--warn:#CC7A36;--s3:#3D5699;--soft:#22262B}
+a{color:inherit;text-decoration:none}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.num{font-family:'Geist Mono',ui-monospace,Menlo,monospace;font-variant-numeric:tabular-nums}
+.nav{display:flex;align-items:center;gap:12px;min-height:44px;padding:0 12px;border-radius:8px;color:var(--muted);font-size:14px;font-weight:500}
+.nav:hover{background:var(--soft);color:var(--ink)}
+.nav svg{flex:none}
+th,td{padding:0}
+</style>
+</helmet>
+<div class="{{themeClass}}" style="min-height: 100vh; background: var(--bg); color: var(--ink); font-family: 'Geist', system-ui, -apple-system, sans-serif; font-size: 14px; line-height: 1.45; display: flex; flex-wrap: wrap; align-items: stretch">
+
+  <nav aria-label="Navigation principale" style="flex: 1 1 232px; max-width: 100%; box-sizing: border-box; padding: 20px 16px; border-right: 1px solid var(--line); display: flex; flex-direction: column; gap: 20px">
+    <div style="display: flex; flex-direction: column; gap: 2px; padding: 0 12px">
+      <span style="font-size: 12px; color: var(--muted)">Compte</span>
+      <button type="button" style="display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 32px; padding: 0; font-size: 15px; font-weight: 600; text-align: left">Compte commun
+        <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"></path></svg>
+      </button>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 2px">
+      <a class="nav" href="Main.dc.html">
+        <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path></svg>
+        Aujourd'hui</a>
+      <a class="nav" href="Operations.dc.html">
+        <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h16M4 18h10"></path></svg>
+        Opérations</a>
+      <a class="nav" href="Analyses.dc.html" aria-current="page" style="background: var(--soft); color: var(--ink)">
+        <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-7M21 20H3"></path></svg>
+        Analyses</a>
+      <a class="nav" href="Budgets.dc.html">
+        <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="M12 3v9l6.5 6"></path></svg>
+        Budgets</a>
+      <a class="nav" href="Echeances.dc.html">
+        <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="16" rx="2"></rect><path d="M8 3v4M16 3v4M4 10h16"></path></svg>
+        Échéances</a>
+    </div>
+    <a class="nav" href="#reglages" style="margin-top: auto">
+      <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"></path><circle cx="16" cy="7" r="2"></circle><circle cx="8" cy="17" r="2"></circle></svg>
+      Réglages</a>
+  </nav>
+
+  <main style="flex: 999 1 560px; min-width: 0; box-sizing: border-box; padding: 24px clamp(16px, 3vw, 40px) 40px">
+    <div style="max-width: 1120px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px">
+
+      <header style="display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px">
+        <h1 style="margin: 0; font-size: 26px; line-height: 1.2; font-weight: 600; letter-spacing: -0.01em">Analyses</h1>
+        <span style="color: var(--muted)">Six périodes fermées, de mai à octobre</span>
+      </header>
+
+      <div style="display: flex; flex-wrap: wrap; gap: 4px; border-bottom: 1px solid var(--line)">
+        <sc-for list="{{tabs}}" as="t" hint-placeholder-count="3">
+          <button type="button" onClick="{{t.pick}}" aria-pressed="{{t.pressed}}" style="min-height: 44px; padding: 0 14px; margin-bottom: -1px; font-weight: 500; color: {{t.ink}}; border-bottom: 2px solid {{t.rule}}">{{t.label}}</button>
+        </sc-for>
+      </div>
+
+      <sc-if value="{{isRep}}" hint-placeholder-val="{{ true }}">
+        <section aria-labelledby="rep-t" style="background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 20px; display: flex; flex-direction: column; gap: 16px">
+          <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start; gap: 12px 24px">
+            <div style="display: flex; flex-direction: column; gap: 2px">
+              <h2 id="rep-t" style="margin: 0; font-size: 14px; font-weight: 500; color: var(--muted)">Dépensé sur la période de {{selName}}</h2>
+              <p class="num" style="margin: 0; font-size: 32px; line-height: 1.15; font-weight: 500; letter-spacing: -0.02em">{{selTotal}}</p>
+              <p style="margin: 0; color: var(--muted)">{{selDelta}}</p>
+            </div>
+            <div style="display: flex; flex-wrap: wrap; gap: 4px" role="group" aria-label="Choisir une période">
+              <sc-for list="{{periodChips}}" as="c" hint-placeholder-count="6">
+                <button type="button" onClick="{{c.pick}}" aria-pressed="{{c.pressed}}" style="min-width: 44px; min-height: 44px; padding: 0 10px; border-radius: 8px; border: 1px solid {{c.rule}}; background: {{c.bg}}; color: {{c.ink}}; font-weight: 500">{{c.label}}</button>
+              </sc-for>
+            </div>
+          </div>
+          <div style="overflow-x: auto">
+            <div style="min-width: 520px; display: flex; flex-direction: column; gap: 2px">
+              <sc-for list="{{rows}}" as="r" hint-placeholder-count="9">
+                <div style="display: grid; grid-template-columns: 120px minmax(0, 1fr) 96px 170px; align-items: center; gap: 12px; min-height: 40px">
+                  <span style="font-weight: 500">{{r.name}}</span>
+                  <div style="height: 12px"><div style="height: 100%; width: {{r.width}}; min-width: 2px; background: var(--accent); border-radius: 0 4px 4px 0"></div></div>
+                  <span class="num" style="text-align: right">{{r.amount}}</span>
+                  <span class="num" style="text-align: right; font-size: 13px; color: {{r.deltaInk}}">{{r.delta}}</span>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </section>
+      </sc-if>
+
+      <sc-if value="{{isEvo}}" hint-placeholder-val="{{ false }}">
+        <div style="display: flex; flex-wrap: wrap; gap: 20px; align-items: stretch">
+          <section aria-labelledby="evo-t" style="flex: 1 1 400px; min-width: 0; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 20px; display: flex; flex-direction: column; gap: 14px">
+            <div style="display: flex; flex-direction: column; gap: 6px">
+              <h2 id="evo-t" style="margin: 0; font-size: 16px; font-weight: 600">{{evoTitle}}</h2>
+              <div style="display: flex; flex-wrap: wrap; gap: 14px; color: var(--muted); font-size: 13px">
+                <span style="display: flex; align-items: center; gap: 6px"><span aria-hidden="true" style="width: 12px; height: 12px; border-radius: 3px; background: var(--accent)"></span>Variables</span>
+                <span style="display: flex; align-items: center; gap: 6px"><span aria-hidden="true" style="width: 12px; height: 12px; border-radius: 3px; background: var(--s3)"></span>Fixes</span>
+                <span style="display: flex; align-items: center; gap: 6px"><span aria-hidden="true" style="width: 16px; border-top: 1px dashed var(--muted)"></span>Budget 2 410 €</span>
+              </div>
+            </div>
+            <div style="position: relative; height: 260px; display: flex; align-items: flex-end; gap: clamp(8px, 2vw, 24px)">
+              <div aria-hidden="true" style="position: absolute; left: 0; right: 0; bottom: {{budgetBottom}}; border-top: 1px dashed var(--muted)"></div>
+              <sc-for list="{{stack}}" as="s" hint-placeholder-count="6">
+                <div title="{{s.tip}}" style="position: relative; flex: 1 1 0; display: flex; flex-direction: column; justify-content: flex-end; gap: 2px; height: 100%">
+                  <span class="num" style="text-align: center; font-size: 12px; color: var(--muted); white-space: nowrap">{{s.label}}</span>
+                  <div style="height: {{s.varH}}; background: var(--accent); border-radius: 4px 4px 0 0"></div>
+                  <div style="height: {{s.fixH}}; background: var(--s3)"></div>
+                </div>
+              </sc-for>
+            </div>
+            <div class="num" style="display: flex; gap: clamp(8px, 2vw, 24px); font-size: 12px; color: var(--muted)">
+              <sc-for list="{{stack}}" as="s" hint-placeholder-count="6"><span style="flex: 1 1 0; text-align: center">{{s.name}}</span></sc-for>
+            </div>
+          </section>
+
+          <section aria-labelledby="cat-t" style="flex: 1 1 400px; min-width: 0; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 20px; display: flex; flex-direction: column; gap: 14px">
+            <div style="display: flex; flex-direction: column; gap: 8px">
+              <h2 id="cat-t" style="margin: 0; font-size: 16px; font-weight: 600">{{catTitle}}</h2>
+              <div style="display: flex; flex-wrap: wrap; gap: 4px" role="group" aria-label="Choisir une catégorie">
+                <sc-for list="{{catChips}}" as="c" hint-placeholder-count="6">
+                  <button type="button" onClick="{{c.pick}}" aria-pressed="{{c.pressed}}" style="min-height: 44px; padding: 0 10px; border-radius: 8px; border: 1px solid {{c.rule}}; background: {{c.bg}}; color: {{c.ink}}; font-weight: 500">{{c.label}}</button>
+                </sc-for>
+              </div>
+            </div>
+            <div style="position: relative; height: 214px; display: flex; align-items: flex-end; gap: clamp(8px, 2vw, 24px)">
+              <div aria-hidden="true" style="position: absolute; left: 0; right: 0; bottom: {{catBudgetBottom}}; border-top: 1px dashed var(--muted)"></div>
+              <sc-for list="{{catBars}}" as="b" hint-placeholder-count="6">
+                <div style="flex: 1 1 0; display: flex; flex-direction: column; justify-content: flex-end; gap: 2px; height: 100%">
+                  <span class="num" style="text-align: center; font-size: 12px; color: {{b.ink}}; white-space: nowrap">{{b.label}}</span>
+                  <div style="height: {{b.h}}; background: {{b.color}}; border-radius: 4px 4px 0 0"></div>
+                </div>
+              </sc-for>
+            </div>
+            <div class="num" style="display: flex; gap: clamp(8px, 2vw, 24px); font-size: 12px; color: var(--muted)">
+              <sc-for list="{{catBars}}" as="b" hint-placeholder-count="6"><span style="flex: 1 1 0; text-align: center">{{b.name}}</span></sc-for>
+            </div>
+          </section>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{isOver}}" hint-placeholder-val="{{ false }}">
+        <section aria-labelledby="over-t" style="background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 20px; display: flex; flex-direction: column; gap: 14px">
+          <div style="display: flex; flex-direction: column; gap: 2px">
+            <h2 id="over-t" style="margin: 0; font-size: 16px; font-weight: 600">{{overTitle}}</h2>
+            <p style="margin: 0; color: var(--muted)">Excédent par rapport au budget. Les factures en attente sont exclues.</p>
+          </div>
+          <div style="overflow-x: auto">
+            <div style="min-width: 680px; display: flex; flex-direction: column; gap: 2px">
+              <div style="display: grid; grid-template-columns: 120px repeat(6, minmax(0, 1fr)) 100px; gap: 2px; min-height: 32px; align-items: center; font-weight: 500; color: var(--muted)">
+                <span>Catégorie</span>
+                <sc-for list="{{periodNames}}" as="p" hint-placeholder-count="6"><span style="text-align: center">{{p}}</span></sc-for>
+                <span style="text-align: right">Total</span>
+              </div>
+              <sc-for list="{{heat}}" as="h" hint-placeholder-count="6">
+                <div style="display: grid; grid-template-columns: 120px repeat(6, minmax(0, 1fr)) 100px; gap: 2px; align-items: stretch">
+                  <span style="font-weight: 500; align-self: center">{{h.name}}</span>
+                  <sc-for list="{{h.cells}}" as="c" hint-placeholder-count="6">
+                    <span class="num" style="min-height: 48px; display: flex; align-items: center; justify-content: center; font-size: 13px; border-radius: 4px; background: {{c.bg}}; color: {{c.ink}}">{{c.text}}</span>
+                  </sc-for>
+                  <span class="num" style="align-self: center; text-align: right; font-weight: 500">{{h.total}}</span>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </section>
+      </sc-if>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["clair","sombre"],"default":"clair"},"$preview":{"width":1440,"height":1180}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { tab: 'rep', period: 5, cat: 'Restaurants' };
+  }
+  renderVals() {
+    const eur = (c) => (c / 100).toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €';
+    const eur0 = (c) => Math.round(c / 100).toLocaleString('fr-FR') + ' €';
+    const periods = ['mai', 'juin', 'juil.', 'août', 'sept.', 'oct.'];
+    const cats = [
+      { name: 'Logement', fixed: true, budget: 98000, real: [98000, 98000, 98000, 98000, 98000, 98000] },
+      { name: 'Énergie', fixed: true, budget: 22500, real: [21800, 21800, 21800, 22500, 22500, 22500] },
+      { name: 'Abonnements', fixed: true, budget: 9500, real: [8800, 8800, 9500, 9500, 9500, 9500] },
+      { name: 'Courses', budget: 42000, real: [39860, 44720, 41290, 38970, 43110, 40230] },
+      { name: 'Restaurants', budget: 18000, real: [18960, 17640, 19870, 24130, 16850, 21260] },
+      { name: 'Shopping', budget: 15000, real: [9730, 14320, 31260, 8840, 20490, 12680] },
+      { name: 'Transports', budget: 16000, real: [14990, 15810, 16530, 12260, 17140, 14820] },
+      { name: 'Loisirs', budget: 14000, real: [13800, 12890, 16340, 19680, 9620, 11850] },
+      { name: 'Santé', budget: 6000, real: [7240, 3550, 6000, 1550, 4800, 2200] },
+    ];
+    const totals = periods.map((_, i) => cats.reduce((s, c) => s + c.real[i], 0));
+    const { tab, period, cat } = this.state;
+    const choice = (active) => ({
+      pressed: active ? 'true' : 'false',
+      rule: active ? 'var(--ink)' : 'var(--line)',
+      bg: active ? 'var(--ink)' : 'transparent',
+      ink: active ? 'var(--bg)' : 'var(--ink)',
+    });
+
+    const tabs = [['rep', 'Répartition'], ['evo', 'Évolution'], ['over', 'Dépassements']].map(([id, label]) => ({
+      label,
+      pressed: tab === id ? 'true' : 'false',
+      ink: tab === id ? 'var(--ink)' : 'var(--muted)',
+      rule: tab === id ? 'var(--accent)' : 'transparent',
+      pick: () => this.setState({ tab: id }),
+    }));
+
+    const pct = (b, a) => {
+      const v = Math.round(((b - a) / a) * 1000) / 10;
+      return (v > 0 ? '+' : '') + v.toLocaleString('fr-FR') + ' %';
+    };
+    const deltaOf = (b, a) => {
+      if (period === 0) return { text: 'Pas de période avant', ink: 'var(--muted)' };
+      if (a === b) return { text: 'Stable', ink: 'var(--muted)' };
+      const up = b > a;
+      return {
+        text: (up ? '↗ +' : '↘ −') + eur(Math.abs(b - a)) + ' ' + pct(b, a),
+        ink: up ? 'var(--warn)' : 'var(--accent)',
+      };
+    };
+    const maxReal = Math.max(...cats.map((c) => c.real[period]));
+    const rows = cats
+      .map((c) => {
+        const b = c.real[period];
+        const d = deltaOf(b, period ? c.real[period - 1] : 0);
+        return { name: c.name, value: b, width: (b / maxReal) * 100 + '%', amount: eur(b), delta: d.text, deltaInk: d.ink };
+      })
+      .sort((x, y) => y.value - x.value);
+    const totalDelta = period === 0 ? 'Première période disponible' : deltaOf(totals[period], totals[period - 1]).text + ' par rapport à ' + periods[period - 1];
+
+    const scale = 280000;
+    const H = (c) => (c / scale) * 224 + 'px';
+    const stack = periods.map((name, i) => {
+      const fix = cats.filter((c) => c.fixed).reduce((s, c) => s + c.real[i], 0);
+      const vari = totals[i] - fix;
+      return { name, label: eur0(totals[i]), fixH: H(fix), varH: H(vari), tip: name + ' : fixes ' + eur(fix) + ', variables ' + eur(vari) };
+    });
+    const avg = Math.round(totals.reduce((s, t) => s + t, 0) / totals.length);
+
+    const variable = cats.filter((c) => !c.fixed);
+    const picked = variable.find((c) => c.name === cat);
+    const catMax = Math.max(picked.budget, ...picked.real) * 1.05;
+    const catBars = periods.map((name, i) => {
+      const over = picked.real[i] > picked.budget;
+      return {
+        name,
+        label: eur0(picked.real[i]),
+        h: (picked.real[i] / catMax) * 184 + 'px',
+        color: over ? 'var(--warn)' : 'var(--accent)',
+        ink: over ? 'var(--warn)' : 'var(--muted)',
+      };
+    });
+    const overCount = picked.real.filter((r) => r > picked.budget).length;
+
+    const allExcess = variable.flatMap((c) => c.real.map((r) => Math.max(0, r - c.budget)));
+    const maxExcess = Math.max(...allExcess);
+    const heat = variable.map((c) => {
+      const ex = c.real.map((r) => Math.max(0, r - c.budget));
+      return {
+        name: c.name,
+        count: ex.filter(Boolean).length,
+        total: eur(ex.reduce((s, v) => s + v, 0)),
+        cells: ex.map((v) => ({
+          text: v ? eur(v) : '—',
+          bg: v ? 'color-mix(in oklab, var(--warn) ' + Math.round(10 + (v / maxExcess) * 35) + '%, var(--surface))' : 'var(--soft)',
+          ink: v ? 'var(--ink)' : 'var(--muted)',
+        })),
+      };
+    });
+    const worst = heat.reduce((a, b) => (b.count > a.count ? b : a));
+
+    return {
+      themeClass: this.props.theme === 'sombre' ? 't-dark' : 't-light',
+      tabs,
+      isRep: tab === 'rep', isEvo: tab === 'evo', isOver: tab === 'over',
+      selName: periods[period],
+      selTotal: eur(totals[period]),
+      selDelta: totalDelta,
+      periodChips: periods.map((label, i) => ({ label, ...choice(i === period), pick: () => this.setState({ period: i }) })),
+      rows,
+      evoTitle: eur0(avg) + ' dépensés en moyenne par période',
+      stack,
+      budgetBottom: (241000 / scale) * 224 + 'px',
+      catTitle: picked.name + ' : ' + overCount + ' dépassement' + (overCount > 1 ? 's' : '') + ' sur 6',
+      catChips: variable.map((c) => ({ label: c.name, ...choice(c.name === cat), pick: () => this.setState({ cat: c.name }) })),
+      catBars,
+      catBudgetBottom: (picked.budget / catMax) * 184 + 'px',
+      overTitle: worst.name + ' dépasse ' + worst.count + ' périodes sur 6',
+      periodNames: periods,
+      heat,
+    };
+  }
+}
+</script>
+</body>
+</html>

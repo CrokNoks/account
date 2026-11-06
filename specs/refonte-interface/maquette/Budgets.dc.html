@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Budgets</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;family=Geist+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+.t-light{--bg:#F7F7F5;--surface:#FFFFFF;--ink:#15181C;--muted:#5B636D;--line:#E3E4E0;--accent:#2450C8;--on-accent:#FFFFFF;--warn:#B4530A;--soft:#EEF0EC}
+.t-dark{--bg:#111316;--surface:#181B1F;--ink:#ECEEF0;--muted:#A0A7B0;--line:#2A2F35;--accent:#6C90E8;--on-accent:#111316;--warn:#CC7A36;--soft:#22262B}
+a{color:inherit;text-decoration:none}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+input{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.num{font-family:'Geist Mono',ui-monospace,Menlo,monospace;font-variant-numeric:tabular-nums}
+.nav{display:flex;align-items:center;gap:12px;min-height:44px;padding:0 12px;border-radius:8px;color:var(--muted);font-size:14px;font-weight:500}
+.nav:hover{background:var(--soft);color:var(--ink)}
+.nav svg{flex:none}
+</style>
+</helmet>
+<div class="{{themeClass}}" style="min-height: 100vh; background: var(--bg); color: var(--ink); font-family: 'Geist', system-ui, -apple-system, sans-serif; font-size: 14px; line-height: 1.45; display: flex; flex-wrap: wrap; align-items: stretch">
+
+  <nav aria-label="Navigation principale" style="flex: 1 1 232px; max-width: 100%; box-sizing: border-box; padding: 20px 16px; border-right: 1px solid var(--line); display: flex; flex-direction: column; gap: 20px">
+    <div style="display: flex; flex-direction: column; gap: 2px; padding: 0 12px">
+      <span style="font-size: 12px; color: var(--muted)">Compte</span>
+      <button type="button" style="display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 32px; padding: 0; font-size: 15px; font-weight: 600; text-align: left">Compte commun
+        <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"></path></svg>
+      </button>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 2px">
+      <a class="nav" href="Main.dc.html">
+        <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path></svg>
+        Aujourd'hui</a>
+      <a class="nav" href="Operations.dc.html">
+        <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h16M4 18h10"></path></svg>
+        Opérations</a>
+      <a class="nav" href="Analyses.dc.html">
+        <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-7M21 20H3"></path></svg>
+        Analyses</a>
+      <a class="nav" href="Budgets.dc.html" aria-current="page" style="background: var(--soft); color: var(--ink)">
+        <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="M12 3v9l6.5 6"></path></svg>
+        Budgets</a>
+      <a class="nav" href="Echeances.dc.html">
+        <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="16" rx="2"></rect><path d="M8 3v4M16 3v4M4 10h16"></path></svg>
+        Échéances</a>
+    </div>
+    <a class="nav" href="#reglages" style="margin-top: auto">
+      <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"></path><circle cx="16" cy="7" r="2"></circle><circle cx="8" cy="17" r="2"></circle></svg>
+      Réglages</a>
+  </nav>
+
+  <main style="flex: 999 1 560px; min-width: 0; box-sizing: border-box; padding: 24px clamp(16px, 3vw, 40px) 40px">
+    <div style="max-width: 1120px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px">
+
+      <header style="display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px">
+        <h1 style="margin: 0; font-size: 26px; line-height: 1.2; font-weight: 600; letter-spacing: -0.01em">Budgets</h1>
+        <span style="color: var(--muted)">25 oct. → 24 nov. · jour 13 sur 31</span>
+      </header>
+
+      <section aria-labelledby="sum-t" style="background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 20px clamp(20px, 3vw, 32px); display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 16px 48px">
+        <div style="display: flex; flex-direction: column; gap: 4px">
+          <h2 id="sum-t" style="margin: 0; font-size: 14px; font-weight: 500; color: var(--muted)">Prévu le 24 nov. avec ces budgets</h2>
+          <p class="num" aria-live="polite" style="margin: 0; font-size: clamp(32px, 5vw, 44px); line-height: 1.1; font-weight: 500; letter-spacing: -0.03em">{{forecast}}</p>
+          <p style="margin: 0; color: {{changeInk}}; min-height: 20px">{{change}}</p>
+        </div>
+        <dl style="margin: 0; display: flex; flex-wrap: wrap; gap: 12px 40px">
+          <div style="display: flex; flex-direction: column; gap: 2px">
+            <dt style="color: var(--muted)">Revenus prévus</dt>
+            <dd class="num" style="margin: 0; font-size: 20px; font-weight: 500">3 200,00 €</dd>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 2px">
+            <dt style="color: var(--muted)">Budgété</dt>
+            <dd class="num" style="margin: 0; font-size: 20px; font-weight: 500">{{planned}}</dd>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 2px">
+            <dt style="color: var(--muted)">Non réparti</dt>
+            <dd class="num" style="margin: 0; font-size: 20px; font-weight: 500">{{free}}</dd>
+          </div>
+        </dl>
+      </section>
+
+      <section aria-labelledby="var-t" style="background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 20px; display: flex; flex-direction: column; gap: 10px">
+        <div style="display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 16px">
+          <h2 id="var-t" style="margin: 0; font-size: 16px; font-weight: 600">Budgets variables</h2>
+          <span style="color: var(--muted); font-size: 13px">Le trait marque le jour 13 sur 31. Modifiez un montant pour voir l'effet sur le prévu.</span>
+        </div>
+        <div style="overflow-x: auto">
+          <div style="min-width: 760px; display: flex; flex-direction: column; gap: 2px">
+            <div style="display: grid; grid-template-columns: 120px minmax(0, 1fr) 150px 96px 130px; gap: 12px; color: var(--muted); font-size: 13px; min-height: 28px; align-items: center">
+              <span>Catégorie</span><span>Consommé</span><span style="text-align: right">Reste</span><span style="text-align: right">Moy. 6 pér.</span><span style="text-align: right">Budget</span>
+            </div>
+            <sc-for list="{{variable}}" as="b" hint-placeholder-count="6">
+              <div style="display: grid; grid-template-columns: 120px minmax(0, 1fr) 150px 96px 130px; gap: 12px; align-items: center; min-height: 52px">
+                <span style="font-weight: 500">{{b.name}}</span>
+                <div style="position: relative; height: 10px; background: var(--soft); border-radius: 4px">
+                  <div style="height: 100%; width: {{b.pct}}; background: {{b.color}}; border-radius: 4px"></div>
+                  <div aria-hidden="true" style="position: absolute; left: 41.9%; top: -3px; bottom: -3px; border-left: 2px solid var(--ink)"></div>
+                </div>
+                <span class="num" style="text-align: right; font-size: 13px; color: {{b.ink}}">{{b.note}}</span>
+                <span class="num" style="text-align: right; font-size: 13px; color: var(--muted)">{{b.avg}}</span>
+                <label style="display: flex; align-items: center; justify-content: flex-end; gap: 6px">
+                  <span style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%)">Budget {{b.name}} en euros</span>
+                  <input class="num" type="text" inputmode="decimal" value="{{b.input}}" onChange="{{b.edit}}" style="box-sizing: border-box; width: 100px; min-height: 44px; padding: 0 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); text-align: right">
+                  <span aria-hidden="true" style="color: var(--muted)">€</span>
+                </label>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </section>
+
+      <section aria-labelledby="fix-t" style="background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 20px; display: flex; flex-direction: column; gap: 6px">
+        <h2 id="fix-t" style="margin: 0 0 4px; font-size: 16px; font-weight: 600">Charges fixes</h2>
+        <sc-for list="{{fixed}}" as="f" hint-placeholder-count="3">
+          <div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 2px 16px; min-height: 40px; border-top: 1px solid var(--line)">
+            <span style="font-weight: 500">{{f.name}}</span>
+            <span class="num" style="flex: 1 1 200px; text-align: right; color: var(--muted); font-size: 13px">{{f.detail}}</span>
+            <span class="num" style="flex: 0 0 110px; text-align: right">{{f.budget}}</span>
+          </div>
+        </sc-for>
+      </section>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["clair","sombre"],"default":"clair"},"$preview":{"width":1440,"height":1180}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { inputs: {} };
+  }
+  renderVals() {
+    const eur = (c) => (c / 100).toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €';
+    const plain = (c) => (c / 100).toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2, useGrouping: false });
+    const toCents = (text, fallback) => {
+      const n = parseFloat(String(text).replace(/\s/g, '').replace(',', '.'));
+      return Number.isFinite(n) && n >= 0 ? Math.round(n * 100) : fallback;
+    };
+    const { inputs } = this.state;
+    const defs = [
+      { name: 'Restaurants', real: 16890, budget: 18000, history: [18960, 17640, 19870, 24130, 16850, 21260] },
+      { name: 'Shopping', real: 18750, budget: 15000, history: [9730, 14320, 31260, 8840, 20490, 12680] },
+      { name: 'Courses', real: 23640, budget: 42000, history: [39860, 44720, 41290, 38970, 43110, 40230] },
+      { name: 'Transports', real: 9420, budget: 16000, history: [14990, 15810, 16530, 12260, 17140, 14820] },
+      { name: 'Loisirs', real: 6130, budget: 14000, history: [13800, 12890, 16340, 19680, 9620, 11850] },
+      { name: 'Santé', real: 2300, budget: 6000, history: [7240, 3550, 6000, 1550, 4800, 2200] },
+    ];
+    const fixedDefs = [
+      { name: 'Logement', budget: 98000, spent: 98000, bills: 0 },
+      { name: 'Énergie', budget: 22500, spent: 5800, bills: 16700 },
+      { name: 'Abonnements', budget: 9500, spent: 4197, bills: 2999 },
+    ];
+    const fixedBudget = fixedDefs.reduce((s, f) => s + f.budget, 0);
+    const realAll = defs.reduce((s, d) => s + d.real, 0) + fixedDefs.reduce((s, f) => s + f.spent + f.bills, 0);
+
+    const variable = defs.map((d) => {
+      const budget = toCents(inputs[d.name] ?? plain(d.budget), d.budget);
+      const over = d.real > budget;
+      return {
+        name: d.name,
+        budget,
+        pct: budget ? Math.min(100, Math.round((d.real / budget) * 100)) + '%' : '100%',
+        color: over ? 'var(--warn)' : 'var(--accent)',
+        ink: over ? 'var(--warn)' : 'var(--muted)',
+        note: over ? eur(d.real - budget) + ' de trop' : eur(budget - d.real) + ' restants',
+        avg: eur(Math.round(d.history.reduce((s, v) => s + v, 0) / d.history.length)),
+        input: inputs[d.name] ?? plain(d.budget),
+        edit: (e) => this.setState({ inputs: { ...inputs, [d.name]: e.target.value } }),
+      };
+    });
+
+    const startBalance = 124000;
+    const income = 320000;
+    const plannedTotal = fixedBudget + variable.reduce((s, b) => s + b.budget, 0);
+    const forecastOf = (planned) => startBalance + income - Math.max(realAll, planned);
+    const forecast = forecastOf(plannedTotal);
+    const diff = forecast - forecastOf(241000);
+
+    return {
+      themeClass: this.props.theme === 'sombre' ? 't-dark' : 't-light',
+      forecast: eur(forecast),
+      change: diff === 0 ? 'Budgets de la période' : (diff > 0 ? '+' : '−') + eur(Math.abs(diff)) + ' par rapport aux budgets actuels',
+      changeInk: diff < 0 ? 'var(--warn)' : 'var(--muted)',
+      planned: eur(plannedTotal),
+      free: (income < plannedTotal ? '−' : '') + eur(Math.abs(income - plannedTotal)),
+      variable,
+      fixed: fixedDefs.map((f) => ({
+        name: f.name,
+        budget: eur(f.budget),
+        detail: f.bills ? eur(f.spent) + ' payés, ' + eur(f.bills) + ' à venir' : eur(f.spent) + ' payés',
+      })),
+    };
+  }
+}
+</script>
+</body>
+</html>

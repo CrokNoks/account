@@ -1,0 +1,19 @@
+{
+  "v": 3,
+  "createdOnFiles": {"v": 1, "at": "2026-11-06T09:00:00Z"},
+  "title": "Interface gestion de compte",
+  "launch": {"view": "canvas"},
+  "pages": [],
+  "boards": {
+    "Main.dc.html": {"x": 0, "y": 0, "w": 1440, "h": 1180, "title": "Aujourd'hui — ordinateur", "expand": "fill", "is_interactive": true},
+    "Analyses.dc.html": {"x": 1520, "y": 0, "w": 1440, "h": 1180, "title": "Analyses — ordinateur", "expand": "fill", "is_interactive": true},
+    "Operations.dc.html": {"x": 3040, "y": 0, "w": 1440, "h": 1180, "title": "Opérations — ordinateur", "expand": "fill", "is_interactive": true},
+    "Budgets.dc.html": {"x": 4560, "y": 0, "w": 1440, "h": 1180, "title": "Budgets — ordinateur", "expand": "fill", "is_interactive": true},
+    "Echeances.dc.html": {"x": 6080, "y": 0, "w": 1440, "h": 1180, "title": "Échéances — ordinateur", "expand": "fill", "is_interactive": true},
+    "MobileAccueil.dc.html": {"x": 0, "y": 1300, "w": 390, "h": 844, "title": "Aujourd'hui — mobile", "is_interactive": true},
+    "MobileSaisie.dc.html": {"x": 470, "y": 1300, "w": 390, "h": 844, "title": "Nouvelle opération — mobile", "is_interactive": true}
+  },
+  "order": ["Main.dc.html", "Analyses.dc.html", "Operations.dc.html", "Budgets.dc.html", "Echeances.dc.html", "MobileAccueil.dc.html", "MobileSaisie.dc.html"],
+  "notes": {},
+  "designSystems": []
+}

@@ -1,0 +1,277 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Aujourd'hui</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;family=Geist+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+.t-light{--bg:#F7F7F5;--surface:#FFFFFF;--ink:#15181C;--muted:#5B636D;--line:#E3E4E0;--accent:#2450C8;--on-accent:#FFFFFF;--warn:#B4530A;--s1:#2450C8;--s2:#6E8FE3;--s3:#A9BEF0;--s4:#D5DFF6;--soft:#EEF0EC;--prev:#8A9199}
+.t-dark{--bg:#111316;--surface:#181B1F;--ink:#ECEEF0;--muted:#A0A7B0;--line:#2A2F35;--accent:#6C90E8;--on-accent:#111316;--warn:#CC7A36;--s1:#6C90E8;--s2:#5577CC;--s3:#3D5699;--s4:#2B3B66;--soft:#22262B;--prev:#7C838B}
+a{color:inherit;text-decoration:none}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.num{font-family:'Geist Mono',ui-monospace,Menlo,monospace;font-variant-numeric:tabular-nums}
+.nav{display:flex;align-items:center;gap:12px;min-height:44px;padding:0 12px;border-radius:8px;color:var(--muted);font-size:14px;font-weight:500}
+.nav:hover{background:var(--soft);color:var(--ink)}
+.nav svg{flex:none}
+.row:hover{background:var(--soft)}
+</style>
+</helmet>
+<div class="{{themeClass}}" style="min-height: 100vh; background: var(--bg); color: var(--ink); font-family: 'Geist', system-ui, -apple-system, sans-serif; font-size: 14px; line-height: 1.45; display: flex; flex-wrap: wrap; align-items: stretch">
+
+  <nav aria-label="Navigation principale" style="flex: 1 1 232px; max-width: 100%; box-sizing: border-box; padding: 20px 16px; border-right: 1px solid var(--line); display: flex; flex-direction: column; gap: 20px">
+    <div style="display: flex; flex-direction: column; gap: 2px; padding: 0 12px">
+      <span style="font-size: 12px; color: var(--muted)">Compte</span>
+      <button type="button" style="display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 32px; padding: 0; font-size: 15px; font-weight: 600; text-align: left">Compte commun
+        <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"></path></svg>
+      </button>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 2px">
+      <a class="nav" href="Main.dc.html" aria-current="page" style="background: var(--soft); color: var(--ink)">
+        <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path></svg>
+        Aujourd'hui</a>
+      <a class="nav" href="Operations.dc.html">
+        <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h16M4 18h10"></path></svg>
+        Opérations</a>
+      <a class="nav" href="Analyses.dc.html">
+        <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-7M21 20H3"></path></svg>
+        Analyses</a>
+      <a class="nav" href="Budgets.dc.html">
+        <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="M12 3v9l6.5 6"></path></svg>
+        Budgets</a>
+      <a class="nav" href="Echeances.dc.html">
+        <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="16" rx="2"></rect><path d="M8 3v4M16 3v4M4 10h16"></path></svg>
+        Échéances</a>
+    </div>
+    <a class="nav" href="#reglages" style="margin-top: auto">
+      <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"></path><circle cx="16" cy="7" r="2"></circle><circle cx="8" cy="17" r="2"></circle></svg>
+      Réglages</a>
+  </nav>
+
+  <main style="flex: 999 1 560px; min-width: 0; box-sizing: border-box; padding: 24px clamp(16px, 3vw, 40px) 40px">
+    <div style="max-width: 1120px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px">
+
+      <header style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px">
+        <div style="display: flex; flex-wrap: wrap; align-items: baseline; gap: 12px">
+          <h1 style="margin: 0; font-size: 26px; line-height: 1.2; font-weight: 600; letter-spacing: -0.01em">Aujourd'hui</h1>
+          <span style="color: var(--muted)">25 oct. → 24 nov. · jour 13 sur 31</span>
+        </div>
+        <div style="display: flex; flex-wrap: wrap; gap: 8px">
+          <button type="button" style="min-height: 44px; padding: 0 14px; border: 1px solid var(--line); border-radius: 8px; color: var(--muted); background: var(--surface); display: flex; align-items: center; gap: 24px">Rechercher <kbd class="num" style="font-size: 12px">⌘K</kbd></button>
+          <button type="button" style="min-height: 44px; padding: 0 16px; border-radius: 8px; background: var(--accent); color: var(--on-accent); font-weight: 600">Nouvelle opération</button>
+        </div>
+      </header>
+
+      <section aria-labelledby="hero-t" style="background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: clamp(20px, 3vw, 32px); display: flex; flex-direction: column; gap: 24px">
+        <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 16px 48px">
+          <div style="display: flex; flex-direction: column; gap: 4px">
+            <h2 id="hero-t" style="margin: 0; font-size: 14px; font-weight: 500; color: var(--muted)">Prévu le 24 nov., si vous tenez vos budgets</h2>
+            <p class="num" style="margin: 0; font-size: clamp(40px, 6vw, 60px); line-height: 1.05; font-weight: 500; letter-spacing: -0.03em">2 030,00 €</p>
+          </div>
+          <dl style="margin: 0; display: flex; flex-wrap: wrap; gap: 12px 40px">
+            <div style="display: flex; flex-direction: column; gap: 2px">
+              <dt style="color: var(--muted)">En banque, pointé</dt>
+              <dd class="num" style="margin: 0; font-size: 20px; font-weight: 500">2 803,53 €</dd>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 2px">
+              <dt style="color: var(--muted)">À venir, CB comprises</dt>
+              <dd class="num" style="margin: 0; font-size: 20px; font-weight: 500">2 588,73 €</dd>
+            </div>
+          </dl>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 12px">
+          <div role="img" aria-label="Du solde en banque de 2 803,53 euros au prévu de 2 030,00 euros : budget restant 361,74, factures 196,99, CB non pointées 214,80" style="display: flex; gap: 2px; height: 28px">
+            <sc-for list="{{segments}}" as="s" hint-placeholder-count="4">
+              <div style="flex: {{s.share}} 1 0; min-width: 4px; background: {{s.color}}; opacity: {{s.opacity}}; border-radius: 4px"></div>
+            </sc-for>
+          </div>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(190px, 100%), 1fr)); gap: 8px">
+            <sc-for list="{{segments}}" as="s" hint-placeholder-count="4">
+              <button type="button" onClick="{{s.pick}}" aria-pressed="{{s.selected}}" style="min-height: 44px; padding: 8px 10px; border-radius: 8px; border: 1px solid {{s.border}}; display: flex; align-items: center; gap: 10px; text-align: left">
+                <span aria-hidden="true" style="flex: none; width: 12px; height: 12px; border-radius: 3px; background: {{s.color}}"></span>
+                <span style="flex: 1; min-width: 0">{{s.label}}</span>
+                <span class="num" style="font-weight: 500">{{s.amount}}</span>
+              </button>
+            </sc-for>
+          </div>
+          <p style="margin: 0; color: var(--muted); text-wrap: pretty; min-height: 20px">{{explain}}</p>
+        </div>
+      </section>
+
+      <div style="display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-start">
+        <section aria-labelledby="rythme-t" style="flex: 2 1 480px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 20px; display: flex; flex-direction: column; gap: 14px; min-width: 0">
+          <div style="display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 16px">
+            <h2 id="rythme-t" style="margin: 0; font-size: 16px; font-weight: 600">109,17 € de plus qu'à la même date</h2>
+            <div style="display: flex; flex-wrap: wrap; gap: 14px; color: var(--muted); font-size: 13px">
+              <span style="display: flex; align-items: center; gap: 6px"><span aria-hidden="true" style="width: 16px; height: 2px; background: var(--accent)"></span>Cette période</span>
+              <span style="display: flex; align-items: center; gap: 6px"><span aria-hidden="true" style="width: 16px; height: 2px; background: var(--prev)"></span>Période précédente</span>
+            </div>
+          </div>
+          <div style="position: relative; height: 220px" onMouseLeave="{{clearDay}}">
+            <div style="position: absolute; left: 0; right: 0; top: {{budgetTop}}; border-top: 1px dashed var(--muted)"></div>
+            <span class="num" style="position: absolute; left: 0; top: {{budgetLabelTop}}; font-size: 12px; color: var(--muted); background: var(--surface); padding-right: 6px">Budget 2 410 €</span>
+            <svg aria-hidden="true" viewBox="0 0 300 220" preserveAspectRatio="none" style="position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible">
+              <path d="{{prevPath}}" fill="none" stroke="var(--prev)" stroke-width="2" vector-effect="non-scaling-stroke"></path>
+              <path d="{{curPath}}" fill="none" stroke="var(--accent)" stroke-width="2" vector-effect="non-scaling-stroke"></path>
+            </svg>
+            <sc-if value="{{hasDay}}" hint-placeholder-val="{{ false }}">
+              <div style="position: absolute; top: 0; bottom: 0; left: {{day.left}}; border-left: 1px solid var(--muted)"></div>
+              <div style="position: absolute; top: 34px; left: {{day.tipLeft}}; transform: translateX({{day.shift}}); min-width: 180px; padding: 8px 10px; background: var(--ink); color: var(--bg); border-radius: 8px; font-size: 13px; display: flex; flex-direction: column; gap: 2px; pointer-events: none">
+                <span style="font-weight: 600">{{day.label}}</span>
+                <span class="num">{{day.cur}}</span>
+                <span class="num">{{day.prev}}</span>
+              </div>
+            </sc-if>
+            <div style="position: absolute; inset: 0; display: flex">
+              <sc-for list="{{days}}" as="d" hint-placeholder-count="31">
+                <div onMouseEnter="{{d.hover}}" style="flex: 1 1 0; height: 100%"></div>
+              </sc-for>
+            </div>
+          </div>
+          <div class="num" style="display: flex; justify-content: space-between; font-size: 12px; color: var(--muted)">
+            <span>25 oct.</span><span>1 nov.</span><span>8 nov.</span><span>15 nov.</span><span>24 nov.</span>
+          </div>
+        </section>
+
+        <section aria-labelledby="traiter-t" style="flex: 1 1 300px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 20px 12px 12px; display: flex; flex-direction: column; gap: 8px; min-width: 0">
+          <h2 id="traiter-t" style="margin: 0; padding: 0 8px; font-size: 16px; font-weight: 600">À traiter</h2>
+          <sc-for list="{{todo}}" as="t" hint-placeholder-count="4">
+            <a class="row" href="{{t.href}}" style="min-height: 44px; padding: 10px 8px; border-radius: 8px; display: flex; justify-content: space-between; gap: 12px">
+              <span style="display: flex; flex-direction: column"><span style="font-weight: 500">{{t.title}}</span><span style="color: var(--muted); font-size: 13px">{{t.sub}}</span></span>
+              <span class="num" style="white-space: nowrap">{{t.amount}}</span>
+            </a>
+          </sc-for>
+        </section>
+      </div>
+
+      <div style="display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-start">
+        <section id="budgets" aria-labelledby="budgets-t" style="flex: 2 1 480px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 20px; display: flex; flex-direction: column; gap: 14px; min-width: 0">
+          <div style="display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 16px">
+            <h2 id="budgets-t" style="margin: 0; font-size: 16px; font-weight: 600">Budgets variables</h2>
+            <span style="color: var(--muted); font-size: 13px">Le trait marque le jour 13 sur 31</span>
+          </div>
+          <sc-for list="{{budgets}}" as="b" hint-placeholder-count="6">
+            <div style="display: grid; grid-template-columns: minmax(84px, 110px) minmax(0, 1fr) auto; align-items: center; gap: 12px">
+              <span style="font-weight: 500">{{b.name}}</span>
+              <div style="position: relative; height: 10px; background: var(--soft); border-radius: 4px">
+                <div style="height: 100%; width: {{b.pct}}; background: {{b.color}}; border-radius: 4px"></div>
+                <div aria-hidden="true" style="position: absolute; left: 41.9%; top: -3px; bottom: -3px; border-left: 2px solid var(--ink)"></div>
+              </div>
+              <span class="num" style="min-width: 150px; text-align: right; color: {{b.ink}}; font-size: 13px">{{b.note}}</span>
+            </div>
+          </sc-for>
+          <p style="margin: 0; padding-top: 12px; border-top: 1px solid var(--line); display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 16px; color: var(--muted)">Charges fixes, factures à venir comprises <span class="num">1 276,96 € sur 1 300,00 €</span></p>
+        </section>
+
+        <section id="echeances" aria-labelledby="ech-t" style="flex: 1 1 300px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 20px; display: flex; flex-direction: column; gap: 10px; min-width: 0">
+          <h2 id="ech-t" style="margin: 0; font-size: 16px; font-weight: 600">Prochaines factures</h2>
+          <sc-for list="{{bills}}" as="f" hint-placeholder-count="4">
+            <div style="display: flex; justify-content: space-between; gap: 12px; min-height: 28px; align-items: center">
+              <span><span class="num" style="display: inline-block; width: 64px; color: var(--muted)">{{f.date}}</span>{{f.name}}</span>
+              <span class="num">{{f.amount}}</span>
+            </div>
+          </sc-for>
+          <p style="margin: 0; padding-top: 10px; border-top: 1px solid var(--line); display: flex; justify-content: space-between; gap: 12px; font-weight: 500">Total <span class="num">196,99 €</span></p>
+        </section>
+      </div>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["clair","sombre"],"default":"clair"},"$preview":{"width":1440,"height":1180}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { seg: 'libre', day: null };
+  }
+  renderVals() {
+    const eur = (c) => (c / 100).toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €';
+    const defs = [
+      { id: 'libre', label: 'Reste prévu', cents: 203000, color: 'var(--s1)', explain: 'Ce qu\'il reste le 24 nov. une fois les budgets consommés et les factures payées.' },
+      { id: 'budget', label: 'Budget restant', cents: 36174, color: 'var(--s2)', explain: 'Ce que vos budgets autorisent encore, net des 37,50 € de dépassement en Shopping.' },
+      { id: 'factures', label: 'Factures à venir', cents: 19699, color: 'var(--s3)', explain: 'Échéances en attente : ni dans le solde en banque, ni dans le solde à venir.' },
+      { id: 'cb', label: 'CB non pointées', cents: 21480, color: 'var(--s4)', explain: 'Paiements déjà faits, pas encore vus sur le relevé : comptés dans le solde à venir.' },
+    ];
+    const seg = this.state.seg;
+    const segments = defs.map((d) => ({
+      ...d,
+      share: d.cents,
+      amount: eur(d.cents),
+      selected: seg === d.id ? 'true' : 'false',
+      border: seg === d.id ? 'var(--ink)' : 'var(--line)',
+      opacity: seg === d.id ? 1 : 0.72,
+      pick: () => this.setState({ seg: d.id }),
+    }));
+
+    const cur = [6230, 11850, 17690, 24000, 30140, 37210, 42000, 143000, 151240, 158810, 166780, 176235, 185127];
+    const prev = [5120, 10460, 17030, 21990, 28840, 34200, 39870, 139600, 146630, 152380, 161020, 168140, 174210, 180150, 186020, 190270, 195500, 200360, 203890, 207140, 210680, 214050, 216730, 219960, 222210, 224870, 227040, 229180, 230820, 231950, 233040];
+    const max = 260000;
+    const X = (i) => (i / 30) * 300;
+    const Y = (v) => 220 - (v / max) * 220;
+    const path = (a) => a.map((v, i) => (i ? 'L' : 'M') + X(i).toFixed(1) + ' ' + Y(v).toFixed(1)).join(' ');
+    const dateOf = (i) => {
+      const d = new Date(Date.UTC(2026, 9, 25 + i));
+      return d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', timeZone: 'UTC' });
+    };
+    const days = prev.map((_, i) => ({ hover: () => this.setState({ day: i }) }));
+    const i = this.state.day;
+    const hasDay = i !== null;
+    const left = hasDay ? ((i + 0.5) / 31) * 100 : 0;
+    const day = hasDay ? {
+      left: left + '%',
+      tipLeft: left + '%',
+      shift: left > 60 ? 'calc(-100% - 8px)' : '8px',
+      label: dateOf(i),
+      cur: i < cur.length ? 'Cette période : ' + eur(cur[i]) : 'Cette période : à venir',
+      prev: 'Précédente : ' + eur(prev[i]),
+    } : {};
+
+    const budgets = [
+      ['Restaurants', 16890, 18000], ['Shopping', 18750, 15000], ['Courses', 23640, 42000],
+      ['Transports', 9420, 16000], ['Loisirs', 6130, 14000], ['Santé', 2300, 6000],
+    ].map(([name, real, budget]) => {
+      const over = real > budget;
+      return {
+        name,
+        pct: Math.min(100, Math.round((real / budget) * 100)) + '%',
+        color: over ? 'var(--warn)' : 'var(--accent)',
+        ink: over ? 'var(--warn)' : 'var(--muted)',
+        note: over ? eur(real - budget) + ' de trop' : eur(budget - real) + ' restants',
+      };
+    });
+
+    return {
+      themeClass: this.props.theme === 'sombre' ? 't-dark' : 't-light',
+      segments,
+      explain: defs.find((d) => d.id === seg).explain,
+      budgetTop: Y(241000) + 'px',
+      budgetLabelTop: (Y(241000) - 22) + 'px',
+      prevPath: path(prev),
+      curPath: path(cur),
+      days, hasDay, day,
+      clearDay: () => this.setState({ day: null }),
+      budgets,
+      todo: [
+        { title: '7 CB à pointer', sub: 'Avec votre relevé', amount: '214,80 €', href: 'Operations.dc.html' },
+        { title: 'Doublon possible', sub: 'Supermarché Central, deux fois le 3 nov.', amount: '42,10 €', href: 'Operations.dc.html' },
+        { title: 'Shopping dépassé', sub: 'Budget de 150,00 €', amount: '37,50 €', href: 'Analyses.dc.html' },
+      ],
+      bills: [
+        { date: '8 nov.', name: 'Salle de sport', amount: '29,99 €' },
+        { date: '12 nov.', name: 'Électricité', amount: '92,00 €' },
+        { date: '15 nov.', name: 'Internet', amount: '40,00 €' },
+        { date: '18 nov.', name: 'Mobile', amount: '35,00 €' },
+      ],
+    };
+  }
+}
+</script>
+</body>
+</html>
