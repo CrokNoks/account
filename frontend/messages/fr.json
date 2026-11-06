@@ -269,7 +269,6 @@
       "deleted": "{count, plural, one {# transaction supprimée} other {# transactions supprimées}}",
       "reconciled": "{count, plural, one {# transaction pointée} other {# transactions pointées}}"
     },
-    "pending_short": "Attente",
     "make_recurring": "Rendre récurrente",
     "filters": {
       "tags": "Tags",
