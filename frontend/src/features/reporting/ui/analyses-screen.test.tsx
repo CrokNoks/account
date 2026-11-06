@@ -144,6 +144,22 @@ describe('Répartition', () => {
   });
 });
 
+describe('Répartition : épargne', () => {
+  it("l'écart d'une ligne d'épargne est neutre, celui d'une dépense garde sa couleur", () => {
+    state.comparison = {
+      income: [], transfers: [],
+      expenses: [pt('courses', '-10000', '-12000', 20)],
+      savings: [pt('livret', '-1000', '-2000', 100)],
+    };
+    renderScreen('breakdown');
+    const gaps = screen.getAllByTestId('comparison-gap');
+    const byText = (t: string) => gaps.find((g) => g.textContent === t)!;
+    expect(byText('+100%').className).toContain('text-muted-foreground');
+    expect(byText('+20%').className).toContain('text-destructive');
+    expect(screen.getByTestId('chart-legend').textContent).toContain('épargne');
+  });
+});
+
 describe('Répartition : période affichée égale à la comparaison', () => {
   it("remet la précédente comme comparaison au lieu d'écarts à 0 %", async () => {
     const user = userEvent.setup();

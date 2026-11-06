@@ -119,7 +119,7 @@ export function BreakdownTab() {
                     <TableCell className="py-3 text-right text-sm tabular-nums">{formatCurrency(absCents(row.period2Real))}</TableCell>
                     {compared && (
                       <TableCell className="py-3 text-right">
-                        <ComparisonGap item={row} isExpense />
+                        <ComparisonGap item={row} isExpense isSavings={row.isSavings} />
                       </TableCell>
                     )}
                   </TableRow>

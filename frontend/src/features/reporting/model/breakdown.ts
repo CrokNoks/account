@@ -8,9 +8,12 @@ export function absCents(cents: string): string {
   return abs(BigInt(cents)).toString();
 }
 
+/** Ligne de la répartition : `isSavings` distingue l'épargne de la dépense (couleur neutre des écarts). */
+export type BreakdownRow = ComparisonPoint & { isSavings: boolean };
+
 export interface Breakdown {
   /** Catégories de dépense et d'épargne ayant un montant sur l'une des deux périodes, plus gros montant d'abord. */
-  rows: ComparisonPoint[];
+  rows: BreakdownRow[];
   /** Total dépensé de la période affichée (centimes, positif). */
   total: string;
   /** Total dépensé de la période de comparaison (centimes, positif). */
@@ -23,8 +26,11 @@ export interface Breakdown {
  * `period2Real` = période affichée, `period1Real` = période de comparaison.
  */
 export function buildBreakdown(comparison: PeriodComparisonResponse): Breakdown {
-  const all = [...comparison.expenses, ...comparison.savings];
-  const sum = (pick: (p: ComparisonPoint) => string) => all.reduce((acc, p) => acc + BigInt(pick(p)), ZERO);
+  const all: BreakdownRow[] = [
+    ...comparison.expenses.map((p) => ({ ...p, isSavings: false })),
+    ...comparison.savings.map((p) => ({ ...p, isSavings: true })),
+  ];
+  const sum = (pick: (p: BreakdownRow) => string) => all.reduce((acc, p) => acc + BigInt(pick(p)), ZERO);
   const rows = all
     .filter((p) => BigInt(p.period2Real) !== ZERO || BigInt(p.period1Real) !== ZERO)
     .sort((a, b) => {

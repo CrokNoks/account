@@ -185,7 +185,7 @@
         "amount": "Montant",
         "gap": "Écart",
         "none": "Aucune dépense sur cette période.",
-        "legend": "Écart = variation du montant par rapport à la période de comparaison : ↗ et + si la dépense monte, ↘ et − si elle baisse, « Nouveau » si elle était à 0. Dépenses et épargne.",
+        "legend": "Écart = variation du montant par rapport à la période de comparaison : ↗ et + si la dépense monte, ↘ et − si elle baisse, « Nouveau » si elle était à 0. Pour une dépense, rouge si elle monte, bleu si elle baisse. Pour l'épargne, l'écart reste gris : seuls la flèche et le signe donnent le sens.",
         "error": "Impossible de charger la comparaison."
       },
       "evolution": {

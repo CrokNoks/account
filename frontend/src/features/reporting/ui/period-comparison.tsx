@@ -7,7 +7,7 @@ import { cn } from '@/lib/utils';
 
 // percentageDiff is the change of the amount: positive means more money (spent or received).
 // Direction is carried by the arrow and the sign, never by the colour alone.
-export function ComparisonGap({ item, isExpense }: { item: ComparisonPoint, isExpense?: boolean }) {
+export function ComparisonGap({ item, isExpense, isSavings }: { item: ComparisonPoint, isExpense?: boolean, isSavings?: boolean }) {
   const t = useTranslations('Reporting.comparison');
   const isNew = item.period1Real === '0' && item.period2Real !== '0';
   const isUp = isNew || item.percentageDiff > 0;
@@ -20,7 +20,8 @@ export function ComparisonGap({ item, isExpense }: { item: ComparisonPoint, isEx
       data-testid="comparison-gap"
       className={cn(
         "text-xs font-bold inline-flex items-center justify-end gap-1",
-        isNeutral ? "text-muted-foreground" : (isGood ? "text-primary" : "text-destructive")
+        // Épargner plus n'est ni bon ni mauvais ici : couleur neutre, le sens reste porté par la flèche et le signe.
+        isNeutral || isSavings ? "text-muted-foreground" : (isGood ? "text-primary" : "text-destructive")
       )}
     >
       {isNeutral ? <Minus className="w-3 h-3" /> : (isUp ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />)}

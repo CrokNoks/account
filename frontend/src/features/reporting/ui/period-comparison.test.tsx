@@ -15,8 +15,8 @@ const point = (period1Real: string, period2Real: string, percentageDiff: number)
   percentageDiff,
 });
 
-const gap = (item: ReturnType<typeof point>, isExpense?: boolean) =>
-  render(<ComparisonGap item={item} isExpense={isExpense} />).getByTestId('comparison-gap');
+const gap = (item: ReturnType<typeof point>, isExpense?: boolean, isSavings?: boolean) =>
+  render(<ComparisonGap item={item} isExpense={isExpense} isSavings={isSavings} />).getByTestId('comparison-gap');
 
 describe('ComparisonGap', () => {
   it('shows an expense that went down as a green decrease', () => {
@@ -46,6 +46,25 @@ describe('ComparisonGap', () => {
   it('shows an unchanged amount as neutral', () => {
     const cell = gap(point('-1078', '-1078', 0), true);
     expect(cell.textContent).toBe('0%');
+    expect(cell.className).toContain('text-muted-foreground');
+  });
+
+  it("garde une couleur neutre pour l'épargne en hausse, ni rouge ni positive, avec flèche et signe", () => {
+    const up = gap(point('-1000', '-2000', 100), true, true);
+    expect(up.textContent).toBe('+100%');
+    expect(up.className).toContain('text-muted-foreground');
+    expect(up.className).not.toContain('text-destructive');
+    expect(up.className).not.toContain('text-primary');
+    expect(up.querySelector('svg')).not.toBeNull();
+  });
+
+  it("garde une couleur neutre pour l'épargne en baisse ou nouvelle", () => {
+    expect(gap(point('-2000', '-1000', -50), true, true).className).toContain('text-muted-foreground');
+  });
+
+  it("garde une couleur neutre pour une épargne nouvelle", () => {
+    const cell = gap(point('0', '-1000', 0), true, true);
+    expect(cell.textContent).toBe('new');
     expect(cell.className).toContain('text-muted-foreground');
   });
 });

@@ -21,6 +21,7 @@ describe('buildBreakdown', () => {
     expect(b.total).toBe('17550');
     expect(b.compareTotal).toBe('6000');
     expect(b.rows.map((r) => r.categoryId)).toEqual(['courses', 'livret', 'loisirs']);
+    expect(b.rows.map((r) => r.isSavings)).toEqual([false, true, false]);
   });
 
   it('masque une catégorie à 0 sur les deux périodes, garde celle qui a disparu', () => {

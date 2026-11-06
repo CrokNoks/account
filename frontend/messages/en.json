@@ -185,7 +185,7 @@
         "amount": "Amount",
         "gap": "Change",
         "none": "No spending in this period.",
-        "legend": "Change = variation of the amount against the comparison period: ↗ and + if spending goes up, ↘ and − if it goes down, \"New\" if it was 0. Expenses and savings.",
+        "legend": "Change = variation of the amount against the comparison period: ↗ and + if spending goes up, ↘ and − if it goes down, \"New\" if it was 0. For spending, red if it goes up, blue if it goes down. For savings the change stays grey: only the arrow and the sign give the direction.",
         "error": "Unable to load the comparison."
       },
       "evolution": {
