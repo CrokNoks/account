@@ -73,7 +73,7 @@ export function PeriodList() {
                   <Button 
                     variant="outline" 
                     size="sm" 
-                    className="gap-2 text-xs h-8"
+                    className="gap-2 text-xs h-11 lg:h-8"
                     onClick={() => handleClosePeriod(period)}
                     disabled={isUpdating}
                   >
@@ -85,7 +85,7 @@ export function PeriodList() {
                   <Button 
                     variant="ghost" 
                     size="icon-sm" 
-                    className="opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8 text-muted-foreground hover:text-primary"
+                    className="lg:opacity-0 lg:group-hover:opacity-100 transition-opacity h-11 w-11 lg:h-8 lg:w-8 text-muted-foreground hover:text-primary"
                     onClick={() => setEditingBudgetsPeriodId(period.id)}
                     title={t('edit_budgets')}
                   >
@@ -94,7 +94,7 @@ export function PeriodList() {
                   <Button 
                     variant="ghost" 
                     size="icon-sm" 
-                    className="opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8"
+                    className="lg:opacity-0 lg:group-hover:opacity-100 transition-opacity h-11 w-11 lg:h-8 lg:w-8"
                     onClick={() => setEditingPeriod(period)}
                     title={t('edit_dates')}
                   >
@@ -103,7 +103,7 @@ export function PeriodList() {
                   <Button 
                     variant="ghost" 
                     size="icon-sm" 
-                    className="opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8 text-destructive"
+                    className="lg:opacity-0 lg:group-hover:opacity-100 transition-opacity h-11 w-11 lg:h-8 lg:w-8 text-destructive"
                     onClick={() => handleDelete(period.id)}
                     title={t('delete_period')}
                     disabled={isDeleting}

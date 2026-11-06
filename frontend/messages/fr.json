@@ -471,9 +471,9 @@
     "close_confirm": "Clôturer la période ?"
   },
   "BudgetTemplates": {
-    "title": "Budgets fixes du compte",
+    "title": "Montants par défaut des nouvelles périodes",
     "description": "Montant de départ proposé pour chaque catégorie à la création d'une période. Les périodes déjà créées ne changent pas.",
-    "link": "Budgets fixes",
+    "link": "Montants par défaut des nouvelles périodes",
     "saved": "Configuration enregistrée",
     "save_failed": "Enregistrement impossible : la liste des catégories a changé, elle a été rechargée.",
     "no_categories": "Aucune catégorie disponible.",

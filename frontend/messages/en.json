@@ -471,9 +471,9 @@
     "close_confirm": "Close the period?"
   },
   "BudgetTemplates": {
-    "title": "Account fixed budgets",
+    "title": "Default amounts for new periods",
     "description": "Starting amount suggested for each category when a period is created. Periods already created do not change.",
-    "link": "Fixed budgets",
+    "link": "Default amounts for new periods",
     "saved": "Configuration saved",
     "save_failed": "Could not save: the category list changed and was reloaded.",
     "no_categories": "No category available.",
