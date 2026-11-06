@@ -67,25 +67,7 @@
     "budgets_title": "Budgets",
     "new_transaction": "Nouvelle opération",
     "no_period_title": "Aucune période pour ce compte",
-    "no_period_desc": "Créez une période pour suivre votre budget et connaître votre solde prévu en fin de période.",
-    "customize": "Personnaliser le tableau de bord",
-    "layout_title": "Disposition du tableau de bord (glissez pour réorganiser)",
-    "available_widgets": "Widgets disponibles",
-    "hide_desktop": "Masquer sur ordinateur",
-    "show_desktop": "Afficher sur ordinateur",
-    "hide_mobile": "Masquer sur mobile",
-    "show_mobile": "Afficher sur mobile",
-    "widgets": {
-      "stat-income": "Revenus / Dépenses",
-      "stat-bank": "Solde en banque",
-      "stat-upcoming": "Solde à venir",
-      "net-worth": "Patrimoine Net",
-      "anomalies": "Anomalies",
-      "breakdown": "Répartition du budget",
-      "tags": "Statistiques par Tags",
-      "upcoming": "Prochaines Échéances",
-      "transactions": "Dernières transactions"
-    }
+    "no_period_desc": "Créez une période pour suivre votre budget et connaître votre solde prévu en fin de période."
   },
   "Reporting": {
     "overruns_title": "Dépassements",
@@ -182,11 +164,6 @@
       "filters": "Filtres",
       "select_all": "Tout sélectionner",
       "deselect_all": "Tout désélectionner"
-    },
-    "net_worth": {
-      "title": "Patrimoine Net (Tous comptes)",
-      "no_data": "Aucune donnée",
-      "history_unavailable": "Historique de solde indisponible"
     },
     "comparison": {
       "title": "Comparaison de périodes",

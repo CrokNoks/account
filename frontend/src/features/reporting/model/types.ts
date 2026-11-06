@@ -70,16 +70,6 @@ export interface Anomaly {
   metadata?: Record<string, unknown>;
 }
 
-export interface NetWorthDataPoint {
-  date: string;
-  amount: string;
-}
-
-export interface NetWorthResponse {
-  currentTotal: string;
-  history: NetWorthDataPoint[];
-}
-
 export interface ComparisonPoint {
   categoryId: string;
   name: string;

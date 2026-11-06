@@ -67,25 +67,7 @@
     "budgets_title": "Budgets",
     "new_transaction": "New transaction",
     "no_period_title": "No period for this account",
-    "no_period_desc": "Create a period to track your budget and see your forecast balance at the end of the period.",
-    "customize": "Customize the dashboard",
-    "layout_title": "Dashboard layout (drag to reorder)",
-    "available_widgets": "Available widgets",
-    "hide_desktop": "Hide on desktop",
-    "show_desktop": "Show on desktop",
-    "hide_mobile": "Hide on mobile",
-    "show_mobile": "Show on mobile",
-    "widgets": {
-      "stat-income": "Income / Expenses",
-      "stat-bank": "Bank balance",
-      "stat-upcoming": "Upcoming balance",
-      "net-worth": "Net worth",
-      "anomalies": "Anomalies",
-      "breakdown": "Budget breakdown",
-      "tags": "Tag statistics",
-      "upcoming": "Upcoming deadlines",
-      "transactions": "Latest transactions"
-    }
+    "no_period_desc": "Create a period to track your budget and see your forecast balance at the end of the period."
   },
   "Reporting": {
     "overruns_title": "Overruns",
@@ -182,11 +164,6 @@
       "filters": "Filters",
       "select_all": "Select all",
       "deselect_all": "Deselect all"
-    },
-    "net_worth": {
-      "title": "Net worth (all accounts)",
-      "no_data": "No data",
-      "history_unavailable": "Balance history unavailable"
     },
     "comparison": {
       "title": "Period comparison",
