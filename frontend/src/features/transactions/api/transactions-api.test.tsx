@@ -119,13 +119,16 @@ describe('transactions API hooks', () => {
     expect(invalidatedKeys()).toContainEqual(['transactions', 'acc-1']);
   });
 
-  it('useDeleteTransaction DELETEs the transaction', async () => {
-    const { wrapper } = setup();
+  it('useDeleteTransaction DELETEs the transaction and refreshes the list, the stats and the anomalies', async () => {
+    const { wrapper, invalidatedKeys } = setup();
     const { result } = renderHook(() => useDeleteTransaction(), { wrapper });
 
     await act(() => result.current.mutateAsync({ accountId: 'acc-1', id: 't1' }));
 
     expect(api.delete).toHaveBeenCalledWith('/acc-1/transactions/t1');
+    expect(invalidatedKeys()).toEqual(
+      expect.arrayContaining([['transactions', 'acc-1'], ['reporting'], ['anomalies', 'acc-1']]),
+    );
   });
 
   // Côté back, PATCH :id et DELETE :id captent ces URLs (voir
@@ -172,8 +175,8 @@ describe('transactions API hooks', () => {
       );
     });
 
-    it('useBulkDeleteTransactions DELETEs /transactions/bulk with the ids in the body', async () => {
-      const { wrapper } = setup();
+    it('useBulkDeleteTransactions DELETEs /transactions/bulk with the ids in the body and refreshes the list, the stats and the anomalies', async () => {
+      const { wrapper, invalidatedKeys } = setup();
       const { result } = renderHook(() => useBulkDeleteTransactions(), {
         wrapper,
       });
@@ -185,6 +188,13 @@ describe('transactions API hooks', () => {
       expect(api.delete).toHaveBeenCalledWith('/acc-1/transactions/bulk', {
         data: { ids: ['t1', 't2'] },
       });
+      expect(invalidatedKeys()).toEqual(
+        expect.arrayContaining([
+          ['transactions', 'acc-1'],
+          ['reporting'],
+          ['anomalies', 'acc-1'],
+        ]),
+      );
     });
 
     it('useBulkCreateTransactions POSTs the lines', async () => {

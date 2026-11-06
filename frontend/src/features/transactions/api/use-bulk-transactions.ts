@@ -38,6 +38,9 @@ export function useBulkDeleteTransactions() {
     },
     onSuccess: (_, { accountId }) => {
       queryClient.invalidateQueries({ queryKey: ['transactions', accountId] });
+      // Supprimer change les soldes et les anomalies, comme la suppression à l'unité.
+      queryClient.invalidateQueries({ queryKey: ['reporting'] });
+      queryClient.invalidateQueries({ queryKey: ['anomalies', accountId] });
     },
   });
 }
