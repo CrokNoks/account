@@ -55,8 +55,6 @@
     "title": "Tableau de bord",
     "welcome": "Bienvenue sur votre gestionnaire de finances",
     "stats": "Statistiques de la période",
-    "select_period": "Sélectionner une période",
-    "active_suffix": "(Active)",
     "forecast_title": "Prévu en fin de période",
     "bank_title": "En banque",
     "upcoming_title": "À venir",
@@ -302,7 +300,14 @@
     "tag_fallback": "Tag",
     "import_csv": "Import CSV",
     "more_pages": "Plus de pages",
-    "pagination": "Pagination"
+    "pagination": "Pagination",
+    "balances": {
+      "bank": "En banque",
+      "upcoming": "À venir",
+      "to_reconcile": "Reste à pointer",
+      "to_reconcile_count": "{count, plural, =0 {Aucune CB} one {# CB} other {# CB}}",
+      "no_period": "Ces soldes se calculent sur une période : créez ou choisissez une période pour les voir. La liste reste utilisable."
+    }
   },
   "Import": {
     "title": "Import de transactions",
@@ -626,5 +631,10 @@
       "blank": "Le champ « {field} » ne peut pas être vide",
       "maxLength": "Le champ « {field} » ne peut pas dépasser {value} caractères"
     }
+  },
+  "PeriodSelect": {
+    "select": "Sélectionner une période",
+    "active_suffix": "(Active)",
+    "all": "Toutes les périodes"
   }
 }

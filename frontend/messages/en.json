@@ -55,8 +55,6 @@
     "title": "Dashboard",
     "welcome": "Welcome to your personal finance manager",
     "stats": "Period Stats",
-    "select_period": "Select a period",
-    "active_suffix": "(Active)",
     "forecast_title": "Forecast at end of period",
     "bank_title": "In bank",
     "upcoming_title": "Upcoming",
@@ -302,7 +300,14 @@
     "tag_fallback": "Tag",
     "import_csv": "Import CSV",
     "more_pages": "More pages",
-    "pagination": "Pagination"
+    "pagination": "Pagination",
+    "balances": {
+      "bank": "In bank",
+      "upcoming": "Upcoming",
+      "to_reconcile": "Left to reconcile",
+      "to_reconcile_count": "{count, plural, =0 {No card payment} one {# card payment} other {# card payments}}",
+      "no_period": "These balances are computed over a period: create or pick a period to see them. The list stays usable."
+    }
   },
   "Import": {
     "title": "Import transactions",
@@ -626,5 +631,10 @@
       "blank": "The \"{field}\" field cannot be blank",
       "maxLength": "The \"{field}\" field cannot exceed {value} characters"
     }
+  },
+  "PeriodSelect": {
+    "select": "Select a period",
+    "active_suffix": "(Active)",
+    "all": "All periods"
   }
 }

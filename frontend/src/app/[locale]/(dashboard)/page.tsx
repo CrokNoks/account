@@ -5,15 +5,7 @@ import { usePeriods } from "@/features/budgets/api/use-periods";
 import { useAccounts } from "@/features/accounts/api/use-accounts";
 import { useUiStore } from "@/shared/model/use-ui-store";
 import { useTranslations } from 'next-intl';
-import { format } from 'date-fns';
 import { useRouter } from '@/i18n/routing';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue
-} from "@/components/ui/select";
 import { HelpButton } from "@/shared/ui/tour/HelpButton";
 import { useEffect } from 'react';
 import { Button } from "@/components/ui/button";
@@ -25,6 +17,7 @@ import { SpendingPace } from "@/features/reporting/ui/spending-pace";
 import { ToHandle } from "@/features/reporting/ui/to-handle";
 import { BudgetBreakdown } from "@/features/reporting/ui/budget-breakdown";
 import { UpcomingDeadlinesWidget } from "@/features/reporting/ui/upcoming-deadlines-widget";
+import { PeriodSelect } from "@/features/periods/ui/period-select";
 import { CreatePeriodDialog } from "@/features/periods/ui/create-period-dialog";
 
 export default function Home() {
@@ -60,8 +53,6 @@ export default function Home() {
     }
   }, [completedTours, startTour, periods, isLoadingPeriods]);
 
-  const currentPeriod = periods?.find(p => p.id === activePeriodId);
-
   // Sans aucune période, rien d'autre que l'explication et la création (ni barre, ni rythme, ni blocs).
   if (!isLoadingPeriods && periods && periods.length === 0) {
     return (
@@ -79,23 +70,7 @@ export default function Home() {
           <div className="flex items-center gap-4">
             <h2 className="hidden lg:block text-3xl font-bold tracking-tight">{t('title')}</h2>
             <HelpButton tour="dashboard" className="h-8 w-8" />
-            <Select value={activePeriodId || ""} onValueChange={setActivePeriodId}>
-              <SelectTrigger className="h-8 rounded-full bg-primary/10 text-primary border-primary/20 px-4 hover:bg-primary/20 transition-colors">
-                <SelectValue>
-                  {currentPeriod
-                    ? `${format(new Date(currentPeriod.startDate), 'dd/MM/yyyy')} - ${format(new Date(currentPeriod.endDate), 'dd/MM/yyyy')}`
-                    : t('select_period')
-                  }
-                </SelectValue>
-              </SelectTrigger>
-              <SelectContent>
-                {periods?.map((p) => (
-                  <SelectItem key={p.id} value={p.id}>
-                    {format(new Date(p.startDate), 'dd/MM/yyyy')} - {format(new Date(p.endDate), 'dd/MM/yyyy')} {p.isActive && t('active_suffix')}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <PeriodSelect periods={periods} value={activePeriodId} onChange={setActivePeriodId} />
           </div>
           <p className="hidden lg:block text-muted-foreground">
             {t('welcome')}

@@ -185,3 +185,20 @@ describe('TransactionList bulk error toast', () => {
     expect(toast.error).toHaveBeenCalledWith('error');
   });
 });
+
+describe('TransactionList period', () => {
+  beforeEach(() => {
+    useTransactions.mockReset();
+    useTransactions.mockReturnValue({ data: undefined, isLoading: false });
+  });
+
+  it('starts on the period chosen by the screen', () => {
+    render(<TransactionList period="p1" />);
+    expect(lastOptions().periodId).toBe('p1');
+  });
+
+  it('sends no period for « all periods »', () => {
+    render(<TransactionList period="all" />);
+    expect(lastOptions().periodId).toBeUndefined();
+  });
+});

@@ -37,6 +37,8 @@ interface TransactionFiltersProps {
   setSelectedPeriodId: (v: string) => void;
   periods?: Period[];
   periodId?: string;
+  /** La période est choisie ailleurs (sélecteur de l'écran) : pas de filtre de période ici. */
+  periodControlled?: boolean;
   onApply: () => void;
   onReset: () => void;
   t: ReturnType<typeof useTranslations>;
@@ -67,6 +69,7 @@ export function TransactionFilters({
   setSelectedPeriodId,
   periods,
   periodId,
+  periodControlled,
   onApply,
   onReset,
   t
@@ -198,6 +201,7 @@ export function TransactionFilters({
                   </div>
                 </div>
 
+                {!periodControlled && (
                 <div className="space-y-1.5 sm:col-span-2">
                   <label className="text-[10px] max-lg:text-xs font-bold uppercase text-muted-foreground px-1">{t('budget_period')}</label>
                   <Select value={effectivePeriodId} onValueChange={(v) => setSelectedPeriodId(v || 'all')}>
@@ -222,6 +226,7 @@ export function TransactionFilters({
                     </SelectContent>
                   </Select>
                 </div>
+                )}
               </>
             )}
           </div>

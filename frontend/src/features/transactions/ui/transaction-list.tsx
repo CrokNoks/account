@@ -42,10 +42,13 @@ import { Transaction } from '../model/types';
 
 export function TransactionList({ 
   periodId, 
+  period,
   compact = false,
   extraActions
 }: { 
   periodId?: string, 
+  /** Période pilotée par l'écran (sélecteur de tête) : un identifiant ou `all`. Le filtre de période du panneau disparaît. */
+  period?: string,
   compact?: boolean,
   extraActions?: React.ReactNode
 }) {
@@ -71,8 +74,15 @@ export function TransactionList({
   const [selectedPeriodId, setSelectedPeriodId] = useState<string | 'all'>('all');
   const [statusFilter, setStatusFilter] = useState<'all' | 'reconciled' | 'not_reconciled'>('all');
   
-  const effectivePeriodId = periodId || (compact ? activePeriodId : selectedPeriodId);
+  const effectivePeriodId = periodId || (compact ? activePeriodId : (period ?? selectedPeriodId));
   
+  // Changer de période ramène à la première page (réinitialisation pendant le rendu).
+  const [pageOfPeriod, setPageOfPeriod] = useState(effectivePeriodId);
+  if (pageOfPeriod !== effectivePeriodId) {
+    setPageOfPeriod(effectivePeriodId);
+    setPage(1);
+  }
+
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [search, setSearch] = useState('');
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | 'all'>('all');
@@ -310,7 +320,7 @@ export function TransactionList({
           startDate={startDate} setStartDate={setStartDate}
           endDate={endDate} setEndDate={setEndDate}
           effectivePeriodId={effectivePeriodId || 'all'} setSelectedPeriodId={setSelectedPeriodId}
-          periods={periods} periodId={periodId}
+          periods={periods} periodId={periodId} periodControlled={period !== undefined}
           onApply={handleApplyFilters} onReset={handleResetFilters}
           t={t}
         />
