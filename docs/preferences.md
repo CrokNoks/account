@@ -1,6 +1,6 @@
 # Préférences — mémorise la disposition du tableau de bord de chaque utilisateur
 
-Mise à jour : 2026-11-01 · Commit : fc285ef
+Mise à jour : 2026-11-06 · Commit : 88a0832
 
 Code : back `functions/src/preferences/`, front `frontend/src/features/preferences/`, base `supabase/migrations/20260316000000..03` et `20261101100600_widen_balance_cards.sql`.
 
@@ -39,7 +39,22 @@ Identité : `SupabaseAuthGuard` exige un jeton valide ; l'utilisateur est lu dan
 | Lire | `GET /preferences` | connecté, ses propres données | renvoie (ou crée) la disposition | `preferences.controller.ts:83` |
 | Enregistrer | `PATCH /preferences` (corps `{widgets:[…]}`) | connecté, ses propres données | remplace la disposition | `preferences.controller.ts:99` |
 
-Écrans : catalogue des widgets possibles et libellés (`config/dashboard-widgets.tsx`, `ALL_AVAILABLE_WIDGETS` : 9 widgets, tous présents dans la disposition par défaut) ; composants d'édition par glisser-déposer (`ui/dashboard-editor-components.tsx` : changement de largeur en boucle 2→3→4→6→12, bascule bureau/mobile). L'écran du tableau de bord (`app/[locale]/(dashboard)/page.tsx`) les utilise.
+Écrans : catalogue des widgets possibles et libellés (`config/dashboard-widgets.tsx`, `ALL_AVAILABLE_WIDGETS` : 9 widgets, tous présents dans la disposition par défaut) ; composants d'édition par glisser-déposer (`ui/dashboard-editor-components.tsx` : changement de largeur en boucle 2→3→4→6→12, bascule bureau/mobile). L'écran du tableau de bord (`app/[locale]/(dashboard)/page.tsx`) les utilise. Depuis le 2026-11-02, seul l'habillage des boutons d'édition change (texte plus grand sur mobile, `max-lg:text-xs`), sans effet sur les règles.
+
+## Ce qui dépend de ces préférences (état avant le cycle 2)
+Aujourd'hui, la page d'accueil du tableau de bord est entièrement pilotée par la disposition enregistrée. Rien d'autre dans le code ne lit `/preferences`.
+
+| Dépendant | Ce qu'il fait | Source | Testé |
+| --- | --- | --- | --- |
+| Page d'accueil `(dashboard)/page.tsx` | Lit la disposition (`useUserPreferences`), sinon `DEFAULT_WIDGETS` ; filtre sur le catalogue ; affiche chaque widget dans l'ordre sur une grille de 12 colonnes via `WIDGET_COMPONENTS` (un id sans composant n'affiche rien) ; bouton « Personnaliser » (crayon, caché sur mobile) qui ouvre l'édition, puis Annuler / Enregistrer (PATCH). Le sélecteur de période et la redirection vers `/accounts` si aucun compte sont dans la même page | `page.tsx:48-190` | ❌ (pas de test de la page) |
+| `WIDGET_COMPONENTS` | Associe les 9 ids à leurs composants : `stat-bank` (repère de visite `stats`), `stat-upcoming`, `stat-income` (revenus et dépenses), `anomalies`, `net-worth`, `upcoming`, `breakdown` (repère `budget-breakdown`), `tags`, `transactions` (repère `transaction-list`) | `config/dashboard-widgets.tsx:15-40` | ❌ |
+| Visite guidée « dashboard » | Cible 3 repères posés dans les widgets : `stats`, `budget-breakdown`, `transaction-list` ; si le widget correspondant est retiré ou masqué par l'utilisateur, le repère n'existe pas | `features/tour/config/dashboard-tour.ts:11-21` | ✅ `dashboard-tour.test.ts` (contenu non vérifié ici) |
+| Textes | Libellés des 9 widgets et de l'édition (`Dashboard.widgets.*`, `customize`, `layout_title`, `available_widgets`, `show/hide_desktop/mobile`) en fr et en | `frontend/messages/fr.json:60-77`, `en.json` | ❌ |
+| Store `useDashboardStore` | État d'édition (voir règles front) | `model/use-dashboard-store.ts` | ✅ `frontend/src/shared/model/stores.test.ts` (retrait, ajout en 12, largeur) |
+| Back | Module `PreferencesModule` branché dans `app.module.ts` ; routes couvertes par `auth.e2e-spec.ts` (jeton exigé), `route-ids.e2e-spec.ts`, `validation.e2e-spec.ts` | `functions/src/app.module.ts` | ✅ |
+| Vérification réelle | `http/tableau-de-bord-allege.http` contrôle que la disposition par défaut d'un nouvel utilisateur contient les 9 ids dans l'ordre | `http/tableau-de-bord-allege.http` | ✅ (fichier httpYac, lancé à la main) |
+
+Ce que le front et le back font des ids : le back n'en connaît aucun (il stocke ce qu'on lui envoie, hormis le défaut de création) ; le catalogue front est la seule liste de référence à l'affichage. Les widgets qui ne figurent pas dans `WIDGET_COMPONENTS` ou dans le catalogue sont ignorés sans erreur.
 
 ## Statuts et transitions
 Mode lecture / mode édition côté front (`isEditing`), sans statut en base.
@@ -48,3 +63,7 @@ Mode lecture / mode édition côté front (`isEditing`), sans statut en base.
 - Le catalogue front (9 widgets) et la liste côté back ne sont pas reliés : un `id` inconnu est enregistré tel quel par le back, mais le front l'ignore à l'affichage (voir règle ci-dessus).
 - Les anciennes valeurs par défaut (`widgets: ["anomalies", …]`, liste de textes) ont existé ; le code actuel ne gère pas ce format.
 - Pourquoi les largeurs 2 et 3 existent à l'édition alors que le défaut n'utilise que 4, 6 et 12 : inconnu.
+- (Cycle 2) Le besoin retire la personnalisation du tableau de bord : le code ne dit pas si `GET/PATCH /preferences`, la table `user_preferences`, le module back et les dispositions déjà enregistrées doivent rester, être vidés ou supprimés. Les dispositions enregistrées des utilisateurs existantes seraient simplement ignorées par un écran fixe, mais rien dans le code ne le garantit aujourd'hui.
+- (Cycle 2) Les widgets `net-worth`, `upcoming`, `tags`, `transactions` existent aujourd'hui ; le besoin cite à la place « rythme de dépense », « À traiter », « budgets », « factures ». Le code ne permet pas de dire lesquels des widgets actuels correspondent ou disparaissent (ex. `anomalies` vs « À traiter », `upcoming` vs « factures »).
+- (Cycle 2) La visite guidée « dashboard » dépend des repères `stats`, `budget-breakdown`, `transaction-list` portés par les widgets : un écran fixe doit les garder ou la visite casse. Le code ne dit pas si c'est voulu.
+- Un utilisateur peut aujourd'hui masquer un widget sur mobile ou bureau ; l'écran fixe supprimerait cette possibilité. Le code ne dit pas si des utilisateurs s'en servent (aucune mesure).
