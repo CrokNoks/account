@@ -4,6 +4,7 @@ import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { formatCurrency } from "@/shared/lib/format";
 import { useAccountStore } from "@/features/accounts/model/use-account-store";
 import { useBudgetBreakdown } from "../api/use-budget-breakdown";
+import { overrunAmount } from "../model/current-overruns";
 import { BudgetCategoryBreakdown } from "../model/types";
 import { useTranslations } from "next-intl";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -85,6 +86,7 @@ function BudgetGroup({ title, items, isExpense }: { title: string, items: Budget
         {items.map((item) => {
           // remaining < 0 means the budget is exceeded (expense, saving or income alike)
           const remaining = parseInt(item.remaining, 10);
+          const overrun = overrunAmount(item);
           const real = parseInt(item.real, 10);
           const budget = parseInt(item.budget, 10);
           // Without budget the API returns 0 %: an amount spent or received
@@ -115,13 +117,13 @@ function BudgetGroup({ title, items, isExpense }: { title: string, items: Budget
               </div>
               <div className="flex justify-between text-[10px] max-lg:text-xs text-muted-foreground uppercase tracking-wider">
                 <span>{item.percentage}%</span>
-                {remaining < 0 ? (
+                {overrun > 0 ? (
                   <span
                     data-testid="over-budget"
                     className={isExpense ? "text-red-600 font-bold" : "text-green-600 font-bold"}
                   >
                     {t(isExpense ? 'over_budget_expense' : 'over_budget_income', {
-                      amount: formatCurrency((-remaining).toString()),
+                      amount: formatCurrency(overrun.toString()),
                     })}
                   </span>
                 ) : (

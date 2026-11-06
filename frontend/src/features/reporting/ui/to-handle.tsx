@@ -6,9 +6,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Link } from '@/i18n/routing';
 import { formatCurrency } from '@/shared/lib/format';
 import { useAccountStore } from '@/features/accounts/model/use-account-store';
-import { useTransactions } from '@/features/transactions/api/use-transactions';
 import { useAnomalies } from '../api/use-anomalies';
 import { useBudgetBreakdown } from '../api/use-budget-breakdown';
+import { useReportingStats } from '../api/use-reporting-stats';
 import { currentOverruns } from '../model/current-overruns';
 import { AnomaliesWidget } from './anomalies-widget';
 
@@ -16,8 +16,7 @@ const rowClass =
   'flex items-center justify-between gap-3 p-3 rounded-lg bg-background border shadow-sm text-sm font-medium hover:bg-muted/50 transition-colors';
 
 /**
- * Bloc « À traiter » de l'écran Aujourd'hui : anomalies, CB à pointer (non pointées, hors factures
- * `pending`) et dépassements en cours (même calcul que la répartition du budget). Chaque ligne mène à
+ * Bloc « À traiter » de l'écran Aujourd'hui : anomalies, CB à pointer (nombre et total des stats) et dépassements en cours (même calcul que la répartition du budget). Chaque ligne mène à
  * l'écran concerné ; sinon « tout est à jour ».
  */
 export function ToHandle() {
@@ -25,17 +24,14 @@ export function ToHandle() {
   const { activeAccountId, activePeriodId } = useAccountStore();
   const { data: anomalies } = useAnomalies(activeAccountId, activePeriodId);
   const { data: breakdown } = useBudgetBreakdown(activeAccountId, activePeriodId);
-  const { data: unreconciled } = useTransactions(activeAccountId, {
-    periodId: activePeriodId,
-    reconciled: false,
-    limit: 5000,
-  });
+  const { data: stats } = useReportingStats(activeAccountId, activePeriodId);
 
-  const cards = (unreconciled?.data ?? []).filter((tx) => !tx.reconciled && !tx.pending);
-  const cardTotal = cards.reduce((sum, tx) => sum + parseInt(tx.amount, 10), 0);
+  // Nombre et total des CB à pointer : fournis par les stats (mêmes données que la composition du prévu).
+  const cardCount = stats?.cardCount ?? 0;
+  const cardTotal = stats?.cardTotal ?? '0';
   const overruns = currentOverruns(breakdown);
   const hasAnomalies = (anomalies?.length ?? 0) > 0;
-  const allGood = !hasAnomalies && cards.length === 0 && overruns.length === 0;
+  const allGood = !hasAnomalies && cardCount === 0 && overruns.length === 0;
 
   return (
     <Card className="border-2 shadow-sm h-full overflow-hidden flex flex-col">
@@ -53,11 +49,11 @@ export function ToHandle() {
           </div>
         )}
         <AnomaliesWidget embedded />
-        {cards.length > 0 && (
+        {cardCount > 0 && (
           <Link href="/transactions" className={rowClass}>
             <span className="flex items-center gap-2">
               <CreditCard className="w-4 h-4 text-primary" />
-              {t('todo_card', { count: cards.length })}
+              {t('todo_card', { count: cardCount })}
             </span>
             <span className="font-black">{formatCurrency(cardTotal)}</span>
           </Link>

@@ -7,6 +7,25 @@ export interface ReportingStats {
   realBankBalance: string;
   upcomingBalance: string;
   forecastBalance: string;
+  /** Composition du prévu : lignes signées en centimes (voir docs/reporting.md). */
+  cardTotal: string;
+  cardCount: number;
+  billsTotal: string;
+  budgetRemaining: string;
+  expectedIncome: string;
+}
+
+export interface SpendingPacePoint {
+  day: number;
+  date: string;
+  cumulative: string;
+  previousCumulative: string | null;
+}
+
+export interface SpendingPace {
+  points: SpendingPacePoint[];
+  previousPeriodId: string | null;
+  gap: string | null;
 }
 
 export interface BudgetCategoryBreakdown {

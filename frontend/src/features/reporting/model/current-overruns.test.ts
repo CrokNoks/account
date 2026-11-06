@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { currentOverruns } from './current-overruns';
+import { currentOverruns, overrunAmount } from './current-overruns';
 
 const item = (categoryId: string, name: string, remaining: string) => ({
   categoryId,
@@ -27,5 +27,13 @@ describe('currentOverruns', () => {
 
   it('rend une liste vide sans répartition', () => {
     expect(currentOverruns(undefined)).toEqual([]);
+  });
+});
+
+describe('overrunAmount', () => {
+  it('est le seul calcul du dépassement : l\'opposé d\'un restant négatif, sinon 0', () => {
+    expect(overrunAmount(item('e1', 'Courses', '-10000'))).toBe(10000);
+    expect(overrunAmount(item('e2', 'Loisirs', '7000'))).toBe(0);
+    expect(overrunAmount(item('e3', 'Cadeaux', '0'))).toBe(0);
   });
 });

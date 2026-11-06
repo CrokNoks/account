@@ -6,7 +6,7 @@ import en from '../../../../messages/en.json';
 import { ToHandle } from './to-handle';
 
 const state = vi.hoisted(() => ({
-  transactions: [] as Array<{ id: string; amount: string; reconciled: boolean; pending: boolean }>,
+  stats: { cardCount: 0, cardTotal: '0' } as { cardCount: number; cardTotal: string },
   anomalies: [] as unknown[],
   breakdown: { expenses: [], income: [], savings: [], transfers: [] } as unknown,
 }));
@@ -14,8 +14,8 @@ const state = vi.hoisted(() => ({
 vi.mock('@/features/accounts/model/use-account-store', () => ({
   useAccountStore: () => ({ activeAccountId: 'a1', activePeriodId: 'p1' }),
 }));
-vi.mock('@/features/transactions/api/use-transactions', () => ({
-  useTransactions: () => ({ isLoading: false, data: { data: state.transactions, meta: { total: state.transactions.length } } }),
+vi.mock('../api/use-reporting-stats', () => ({
+  useReportingStats: () => ({ isLoading: false, data: state.stats }),
 }));
 vi.mock('../api/use-anomalies', () => ({
   useAnomalies: () => ({ isLoading: false, data: state.anomalies }),
@@ -40,7 +40,7 @@ const text = () => document.body.textContent!.replace(/\s/g, '');
 
 describe('Bloc À traiter', () => {
   beforeEach(() => {
-    state.transactions = [];
+    state.stats = { cardCount: 0, cardTotal: '0' };
     state.anomalies = [];
     state.breakdown = { expenses: [], income: [], savings: [], transfers: [] };
   });
@@ -50,13 +50,8 @@ describe('Bloc À traiter', () => {
     expect(screen.getByText('Tout est à jour')).toBeTruthy();
   });
 
-  it('compte les CB à pointer (non pointées, hors factures en attente) avec leur total et mène aux opérations', () => {
-    state.transactions = [
-      { id: 't1', amount: '-1000', reconciled: false, pending: false },
-      { id: 't2', amount: '-250', reconciled: false, pending: false },
-      { id: 't3', amount: '-9000', reconciled: false, pending: true },
-      { id: 't4', amount: '-500', reconciled: true, pending: false },
-    ];
+  it('affiche les CB à pointer (nombre et total fournis par les stats du back) et mène aux opérations', () => {
+    state.stats = { cardCount: 2, cardTotal: '-1250' };
     renderBlock();
 
     expect(screen.queryByText('Tout est à jour')).toBeNull();

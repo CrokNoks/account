@@ -1,4 +1,4 @@
-import { BudgetBreakdownResponse } from './types';
+import { BudgetBreakdownResponse, BudgetCategoryBreakdown } from './types';
 
 export interface CurrentOverrun {
   categoryId: string;
@@ -8,16 +8,25 @@ export interface CurrentOverrun {
 }
 
 /**
+ * Dépassement d'une ligne de la répartition : l'opposé d'un restant négatif, sinon 0 (centimes).
+ * Seul calcul du dépassement en cours, partagé par À traiter et le bloc Budgets.
+ */
+export function overrunAmount(item: BudgetCategoryBreakdown): number {
+  const remaining = parseInt(item.remaining, 10);
+  return remaining < 0 ? -remaining : 0;
+}
+
+/**
  * Dépassements de la période en cours : catégories de dépense et d'épargne dont le restant de la
  * répartition du budget est négatif (factures `pending` comprises). Même chiffre que le bloc Budgets.
  */
 export function currentOverruns(breakdown: BudgetBreakdownResponse | undefined): CurrentOverrun[] {
   if (!breakdown) return [];
   return [...breakdown.expenses, ...breakdown.savings]
-    .filter((item) => parseInt(item.remaining, 10) < 0)
+    .filter((item) => overrunAmount(item) > 0)
     .map((item) => ({
       categoryId: item.categoryId,
       name: item.name,
-      amount: String(-parseInt(item.remaining, 10)),
+      amount: String(overrunAmount(item)),
     }));
 }
