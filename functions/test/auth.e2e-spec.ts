@@ -33,6 +33,10 @@ describe('Health and authentication (e2e)', () => {
       ['get', '/00000000-0000-4000-8000-000000000101/recurring'],
       ['get', '/00000000-0000-4000-8000-000000000101/smart-rules'],
       ['get', '/00000000-0000-4000-8000-000000000101/reporting/evolution'],
+      [
+        'get',
+        '/00000000-0000-4000-8000-000000000101/periods/00000000-0000-4000-8000-000000000107/reporting/spending-pace',
+      ],
     ] as const;
 
     it.each(routes)('%s %s rejects a request without token', (method, url) =>

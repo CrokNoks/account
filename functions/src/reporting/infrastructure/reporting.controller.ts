@@ -61,6 +61,11 @@ import {
   CategoryOverrunsChartResponse,
 } from '../application/get-category-overruns-chart.use-case';
 import {
+  GetSpendingPaceUseCase,
+  SpendingPacePoint,
+  SpendingPaceResponse,
+} from '../application/get-spending-pace.use-case';
+import {
   IsArray,
   IsString,
   IsIn,
@@ -230,6 +235,23 @@ class PeriodStatsResponseDto implements PeriodStatsResponse {
   @ApiProperty() expectedIncome: string;
 }
 
+class SpendingPacePointDto implements SpendingPacePoint {
+  @ApiProperty() day: number;
+  @ApiProperty() date: string;
+  @ApiProperty() cumulative: string;
+  @ApiProperty({ type: String, nullable: true })
+  previousCumulative: string | null;
+}
+
+class SpendingPaceResponseDto implements SpendingPaceResponse {
+  @ApiProperty({ type: [SpendingPacePointDto] })
+  points: SpendingPacePointDto[];
+  @ApiProperty({ type: String, nullable: true })
+  previousPeriodId: string | null;
+  @ApiProperty({ type: String, nullable: true })
+  gap: string | null;
+}
+
 class EvolutionDataPointDto implements EvolutionDataPoint {
   @ApiProperty() periodId: string;
   @ApiProperty() startDate: string;
@@ -260,6 +282,7 @@ export class ReportingController {
     private readonly ignoreAnomalyUseCase: IgnoreAnomalyUseCase,
     private readonly getOverrunsByPeriodUseCase: GetOverrunsByPeriodUseCase,
     private readonly getCategoryOverrunsChartUseCase: GetCategoryOverrunsChartUseCase,
+    private readonly getSpendingPaceUseCase: GetSpendingPaceUseCase,
   ) {}
 
   @Get('reporting/overruns')
@@ -311,6 +334,18 @@ export class ReportingController {
     @Param('periodId') periodId: string,
   ): Promise<PeriodStatsResponseDto> {
     return this.getPeriodStatsUseCase.execute(accountId, periodId);
+  }
+
+  @Get('periods/:periodId/reporting/spending-pace')
+  @ApiOperation({
+    summary: 'Cumulative outflows per day, compared with the previous period',
+  })
+  @ApiResponse({ status: 200, type: SpendingPaceResponseDto })
+  async getSpendingPace(
+    @Param('accountId') accountId: string,
+    @Param('periodId') periodId: string,
+  ): Promise<SpendingPaceResponseDto> {
+    return this.getSpendingPaceUseCase.execute(accountId, periodId);
   }
 
   @Get('periods/:periodId/reporting/budget-breakdown')

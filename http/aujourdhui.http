@@ -1,0 +1,306 @@
+# Écran Aujourd'hui : composition du prévu (stats) et rythme de dépense (spending-pace) ; routes retirées.
+# Lancement : npx httpyac send --all http/aujourdhui.http --var port=8080 --var anon=<ANON_KEY de `supabase status`>
+# (la clé vient de la ligne de commande, jamais du fichier ; les utilisateurs sont jetables, créés par le fichier)
+# Les valeurs du rythme sont lues au 6e jour de novembre 2026 : stables tant que la période reste en cours ou fermée.
+@baseUrl = http://localhost:{{port}}
+@authUrl = http://127.0.0.1:54321/auth/v1
+
+### Utilisateur jetable
+# @name login
+POST {{authUrl}}/signup
+apikey: {{anon}}
+Content-Type: application/json
+
+{ "email": "aujourdhui-{{$timestamp}}@example.com", "password": "Password123!" }
+
+?? status == 200
+
+### Autre utilisateur connecté
+# @name other
+POST {{authUrl}}/signup
+apikey: {{anon}}
+Content-Type: application/json
+
+{ "email": "aujourdhui-autre-{{$timestamp}}@example.com", "password": "Password123!" }
+
+?? status == 200
+
+### Compte A : solde de départ 1000,00 €
+# @name account
+POST {{baseUrl}}/accounts
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "name": "aujourdhui-{{$timestamp}}", "initialBalance": "100000" }
+
+?? status == 201
+
+### Catégorie dépense
+# @name dep
+POST {{baseUrl}}/{{account.id}}/categories
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "name": "Courses", "color": "#112233", "type": "expense" }
+
+?? status == 201
+
+### Catégorie revenu
+# @name rev
+POST {{baseUrl}}/{{account.id}}/categories
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "name": "Salaire", "color": "#445566", "type": "income" }
+
+?? status == 201
+
+### Catégorie virement
+# @name vir
+POST {{baseUrl}}/{{account.id}}/categories
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "name": "Virement", "color": "#778899", "type": "transfer" }
+
+?? status == 201
+
+### Octobre 2026 (précédente)
+# @name oct
+POST {{baseUrl}}/{{account.id}}/periods
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "startDate": "2026-10-01", "endDate": "2026-10-31", "budgets": [] }
+
+?? status == 201
+
+### Novembre 2026 : budget dépense 300,00 € (stocké négatif), revenu 2000,00 €
+# @name nov
+POST {{baseUrl}}/{{account.id}}/periods
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "startDate": "2026-11-01", "endDate": "2026-11-30", "budgets": [
+  { "categoryId": "{{dep.id}}", "amountAllocated": "-30000" },
+  { "categoryId": "{{rev.id}}", "amountAllocated": "200000" }
+] }
+
+?? status == 201
+
+### Octobre : dépense -8,00 € le 5
+POST {{baseUrl}}/{{account.id}}/transactions
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "date": "2026-10-05", "description": "oct courses", "amount": "-800", "categoryId": "{{dep.id}}" }
+
+?? status == 201
+
+### Octobre : dépense -15,00 € le 20 (après le 6e jour : hors comparaison)
+POST {{baseUrl}}/{{account.id}}/transactions
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "date": "2026-10-20", "description": "oct courses 2", "amount": "-1500", "categoryId": "{{dep.id}}" }
+
+?? status == 201
+
+### Octobre : virement catégorisé -30,00 € (exclu du rythme)
+POST {{baseUrl}}/{{account.id}}/transactions
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "date": "2026-10-03", "description": "oct virement", "amount": "-3000", "categoryId": "{{vir.id}}" }
+
+?? status == 201
+
+### Novembre : salaire +2000,00 € rapproché (exclu du rythme)
+POST {{baseUrl}}/{{account.id}}/transactions
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "date": "2026-11-01", "description": "salaire", "amount": "200000", "categoryId": "{{rev.id}}", "reconciled": true }
+
+?? status == 201
+
+### Novembre : courses -100,00 € rapprochées le 2
+POST {{baseUrl}}/{{account.id}}/transactions
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "date": "2026-11-02", "description": "courses", "amount": "-10000", "categoryId": "{{dep.id}}", "reconciled": true }
+
+?? status == 201
+
+### Novembre : CB non pointée -50,00 € le 4
+POST {{baseUrl}}/{{account.id}}/transactions
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "date": "2026-11-04", "description": "cb", "amount": "-5000", "categoryId": "{{dep.id}}" }
+
+?? status == 201
+
+### Novembre : facture à venir -80,00 € (pending, exclue du rythme)
+POST {{baseUrl}}/{{account.id}}/transactions
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "date": "2026-11-05", "description": "facture", "amount": "-8000", "categoryId": "{{dep.id}}", "pending": true }
+
+?? status == 201
+
+### Novembre : sans catégorie -7,00 € le 4 (compté dans le rythme)
+POST {{baseUrl}}/{{account.id}}/transactions
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "date": "2026-11-04", "description": "import", "amount": "-700" }
+
+?? status == 201
+
+### Novembre : remboursement sans catégorie +9,00 € le 5 (exclu du rythme)
+POST {{baseUrl}}/{{account.id}}/transactions
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "date": "2026-11-05", "description": "remboursement", "amount": "900" }
+
+?? status == 201
+
+### CA2 : composition, les lignes signées somment au prévu
+# banque 94700 + 200000 - 10000 = 284700 ; CB -5000 - 700 + 900 = -4800 (3) ; factures -8000 ; budget restant -7000 ; revenus attendus 0
+# prévu = 94700 + 200000 - 30000 + 200 = 264900 = 284700 - 4800 - 8000 - 7000 + 0
+# @name stats
+GET {{baseUrl}}/{{account.id}}/periods/{{nov.id}}/reporting/stats
+Authorization: Bearer {{login.access_token}}
+
+?? status == 200
+?? body contains "realBankBalance":"284700"
+?? body contains "cardTotal":"-4800"
+?? body contains "cardCount":3
+?? body contains "billsTotal":"-8000"
+?? body contains "budgetRemaining":"-7000"
+?? body contains "expectedIncome":"0"
+?? body contains "forecastBalance":"264900"
+
+### CA4 : rythme, 6e jour (au 6 novembre) : 100,00 + 50,00 + 7,00 = 157,00 € contre 8,00 € le mois précédent
+# @name pace
+GET {{baseUrl}}/{{account.id}}/periods/{{nov.id}}/reporting/spending-pace
+Authorization: Bearer {{login.access_token}}
+
+?? status == 200
+?? body contains "previousPeriodId":"{{oct.id}}"
+?? body contains {"day":1,"date":"2026-11-01","cumulative":"0","previousCumulative":"0"}
+?? body contains {"day":2,"date":"2026-11-02","cumulative":"10000","previousCumulative":"0"}
+?? body contains {"day":4,"date":"2026-11-04","cumulative":"15700","previousCumulative":"0"}
+?? body contains {"day":5,"date":"2026-11-05","cumulative":"15700","previousCumulative":"800"}
+?? body contains {"day":6,"date":"2026-11-06","cumulative":"15700","previousCumulative":"800"}
+
+### CA4 : sans période précédente, courbe seule
+GET {{baseUrl}}/{{account.id}}/periods/{{oct.id}}/reporting/spending-pace
+Authorization: Bearer {{login.access_token}}
+
+?? status == 200
+?? body contains "previousPeriodId":null
+?? body contains "gap":null
+?? body contains {"day":5,"date":"2026-10-05","cumulative":"800","previousCumulative":null}
+?? body contains {"day":31,"date":"2026-10-31","cumulative":"2300","previousCumulative":null}
+
+### Compte B : revenus attendus (barre impossible)
+# @name accountB
+POST {{baseUrl}}/accounts
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "name": "aujourdhui-b-{{$timestamp}}", "initialBalance": "0" }
+
+?? status == 201
+
+### Compte B : catégorie revenu
+# @name revB
+POST {{baseUrl}}/{{accountB.id}}/categories
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "name": "Salaire", "color": "#445566", "type": "income" }
+
+?? status == 201
+
+### Compte B : novembre, revenu prévu 2500,00 €, aucune transaction
+# @name novB
+POST {{baseUrl}}/{{accountB.id}}/periods
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "startDate": "2026-11-01", "endDate": "2026-11-30", "budgets": [ { "categoryId": "{{revB.id}}", "amountAllocated": "250000" } ] }
+
+?? status == 201
+
+### CA2/CA3 : revenus attendus > 0, la somme reste le prévu
+GET {{baseUrl}}/{{accountB.id}}/periods/{{novB.id}}/reporting/stats
+Authorization: Bearer {{login.access_token}}
+
+?? status == 200
+?? body contains "expectedIncome":"250000"
+?? body contains "cardTotal":"0"
+?? body contains "billsTotal":"0"
+?? body contains "forecastBalance":"250000"
+
+### Rythme d'une période vide : zéros
+GET {{baseUrl}}/{{accountB.id}}/periods/{{novB.id}}/reporting/spending-pace
+Authorization: Bearer {{login.access_token}}
+
+?? status == 200
+?? body contains {"day":6,"date":"2026-11-06","cumulative":"0","previousCumulative":null}
+?? body contains "previousPeriodId":null
+
+### Accès : anonyme, sans jeton
+GET {{baseUrl}}/{{account.id}}/periods/{{nov.id}}/reporting/spending-pace
+
+?? status == 401
+
+### Accès : autre utilisateur connecté, compte qui n'est pas le sien
+GET {{baseUrl}}/{{account.id}}/periods/{{nov.id}}/reporting/spending-pace
+Authorization: Bearer {{other.access_token}}
+
+?? status >= 403
+?? status <= 404
+
+### Accès : période d'un autre compte (compte B, période de A)
+GET {{baseUrl}}/{{accountB.id}}/periods/{{nov.id}}/reporting/spending-pace
+Authorization: Bearer {{login.access_token}}
+
+?? status == 404
+
+### Accès : stats d'un autre utilisateur
+GET {{baseUrl}}/{{account.id}}/periods/{{nov.id}}/reporting/stats
+Authorization: Bearer {{other.access_token}}
+
+?? status >= 403
+?? status <= 404
+
+### CA6 : routes retirées
+GET {{baseUrl}}/{{account.id}}/reporting/net-worth
+Authorization: Bearer {{login.access_token}}
+
+?? status == 404
+
+### CA6 : tags-summary retirée
+GET {{baseUrl}}/{{account.id}}/reporting/tags-summary?periodId={{nov.id}}
+Authorization: Bearer {{login.access_token}}
+
+?? status == 404
+
+### CA6 : preferences retirée
+GET {{baseUrl}}/preferences
+Authorization: Bearer {{login.access_token}}
+
+?? status == 404
+
+### CA6 : la page Tags marche toujours
+GET {{baseUrl}}/{{account.id}}/tags
+Authorization: Bearer {{login.access_token}}
+
+?? status == 200

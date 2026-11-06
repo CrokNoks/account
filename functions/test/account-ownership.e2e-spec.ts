@@ -318,6 +318,7 @@ describe('Account ownership of :id routes (e2e)', () => {
   describe('reporting of a period of another account', () => {
     it.each([
       'periods/00000000-0000-4000-8000-000000000107/reporting/stats',
+      'periods/00000000-0000-4000-8000-000000000107/reporting/spending-pace',
       'periods/00000000-0000-4000-8000-000000000107/reporting/budget-breakdown',
       'periods/00000000-0000-4000-8000-000000000107/reporting/comparison?compareWith=00000000-0000-4000-8000-000000000107',
       'reporting/anomalies?periodId=00000000-0000-4000-8000-000000000107',

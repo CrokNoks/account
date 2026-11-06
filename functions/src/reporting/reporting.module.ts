@@ -17,6 +17,7 @@ import { GetAnomaliesUseCase } from './application/get-anomalies.use-case';
 import { IgnoreAnomalyUseCase } from './application/ignore-anomaly.use-case';
 import { GetOverrunsByPeriodUseCase } from './application/get-overruns-by-period.use-case';
 import { GetCategoryOverrunsChartUseCase } from './application/get-category-overruns-chart.use-case';
+import { GetSpendingPaceUseCase } from './application/get-spending-pace.use-case';
 import { ReportingController } from './infrastructure/reporting.controller';
 
 @Module({
@@ -42,6 +43,7 @@ import { ReportingController } from './infrastructure/reporting.controller';
     IgnoreAnomalyUseCase,
     GetOverrunsByPeriodUseCase,
     GetCategoryOverrunsChartUseCase,
+    GetSpendingPaceUseCase,
   ],
 })
 export class ReportingModule {}
