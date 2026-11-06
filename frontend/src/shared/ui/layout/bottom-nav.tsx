@@ -4,19 +4,15 @@ import { Fragment } from 'react';
 import { Link } from '@/i18n/routing';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { 
-  LayoutDashboard, 
-  TrendingUp,
-  Receipt,
-  Plus
-} from 'lucide-react';
+import { LayoutDashboard, TrendingUp, Receipt, Plus } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useUiStore } from '@/shared/model/use-ui-store';
+import { activeEntryHref } from './nav-config';
 
 const navItems = [
-  { icon: LayoutDashboard, labelKey: 'dashboard', href: '/' },
-  { icon: Receipt, labelKey: 'transactions', href: '/transactions' },
-  { icon: TrendingUp, labelKey: 'evolution', href: '/evolution' },
+  { icon: LayoutDashboard, labelKey: 'today', href: '/' },
+  { icon: Receipt, labelKey: 'operations', href: '/transactions' },
+  { icon: TrendingUp, labelKey: 'analysis', href: '/evolution' },
 ];
 
 export function BottomNav() {
@@ -41,8 +37,7 @@ export function BottomNav() {
     <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-50 flex items-center justify-around min-h-16 bg-background border-t border-border px-2 pb-[env(safe-area-inset-bottom)]">
       {navItems.map((item, index) => {
         const Icon = item.icon;
-        const isActive = pathname.endsWith(item.href === '/' ? '/fr' : item.href) || 
-                         pathname.endsWith(item.href === '/' ? '/en' : item.href);
+        const isActive = activeEntryHref(pathname) === item.href;
 
         return (
           <Fragment key={item.href}>

@@ -65,6 +65,13 @@ describe('cibles des visites guidées', () => {
     });
   }
 
+  it('la visite « compte » vise Réglages puis Budgets, plus catégories ni récurrences', () => {
+    const targets = ACCOUNT_STEPS(t).map((s) => s.target);
+    expect(targets.slice(-2)).toEqual(['[data-tour="nav-settings"]', '[data-tour="nav-budgets"]']);
+    expect(targets).not.toContain('[data-tour="nav-categories"]');
+    expect(targets).not.toContain('[data-tour="nav-recurring"]');
+  });
+
   it("la visite du tableau de bord n'inclut pas l'étape évolution (page Évolution seulement)", () => {
     const targets = DASHBOARD_STEPS(((k: string) => k) as unknown as Parameters<typeof DASHBOARD_STEPS>[0]).map((s) => s.target);
     expect(targets).not.toContain('[data-tour="evolution"]');

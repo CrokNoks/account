@@ -2,19 +2,7 @@
 
 import * as React from 'react';
 import { useRouter } from 'next/navigation';
-import {
-  LayoutDashboard,
-  Receipt,
-  TrendingUp,
-  GitBranch,
-  Tags,
-  Calendar,
-  Plus,
-  Search,
-  User,
-  Calculator,
-  AlertTriangle,
-} from 'lucide-react';
+import { Plus, Search } from 'lucide-react';
 import {
   CommandDialog,
   CommandEmpty,
@@ -26,6 +14,7 @@ import {
 } from '@/components/ui/command';
 import { useUiStore } from '@/shared/model/use-ui-store';
 import { useTranslations } from 'next-intl';
+import { ATTACHED_PAGES, NAV_ENTRIES, SETTINGS_PAGES } from './nav-config';
 
 export function CommandMenu() {
   const [open, setOpen] = React.useState(false);
@@ -58,38 +47,15 @@ export function CommandMenu() {
       <CommandList>
         <CommandEmpty>{tn('command.empty')}</CommandEmpty>
         <CommandGroup heading={tn('command.group_navigation')}>
-          <CommandItem onSelect={() => runCommand(() => router.push('/'))}>
-            <LayoutDashboard className="mr-2 h-4 w-4" />
-            <span>{tn('dashboard')}</span>
-          </CommandItem>
-          <CommandItem onSelect={() => runCommand(() => router.push('/transactions'))}>
-            <Receipt className="mr-2 h-4 w-4" />
-            <span>{tn('transactions')}</span>
-          </CommandItem>
-          <CommandItem onSelect={() => runCommand(() => router.push('/budgets'))}>
-            <Calculator className="mr-2 h-4 w-4" />
-            <span>{tn('budgets')}</span>
-          </CommandItem>
-          <CommandItem onSelect={() => runCommand(() => router.push('/evolution'))}>
-            <TrendingUp className="mr-2 h-4 w-4" />
-            <span>{tn('evolution')}</span>
-          </CommandItem>
-          <CommandItem onSelect={() => runCommand(() => router.push('/depassements'))}>
-            <AlertTriangle className="mr-2 h-4 w-4" />
-            <span>{tn('overruns')}</span>
-          </CommandItem>
-          <CommandItem onSelect={() => runCommand(() => router.push('/calendar'))}>
-            <Calendar className="mr-2 h-4 w-4" />
-            <span>{tn('calendar')}</span>
-          </CommandItem>
-          <CommandItem onSelect={() => runCommand(() => router.push('/categories'))}>
-            <GitBranch className="mr-2 h-4 w-4" />
-            <span>{tn('categories')}</span>
-          </CommandItem>
-          <CommandItem onSelect={() => runCommand(() => router.push('/tags'))}>
-            <Tags className="mr-2 h-4 w-4" />
-            <span>{tn('tags')}</span>
-          </CommandItem>
+          {[...NAV_ENTRIES, ...ATTACHED_PAGES].map((page) => {
+            const Icon = page.icon;
+            return (
+              <CommandItem key={page.href} onSelect={() => runCommand(() => router.push(page.href))}>
+                <Icon className="mr-2 h-4 w-4" />
+                <span>{tn(page.labelKey)}</span>
+              </CommandItem>
+            );
+          })}
         </CommandGroup>
         <CommandSeparator />
         <CommandGroup heading={tn('command.group_actions')}>
@@ -104,10 +70,12 @@ export function CommandMenu() {
         </CommandGroup>
         <CommandSeparator />
         <CommandGroup heading={tn('command.group_settings')}>
-          <CommandItem onSelect={() => runCommand(() => router.push('/accounts'))}>
-            <User className="mr-2 h-4 w-4" />
-            <span>{tn('command.manage_accounts')}</span>
-          </CommandItem>
+          {SETTINGS_PAGES.map(({ href, labelKey, icon: Icon }) => (
+            <CommandItem key={href} onSelect={() => runCommand(() => router.push(href))}>
+              <Icon className="mr-2 h-4 w-4" />
+              <span>{tn(labelKey)}</span>
+            </CommandItem>
+          ))}
         </CommandGroup>
       </CommandList>
     </CommandDialog>

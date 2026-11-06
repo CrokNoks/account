@@ -1,6 +1,7 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
+import { SectionTabs } from '@/shared/ui/layout/section-tabs';
 import { FinancialCalendar } from "@/features/reporting/ui/financial-calendar";
 
 export default function CalendarPage() {
@@ -8,6 +9,7 @@ export default function CalendarPage() {
 
   return (
     <div className="flex flex-col gap-4 lg:gap-8">
+      <SectionTabs entry="/calendar" />
       <div className="flex flex-col gap-2 max-lg:hidden">
         <h2 className="text-3xl font-bold tracking-tight">{t('page_title')}</h2>
         <p className="text-muted-foreground">

@@ -1,6 +1,7 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
+import { SectionTabs } from '@/shared/ui/layout/section-tabs';
 import { PeriodComparison } from "@/features/reporting/ui/period-comparison";
 import { useAccountStore } from "@/features/accounts/model/use-account-store";
 
@@ -10,6 +11,7 @@ export default function FluxPage() {
 
   return (
     <div className="flex flex-col gap-4 lg:gap-12">
+      <SectionTabs entry="/evolution" />
       <div className="flex flex-col gap-2 max-lg:hidden">
         <h2 className="text-3xl font-bold tracking-tight">{t('title')}</h2>
         <p className="text-muted-foreground">

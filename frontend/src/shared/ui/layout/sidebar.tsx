@@ -4,41 +4,13 @@ import {Link} from '@/i18n/routing';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { useEffect } from 'react';
-import { 
-  LayoutDashboard, 
-  TrendingUp,
-  GitBranch,
-  Calendar,
-  CreditCard, 
-  Receipt, 
-  PieChart, 
-  Settings,
-  Tag,
-  Repeat,
-  LogOut,
-  Sparkles,
-  AlertTriangle
-} from 'lucide-react';
+import { LogOut } from 'lucide-react';
 import { createClient } from '@/shared/lib/supabase/supabase-browser';
 import { useRouter } from '@/i18n/routing';
 import {useTranslations} from 'next-intl';
+import { NAV_ENTRIES, activeEntryHref } from './nav-config';
 
-const menuItems = [
-  { icon: LayoutDashboard, labelKey: 'dashboard', href: '/', shortcut: 'F2' },
-  { icon: Calendar, labelKey: 'calendar', href: '/calendar', shortcut: 'F3' },
-  { icon: TrendingUp, labelKey: 'evolution', href: '/evolution', shortcut: 'F4' },
-  { icon: AlertTriangle, labelKey: 'overruns', href: '/depassements' },
-  { icon: GitBranch, labelKey: 'flux', href: '/flux', shortcut: 'F5' },
-  { icon: Calendar, labelKey: 'prevision', href: '/cashflow', shortcut: 'F6' },
-  { isSeparator: true },
-  { icon: CreditCard, labelKey: 'accounts', href: '/accounts' },
-  { icon: Settings, labelKey: 'categories', href: '/categories' },
-  { icon: Tag, labelKey: 'tags', href: '/tags' },
-  { icon: Sparkles, labelKey: 'smart_rules', href: '/smart-rules' },
-  { icon: Repeat, labelKey: 'recurring', href: '/recurring' },
-  { icon: PieChart, labelKey: 'budgets', href: '/budgets' },
-  { icon: Receipt, labelKey: 'transactions', href: '/transactions' },
-];
+const TOUR_TARGETS: Record<string, string> = { budgets: 'nav-budgets', settings: 'nav-settings' };
 
 export function Sidebar() {
   const pathname = usePathname();
@@ -62,8 +34,8 @@ export function Sidebar() {
 
       e.preventDefault();
       
-      const target = menuItems.find(item => !('isSeparator' in item) && item.shortcut === e.key);
-      if (target && 'href' in target) {
+      const target = NAV_ENTRIES.find(item => 'shortcut' in item && item.shortcut === e.key);
+      if (target) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         router.push(target.href as any);
       }
@@ -86,22 +58,16 @@ export function Sidebar() {
       </div>
       
       <nav className="flex-1 px-4 py-4 space-y-2 flex flex-col overflow-y-auto custom-scrollbar">
-        {menuItems.map((item, index) => {
-          if ('isSeparator' in item) {
-            return <div key={`sep-${index}`} className="my-4 border-t border-muted" />;
-          }
-
+        {NAV_ENTRIES.map((item) => {
           const Icon = item.icon;
-          // Note: with next-intl, pathname includes locale
-          const isActive = pathname.endsWith(item.href === '/' ? '/fr' : item.href) || 
-                           pathname.endsWith(item.href === '/' ? '/en' : item.href);
-          
+          const isActive = activeEntryHref(pathname) === item.href;
+
           return (
             <Link
               key={item.href}
               // eslint-disable-next-line @typescript-eslint/no-explicit-any
               href={item.href as any}
-              data-tour={item.labelKey === 'categories' ? 'nav-categories' : item.labelKey === 'recurring' ? 'nav-recurring' : item.labelKey === 'budgets' ? 'nav-budgets' : undefined}
+              data-tour={TOUR_TARGETS[item.labelKey]}
               className={cn(
                 "group flex items-center gap-3 px-3 py-2 rounded-lg transition-colors",
                 isActive 

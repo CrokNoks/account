@@ -1,5 +1,10 @@
 {
   "Navigation": {
+    "today": "Aujourd'hui",
+    "operations": "Opérations",
+    "analysis": "Analyses",
+    "due_dates": "Échéances",
+    "settings": "Réglages",
     "dashboard": "Tableau de bord",
     "calendar": "Calendrier",
     "evolution": "Évolution",
@@ -23,10 +28,17 @@
       "group_actions": "Actions",
       "group_settings": "Paramètres",
       "import_csv": "Importer un CSV",
-      "manage_accounts": "Gérer les comptes",
       "title": "Palette de commandes",
       "description": "Recherchez une commande à exécuter..."
     }
+  },
+  "Settings": {
+    "title": "Réglages",
+    "accounts_desc": "Vos comptes bancaires et leurs soldes.",
+    "categories_desc": "Les catégories de dépenses et de revenus.",
+    "tags_desc": "Des étiquettes libres pour regrouper vos transactions.",
+    "smart_rules_desc": "Catégoriser automatiquement vos transactions.",
+    "recurring_desc": "Vos virements et prélèvements automatiques."
   },
   "Auth": {
     "login_title": "Connexion",
@@ -519,8 +531,7 @@
       "name": "Donnez un nom clair à votre compte (ex: Courant, Livret A).",
       "create_btn": "Cliquez ici pour créer un nouveau compte.",
       "balance": "Saisissez le solde actuel de votre compte en banque pour démarrer sur de bonnes bases.",
-      "categories": "Configurez vos catégories de dépenses et revenus pour organiser vos transactions.",
-      "recurring": "Programmez vos virements et prélèvements automatiques ici.",
+      "settings": "Retrouvez ici vos catégories, tags, règles et récurrences, à configurer une fois pour toutes.",
       "periods": "Enfin, créez vos périodes budgétaires (mois par mois) pour suivre vos objectifs."
     },
     "transactions": {

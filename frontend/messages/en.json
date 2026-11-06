@@ -1,5 +1,10 @@
 {
   "Navigation": {
+    "today": "Today",
+    "operations": "Transactions",
+    "analysis": "Analysis",
+    "due_dates": "Due dates",
+    "settings": "Settings",
     "dashboard": "Dashboard",
     "calendar": "Calendar",
     "evolution": "Evolution",
@@ -23,10 +28,17 @@
       "group_actions": "Actions",
       "group_settings": "Settings",
       "import_csv": "Import CSV",
-      "manage_accounts": "Manage accounts",
       "title": "Command palette",
       "description": "Search for a command to run..."
     }
+  },
+  "Settings": {
+    "title": "Settings",
+    "accounts_desc": "Your bank accounts and their balances.",
+    "categories_desc": "Expense and income categories.",
+    "tags_desc": "Free labels to group your transactions.",
+    "smart_rules_desc": "Categorize your transactions automatically.",
+    "recurring_desc": "Your automatic transfers and withdrawals."
   },
   "Auth": {
     "login_title": "Login",
@@ -519,8 +531,7 @@
       "name": "Give your account a clear name (e.g., Checking, Savings).",
       "create_btn": "Click here to create a new account.",
       "balance": "Enter your current bank balance to start on the right foot.",
-      "categories": "Set up your expense and income categories to organize your transactions.",
-      "recurring": "Schedule your automatic transfers and withdrawals here.",
+      "settings": "Find your categories, tags, rules and recurring items here, to set up once and for all.",
       "periods": "Finally, create your budget periods (month by month) to track your goals."
     },
     "transactions": {

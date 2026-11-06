@@ -2,7 +2,7 @@ import type { TourName } from '@/shared/model/use-ui-store';
 
 // Étapes qui attendent l'ouverture d'un panneau (cible absente tant qu'il n'est pas rendu).
 const WAITING_STEPS: Partial<Record<TourName, number[]>> = {
-  account: [2, 4], // formulaire de création de compte
+  account: [2], // formulaire de création de compte
   transactions: [0], // tiroir de création de transaction
 };
 

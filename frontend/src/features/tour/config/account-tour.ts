@@ -20,13 +20,8 @@ export const ACCOUNT_STEPS = (t: any): Step[] => [
     content: t('account.balance'),
   },
   {
-    target: '[data-tour="nav-categories"]',
-    content: t('account.categories'),
-    placement: 'right',
-  },
-  {
-    target: '[data-tour="nav-recurring"]',
-    content: t('account.recurring'),
+    target: '[data-tour="nav-settings"]',
+    content: t('account.settings'),
     placement: 'right',
   },
   {
