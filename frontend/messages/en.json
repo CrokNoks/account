@@ -62,6 +62,8 @@
     "upcoming_title": "Upcoming",
     "todo_title": "To handle",
     "todo_all_good": "All up to date",
+    "todo_loading": "Loading…",
+    "todo_error": "Could not load everything to handle. Please try again.",
     "todo_card": "{count} card payments to reconcile",
     "todo_overrun": "{name} is over budget by {amount}",
     "budgets_title": "Budgets",

@@ -8,6 +8,7 @@ import { ToHandle } from './to-handle';
 const state = vi.hoisted(() => ({
   stats: { cardCount: 0, cardTotal: '0' } as { cardCount: number; cardTotal: string },
   anomalies: [] as unknown[],
+  status: {} as { target?: string; loading?: boolean; error?: boolean },
   breakdown: { expenses: [], income: [], savings: [], transfers: [] } as unknown,
 }));
 
@@ -15,14 +16,14 @@ vi.mock('@/features/accounts/model/use-account-store', () => ({
   useAccountStore: () => ({ activeAccountId: 'a1', activePeriodId: 'p1' }),
 }));
 vi.mock('../api/use-reporting-stats', () => ({
-  useReportingStats: () => ({ isLoading: false, data: state.stats }),
+  useReportingStats: () => state.status.target === 'stats' ? { isLoading: !!state.status.loading, isError: !!state.status.error, data: undefined } : { isLoading: false, isError: false, data: state.stats },
 }));
 vi.mock('../api/use-anomalies', () => ({
-  useAnomalies: () => ({ isLoading: false, data: state.anomalies }),
+  useAnomalies: () => state.status.target === 'anomalies' ? { isLoading: !!state.status.loading, isError: !!state.status.error, data: undefined } : { isLoading: false, isError: false, data: state.anomalies },
 }));
 vi.mock('../api/use-ignore-anomaly', () => ({ useIgnoreAnomaly: () => ({ mutate: vi.fn() }) }));
 vi.mock('../api/use-budget-breakdown', () => ({
-  useBudgetBreakdown: () => ({ isLoading: false, data: state.breakdown }),
+  useBudgetBreakdown: () => state.status.target === 'breakdown' ? { isLoading: !!state.status.loading, isError: !!state.status.error, data: undefined } : { isLoading: false, isError: false, data: state.breakdown },
 }));
 vi.mock('@/i18n/routing', () => ({
   Link: ({ href, children, ...rest }: { href: string; children: React.ReactNode }) => (
@@ -43,6 +44,7 @@ describe('Bloc À traiter', () => {
     state.stats = { cardCount: 0, cardTotal: '0' };
     state.anomalies = [];
     state.breakdown = { expenses: [], income: [], savings: [], transfers: [] };
+    state.status = {};
   });
 
   it('dit « tout est à jour » sans anomalie, CB à pointer ni dépassement', () => {
@@ -83,6 +85,26 @@ describe('Bloc À traiter', () => {
     expect(screen.getByRole('link', { name: 'Doublon' }).getAttribute('href')).toBe('/transactions');
     expect(screen.queryByText('Tout est à jour')).toBeNull();
   });
+
+  it.each(['stats', 'anomalies', 'breakdown'])(
+    'n\'affiche pas « Tout est à jour » pendant le chargement de %s',
+    (target) => {
+      state.status = { target, loading: true };
+      renderBlock();
+      expect(screen.queryByText('Tout est à jour')).toBeNull();
+      expect(screen.getByText('Chargement…')).toBeTruthy();
+    },
+  );
+
+  it.each(['stats', 'anomalies', 'breakdown'])(
+    'montre une erreur visible, sans « Tout est à jour », si %s échoue',
+    (target) => {
+      state.status = { target, error: true };
+      renderBlock();
+      expect(screen.queryByText('Tout est à jour')).toBeNull();
+      expect(screen.getByRole('alert').textContent).toContain('Impossible de charger');
+    },
+  );
 
   it('est traduit en anglais', () => {
     renderBlock('en');

@@ -62,6 +62,8 @@
     "upcoming_title": "À venir",
     "todo_title": "À traiter",
     "todo_all_good": "Tout est à jour",
+    "todo_loading": "Chargement…",
+    "todo_error": "Impossible de charger tous les éléments à traiter. Réessayez.",
     "todo_card": "{count} CB à pointer",
     "todo_overrun": "{name} dépasse son budget de {amount}",
     "budgets_title": "Budgets",

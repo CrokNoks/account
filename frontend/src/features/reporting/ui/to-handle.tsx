@@ -1,6 +1,6 @@
 'use client';
 
-import { CheckCircle2, CreditCard, ListChecks, TrendingUp } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, CreditCard, ListChecks, TrendingUp } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Link } from '@/i18n/routing';
@@ -22,16 +22,19 @@ const rowClass =
 export function ToHandle() {
   const t = useTranslations('Dashboard');
   const { activeAccountId, activePeriodId } = useAccountStore();
-  const { data: anomalies } = useAnomalies(activeAccountId, activePeriodId);
-  const { data: breakdown } = useBudgetBreakdown(activeAccountId, activePeriodId);
-  const { data: stats } = useReportingStats(activeAccountId, activePeriodId);
+  const { data: anomalies, isLoading: loadingAnomalies, isError: errorAnomalies } = useAnomalies(activeAccountId, activePeriodId);
+  const { data: breakdown, isLoading: loadingBreakdown, isError: errorBreakdown } = useBudgetBreakdown(activeAccountId, activePeriodId);
+  const { data: stats, isLoading: loadingStats, isError: errorStats } = useReportingStats(activeAccountId, activePeriodId);
+  const isLoading = loadingAnomalies || loadingBreakdown || loadingStats;
+  const isError = errorAnomalies || errorBreakdown || errorStats;
 
   // Nombre et total des CB à pointer : fournis par les stats (mêmes données que la composition du prévu).
   const cardCount = stats?.cardCount ?? 0;
   const cardTotal = stats?.cardTotal ?? '0';
   const overruns = currentOverruns(breakdown);
   const hasAnomalies = (anomalies?.length ?? 0) > 0;
-  const allGood = !hasAnomalies && cardCount === 0 && overruns.length === 0;
+  // « Tout est à jour » seulement quand les trois sources ont répondu sans erreur.
+  const allGood = !isLoading && !isError && !hasAnomalies && cardCount === 0 && overruns.length === 0;
 
   return (
     <Card className="border-2 shadow-sm h-full overflow-hidden flex flex-col">
@@ -42,6 +45,15 @@ export function ToHandle() {
         </CardTitle>
       </CardHeader>
       <CardContent className="pt-2 flex-1 min-h-0 overflow-y-auto space-y-3">
+        {isLoading && !isError && (
+          <p className="text-sm text-muted-foreground">{t('todo_loading')}</p>
+        )}
+        {isError && (
+          <div role="alert" className="flex items-center gap-2 text-sm font-medium text-red-600 dark:text-red-400">
+            <AlertTriangle className="w-5 h-5 shrink-0" />
+            {t('todo_error')}
+          </div>
+        )}
         {allGood && (
           <div className="flex items-center gap-2 text-sm font-medium text-emerald-700 dark:text-emerald-400">
             <CheckCircle2 className="w-5 h-5" />
