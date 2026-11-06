@@ -193,7 +193,7 @@
         "total_legend": "Barres : total des dépenses et de l'épargne de chaque période fermée, factures en attente comprises.",
         "total_series": "Total dépensé",
         "category_title": "Réel et budget d'une catégorie",
-        "category_legend": "Barre pleine : réel de la catégorie ; barre claire : budget. Factures en attente exclues ; « Dépassement » marque une période où le réel dépasse le budget (même règle que l'onglet Dépassements).",
+        "category_legend": "Barre bleue : réel de la catégorie ; barre grise : budget. Factures en attente exclues ; « Dépassement » marque une période où le réel dépasse le budget (même règle que l'onglet Dépassements).",
         "choose_category": "Choisir une catégorie",
         "pick_category": "Choisissez une catégorie de dépense ou d'épargne pour afficher son réel face à son budget.",
         "category_select": "Catégorie",

@@ -2,8 +2,8 @@ import { cn } from '@/lib/utils';
 
 export interface LegendItem {
   label: string;
-  /** Forme du repère : barre pleine, barre claire ou courbe (la forme porte le sens, pas la couleur seule). */
-  kind: 'bar' | 'bar-light' | 'line';
+  /** Forme du repère : barre pleine, barre de budget ou courbe (la forme porte le sens, pas la couleur seule). */
+  kind: 'bar' | 'bar-budget' | 'line';
 }
 
 /** Légende d'un graphique : repères et phrase qui dit ce que représentent barres, courbes et marques. */
@@ -19,7 +19,7 @@ export function ChartLegend({ items, note }: { items: LegendItem[]; note: string
                 'inline-block',
                 item.kind === 'line' ? 'h-0.5 w-4 bg-primary' : 'h-3 w-3 rounded-sm',
                 item.kind === 'bar' && 'bg-primary',
-                item.kind === 'bar-light' && 'bg-primary/40 border border-primary',
+                item.kind === 'bar-budget' && 'bg-muted-foreground',
               )}
             />
             {item.label}

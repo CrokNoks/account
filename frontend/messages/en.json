@@ -193,7 +193,7 @@
         "total_legend": "Bars: total expenses and savings of each closed period, pending bills included.",
         "total_series": "Total spent",
         "category_title": "Actual and budget of a category",
-        "category_legend": "Solid bar: actual of the category; light bar: budget. Pending bills excluded; \"Overrun\" marks a period where the actual exceeds the budget (same rule as the Overruns tab).",
+        "category_legend": "Blue bar: actual of the category; grey bar: budget. Pending bills excluded; \"Overrun\" marks a period where the actual exceeds the budget (same rule as the Overruns tab).",
         "choose_category": "Choose a category",
         "pick_category": "Choose an expense or savings category to show its actual against its budget.",
         "category_select": "Category",

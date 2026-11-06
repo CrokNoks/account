@@ -124,7 +124,7 @@ export function EvolutionTab() {
                 <Bar dataKey="real" name={te('real')} fill={CHART.strong} radius={[4, 4, 0, 0]}>
                   <LabelList dataKey="real" position="top" formatter={eur} fill={CHART.text} fontSize={12} />
                 </Bar>
-                <Bar dataKey="budget" name={te('budget')} fill={CHART.light} radius={[4, 4, 0, 0]} />
+                <Bar dataKey="budget" name={te('budget')} fill={CHART.budget} radius={[4, 4, 0, 0]} />
               </BarChart>
             </Scrollable>
             <Table data-testid="category-evolution-table">
@@ -152,7 +152,7 @@ export function EvolutionTab() {
             <ChartLegend
               items={[
                 { label: te('real'), kind: 'bar' },
-                { label: te('budget'), kind: 'bar-light' },
+                { label: te('budget'), kind: 'bar-budget' },
               ]}
               note={te('category_legend')}
             />

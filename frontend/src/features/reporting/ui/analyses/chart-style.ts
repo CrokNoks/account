@@ -1,7 +1,8 @@
 /** Jetons de `globals.css` pour les graphiques (clair et sombre) : aucune couleur en dur. */
 export const CHART = {
   strong: 'var(--chart-1)',
-  light: 'var(--chart-3)',
+  /** Budget : le gris de texte secondaire (≥ 3:1 sur la surface en clair et en sombre), distinct du bleu du réel. */
+  budget: 'var(--muted-foreground)',
   grid: 'var(--border)',
   text: 'var(--muted-foreground)',
   alert: 'var(--destructive)',
