@@ -24,6 +24,7 @@ export interface FindTransactionsOptions {
   minAmount?: string;
   maxAmount?: string;
   reconciled?: boolean;
+  pending?: boolean;
   startDate?: string;
   endDate?: string;
   page?: number;

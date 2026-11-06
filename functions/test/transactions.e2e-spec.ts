@@ -236,6 +236,38 @@ describe('Transactions routes (e2e)', () => {
       expect(mocks.transactions.findAllByAccount).not.toHaveBeenCalled();
     });
 
+    it.each([
+      ['reconciled=false&pending=false', { reconciled: false, pending: false }],
+      ['reconciled=false&pending=true', { reconciled: false, pending: true }],
+      ['pending=true', { pending: true }],
+    ])('passes %s to the repository as booleans', async (_n, flags) => {
+      mocks.transactions.findAllByAccount.mockResolvedValue({
+        data: [],
+        meta: { total: 0, page: 1, limit: 1000, totalPages: 0 },
+      });
+
+      await http()
+        .get('/00000000-0000-4000-8000-000000000101/transactions')
+        .query(flags)
+        .set(auth())
+        .expect(200);
+
+      expect(mocks.transactions.findAllByAccount).toHaveBeenCalledWith(
+        '00000000-0000-4000-8000-000000000101',
+        expect.objectContaining(flags),
+      );
+    });
+
+    it('answers 400 without querying for pending=maybe', async () => {
+      await http()
+        .get('/00000000-0000-4000-8000-000000000101/transactions')
+        .query({ pending: 'maybe' })
+        .set(auth())
+        .expect(400);
+
+      expect(mocks.transactions.findAllByAccount).not.toHaveBeenCalled();
+    });
+
     it('answers 404 for an unknown period', async () => {
       mocks.periods.findById.mockResolvedValue(null);
 

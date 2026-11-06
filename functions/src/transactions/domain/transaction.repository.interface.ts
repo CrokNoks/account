@@ -10,6 +10,7 @@ export interface FindAllTransactionsOptions {
   minAmount?: bigint;
   maxAmount?: bigint;
   reconciled?: boolean;
+  pending?: boolean;
   page?: number;
   limit?: number;
 }

@@ -338,6 +338,15 @@ export class FindTransactionsQueryDto {
   reconciled?: boolean;
 
   @IsOptional()
+  @Transform(({ value }): boolean | string | undefined => {
+    if (value === 'true') return true;
+    if (value === 'false') return false;
+    return value as string | undefined;
+  })
+  @IsBoolean()
+  pending?: boolean;
+
+  @IsOptional()
   @IsCalendarDate()
   startDate?: string;
 
@@ -446,6 +455,7 @@ export class TransactionsController {
         minAmount: query.minAmount ? parseCents(query.minAmount) : undefined,
         maxAmount: query.maxAmount ? parseCents(query.maxAmount) : undefined,
         reconciled: query.reconciled,
+        pending: query.pending,
         page: query.page,
         limit: query.limit,
       },

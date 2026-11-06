@@ -363,3 +363,81 @@ describe('SupabaseTransactionRepository ids filter', () => {
     expect(calls.some(([n, col]) => n === 'in' && col === 'id')).toBe(false);
   });
 });
+
+describe('SupabaseTransactionRepository pending filter', () => {
+  const listChain = () => {
+    const calls: Array<[string, ...unknown[]]> = [];
+    const result = { data: [], count: 0, error: null };
+    const chain: Record<string, unknown> = {};
+    for (const name of ['select', 'eq', 'in', 'order', 'range']) {
+      chain[name] = (...args: unknown[]) => {
+        calls.push([name, ...args]);
+        return chain;
+      };
+    }
+    chain.returns = () => Promise.resolve(result);
+    const repository = new SupabaseTransactionRepository({
+      from: () => chain,
+    } as unknown as SupabaseClient);
+    return { repository, calls };
+  };
+
+  // Même table de 4 lignes que operation-state.test.ts (front) : le front choisit
+  // les paramètres, le back applique deux `eq` indépendants.
+  const cases: Array<
+    [
+      string,
+      { reconciled?: boolean; pending?: boolean },
+      Array<[string, unknown]>,
+    ]
+  > = [
+    [
+      'a_pointer: reconciled=false&pending=false',
+      { reconciled: false, pending: false },
+      [
+        ['reconciled', false],
+        ['pending', false],
+      ],
+    ],
+    [
+      'a_venir: reconciled=false&pending=true',
+      { reconciled: false, pending: true },
+      [
+        ['reconciled', false],
+        ['pending', true],
+      ],
+    ],
+    [
+      'pointee: reconciled=true (pending not sent)',
+      { reconciled: true },
+      [['reconciled', true]],
+    ],
+    [
+      'pending=true alone (pending reconciled included)',
+      { pending: true },
+      [['pending', true]],
+    ],
+    ['all: no filter', {}, []],
+  ];
+
+  it.each(cases)(
+    '%s, paginated and unpaginated alike',
+    async (_name, options, expected) => {
+      const paginated = listChain();
+      await paginated.repository.findAllByAccount('acc-1', options);
+      const unpaginated = listChain();
+      await unpaginated.repository.findAllByAccountUnpaginated(
+        'acc-1',
+        options,
+      );
+
+      for (const { calls } of [paginated, unpaginated]) {
+        const flags = calls.filter(
+          ([n, col]) =>
+            n === 'eq' && (col === 'reconciled' || col === 'pending'),
+        );
+        expect(flags.map(([, col, val]) => [col, val])).toEqual(expected);
+      }
+    },
+  );
+});

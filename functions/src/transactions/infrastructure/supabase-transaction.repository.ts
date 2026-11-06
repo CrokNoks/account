@@ -79,6 +79,9 @@ export class SupabaseTransactionRepository implements TransactionRepository {
     if (options?.reconciled !== undefined) {
       query = query.eq('reconciled', options.reconciled);
     }
+    if (options?.pending !== undefined) {
+      query = query.eq('pending', options.pending);
+    }
 
     const page = options?.page && options.page > 0 ? options.page : 1;
     const limit = options?.limit && options.limit > 0 ? options.limit : 1000;
@@ -146,6 +149,9 @@ export class SupabaseTransactionRepository implements TransactionRepository {
     }
     if (options?.reconciled !== undefined) {
       query = query.eq('reconciled', options.reconciled);
+    }
+    if (options?.pending !== undefined) {
+      query = query.eq('pending', options.pending);
     }
 
     const { data, error } = await query
