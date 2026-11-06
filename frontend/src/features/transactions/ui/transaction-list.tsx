@@ -187,7 +187,7 @@ export function TransactionList({
     setStateFilter(value);
   };
 
-  const { data: transactions, isLoading } = useTransactions(activeAccountId, filterOptions);
+  const { data: transactions, isLoading, isError } = useTransactions(activeAccountId, filterOptions);
   // Anomalies de la période partagée avec Aujourd'hui (ignorées exclues par le back) : marques sur les lignes.
   const { data: anomalies } = useAnomalies(activeAccountId, activePeriodId);
   const marks = useMemo(() => anomalyMarks(anomalies), [anomalies]);
@@ -381,6 +381,13 @@ export function TransactionList({
 
       {!compact && effectivePeriodId === 'all' && (
         <p data-testid="all-periods-note" className="text-xs text-muted-foreground shrink-0">{t('all_periods_note')}</p>
+      )}
+
+      {isError && (
+        <div role="alert" data-testid="list-error" className="flex flex-col items-start gap-3 rounded-xl border p-6">
+          <p className="text-sm text-muted-foreground">{t('list_error')}</p>
+          <Button variant="outline" size="sm" onClick={handleResetFilters}>{t('back_to_full_list')}</Button>
+        </div>
       )}
 
       <div className="flex-1 min-h-0 overflow-y-auto">

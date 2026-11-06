@@ -323,7 +323,10 @@
     "unpointed_to_point": "Dépointée : l'opération redevient « À pointer », pas « Facture à venir ».",
     "back_to_upcoming": "Remettre en facture à venir",
     "back_to_upcoming_done": "Remise en facture à venir",
-    "all_periods_note": "Toutes les périodes : la liste peut compter plus d'opérations que le nombre « À pointer » (période choisie), et les marques d'anomalie ne couvrent que la période choisie."
+    "all_periods_note": "Toutes les périodes : la liste peut compter plus d'opérations que le nombre « À pointer » (période choisie), et les marques d'anomalie ne couvrent que la période choisie.",
+    "ids_missing": "Les opérations de cette anomalie sont introuvables : le lien ne contient aucun identifiant.",
+    "list_error": "Impossible d'afficher ces opérations : le filtre du lien est invalide ou la liste n'a pas pu être chargée.",
+    "back_to_full_list": "Revenir à la liste complète"
   },
   "Import": {
     "title": "Import de transactions",

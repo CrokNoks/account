@@ -12,7 +12,8 @@ export interface OperationsLink {
 
 export function operationsHref({ ids, categoryId, state, allPeriods }: OperationsLink = {}): string {
   const params = new URLSearchParams();
-  if (ids && ids.length > 0) params.set('ids', ids.join(','));
+  // `ids` fourni mais vide : le paramètre reste dans l'URL, pour que l'écran dise « introuvable » au lieu de tout lister.
+  if (ids) params.set('ids', ids.join(','));
   if (categoryId) params.set('categoryId', categoryId);
   if (state) params.set('state', state);
   if (allPeriods) params.set('period', 'all');
@@ -25,6 +26,8 @@ export interface OperationsLinkFilters {
   categoryId: string | undefined;
   state: 'a_pointer' | undefined;
   allPeriods: boolean;
+  /** Le lien demande des identifiants (`ids` présent) mais n'en porte aucun. */
+  idsMissing: boolean;
 }
 
 /** Relit les filtres d'un lien (l'inverse de `operationsHref`) ; les identifiants sont validés par le back. */
@@ -35,5 +38,6 @@ export function readOperationsLink(params: { get: (name: string) => string | nul
     categoryId: params.get('categoryId') || undefined,
     state: params.get('state') === 'a_pointer' ? 'a_pointer' : undefined,
     allPeriods: params.get('period') === 'all',
+    idsMissing: params.get('ids') !== null && ids.length === 0,
   };
 }

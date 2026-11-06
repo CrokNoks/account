@@ -93,6 +93,16 @@ describe('Page Opérations', () => {
     expect(state.initialFilters).toEqual({ ids: ['t1', 't2'], categoryId: undefined });
   });
 
+  it('lien d\'anomalie sans identifiant : message clair et retour à la liste complète, pas toute la liste', () => {
+    state.listPeriod = undefined;
+    state.query = 'ids=&period=all';
+    render(<TransactionsPage />);
+
+    expect(screen.getByTestId('ids-missing')).toHaveTextContent('ids_missing');
+    expect(screen.getByText('back_to_full_list')).toBeTruthy();
+    expect(state.listPeriod).toBeUndefined();
+  });
+
   it("lien CB à pointer : arrive filtrée sur « À pointer »", () => {
     state.query = 'state=a_pointer';
     render(<TransactionsPage />);

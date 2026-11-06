@@ -83,6 +83,14 @@ function TransactionsContent() {
 
       <OperationsBalances hasPeriod={hasPeriod} />
 
+      {link.idsMissing ? (
+        <div role="alert" data-testid="ids-missing" className="flex flex-col items-start gap-3 rounded-xl border p-6">
+          <p className="text-sm text-muted-foreground">{t('ids_missing')}</p>
+          <Link href="/transactions">
+            <Button variant="outline" size="sm">{t('back_to_full_list')}</Button>
+          </Link>
+        </div>
+      ) : (
       <TransactionList 
         // Un autre lien (autres filtres) repart d'une liste neuve.
         key={searchParams.toString()}
@@ -97,6 +105,7 @@ function TransactionsContent() {
           </Link>
         }
       />
+      )}
     </div>
   );
 }

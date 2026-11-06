@@ -387,3 +387,17 @@ describe('TransactionList pointing', () => {
     expect(toast.info).toHaveBeenCalledTimes(1);
   });
 });
+
+describe('TransactionList en erreur (ids invalides : 400 du back)', () => {
+  it('affiche un message clair et revient à la liste complète, sans identifiants', () => {
+    useTransactions.mockReset();
+    useTransactions.mockReturnValue({ data: undefined, isLoading: false, isError: true });
+    render(<TransactionList initialFilters={{ ids: ['pas-un-uuid'] }} />);
+
+    expect(screen.getByTestId('list-error')).toHaveTextContent('list_error');
+    expect(lastOptions().ids).toBe('pas-un-uuid');
+
+    fireEvent.click(screen.getByText('back_to_full_list'));
+    expect(lastOptions().ids).toBeUndefined();
+  });
+});
