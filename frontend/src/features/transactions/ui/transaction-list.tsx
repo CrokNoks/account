@@ -41,6 +41,8 @@ import { BulkActionsBar } from './bulk-actions-bar';
 import { Transaction } from '../model/types';
 import { useAnomalies } from '@/features/reporting/api/use-anomalies';
 import { anomalyMarks } from '../model/anomaly-marks';
+import { operationState, stateFilterToQuery, type StateFilter } from '../model/operation-state';
+import { useReportingStats } from '@/features/reporting/api/use-reporting-stats';
 
 export function TransactionList({ 
   periodId, 
@@ -52,8 +54,8 @@ export function TransactionList({
   periodId?: string, 
   /** Période pilotée par l'écran (sélecteur de tête) : un identifiant ou `all`. Le filtre de période du panneau disparaît. */
   period?: string,
-  /** Filtres venus d'un lien (identifiants exacts, catégorie). */
-  initialFilters?: { ids?: string[]; categoryId?: string },
+  /** Filtres venus d'un lien (identifiants exacts, catégorie, état). */
+  initialFilters?: { ids?: string[]; categoryId?: string; state?: 'a_pointer' },
   compact?: boolean,
   extraActions?: React.ReactNode
 }) {
@@ -77,7 +79,10 @@ export function TransactionList({
   const [page, setPage] = useState(1);
   const [limit] = useState(25);
   const [selectedPeriodId, setSelectedPeriodId] = useState<string | 'all'>('all');
-  const [statusFilter, setStatusFilter] = useState<'all' | 'reconciled' | 'not_reconciled'>('all');
+  // Filtre d'état : appliqué tout de suite (hors panneau), il se combine avec les autres filtres.
+  const [stateFilter, setStateFilter] = useState<StateFilter>(initialFilters?.state ?? 'all');
+  // Lignes pointées depuis « Facture à venir » pendant la session de l'écran : seules elles proposent « Remettre en facture à venir ».
+  const [pointedFromUpcoming, setPointedFromUpcoming] = useState<Set<string>>(() => new Set());
   
   const effectivePeriodId = periodId || (compact ? activePeriodId : (period ?? selectedPeriodId));
   
@@ -102,7 +107,6 @@ export function TransactionList({
     search: '',
     categoryId: initialFilters?.categoryId ?? 'all',
     selectedTagIds: [] as string[],
-    statusFilter: 'all',
     minAmount: '',
     maxAmount: '',
     startDate: '',
@@ -119,10 +123,10 @@ export function TransactionList({
     maxAmount: toOptionalCents(appliedFilters.maxAmount),
     startDate: appliedFilters.startDate || undefined,
     endDate: appliedFilters.endDate || undefined,
-    reconciled: appliedFilters.statusFilter === 'all' ? undefined : appliedFilters.statusFilter === 'reconciled',
+    ...stateFilterToQuery(stateFilter),
     page,
     limit,
-  }), [page, limit, effectivePeriodId, appliedFilters]);
+  }), [page, limit, effectivePeriodId, appliedFilters, stateFilter]);
 
   const handleApplyFilters = () => {
     setPage(1);
@@ -132,7 +136,6 @@ export function TransactionList({
       search,
       categoryId: selectedCategoryId,
       selectedTagIds,
-      statusFilter,
       minAmount,
       maxAmount,
       startDate,
@@ -146,7 +149,6 @@ export function TransactionList({
       search: '',
       categoryId: 'all',
       selectedTagIds: [],
-      statusFilter: 'all',
       minAmount: '',
       maxAmount: '',
       startDate: '',
@@ -159,7 +161,7 @@ export function TransactionList({
     setMaxAmount('');
     setStartDate('');
     setEndDate('');
-    setStatusFilter('all');
+    setStateFilter('all');
     setPage(1);
     setAppliedFilters(defaultFilters);
   };
@@ -174,9 +176,16 @@ export function TransactionList({
       toOptionalCents(appliedFilters.maxAmount),
       appliedFilters.startDate,
       appliedFilters.endDate,
-      appliedFilters.statusFilter !== 'all'
+      stateFilter !== 'all'
     ].filter(Boolean).length;
-  }, [appliedFilters]);
+  }, [appliedFilters, stateFilter]);
+
+  // N du filtre « À pointer » : le reste à pointer de la période choisie (stats existantes, comme les soldes de tête).
+  const { data: periodStats } = useReportingStats(activeAccountId, compact ? null : activePeriodId);
+  const handleStateChange = (value: StateFilter) => {
+    setPage(1);
+    setStateFilter(value);
+  };
 
   const { data: transactions, isLoading } = useTransactions(activeAccountId, filterOptions);
   // Anomalies de la période partagée avec Aujourd'hui (ignorées exclues par le back) : marques sur les lignes.
@@ -221,16 +230,42 @@ export function TransactionList({
     );
   };
 
-  const toggleReconciliation = useCallback((transactionId: string, currentStatus: boolean) => {
+  // Pointer / dépointer : un geste, sans dialogue. Rien n'est modifié à l'écran avant la réponse du serveur
+  // (en cas d'échec, la ligne garde son état et le toast d'erreur global s'affiche).
+  const togglePointage = useCallback((transaction: Transaction) => {
     if (!activeAccountId) return;
-    updateTransaction({
-      accountId: activeAccountId,
-      id: transactionId,
-      data: { reconciled: !currentStatus }
-    }, {
-      onSuccess: () => toast.success(t('toggled'))
-    });
-  }, [activeAccountId, updateTransaction, t]);
+    const state = operationState(transaction);
+    const id = transaction.id;
+    if (state === 'pointee') {
+      update(id, { reconciled: false }, () => {
+        if (pointedFromUpcoming.has(id)) {
+          setPointedFromUpcoming(prev => {
+            const next = new Set(prev);
+            next.delete(id);
+            return next;
+          });
+          // Dépointer ne restaure pas `pending` : on le dit, avec le moyen de la remettre en facture à venir.
+          toast.info(t('unpointed_to_point'), {
+            action: {
+              label: t('back_to_upcoming'),
+              onClick: () => update(id, { pending: true }, () => toast.success(t('back_to_upcoming_done'))),
+            },
+          });
+        } else {
+          toast.success(t('toggled'));
+        }
+      });
+    } else {
+      update(id, { reconciled: true }, () => {
+        if (state === 'a_venir') setPointedFromUpcoming(prev => new Set(prev).add(id));
+        toast.success(t('toggled'));
+      });
+    }
+
+    function update(txId: string, data: Partial<Transaction>, onSuccess: () => void) {
+      updateTransaction({ accountId: activeAccountId!, id: txId, data }, { onSuccess });
+    }
+  }, [activeAccountId, updateTransaction, pointedFromUpcoming, t]);
 
   const handleDelete = useCallback((id: string) => {
     if (!activeAccountId || !confirm(t('delete_confirm'))) return;
@@ -252,6 +287,9 @@ export function TransactionList({
 
   const handleBulkReconcile = () => {
     if (!activeAccountId || bulkIds.length === 0) return;
+    const upcomingIds = (transactions?.data ?? [])
+      .filter(tx => bulkIds.includes(tx.id) && operationState(tx) === 'a_venir')
+      .map(tx => tx.id);
     bulkUpdate({ 
       accountId: activeAccountId, 
       command: {
@@ -260,6 +298,7 @@ export function TransactionList({
       }
     }, {
       onSuccess: () => {
+        if (upcomingIds.length > 0) setPointedFromUpcoming(prev => new Set([...prev, ...upcomingIds]));
         toast.success(t('bulk.reconciled', { count: bulkIds.length }));
         setSelectedIds([]);
       },
@@ -328,7 +367,7 @@ export function TransactionList({
           activeAccountId={activeAccountId}
           selectedCategoryId={selectedCategoryId} setSelectedCategoryId={setSelectedCategoryId}
           selectedTagIds={selectedTagIds} setSelectedTagIds={setSelectedTagIds}
-          statusFilter={statusFilter} setStatusFilter={setStatusFilter}
+          stateFilter={stateFilter} onStateChange={handleStateChange} toPointCount={periodStats?.cardCount}
           minAmount={minAmount} setMinAmount={setMinAmount}
           maxAmount={maxAmount} setMaxAmount={setMaxAmount}
           startDate={startDate} setStartDate={setStartDate}
@@ -340,6 +379,10 @@ export function TransactionList({
         />
       )}
 
+      {!compact && effectivePeriodId === 'all' && (
+        <p data-testid="all-periods-note" className="text-xs text-muted-foreground shrink-0">{t('all_periods_note')}</p>
+      )}
+
       <div className="flex-1 min-h-0 overflow-y-auto">
         {transactions && (
           <>
@@ -347,14 +390,14 @@ export function TransactionList({
               transactions={transactions.data}
               categories={categories} tags={tags}
               selectedIds={selectedIds} onToggleSelect={toggleSelect}
-              onEdit={setEditingTransaction} onToggleReconciliation={toggleReconciliation}
+              onEdit={setEditingTransaction} onTogglePointage={togglePointage}
               onTagClick={setTagDetailId} compact={compact} isUpdating={isUpdating} anomalyMarks={marks} t={t}
             />
             <TransactionTable 
               transactions={transactions.data}
               categories={categories} tags={tags}
               selectedIds={selectedIds} onToggleSelect={toggleSelect} onToggleSelectAll={toggleSelectAll}
-              onEdit={setEditingTransaction} onDelete={handleDelete} onToggleReconciliation={toggleReconciliation}
+              onEdit={setEditingTransaction} onDelete={handleDelete} onTogglePointage={togglePointage}
               onMakeRecurring={setTransactionToMakeRecurring} onTagClick={setTagDetailId}
               compact={compact} isUpdating={isUpdating} anomalyMarks={marks} t={t}
             />

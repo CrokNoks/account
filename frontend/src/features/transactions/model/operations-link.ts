@@ -23,6 +23,7 @@ export function operationsHref({ ids, categoryId, state, allPeriods }: Operation
 export interface OperationsLinkFilters {
   ids: string[];
   categoryId: string | undefined;
+  state: 'a_pointer' | undefined;
   allPeriods: boolean;
 }
 
@@ -32,6 +33,7 @@ export function readOperationsLink(params: { get: (name: string) => string | nul
   return {
     ids,
     categoryId: params.get('categoryId') || undefined,
+    state: params.get('state') === 'a_pointer' ? 'a_pointer' : undefined,
     allPeriods: params.get('period') === 'all',
   };
 }

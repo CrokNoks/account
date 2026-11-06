@@ -11,6 +11,8 @@ import { TagSelector } from '@/features/tags/ui/tag-selector';
 import { format } from 'date-fns';
 import { Period } from "@/features/periods/model/types";
 import { useTranslations } from "next-intl";
+import { cn } from '@/lib/utils';
+import type { StateFilter } from '../model/operation-state';
 
 interface TransactionFiltersProps {
   search: string;
@@ -23,8 +25,10 @@ interface TransactionFiltersProps {
   setSelectedCategoryId: (v: string) => void;
   selectedTagIds: string[];
   setSelectedTagIds: (v: string[]) => void;
-  statusFilter: 'all' | 'reconciled' | 'not_reconciled';
-  setStatusFilter: (v: 'all' | 'reconciled' | 'not_reconciled') => void;
+  stateFilter: StateFilter;
+  onStateChange: (v: StateFilter) => void;
+  /** Reste à pointer de la période choisie (affiché dans « À pointer · N »). */
+  toPointCount?: number;
   minAmount: string;
   setMinAmount: (v: string) => void;
   maxAmount: string;
@@ -55,8 +59,9 @@ export function TransactionFilters({
   setSelectedCategoryId,
   selectedTagIds,
   setSelectedTagIds,
-  statusFilter,
-  setStatusFilter,
+  stateFilter,
+  onStateChange,
+  toPointCount,
   minAmount,
   setMinAmount,
   maxAmount,
@@ -114,6 +119,24 @@ export function TransactionFilters({
         </Button>
       </div>
 
+      <div role="group" aria-label={t('filter_status')} className="flex flex-wrap gap-2">
+        {(['all', 'a_pointer', 'a_venir', 'pointee'] as const).map((value) => (
+          <Button
+            key={value}
+            type="button"
+            size="sm"
+            variant={stateFilter === value ? 'default' : 'outline'}
+            aria-pressed={stateFilter === value}
+            className={cn('h-8 text-xs font-bold')}
+            onClick={() => onStateChange(value)}
+          >
+            {value === 'a_pointer' && toPointCount !== undefined
+              ? t('status_a_pointer_count', { count: toPointCount })
+              : t(`status_${value}`)}
+          </Button>
+        ))}
+      </div>
+
       {isFilterOpen && (
         <div className="p-4 rounded-xl border bg-muted/10 space-y-4 animate-in fade-in slide-in-from-top-2 duration-200">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -140,23 +163,6 @@ export function TransactionFilters({
                   onChange={setSelectedTagIds}
                 />
               )}
-            </div>
-
-            {/* Status */}
-            <div className="space-y-1.5">
-              <label className="text-[10px] max-lg:text-xs font-bold uppercase text-muted-foreground px-1">{t('filter_status')}</label>
-              <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as 'all' | 'reconciled' | 'not_reconciled')}>
-                <SelectTrigger className="h-10 bg-background">
-                  <SelectValue>
-                    {statusFilter === 'all' ? t('status_all') : statusFilter === 'reconciled' ? t('status_reconciled') : t('status_not_reconciled')}
-                  </SelectValue>
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">{t('status_all')}</SelectItem>
-                  <SelectItem value="reconciled">{t('status_reconciled')}</SelectItem>
-                  <SelectItem value="not_reconciled">{t('status_not_reconciled')}</SelectItem>
-                </SelectContent>
-              </Select>
             </div>
 
             {/* Amount Range */}

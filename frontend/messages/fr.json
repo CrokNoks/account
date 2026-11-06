@@ -249,9 +249,7 @@
     "save_another": "Enregistrer & Nouveau",
     "expense_hint": "Utilisez une valeur négative pour les dépenses (ex: -10)",
     "filter_status": "Filtrer par statut",
-    "status_all": "Tous les statuts",
-    "status_reconciled": "Pointées",
-    "status_not_reconciled": "Non pointées",
+    "status_all": "Toutes",
     "filter_title": "Filtres",
     "search_placeholder": "Rechercher une transaction...",
     "reset_filters": "Réinitialiser",
@@ -311,7 +309,22 @@
     "anomaly": {
       "duplicate": "Doublon possible",
       "outlier": "Dépense inhabituelle"
-    }
+    },
+    "status_a_pointer": "À pointer",
+    "status_a_pointer_count": "À pointer · {count}",
+    "status_a_venir": "Factures à venir",
+    "status_pointee": "Pointées",
+    "state": {
+      "a_pointer": "À pointer",
+      "a_venir": "Facture à venir",
+      "pointee": "Pointée"
+    },
+    "point": "Pointer",
+    "unpoint": "Dépointer",
+    "unpointed_to_point": "Dépointée : l'opération redevient « À pointer », pas « Facture à venir ».",
+    "back_to_upcoming": "Remettre en facture à venir",
+    "back_to_upcoming_done": "Remise en facture à venir",
+    "all_periods_note": "Toutes les périodes : la liste peut compter plus d'opérations que le nombre « À pointer » (période choisie), et les marques d'anomalie ne couvrent que la période choisie."
   },
   "Import": {
     "title": "Import de transactions",

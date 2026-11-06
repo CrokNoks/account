@@ -93,6 +93,13 @@ describe('Page Opérations', () => {
     expect(state.initialFilters).toEqual({ ids: ['t1', 't2'], categoryId: undefined });
   });
 
+  it("lien CB à pointer : arrive filtrée sur « À pointer »", () => {
+    state.query = 'state=a_pointer';
+    render(<TransactionsPage />);
+
+    expect(state.initialFilters).toMatchObject({ state: 'a_pointer' });
+  });
+
   it('lien de dépassement : la catégorie, sur la période choisie', () => {
     state.query = 'categoryId=cat-1';
     render(<TransactionsPage />);

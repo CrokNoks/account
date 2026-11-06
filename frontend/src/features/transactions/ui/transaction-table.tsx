@@ -18,6 +18,8 @@ import { format } from 'date-fns';
 import { formatCurrency } from '@/shared/lib/format';
 import { cn } from "@/lib/utils";
 import { AnomalyBadges } from './anomaly-badges';
+import { OperationStateLabel } from './operation-state-label';
+import { operationState } from '../model/operation-state';
 import { AnomalyMark } from '../model/anomaly-marks';
 import { Transaction } from '../model/types';
 import { Category } from '@/features/categories/model/types';
@@ -33,7 +35,8 @@ interface TransactionTableProps {
   onToggleSelectAll: () => void;
   onEdit: (transaction: Transaction) => void;
   onDelete: (id: string) => void;
-  onToggleReconciliation: (id: string, currentStatus: boolean) => void;
+  /** Pointer ou dépointer, selon l'état de la ligne. */
+  onTogglePointage: (transaction: Transaction) => void;
   onMakeRecurring?: (transaction: Transaction) => void;
   onTagClick: (tagId: string) => void;
   compact?: boolean;
@@ -52,7 +55,7 @@ export function TransactionTable({
   onToggleSelectAll,
   onEdit,
   onDelete,
-  onToggleReconciliation,
+  onTogglePointage,
   onMakeRecurring,
   onTagClick,
   compact,
@@ -94,7 +97,7 @@ export function TransactionTable({
                 key={transaction.id} 
                 className={cn(
                   "group cursor-pointer",
-                  transaction.pending && "bg-muted/20 opacity-80",
+                  operationState(transaction) === 'a_venir' && "bg-muted/20 opacity-80",
                   selectedIds.includes(transaction.id) && "bg-primary/5"
                 )}
                 onClick={() => selectedIds.length > 0 ? onToggleSelect(transaction.id) : onEdit(transaction)}
@@ -109,11 +112,12 @@ export function TransactionTable({
                 )}
                 <TableCell onClick={(e) => e.stopPropagation()}>
                   <button 
-                    onClick={() => onToggleReconciliation(transaction.id, transaction.reconciled)}
+                    onClick={() => onTogglePointage(transaction)}
                     disabled={isUpdating}
+                    aria-label={operationState(transaction) === 'pointee' ? t('unpoint') : t('point')}
                     className="hover:scale-110 transition-transform"
                   >
-                    {transaction.reconciled ? (
+                    {operationState(transaction) === 'pointee' ? (
                       <CheckCircle2 className="w-5 h-5 text-green-500 fill-green-500/10" />
                     ) : (
                       <Circle className="w-5 h-5 text-muted-foreground/30" />
@@ -168,9 +172,7 @@ export function TransactionTable({
                 )}>
                   <div className="flex flex-col items-end gap-0.5">
                     {formatCurrency(transaction.amount)}
-                    {transaction.pending && (
-                      <span className="text-[8px] max-lg:text-xs uppercase tracking-widest text-orange-500 font-bold bg-orange-500/10 px-1 rounded">{t('pending_short')}</span>
-                    )}
+                    <OperationStateLabel state={operationState(transaction)} t={t} />
                   </div>
                 </TableCell>
                 <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>

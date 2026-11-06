@@ -22,6 +22,11 @@ describe('liens vers Opérations', () => {
     expect(new URL(operationsHref({ state: 'a_pointer' }), 'http://x').searchParams.get('state')).toBe('a_pointer');
   });
 
+  it("CB à pointer : le filtre d'état est relu", () => {
+    expect(read(operationsHref({ state: 'a_pointer' })).state).toBe('a_pointer');
+    expect(read('/transactions?state=n_importe_quoi').state).toBeUndefined();
+  });
+
   it('ignore les identifiants vides', () => {
     expect(read('/transactions?ids=,a,,b,').ids).toEqual(['a', 'b']);
   });

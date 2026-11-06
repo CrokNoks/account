@@ -6,6 +6,8 @@ import { TransactionList } from './transaction-list';
 const useTransactions = vi.fn();
 const bulkDelete = vi.fn();
 const bulkUpdate = vi.fn();
+const update = vi.fn();
+const stats = vi.hoisted(() => ({ cardCount: 7 as number | undefined }));
 
 vi.mock('next-intl', () => ({ useTranslations: () => (key: string) => key }));
 vi.mock('sonner', () => ({ toast: { error: vi.fn(), success: vi.fn(), info: vi.fn() } }));
@@ -22,12 +24,15 @@ vi.mock('@/shared/model/use-ui-store', () => ({
 vi.mock('@/features/budgets/api/use-periods', () => ({ usePeriods: () => ({ data: [] }) }));
 vi.mock('@/features/categories/api/use-categories', () => ({ useCategories: () => ({ data: [] }) }));
 vi.mock('@/features/reporting/api/use-anomalies', () => ({ useAnomalies: () => ({ data: [] }) }));
+vi.mock('@/features/reporting/api/use-reporting-stats', () => ({
+  useReportingStats: () => ({ data: stats.cardCount === undefined ? undefined : { cardCount: stats.cardCount } }),
+}));
 vi.mock('@/features/tags/api/use-tags', () => ({ useTags: () => ({ data: [] }) }));
 vi.mock('../api/use-transactions', () => ({
   useTransactions: (...args: unknown[]) => useTransactions(...args),
 }));
 vi.mock('../api/use-update-transaction', () => ({
-  useUpdateTransaction: () => ({ mutate: vi.fn(), isPending: false }),
+  useUpdateTransaction: () => ({ mutate: update, isPending: false }),
 }));
 vi.mock('../api/use-delete-transaction', () => ({ useDeleteTransaction: () => ({ mutate: vi.fn() }) }));
 vi.mock('../api/use-bulk-transactions', () => ({
@@ -37,10 +42,13 @@ vi.mock('../api/use-bulk-transactions', () => ({
 vi.mock('@/features/recurring/ui/create-recurring-dialog', () => ({ CreateRecurringDialog: () => null }));
 vi.mock('./transaction-form', () => ({ TransactionForm: () => null }));
 vi.mock('./transaction-table', () => ({
-  TransactionTable: (p: { transactions: { id: string }[]; onToggleSelect: (id: string) => void }) => (
+  TransactionTable: (p: { transactions: { id: string }[]; onToggleSelect: (id: string) => void; onTogglePointage: (tx: { id: string }) => void }) => (
     <div>
       {p.transactions.map(tx => (
-        <button key={tx.id} onClick={() => p.onToggleSelect(tx.id)}>{`select ${tx.id}`}</button>
+        <span key={tx.id}>
+          <button onClick={() => p.onToggleSelect(tx.id)}>{`select ${tx.id}`}</button>
+          <button onClick={() => p.onTogglePointage(tx)}>{`point ${tx.id}`}</button>
+        </span>
       ))}
     </div>
   ),
@@ -61,8 +69,16 @@ vi.mock('./transaction-filters', () => ({
     setMinAmount: (v: string) => void;
     setMaxAmount: (v: string) => void;
     onApply: () => void;
+    stateFilter: string;
+    onStateChange: (v: string) => void;
+    toPointCount?: number;
   }) => (
     <div>
+      <span data-testid="state">{p.stateFilter}</span>
+      <span data-testid="count">{String(p.toPointCount)}</span>
+      {['all', 'a_pointer', 'a_venir', 'pointee'].map(v => (
+        <button key={v} onClick={() => p.onStateChange(v)}>{`state ${v}`}</button>
+      ))}
       <input aria-label="min" onChange={(e) => p.setMinAmount(e.target.value)} />
       <input aria-label="max" onChange={(e) => p.setMaxAmount(e.target.value)} />
       <button onClick={p.onApply}>apply</button>
@@ -219,5 +235,155 @@ describe('TransactionList filters from a link', () => {
   it('sends no ids without a link', () => {
     render(<TransactionList />);
     expect(lastOptions().ids).toBeUndefined();
+  });
+});
+
+describe('TransactionList state filter', () => {
+  beforeEach(() => {
+    useTransactions.mockReset();
+    useTransactions.mockReturnValue({ data: undefined, isLoading: false });
+    stats.cardCount = 7;
+  });
+
+  it.each([
+    ['a_pointer', { reconciled: false, pending: false }],
+    ['a_venir', { reconciled: false, pending: true }],
+  ])('« %s » sends reconciled and pending', (state, expected) => {
+    render(<TransactionList />);
+    fireEvent.click(screen.getByText(`state ${state}`));
+    expect(lastOptions()).toMatchObject(expected);
+  });
+
+  it('« pointee » sends reconciled true and no pending (the reconciled pending stays in)', () => {
+    render(<TransactionList />);
+    fireEvent.click(screen.getByText('state pointee'));
+    expect(lastOptions().reconciled).toBe(true);
+    expect('pending' in lastOptions()).toBe(false);
+  });
+
+  it('« all » sends neither', () => {
+    render(<TransactionList />);
+    fireEvent.click(screen.getByText('state a_pointer'));
+    fireEvent.click(screen.getByText('state all'));
+    expect(lastOptions().reconciled).toBeUndefined();
+    expect(lastOptions().pending).toBeUndefined();
+  });
+
+  it('combines with the other filters', () => {
+    render(<TransactionList initialFilters={{ categoryId: 'cat-1' }} />);
+    fireEvent.change(screen.getByLabelText('min'), { target: { value: '10' } });
+    fireEvent.click(screen.getByText('apply'));
+    fireEvent.click(screen.getByText('state a_pointer'));
+    expect(lastOptions()).toMatchObject({ reconciled: false, pending: false, categoryId: 'cat-1', minAmount: '1000' });
+  });
+
+  it('starts on « a_pointer » when the link says so (CB link of À traiter)', () => {
+    render(<TransactionList initialFilters={{ state: 'a_pointer' }} />);
+    expect(screen.getByTestId('state').textContent).toBe('a_pointer');
+    expect(lastOptions()).toMatchObject({ reconciled: false, pending: false });
+  });
+
+  it('gives the filter the count to point of the period', () => {
+    render(<TransactionList />);
+    expect(screen.getByTestId('count').textContent).toBe('7');
+  });
+});
+
+describe('TransactionList all periods', () => {
+  beforeEach(() => {
+    useTransactions.mockReset();
+    useTransactions.mockReturnValue({ data: undefined, isLoading: false });
+  });
+
+  it('says the count and the marks only cover the chosen period', () => {
+    render(<TransactionList period="all" />);
+    expect(screen.getByTestId('all-periods-note')).toBeTruthy();
+  });
+
+  it('shows no such note on a period', () => {
+    render(<TransactionList period="p1" />);
+    expect(screen.queryByTestId('all-periods-note')).toBeNull();
+  });
+});
+
+describe('TransactionList pointing', () => {
+  const row = (id: string, reconciled: boolean, pending: boolean) => ({ id, reconciled, pending });
+  let rows: ReturnType<typeof row>[];
+  const ui = () => <TransactionList />;
+
+  beforeEach(() => {
+    update.mockReset();
+    bulkUpdate.mockReset();
+    vi.mocked(toast.success).mockReset();
+    vi.mocked(toast.info).mockReset();
+    rows = [row('cb', false, false), row('fa', false, true), row('ok', true, false)];
+    useTransactions.mockReset();
+    useTransactions.mockImplementation(() => ({
+      data: { data: rows, meta: { page: 1, totalPages: 1, total: rows.length, limit: 25 } },
+      isLoading: false,
+    }));
+  });
+
+  it('points a CB in one gesture, with no action message', () => {
+    update.mockImplementation((_v, o) => o.onSuccess());
+    render(ui());
+    fireEvent.click(screen.getByText('point cb'));
+
+    expect(update).toHaveBeenCalledWith(expect.objectContaining({ id: 'cb', data: { reconciled: true } }), expect.anything());
+    expect(toast.info).not.toHaveBeenCalled();
+  });
+
+  it('unpointing a line pointed from « Facture à venir » in this session offers to put it back', () => {
+    update.mockImplementation((_v, o) => o.onSuccess());
+    const { rerender } = render(ui());
+    fireEvent.click(screen.getByText('point fa'));
+    rows = [row('cb', false, false), row('fa', true, false), row('ok', true, false)];
+    rerender(ui());
+    fireEvent.click(screen.getByText('point fa')); // unpoint
+
+    expect(update).toHaveBeenLastCalledWith(expect.objectContaining({ id: 'fa', data: { reconciled: false } }), expect.anything());
+    const [message, options] = vi.mocked(toast.info).mock.calls[0] as [string, { action: { label: string; onClick: () => void } }];
+    expect(message).toBe('unpointed_to_point');
+    expect(options.action.label).toBe('back_to_upcoming');
+
+    rows = [row('cb', false, false), row('fa', false, false), row('ok', true, false)];
+    options.action.onClick();
+    expect(update).toHaveBeenLastCalledWith(expect.objectContaining({ id: 'fa', data: { pending: true } }), expect.anything());
+  });
+
+  it('unpointing a line pointed before the session (or a CB) gives no message and no action', () => {
+    update.mockImplementation((_v, o) => o.onSuccess());
+    render(ui());
+    fireEvent.click(screen.getByText('point ok'));
+
+    expect(update).toHaveBeenCalledWith(expect.objectContaining({ id: 'ok', data: { reconciled: false } }), expect.anything());
+    expect(toast.info).not.toHaveBeenCalled();
+    expect(toast.success).toHaveBeenCalledWith('toggled');
+  });
+
+  it('a failed pointing is not remembered: no success message, no action afterwards', () => {
+    update.mockImplementation(() => undefined); // network error: onSuccess never called
+    const { rerender } = render(ui());
+    fireEvent.click(screen.getByText('point fa'));
+    expect(toast.success).not.toHaveBeenCalled();
+
+    update.mockImplementation((_v, o) => o.onSuccess());
+    rows = [row('cb', false, false), row('fa', true, false), row('ok', true, false)];
+    rerender(ui());
+    fireEvent.click(screen.getByText('point fa'));
+    expect(toast.info).not.toHaveBeenCalled();
+  });
+
+  it('a bulk pointing remembers the invoices to come it pointed', () => {
+    bulkUpdate.mockImplementation((_v, o) => o.onSuccess());
+    update.mockImplementation((_v, o) => o.onSuccess());
+    const { rerender } = render(ui());
+    fireEvent.click(screen.getByText('select fa'));
+    fireEvent.click(screen.getByText('bulk reconcile'));
+    rows = [row('cb', false, false), row('fa', true, false), row('ok', true, false)];
+    rerender(ui());
+    fireEvent.click(screen.getByText('point fa'));
+
+    expect(toast.info).toHaveBeenCalledTimes(1);
   });
 });

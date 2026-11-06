@@ -2,12 +2,14 @@
 
 import { Badge } from '@/components/ui/badge';
 import { tintedBadgeStyle } from '@/shared/lib/badge-color';
-import { CheckCircle2, Circle, Clock } from 'lucide-react';
+import { CheckCircle2, Circle } from 'lucide-react';
 import { format } from 'date-fns';
 import { formatCurrency } from '@/shared/lib/format';
 import { cn } from "@/lib/utils";
 import { Checkbox } from "@/components/ui/checkbox";
 import { AnomalyBadges } from './anomaly-badges';
+import { OperationStateLabel } from './operation-state-label';
+import { operationState } from '../model/operation-state';
 import { AnomalyMark } from '../model/anomaly-marks';
 import { Transaction } from '../model/types';
 import { Category } from '@/features/categories/model/types';
@@ -21,7 +23,8 @@ interface TransactionMobileListProps {
   selectedIds: string[];
   onToggleSelect: (id: string) => void;
   onEdit: (transaction: Transaction) => void;
-  onToggleReconciliation: (id: string, currentStatus: boolean) => void;
+  /** Pointer ou dépointer, selon l'état de la ligne (un geste). */
+  onTogglePointage: (transaction: Transaction) => void;
   onTagClick: (tagId: string) => void;
   compact?: boolean;
   isUpdating?: boolean;
@@ -37,7 +40,7 @@ export function TransactionMobileList({
   selectedIds,
   onToggleSelect,
   onEdit,
-  onToggleReconciliation,
+  onTogglePointage,
   onTagClick,
   compact,
   isUpdating,
@@ -56,7 +59,7 @@ export function TransactionMobileList({
             key={transaction.id} 
             className={cn(
               "p-4 rounded-xl border bg-card transition-all active:scale-[0.98] flex gap-3",
-              transaction.reconciled ? "border-green-500/20 bg-green-500/5" : "shadow-sm",
+              operationState(transaction) === 'pointee' ? "border-green-500/20 bg-green-500/5" : "shadow-sm",
               selectedIds.includes(transaction.id) && "ring-2 ring-primary bg-primary/5"
             )}
             onClick={() => selectedIds.length > 0 ? onToggleSelect(transaction.id) : onEdit(transaction)}
@@ -75,12 +78,13 @@ export function TransactionMobileList({
                   <button 
                     onClick={(e) => {
                       e.stopPropagation();
-                      onToggleReconciliation(transaction.id, transaction.reconciled);
+                      onTogglePointage(transaction);
                     }} 
                     disabled={isUpdating}
+                    aria-label={operationState(transaction) === 'pointee' ? t('unpoint') : t('point')}
                     className="shrink-0"
                   >
-                    {transaction.reconciled ? (
+                    {operationState(transaction) === 'pointee' ? (
                       <CheckCircle2 className="w-5 h-5 text-green-500 fill-green-500/10" />
                     ) : (
                       <Circle className="w-5 h-5 text-muted-foreground/30" />
@@ -105,12 +109,7 @@ export function TransactionMobileList({
                   )}>
                     {formatCurrency(transaction.amount)}
                   </span>
-                  {transaction.pending && (
-                    <div className="flex items-center gap-1 text-orange-500 font-medium">
-                      <Clock className="w-3 h-3 animate-pulse" />
-                      <span className="text-[9px] max-lg:text-xs uppercase tracking-wider">{t('pending_short')}</span>
-                    </div>
-                  )}
+                  <OperationStateLabel state={operationState(transaction)} t={t} />
                 </div>
               </div>
               {anomalyMarks?.[transaction.id] && (

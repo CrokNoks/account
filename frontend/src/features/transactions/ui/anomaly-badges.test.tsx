@@ -18,7 +18,7 @@ function Table() {
     <TransactionTable
       transactions={[tx('t1'), tx('t2')]}
       selectedIds={[]} onToggleSelect={() => {}} onToggleSelectAll={() => {}} onEdit={() => {}}
-      onDelete={() => {}} onToggleReconciliation={() => {}} onTagClick={() => {}}
+      onDelete={() => {}} onTogglePointage={() => {}} onTagClick={() => {}}
       anomalyMarks={{ t1: ['duplicate'], t2: ['outlier', 'duplicate'] }}
       t={t}
     />

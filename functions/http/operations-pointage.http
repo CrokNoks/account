@@ -1,0 +1,235 @@
+@api = http://localhost:8080
+@supabase = http://127.0.0.1:54321
+@anon = sb_publishable_ACJWlzQHlZjBrEguHvfOxg_3BJgxAaH
+@courant = 7385d77b-78f2-4709-87de-074f22f0721f
+@period = dc439a24-b481-4aac-af83-f93831ae7f80
+
+# Local stack only (back sur PORT, ex. --var ... ou @api ci-dessus). Alice possède E2E Courant, Bob est un autre utilisateur.
+# Refonte Opérations : états À pointer / Facture à venir / Pointée, filtres reconciled + pending + ids, pointage et dépointage.
+# Toutes les transactions créées ici sont supprimées à la fin du fichier.
+
+{{
+  exports.tag = 'pt' + Date.now();
+}}
+
+### Alice token
+# @name aliceLogin
+POST {{supabase}}/auth/v1/token?grant_type=password
+apikey: {{anon}}
+Content-Type: application/json
+
+{"email":"e2e-alice@test.local","password":"Test-1234!"}
+
+### Bob token
+# @name bobLogin
+POST {{supabase}}/auth/v1/token?grant_type=password
+apikey: {{anon}}
+Content-Type: application/json
+
+{"email":"e2e-bob@test.local","password":"Test-1234!"}
+
+### Les 4 combinaisons : CB à pointer (faux, faux)
+# @name cb
+POST {{api}}/{{courant}}/transactions
+Authorization: Bearer {{aliceLogin.access_token}}
+Content-Type: application/json
+
+{"date":"2026-10-15T00:00:00.000Z","amount":"-1234","description":"{{tag}} cb"}
+
+?? status == 201
+?? js response.parsedBody.reconciled == false
+?? js response.parsedBody.pending == false
+
+### Facture à venir (faux, vrai)
+# @name facture
+POST {{api}}/{{courant}}/transactions
+Authorization: Bearer {{aliceLogin.access_token}}
+Content-Type: application/json
+
+{"date":"2026-10-15T00:00:00.000Z","amount":"-2345","description":"{{tag}} facture","pending":true}
+
+?? status == 201
+?? js response.parsedBody.reconciled == false
+?? js response.parsedBody.pending == true
+
+### Pointée (vrai, faux)
+# @name pointee
+POST {{api}}/{{courant}}/transactions
+Authorization: Bearer {{aliceLogin.access_token}}
+Content-Type: application/json
+
+{"date":"2026-10-15T00:00:00.000Z","amount":"-3456","description":"{{tag}} pointee","reconciled":true}
+
+?? status == 201
+?? js response.parsedBody.reconciled == true
+?? js response.parsedBody.pending == false
+
+### Pending rapprochée (vrai, vrai) : créée avec les deux
+# @name pendingRapprochee
+POST {{api}}/{{courant}}/transactions
+Authorization: Bearer {{aliceLogin.access_token}}
+Content-Type: application/json
+
+{"date":"2026-10-15T00:00:00.000Z","amount":"-4567","description":"{{tag}} pendingrapprochee","reconciled":true,"pending":true}
+
+?? status == 201
+?? js response.parsedBody.reconciled == true
+?? js response.parsedBody.pending == true
+
+### Filtre « À pointer » : seulement la CB
+GET {{api}}/{{courant}}/transactions?search={{tag}}&reconciled=false&pending=false
+Authorization: Bearer {{aliceLogin.access_token}}
+
+?? status == 200
+?? js response.parsedBody.meta.total == 1
+?? body contains "{{tag}} cb"
+?? body not contains "{{tag}} facture"
+
+### Filtre « Factures à venir » : la facture, pas la pending rapprochée
+GET {{api}}/{{courant}}/transactions?search={{tag}}&reconciled=false&pending=true
+Authorization: Bearer {{aliceLogin.access_token}}
+
+?? status == 200
+?? js response.parsedBody.meta.total == 1
+?? body contains "{{tag}} facture"
+?? body not contains "pendingrapprochee"
+
+### Filtre « Pointées » (pending non envoyé) : les deux pointées, dont la pending rapprochée
+GET {{api}}/{{courant}}/transactions?search={{tag}}&reconciled=true
+Authorization: Bearer {{aliceLogin.access_token}}
+
+?? status == 200
+?? js response.parsedBody.meta.total == 2
+?? body contains "{{tag}} pointee"
+?? body contains "{{tag}} pendingrapprochee"
+
+### pending=true seul : facture + pending rapprochée
+GET {{api}}/{{courant}}/transactions?search={{tag}}&pending=true
+Authorization: Bearer {{aliceLogin.access_token}}
+
+?? status == 200
+?? js response.parsedBody.meta.total == 2
+
+### Sans filtre d'état : les 4
+GET {{api}}/{{courant}}/transactions?search={{tag}}
+Authorization: Bearer {{aliceLogin.access_token}}
+
+?? status == 200
+?? js response.parsedBody.meta.total == 4
+
+### pending=maybe est refusé
+GET {{api}}/{{courant}}/transactions?pending=maybe
+Authorization: Bearer {{aliceLogin.access_token}}
+
+?? status == 400
+
+### N d'Aujourd'hui = lignes « À pointer » de la période (cardCount des stats)
+# @name stats
+GET {{api}}/{{courant}}/periods/{{period}}/reporting/stats
+Authorization: Bearer {{aliceLogin.access_token}}
+
+?? status == 200
+
+###
+GET {{api}}/{{courant}}/transactions?periodId={{period}}&reconciled=false&pending=false&limit=1
+Authorization: Bearer {{aliceLogin.access_token}}
+
+?? status == 200
+?? js response.parsedBody.meta.total == {{stats.cardCount}}
+
+### Filtre ids : exactement les lignes demandées
+GET {{api}}/{{courant}}/transactions?ids={{cb.id}},{{facture.id}}
+Authorization: Bearer {{aliceLogin.access_token}}
+
+?? status == 200
+?? js response.parsedBody.meta.total == 2
+
+### Filtre ids : identifiant invalide refusé
+GET {{api}}/{{courant}}/transactions?ids={{cb.id}},pas-un-uuid
+Authorization: Bearer {{aliceLogin.access_token}}
+
+?? status == 400
+
+### Filtre ids : un autre utilisateur ne reçoit rien de ces identifiants (pas d'accès au compte)
+GET {{api}}/{{courant}}/transactions?ids={{cb.id}}
+Authorization: Bearer {{bobLogin.access_token}}
+
+?? status == 403
+
+### Anonyme : refusé
+GET {{api}}/{{courant}}/transactions?reconciled=false&pending=false
+
+?? status == 401
+
+### Pointer la facture à venir : elle sort de l'attente (resolvePending inchangée)
+PATCH {{api}}/{{courant}}/transactions/{{facture.id}}
+Authorization: Bearer {{aliceLogin.access_token}}
+Content-Type: application/json
+
+{"reconciled":true}
+
+?? status == 200
+?? js response.parsedBody.reconciled == true
+?? js response.parsedBody.pending == false
+
+### Dépointer : elle redevient « À pointer » (pending non restaurée)
+PATCH {{api}}/{{courant}}/transactions/{{facture.id}}
+Authorization: Bearer {{aliceLogin.access_token}}
+Content-Type: application/json
+
+{"reconciled":false}
+
+?? status == 200
+?? js response.parsedBody.reconciled == false
+?? js response.parsedBody.pending == false
+
+### « Remettre en facture à venir » : pending seul, reste non rapprochée
+PATCH {{api}}/{{courant}}/transactions/{{facture.id}}
+Authorization: Bearer {{aliceLogin.access_token}}
+Content-Type: application/json
+
+{"pending":true}
+
+?? status == 200
+?? js response.parsedBody.reconciled == false
+?? js response.parsedBody.pending == true
+
+### Pointage en lot de la CB et de la facture
+PATCH {{api}}/{{courant}}/transactions/bulk
+Authorization: Bearer {{aliceLogin.access_token}}
+Content-Type: application/json
+
+{"ids":["{{cb.id}}","{{facture.id}}"],"data":{"reconciled":true}}
+
+?? status == 200
+
+###
+GET {{api}}/{{courant}}/transactions?search={{tag}}&reconciled=false&pending=false
+Authorization: Bearer {{aliceLogin.access_token}}
+
+?? status == 200
+?? js response.parsedBody.meta.total == 0
+
+### Nettoyage
+DELETE {{api}}/{{courant}}/transactions/{{cb.id}}
+Authorization: Bearer {{aliceLogin.access_token}}
+
+?? status == 204
+
+###
+DELETE {{api}}/{{courant}}/transactions/{{facture.id}}
+Authorization: Bearer {{aliceLogin.access_token}}
+
+?? status == 204
+
+###
+DELETE {{api}}/{{courant}}/transactions/{{pointee.id}}
+Authorization: Bearer {{aliceLogin.access_token}}
+
+?? status == 204
+
+###
+DELETE {{api}}/{{courant}}/transactions/{{pendingRapprochee.id}}
+Authorization: Bearer {{aliceLogin.access_token}}
+
+?? status == 204

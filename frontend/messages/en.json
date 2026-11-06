@@ -249,9 +249,7 @@
     "save_another": "Save & Add Another",
     "expense_hint": "Use negative value for expenses (ex: -10)",
     "filter_status": "Filter by status",
-    "status_all": "All statuses",
-    "status_reconciled": "Reconciled",
-    "status_not_reconciled": "Not reconciled",
+    "status_all": "All",
     "filter_title": "Filters",
     "search_placeholder": "Search a transaction...",
     "reset_filters": "Reset",
@@ -311,7 +309,22 @@
     "anomaly": {
       "duplicate": "Possible duplicate",
       "outlier": "Unusual expense"
-    }
+    },
+    "status_a_pointer": "To reconcile",
+    "status_a_pointer_count": "To reconcile · {count}",
+    "status_a_venir": "Upcoming invoices",
+    "status_pointee": "Reconciled",
+    "state": {
+      "a_pointer": "To reconcile",
+      "a_venir": "Upcoming invoice",
+      "pointee": "Reconciled"
+    },
+    "point": "Reconcile",
+    "unpoint": "Unreconcile",
+    "unpointed_to_point": "Unreconciled: the transaction is back to « To reconcile », not « Upcoming invoice ».",
+    "back_to_upcoming": "Put back as upcoming invoice",
+    "back_to_upcoming_done": "Put back as upcoming invoice",
+    "all_periods_note": "All periods: the list can hold more transactions than the « To reconcile » count (chosen period), and anomaly marks only cover the chosen period."
   },
   "Import": {
     "title": "Import transactions",

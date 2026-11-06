@@ -87,7 +87,7 @@ function TransactionsContent() {
         // Un autre lien (autres filtres) repart d'une liste neuve.
         key={searchParams.toString()}
         period={listPeriod}
-        initialFilters={{ ids: link.ids, categoryId: link.categoryId }}
+        initialFilters={{ ids: link.ids, categoryId: link.categoryId, state: link.state }}
         extraActions={
           <Link href="/transactions/import">
             <Button variant="outline" size="sm" className="gap-2">
