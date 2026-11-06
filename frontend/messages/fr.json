@@ -57,6 +57,17 @@
     "stats": "Statistiques de la période",
     "select_period": "Sélectionner une période",
     "active_suffix": "(Active)",
+    "forecast_title": "Prévu en fin de période",
+    "bank_title": "En banque",
+    "upcoming_title": "À venir",
+    "todo_title": "À traiter",
+    "todo_all_good": "Tout est à jour",
+    "todo_card": "{count} CB à pointer",
+    "todo_overrun": "{name} dépasse son budget de {amount}",
+    "budgets_title": "Budgets",
+    "new_transaction": "Nouvelle opération",
+    "no_period_title": "Aucune période pour ce compte",
+    "no_period_desc": "Créez une période pour suivre votre budget et connaître votre solde prévu en fin de période.",
     "customize": "Personnaliser le tableau de bord",
     "layout_title": "Disposition du tableau de bord (glissez pour réorganiser)",
     "available_widgets": "Widgets disponibles",
@@ -196,7 +207,8 @@
       "title": "Prochaines Échéances (7j)",
       "none": "Rien de prévu cette semaine",
       "recurring": "Récurrent",
-      "planned": "Prévu"
+      "planned": "Prévu",
+      "total": "Total"
     },
     "anomalies": {
       "all_good": "Tout est en ordre",
@@ -521,10 +533,10 @@
     "next_with_progress": "Suivant (étape {step} sur {steps})",
     "dashboard": {
       "welcome": "Bienvenue sur Account V2 ! Laissez-vous guider pour découvrir les fonctionnalités principales.",
-      "stats": "Retrouvez ici votre solde en banque (opérations pointées) pour la période en cours.",
+      "stats": "Votre solde prévu en fin de période, votre solde en banque et votre solde à venir, pour la période choisie.",
       "breakdown": "Visualisez en un coup d'œil la répartition de vos dépenses par catégorie par rapport à votre budget.",
-      "transactions": "Consultez ici vos dernières opérations. Les couleurs indiquent si vous êtes dans le vert ou non.",
-      "add_btn": "Cliquez sur + pour ajouter une transaction."
+      "transactions": "Ici, ce qui demande votre attention : anomalies, cartes bancaires à pointer et budgets dépassés.",
+      "add_btn": "Cliquez sur « Nouvelle opération » pour ajouter une transaction."
     },
     "account": {
       "intro": "La configuration d'un compte se fait en plusieurs étapes pour assurer une gestion précise.",

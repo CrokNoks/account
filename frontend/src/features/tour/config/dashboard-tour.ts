@@ -18,7 +18,7 @@ export const DASHBOARD_STEPS = (t: _Translator): Step[] => [
     placement: 'top',
   },
   {
-    target: '[data-tour="transaction-list"]',
+    target: '[data-tour="to-handle"]',
     content: t('dashboard.transactions'),
     placement: 'top',
   },

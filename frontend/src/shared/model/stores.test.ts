@@ -1,7 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { useUiStore } from './use-ui-store';
 import { useAccountStore } from '@/features/accounts/model/use-account-store';
-import { useDashboardStore } from '@/features/preferences/model/use-dashboard-store';
 
 describe('useAccountStore', () => {
   beforeEach(() => {
@@ -108,62 +107,5 @@ describe('useUiStore tours', () => {
       isCreateTransactionDrawerOpen: true,
       isCreateAccountDialogOpen: false,
     });
-  });
-});
-
-describe('useDashboardStore', () => {
-  const widget = (id: string, width = 6) => ({
-    id,
-    width,
-    desktopVisible: true,
-    mobileVisible: true,
-  });
-
-  beforeEach(() => {
-    useDashboardStore.setState({
-      tempLayout: [widget('tags'), widget('anomalies', 12)],
-    });
-  });
-
-  const layout = () => useDashboardStore.getState().tempLayout;
-
-  it('removes a widget present in the layout', () => {
-    useDashboardStore.getState().toggleWidget('tags');
-
-    expect(layout()!.map((w) => w.id)).toEqual(['anomalies']);
-  });
-
-  it('adds a missing widget at full width and visible everywhere', () => {
-    useDashboardStore.getState().toggleWidget('net-worth');
-
-    expect(layout()!.at(-1)).toEqual(widget('net-worth', 12));
-  });
-
-  it('changes the width of a widget', () => {
-    useDashboardStore.getState().updateWidgetWidth('tags', 4);
-
-    expect(layout()![0].width).toBe(4);
-    expect(layout()![1].width).toBe(12);
-  });
-
-  it('toggles the visibility on one device only', () => {
-    useDashboardStore.getState().toggleDeviceVisibility('tags', 'mobile');
-
-    expect(layout()![0]).toMatchObject({
-      desktopVisible: true,
-      mobileVisible: false,
-    });
-  });
-
-  it('ignores edits when no layout is being edited', () => {
-    useDashboardStore.setState({ tempLayout: null });
-    const { toggleWidget, updateWidgetWidth, toggleDeviceVisibility } =
-      useDashboardStore.getState();
-
-    toggleWidget('tags');
-    updateWidgetWidth('tags', 4);
-    toggleDeviceVisibility('tags', 'desktop');
-
-    expect(layout()).toBeNull();
   });
 });

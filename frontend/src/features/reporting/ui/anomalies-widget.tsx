@@ -12,8 +12,13 @@ import { useState } from 'react';
 import { toast } from 'sonner';
 import { getApiErrorMessage } from '@/shared/api/mutation-error';
 import { useTranslations } from 'next-intl';
+import { Link } from '@/i18n/routing';
 
-export function AnomaliesWidget() {
+/**
+ * `embedded` : seulement les lignes (bloc À traiter de l'écran Aujourd'hui) ; rien s'il n'y a
+ * aucune anomalie, c'est le bloc parent qui dit « tout est à jour ».
+ */
+export function AnomaliesWidget({ embedded = false }: { embedded?: boolean }) {
   const t = useTranslations('Reporting.anomalies');
   const tApi = useTranslations('ApiErrors');
   const { activeAccountId, activePeriodId } = useAccountStore();
@@ -28,6 +33,7 @@ export function AnomaliesWidget() {
   if (isLoading) return null;
 
   if (activeAnomalies.length === 0) {
+    if (embedded) return null;
     return (
       <Card className="border-2 border-emerald-500/30 shadow-sm h-full overflow-hidden bg-emerald-500/5 flex flex-col items-center justify-center p-8 transition-all hover:bg-emerald-500/10">
         <div className="p-4 rounded-full bg-emerald-100 text-emerald-600 mb-4 animate-in zoom-in duration-500">
@@ -81,16 +87,9 @@ export function AnomaliesWidget() {
     }
   };
 
-  return (
-    <Card className="border-2 border-orange-500/50 shadow-md h-full overflow-hidden bg-transparent flex flex-col">
-      <CardHeader className="pb-3 flex flex-row items-center justify-start gap-2 space-y-0 bg-transparent shrink-0">
-        <AlertCircle className="w-5 h-5 text-orange-500" />
-        <CardTitle className="text-[10px] max-lg:text-xs font-bold text-orange-600 dark:text-orange-400 uppercase tracking-wider">
-          {t('detected', { count: activeAnomalies.length })}
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-3 pt-2 bg-transparent overflow-y-auto flex-1 min-h-0">
-        {activeAnomalies.map((anomaly) => (
+  const rows = (
+    <>
+      {activeAnomalies.map((anomaly) => (
           <div 
             key={anomaly.id} 
             className="flex items-start gap-3 p-3 rounded-lg bg-background border shadow-sm relative group"
@@ -102,7 +101,13 @@ export function AnomaliesWidget() {
               {getIcon(anomaly.type)}
             </div>
             <div className="flex-1 min-w-0 pr-8">
-              <h4 className="text-sm font-bold truncate">{anomaly.title}</h4>
+              <h4 className="text-sm font-bold truncate">
+                {embedded ? (
+                  <Link href="/transactions" className="hover:underline">{anomaly.title}</Link>
+                ) : (
+                  anomaly.title
+                )}
+              </h4>
               <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
                 {anomaly.description}
               </p>
@@ -118,6 +123,21 @@ export function AnomaliesWidget() {
             </Button>
           </div>
         ))}
+    </>
+  );
+
+  if (embedded) return <div className="space-y-3">{rows}</div>;
+
+  return (
+    <Card className="border-2 border-orange-500/50 shadow-md h-full overflow-hidden bg-transparent flex flex-col">
+      <CardHeader className="pb-3 flex flex-row items-center justify-start gap-2 space-y-0 bg-transparent shrink-0">
+        <AlertCircle className="w-5 h-5 text-orange-500" />
+        <CardTitle className="text-[10px] max-lg:text-xs font-bold text-orange-600 dark:text-orange-400 uppercase tracking-wider">
+          {t('detected', { count: activeAnomalies.length })}
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-3 pt-2 bg-transparent overflow-y-auto flex-1 min-h-0">
+        {rows}
       </CardContent>
     </Card>
   );

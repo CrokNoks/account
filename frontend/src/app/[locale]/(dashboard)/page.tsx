@@ -7,125 +7,31 @@ import { useUiStore } from "@/shared/model/use-ui-store";
 import { useTranslations } from 'next-intl';
 import { format } from 'date-fns';
 import { useRouter } from '@/i18n/routing';
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
 } from "@/components/ui/select";
 import { HelpButton } from "@/shared/ui/tour/HelpButton";
-import { useEffect, useMemo } from 'react';
+import { useEffect } from 'react';
 import { Button } from "@/components/ui/button";
-import { Settings2, Check, X, PlusCircle } from "lucide-react";
-import { useUserPreferences, useUpdateUserPreferences } from "@/features/preferences/api/use-user-preferences";
-import { useDashboardStore } from "@/features/preferences/model/use-dashboard-store";
-import { 
-  WIDGET_COMPONENTS, 
-  ALL_AVAILABLE_WIDGETS, 
-  DEFAULT_WIDGETS 
-} from "@/features/preferences/config/dashboard-widgets";
-import { visibleLayout } from "@/features/preferences/model/visible-layout";
-import { 
-  MiniWidget, 
-  ManagementItem, 
-  SortableWidget 
-} from "@/features/preferences/ui/dashboard-editor-components";
-import {
-  DndContext,
-  closestCenter,
-  KeyboardSensor,
-  PointerSensor,
-  useSensor,
-  useSensors,
-  DragEndEvent,
-} from '@dnd-kit/core';
-import {
-  arrayMove,
-  SortableContext,
-  sortableKeyboardCoordinates,
-  rectSortingStrategy,
-} from '@dnd-kit/sortable';
+import { CalendarX, Plus } from "lucide-react";
+import { NoDataState } from "@/shared/ui/no-data-state";
+import { BalanceBar } from "@/features/reporting/ui/dashboard-stats";
+import { ToHandle } from "@/features/reporting/ui/to-handle";
+import { BudgetBreakdown } from "@/features/reporting/ui/budget-breakdown";
+import { UpcomingDeadlinesWidget } from "@/features/reporting/ui/upcoming-deadlines-widget";
+import { CreatePeriodDialog } from "@/features/periods/ui/create-period-dialog";
 
 export default function Home() {
   const t = useTranslations('Dashboard');
-  const tc = useTranslations('Common');
   const router = useRouter();
   const { activeAccountId, activePeriodId, setActivePeriodId } = useAccountStore();
-  const { startTour, completedTours } = useUiStore();
+  const { startTour, completedTours, setCreateTransactionDrawerOpen } = useUiStore();
   const { data: accounts, isLoading: isLoadingAccounts } = useAccounts();
-  const { data: periods } = usePeriods(activeAccountId);
-
-  const { data: preferences } = useUserPreferences();
-  const { mutate: updatePreferences } = useUpdateUserPreferences();
-  const { isEditing, setEditing, tempLayout, setTempLayout, toggleWidget, updateWidgetWidth, toggleDeviceVisibility } = useDashboardStore();
-
-  const savedLayout = useMemo(
-    () => visibleLayout(preferences?.dashboardLayout.widgets || DEFAULT_WIDGETS, ALL_AVAILABLE_WIDGETS.map(aw => aw.id)),
-    [preferences],
-  );
-
-  const layout = useMemo(() => {
-    if (isEditing && tempLayout) return tempLayout;
-    return savedLayout;
-  }, [isEditing, tempLayout, savedLayout]);
-
-  const activeWidgets = useMemo(() => {
-    return layout.map(w => ({
-      ...w,
-      label: t(`widgets.${w.id}`)
-    }));
-  }, [layout, t]);
-
-  const inactiveWidgets = useMemo(() => {
-    return ALL_AVAILABLE_WIDGETS.filter(aw => !layout.find(w => w.id === aw.id)).map(aw => ({ ...aw, label: t(`widgets.${aw.id}`) }));
-  }, [layout, t]);
-
-  const handleStartEditing = () => {
-    const currentWidgets = savedLayout;
-
-    const normalizedWidgets = currentWidgets.map(w => ({
-      ...w,
-      desktopVisible: w.desktopVisible ?? true,
-      mobileVisible: w.mobileVisible ?? true,
-    }));
-
-    setTempLayout(normalizedWidgets);
-    setEditing(true);
-  };
-
-  const handleSaveLayout = () => {
-    if (tempLayout) {
-      updatePreferences({ widgets: tempLayout });
-    }
-    setEditing(false);
-    setTempLayout(null);
-  };
-
-  const handleCancelEdit = () => {
-    setEditing(false);
-    setTempLayout(null);
-  };
-
-  const sensors = useSensors(
-    useSensor(PointerSensor),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    })
-  );
-
-  function handleDragEnd(event: DragEndEvent) {
-    const { active, over } = event;
-
-    if (over && active.id !== over.id) {
-      const oldIndex = layout.findIndex(w => w.id === active.id);
-      const newIndex = layout.findIndex(w => w.id === over.id);
-      
-      if (oldIndex !== -1 && newIndex !== -1) {
-        setTempLayout(arrayMove(layout, oldIndex, newIndex));
-      }
-    }
-  }
+  const { data: periods, isLoading: isLoadingPeriods } = usePeriods(activeAccountId);
 
   useEffect(() => {
     if (!isLoadingAccounts && (!accounts || accounts.length === 0)) {
@@ -152,9 +58,19 @@ export default function Home() {
 
   const currentPeriod = periods?.find(p => p.id === activePeriodId);
 
+  // Sans aucune période, rien d'autre que l'explication et la création (ni barre, ni rythme, ni blocs).
+  if (!isLoadingPeriods && periods && periods.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center gap-4 py-16">
+        <NoDataState icon={CalendarX} title={t('no_period_title')} description={t('no_period_desc')} />
+        <CreatePeriodDialog />
+      </div>
+    );
+  }
+
   return (
-    <div className="flex flex-col gap-6 lg:gap-12">
-      <div className="flex items-center justify-between">
+    <div className="flex flex-col gap-4 lg:gap-8">
+      <div className="flex items-center justify-between gap-2">
         <div className="flex flex-col gap-2">
           <div className="flex items-center gap-4">
             <h2 className="hidden lg:block text-3xl font-bold tracking-tight">{t('title')}</h2>
@@ -162,7 +78,7 @@ export default function Home() {
             <Select value={activePeriodId || ""} onValueChange={setActivePeriodId}>
               <SelectTrigger className="h-8 rounded-full bg-primary/10 text-primary border-primary/20 px-4 hover:bg-primary/20 transition-colors">
                 <SelectValue>
-                  {currentPeriod 
+                  {currentPeriod
                     ? `${format(new Date(currentPeriod.startDate), 'dd/MM/yyyy')} - ${format(new Date(currentPeriod.endDate), 'dd/MM/yyyy')}`
                     : t('select_period')
                   }
@@ -181,94 +97,29 @@ export default function Home() {
             {t('welcome')}
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          {!isEditing ? (
-            <Button variant="outline" size="icon" onClick={handleStartEditing} title={t('customize')} className="hidden lg:flex">
-              <Settings2 className="w-4 h-4" />
-            </Button>
-          ) : (
-            <div className="flex items-center gap-2 animate-in fade-in zoom-in duration-200">
-              <Button variant="outline" size="sm" onClick={handleCancelEdit} className="gap-2">
-                <X className="w-4 h-4" /> {tc('cancel')}
-              </Button>
-              <Button size="sm" onClick={handleSaveLayout} className="gap-2">
-                <Check className="w-4 h-4" /> {tc('save')}
-              </Button>
-            </div>
-          )}
-        </div>
+        <Button className="gap-2" onClick={() => setCreateTransactionDrawerOpen(true)} data-tour="add-transaction">
+          <Plus className="w-4 h-4" />
+          {t('new_transaction')}
+        </Button>
       </div>
 
-      {isEditing && (
-        <div className="p-8 bg-primary/5 border-2 border-primary/20 rounded-3xl animate-in slide-in-from-top-4 duration-300 space-y-8">
-          <div>
-            <h3 className="text-xs font-black uppercase tracking-widest mb-4 flex items-center gap-2 text-primary">
-              <Settings2 className="w-4 h-4" /> {t('layout_title')}
-            </h3>
-            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-              <SortableContext items={layout.map(w => w.id)} strategy={rectSortingStrategy}>
-                <div className="grid grid-cols-12 gap-4 bg-background/50 p-4 rounded-2xl border-2 border-dashed border-primary/20 min-h-[200px]">
-                  {activeWidgets.map((widget) => (
-                    <MiniWidget 
-                      key={widget.id} 
-                      id={widget.id} 
-                      label={widget.label}
-                      width={widget.width}
-                      desktopVisible={widget.desktopVisible}
-                      mobileVisible={widget.mobileVisible}
-                      onRemove={() => toggleWidget(widget.id)}
-                      onWidthChange={(newWidth) => updateWidgetWidth(widget.id, newWidth)}
-                      onToggleDevice={(device) => toggleDeviceVisibility(widget.id, device)}
-                    />
-                  ))}
-                </div>
-              </SortableContext>
-            </DndContext>
-          </div>
+      <BalanceBar />
 
-          <div>
-            <h3 className="text-xs font-black uppercase tracking-widest mb-4 flex items-center gap-2 text-muted-foreground">
-              <PlusCircle className="w-4 h-4" /> {t('available_widgets')}
-            </h3>
-            <div className="flex flex-wrap gap-2">
-              {inactiveWidgets.map((widget) => (
-                <ManagementItem 
-                  key={widget.id} 
-                  id={widget.id} 
-                  label={widget.label}
-                  onAdd={() => toggleWidget(widget.id)}
-                />
-              ))}
-            </div>
-          </div>
+      {/* Emplacements de la composition du prévu et du rythme de dépense (parties sensibles, à brancher). */}
+      <div data-slot="composition" />
+      <div data-slot="spending-pace" />
+
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-8">
+        <div data-tour="to-handle" className="lg:col-span-12">
+          <ToHandle />
         </div>
-      )}
-      
-      {!isEditing && (
-      <div className="grid grid-cols-12 gap-4 lg:gap-8">
-        {layout.map((widget) => {
-          const widgetId = widget.id;
-          const WidgetComponent = WIDGET_COMPONENTS[widgetId];
-          
-          if (!WidgetComponent) return null;
-
-          return (
-            <SortableWidget 
-              key={widgetId} 
-              id={widgetId} 
-              isEditing={isEditing}
-              width={widget.width}
-              desktopVisible={widget.desktopVisible}
-              mobileVisible={widget.mobileVisible}
-              onWidthChange={(newWidth) => updateWidgetWidth(widgetId, newWidth)}
-              onToggleDevice={(device) => toggleDeviceVisibility(widgetId, device)}
-            >
-              <WidgetComponent />
-            </SortableWidget>
-          );
-        })}
+        <div data-tour="budget-breakdown" className="lg:col-span-7">
+          <BudgetBreakdown />
+        </div>
+        <div className="lg:col-span-5">
+          <UpcomingDeadlinesWidget />
+        </div>
       </div>
-      )}
     </div>
   );
 }

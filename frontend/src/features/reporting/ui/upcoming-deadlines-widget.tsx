@@ -34,6 +34,7 @@ export function UpcomingDeadlinesWidget() {
     })
     .sort((a, b) => a.date.localeCompare(b.date))
     .slice(0, 5);
+  const total = (upcoming ?? []).reduce((sum, e) => sum + parseInt(e.amount, 10), 0);
 
   return (
     <Card className="h-full border-2 shadow-sm overflow-hidden flex flex-col">
@@ -75,6 +76,14 @@ export function UpcomingDeadlinesWidget() {
             ))
           )}
         </div>
+        {upcoming && upcoming.length > 0 && (
+          <div className="mt-4 flex items-center justify-between border-t pt-3 text-xs max-lg:text-sm font-bold">
+            <span className="uppercase tracking-widest text-muted-foreground">{t('total')}</span>
+            <span className={cn("font-black tracking-tight", total < 0 ? "text-red-500" : "text-green-500")}>
+              {formatCurrency(total)}
+            </span>
+          </div>
+        )}
       </CardContent>
     </Card>
   );

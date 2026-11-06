@@ -5,25 +5,47 @@ import { DASHBOARD_STEPS } from './dashboard-tour';
 
 type Messages = { Tour: Record<string, Record<string, string>> };
 
-const statsStepText = (messages: Messages) => {
+const steps = (messages: Messages) => {
   const t = ((key: string) => {
     const [group, name] = key.split('.');
     return messages.Tour[group][name];
   }) as Parameters<typeof DASHBOARD_STEPS>[0];
-  const step = DASHBOARD_STEPS(t).find((s) => s.target === '[data-tour="stats"]');
-  return step?.content;
+  return DASHBOARD_STEPS(t);
 };
 
-describe('visite guidée du tableau de bord, étape stats', () => {
-  it('annonce uniquement le solde en banque (français)', () => {
-    expect(statsStepText(fr as unknown as Messages)).toBe(
-      'Retrouvez ici votre solde en banque (opérations pointées) pour la période en cours.',
-    );
+describe('visite guidée de l\'écran Aujourd\'hui', () => {
+  it('pointe la barre des soldes, Budgets, À traiter puis Nouvelle opération', () => {
+    expect(steps(fr as unknown as Messages).map((s) => s.target)).toEqual([
+      'body',
+      '[data-tour="stats"]',
+      '[data-tour="budget-breakdown"]',
+      '[data-tour="to-handle"]',
+      '[data-tour="add-transaction"]',
+    ]);
   });
 
-  it('annonce uniquement le solde en banque (anglais)', () => {
-    expect(statsStepText(en as unknown as Messages)).toBe(
-      'Find your bank balance (reconciled transactions) for the current period.',
+  it.each([
+    ['français', fr],
+    ['anglais', en],
+  ] as const)('chaque étape a un texte (%s)', (_name, messages) => {
+    for (const step of steps(messages as unknown as Messages)) {
+      expect(typeof step.content).toBe('string');
+      expect((step.content as string).length).toBeGreaterThan(10);
+    }
+  });
+
+  it('annonce le prévu et les soldes, sans parler des dernières opérations (français)', () => {
+    const [, stats, , todo] = steps(fr as unknown as Messages);
+    expect(stats.content).toBe(
+      'Votre solde prévu en fin de période, votre solde en banque et votre solde à venir, pour la période choisie.',
+    );
+    expect(String(todo.content)).not.toMatch(/dernières/i);
+  });
+
+  it('annonce le prévu et les soldes (anglais)', () => {
+    const [, stats] = steps(en as unknown as Messages);
+    expect(stats.content).toBe(
+      'Your forecast balance at the end of the period, your bank balance and your upcoming balance, for the chosen period.',
     );
   });
 });

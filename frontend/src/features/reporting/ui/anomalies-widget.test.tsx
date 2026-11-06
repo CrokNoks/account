@@ -19,6 +19,9 @@ vi.mock('../api/use-anomalies', () => ({
     ],
   }),
 }));
+vi.mock('@/i18n/routing', () => ({
+  Link: ({ href, children }: { href: string; children: React.ReactNode }) => <a href={href}>{children}</a>,
+}));
 vi.mock('../api/use-ignore-anomaly', () => ({
   useIgnoreAnomaly: () => ({ mutate: ignoreAnomaly }),
 }));

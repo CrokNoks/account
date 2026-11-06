@@ -57,6 +57,17 @@
     "stats": "Period Stats",
     "select_period": "Select a period",
     "active_suffix": "(Active)",
+    "forecast_title": "Forecast at end of period",
+    "bank_title": "In bank",
+    "upcoming_title": "Upcoming",
+    "todo_title": "To handle",
+    "todo_all_good": "All up to date",
+    "todo_card": "{count} card payments to reconcile",
+    "todo_overrun": "{name} is over budget by {amount}",
+    "budgets_title": "Budgets",
+    "new_transaction": "New transaction",
+    "no_period_title": "No period for this account",
+    "no_period_desc": "Create a period to track your budget and see your forecast balance at the end of the period.",
     "customize": "Customize the dashboard",
     "layout_title": "Dashboard layout (drag to reorder)",
     "available_widgets": "Available widgets",
@@ -196,7 +207,8 @@
       "title": "Upcoming deadlines (7d)",
       "none": "Nothing planned this week",
       "recurring": "Recurring",
-      "planned": "Planned"
+      "planned": "Planned",
+      "total": "Total"
     },
     "anomalies": {
       "all_good": "All clear",
@@ -521,10 +533,10 @@
     "next_with_progress": "Next (Step {step} of {steps})",
     "dashboard": {
       "welcome": "Welcome to Account V2! Let us guide you through the main features.",
-      "stats": "Find your bank balance (reconciled transactions) for the current period.",
+      "stats": "Your forecast balance at the end of the period, your bank balance and your upcoming balance, for the chosen period.",
       "breakdown": "Visualize at a glance your spending distribution by category compared to your budget.",
-      "transactions": "Check your latest operations here. Colors indicate if you're on track.",
-      "add_btn": "Click + to add a transaction."
+      "transactions": "What needs your attention: anomalies, card payments to reconcile and exceeded budgets.",
+      "add_btn": "Click \"New transaction\" to add a transaction."
     },
     "account": {
       "intro": "Setting up an account involves several steps to ensure accurate management.",
