@@ -215,6 +215,19 @@ describe('GetSpendingPaceUseCase', () => {
     expect(r.gap).toBeNull();
   });
 
+  it('période future non active : aucun point, écart null, aucune transaction chargée pour elle', async () => {
+    const futureClosed = period('jan', '2027-01-01', '2027-01-31', false);
+    periodsList = [nov, oct, futureClosed];
+    const r = await useCase.execute('acc-1', 'jan', today);
+    expect(r.points).toEqual([]);
+    expect(r.gap).toBeNull();
+    const starts = transactions.findAllByAccountUnpaginated.mock.calls.map(
+      (c: [string, { startDate: Date }]) =>
+        c[1].startDate.toISOString().slice(0, 10),
+    );
+    expect(starts).not.toContain('2027-01-01');
+  });
+
   it('rejette une période d’un autre compte ou inconnue', async () => {
     periodsList = [period('x', '2026-11-01', null, true, 'acc-other')];
     await expect(useCase.execute('acc-1', 'x', today)).rejects.toThrow(

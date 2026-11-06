@@ -59,7 +59,9 @@ export class GetSpendingPaceUseCase {
       period.isActive || !period.endDate
         ? earliest(period.endDate ?? today, today)
         : period.endDate;
-    const days = daysBetween(period.startDate, last);
+    // Période future (non active comprise) : rien à tracer, la courbe n'a pas commencé.
+    const days =
+      period.startDate > today ? 0 : daysBetween(period.startDate, last);
 
     const previousPeriod = this.findPrevious(period, allPeriods);
 
