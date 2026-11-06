@@ -67,6 +67,11 @@ export function EvolutionTab() {
     return <p data-testid="evolution-no-period" className="text-muted-foreground">{t('no_closed_period')}</p>;
   }
 
+  // Des périodes fermées existent mais la réponse n'en contient aucune : on le dit plutôt que d'afficher des graphiques vides.
+  if (closedEvolution.length === 0) {
+    return <p data-testid="evolution-empty" className="text-muted-foreground">{te('empty')}</p>;
+  }
+
   const totals = closedEvolution.map((d) => ({
     name: shortPeriodLabel(d.startDate, locale),
     total: Number(absCents(d.realExpenses)),

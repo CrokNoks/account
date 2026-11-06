@@ -189,6 +189,7 @@
         "error": "Unable to load the comparison."
       },
       "evolution": {
+        "empty": "Evolution data is not available for the closed periods. Please try again later.",
         "total_title": "Spending by period",
         "total_legend": "Bars: total expenses and savings of each closed period, pending bills included.",
         "total_series": "Total spent",

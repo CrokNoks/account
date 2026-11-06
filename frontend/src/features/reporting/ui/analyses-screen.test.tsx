@@ -238,6 +238,14 @@ describe('Évolution', () => {
     expect(screen.getByTestId('evolution-no-period')).toBeTruthy();
   });
 
+  it("périodes fermées existantes mais réponse vide : un message, aucun graphique", () => {
+    state.evolution = [];
+    renderScreen('evolution');
+    expect(screen.getByTestId('evolution-empty').textContent).toContain("pas disponibles");
+    expect(screen.queryByTestId('chart-legend')).toBeNull();
+    expect(screen.queryByTestId('evolution-no-period')).toBeNull();
+  });
+
   it("légendes des trois graphiques ; le graphique revenus face aux dépenses n'existe plus", () => {
     state.evolution = [evo(1), evo(2), evo(3, true)];
     renderScreen('evolution');

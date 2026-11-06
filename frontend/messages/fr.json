@@ -189,6 +189,7 @@
         "error": "Impossible de charger la comparaison."
       },
       "evolution": {
+        "empty": "Les données d'évolution ne sont pas disponibles pour les périodes fermées. Réessayez plus tard.",
         "total_title": "Dépenses par période",
         "total_legend": "Barres : total des dépenses et de l'épargne de chaque période fermée, factures en attente comprises.",
         "total_series": "Total dépensé",
