@@ -35,6 +35,10 @@ vi.mock('@/shared/ui/tour/HelpButton', () => ({ HelpButton: () => <span data-tes
 vi.mock('@/features/reporting/ui/dashboard-stats', () => ({
   BalanceBar: () => <div data-testid="balance-bar" data-tour="stats" />,
 }));
+vi.mock('@/features/reporting/ui/forecast-composition', () => ({
+  ForecastComposition: () => <div data-testid="composition" />,
+}));
+vi.mock('@/features/reporting/ui/spending-pace', () => ({ SpendingPace: () => <div data-testid="pace" /> }));
 vi.mock('@/features/reporting/ui/to-handle', () => ({ ToHandle: () => <div data-testid="to-handle" /> }));
 vi.mock('@/features/reporting/ui/budget-breakdown', () => ({ BudgetBreakdown: () => <div data-testid="budgets" /> }));
 vi.mock('@/features/reporting/ui/upcoming-deadlines-widget', () => ({
@@ -60,10 +64,10 @@ describe('Écran Aujourd\'hui', () => {
     state.completedTours = {};
   });
 
-  it('affiche la barre des soldes puis À traiter, Budgets et Factures, sans personnalisation', () => {
+  it('affiche la barre des soldes, la composition, le rythme puis À traiter, Budgets et Factures, sans personnalisation', () => {
     renderHome();
 
-    for (const id of ['balance-bar', 'to-handle', 'budgets', 'bills']) {
+    for (const id of ['balance-bar', 'composition', 'pace', 'to-handle', 'budgets', 'bills']) {
       expect(screen.getByTestId(id)).toBeTruthy();
     }
     expect(screen.queryByTitle(/Personnaliser/)).toBeNull();
@@ -90,7 +94,7 @@ describe('Écran Aujourd\'hui', () => {
 
     expect(screen.getByText('Aucune période pour ce compte')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Créer une période' })).toBeTruthy();
-    for (const id of ['balance-bar', 'to-handle', 'budgets', 'bills']) {
+    for (const id of ['balance-bar', 'composition', 'pace', 'to-handle', 'budgets', 'bills']) {
       expect(screen.queryByTestId(id)).toBeNull();
     }
   });

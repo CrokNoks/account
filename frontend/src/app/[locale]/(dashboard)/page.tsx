@@ -20,6 +20,8 @@ import { Button } from "@/components/ui/button";
 import { CalendarX, Plus } from "lucide-react";
 import { NoDataState } from "@/shared/ui/no-data-state";
 import { BalanceBar } from "@/features/reporting/ui/dashboard-stats";
+import { ForecastComposition } from "@/features/reporting/ui/forecast-composition";
+import { SpendingPace } from "@/features/reporting/ui/spending-pace";
 import { ToHandle } from "@/features/reporting/ui/to-handle";
 import { BudgetBreakdown } from "@/features/reporting/ui/budget-breakdown";
 import { UpcomingDeadlinesWidget } from "@/features/reporting/ui/upcoming-deadlines-widget";
@@ -105,9 +107,14 @@ export default function Home() {
 
       <BalanceBar />
 
-      {/* Emplacements de la composition du prévu et du rythme de dépense (parties sensibles, à brancher). */}
-      <div data-slot="composition" />
-      <div data-slot="spending-pace" />
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-8">
+        <div className="lg:col-span-5">
+          <ForecastComposition />
+        </div>
+        <div className="lg:col-span-7">
+          <SpendingPace />
+        </div>
+      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-8">
         <div data-tour="to-handle" className="lg:col-span-12">

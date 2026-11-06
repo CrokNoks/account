@@ -67,7 +67,22 @@
     "budgets_title": "Budgets",
     "new_transaction": "Nouvelle opération",
     "no_period_title": "Aucune période pour ce compte",
-    "no_period_desc": "Créez une période pour suivre votre budget et connaître votre solde prévu en fin de période."
+    "no_period_desc": "Créez une période pour suivre votre budget et connaître votre solde prévu en fin de période.",
+    "composition_title": "Composition du prévu",
+    "composition_bank": "En banque",
+    "composition_card": "CB non pointées",
+    "composition_bills": "Factures à venir",
+    "composition_budget": "Budget restant",
+    "composition_income": "Revenus attendus",
+    "composition_forecast": "Prévu",
+    "pace_title": "Rythme de dépense",
+    "pace_more": "{amount} de plus qu'à la même date",
+    "pace_less": "{amount} de moins qu'à la même date",
+    "pace_same": "Identique à la même date",
+    "pace_current": "Cette période",
+    "pace_previous": "Période précédente",
+    "pace_day": "Jour {day}",
+    "pace_empty": "Aucune donnée à afficher pour l'instant"
   },
   "Reporting": {
     "overruns_title": "Dépassements",

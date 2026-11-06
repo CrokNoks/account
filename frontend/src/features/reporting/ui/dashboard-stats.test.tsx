@@ -15,6 +15,11 @@ const stats = vi.hoisted(() => ({
     realBankBalance: '340000',
     upcomingBalance: '345000',
     forecastBalance: '330000',
+    cardTotal: '0',
+    cardCount: 0,
+    billsTotal: '0',
+    budgetRemaining: '0',
+    expectedIncome: '0',
   },
 }));
 

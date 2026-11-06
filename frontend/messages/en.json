@@ -67,7 +67,22 @@
     "budgets_title": "Budgets",
     "new_transaction": "New transaction",
     "no_period_title": "No period for this account",
-    "no_period_desc": "Create a period to track your budget and see your forecast balance at the end of the period."
+    "no_period_desc": "Create a period to track your budget and see your forecast balance at the end of the period.",
+    "composition_title": "Forecast breakdown",
+    "composition_bank": "In bank",
+    "composition_card": "Unreconciled card payments",
+    "composition_bills": "Upcoming bills",
+    "composition_budget": "Remaining budget",
+    "composition_income": "Expected income",
+    "composition_forecast": "Forecast",
+    "pace_title": "Spending pace",
+    "pace_more": "{amount} more than on the same date",
+    "pace_less": "{amount} less than on the same date",
+    "pace_same": "Same as on the same date",
+    "pace_current": "This period",
+    "pace_previous": "Previous period",
+    "pace_day": "Day {day}",
+    "pace_empty": "Nothing to show yet"
   },
   "Reporting": {
     "overruns_title": "Overruns",
