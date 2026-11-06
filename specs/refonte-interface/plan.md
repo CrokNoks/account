@@ -21,7 +21,7 @@ Un cycle = un `/quickcycle`, livrable seul. L'ordre compte : chacun s'appuie sur
 | 1 | `refonte-navigation` | Coque à 5 entrées + Réglages, jetons visuels | Clics pour atteindre Transactions et le paramétrage | complet | codé, reste à voir en réel |
 | 2 | `refonte-aujourdhui` | Écran Aujourd'hui fixe : barre des soldes, rythme, À traiter, budgets, factures. Retrait de la personnalisation | Temps pour connaître le prévu de fin de période | complet, partie sensible (soldes) | codé, écran à voir en réel, `http/aujourdhui.http` à rejouer |
 | 3 | `refonte-operations` | Pointage dans la liste, filtres d'état, soldes à jour | Part d'opérations pointées sans passer par un dialogue | complet | codé, écran à voir en réel, `functions/http/operations-pointage.http` jamais exécuté |
-| 4 | `refonte-analyses` | Répartition, Évolution, Dépassements sur un seul écran à onglets | Nombre de pages à ouvrir pour une analyse | complet | à faire |
+| 4 | `refonte-analyses` | Répartition, Évolution, Dépassements sur un seul écran à onglets | Nombre de pages à ouvrir pour une analyse | complet | codé, écran à voir en réel, `http/depassements-par-periode.http` à rejouer |
 | 5 | `refonte-budgets` | Saisie d'un budget avec effet immédiat sur le prévu | Ajustements de budget par période | complet, partie sensible (prévu) | à faire |
 | 6 | `refonte-echeances` | Courbe de trésorerie, point bas, calendrier, liste | Consultation des échéances avant une grosse dépense | complet | à faire |
 | 7 | `refonte-mobile` | Accueil et saisie mobile, nettoyage des anciennes pages | Temps de saisie d'une opération sur mobile | complet | à faire |
@@ -31,6 +31,8 @@ Un cycle = un `/quickcycle`, livrable seul. L'ordre compte : chacun s'appuie sur
 - Cycle 1, à voir une fois connecté : menu, onglets, Réglages, F2-F6, visite « compte » (dialogue encore ouvert à l'étape Réglages), bleu en clair et en sombre.
 - Cycle 2, à voir une fois connecté : écran à 1440 et 390 px, barre ou lignes signées, clair et sombre, visite `dashboard`. Rejouer `http/aujourdhui.http` avec Supabase local démarré.
 - Cycle 3, à voir avec Supabase démarré : jouer `functions/http/operations-pointage.http`, dont l'exclusion des autres comptes par le filtre `ids` (vérifiée seulement sur dépôts simulés), le pointage, le dépointage et les liens de À traiter.
+- Cycle 4, à voir une fois connecté : graphiques en clair et en sombre, à 1440 et 390 px, lien d'une catégorie vers Opérations.
+- Cycle 5 : aucune donnée ne distingue fixes et variables, la maquette Budgets devra composer avec.
 - Mise en prod : déployer front et back, puis appliquer `20261106100000_drop_user_preferences.sql`. Irréversible sans sauvegarde.
 - Les soldes gardent leurs définitions : `pending` hors soldes, CB non pointée comptée dans le solde à venir (`docs/reporting.md`).
 - Les montants restent en centimes entiers.
