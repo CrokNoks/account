@@ -250,12 +250,15 @@ Authorization: Bearer {{login.access_token}}
 ?? js response.parsedBody.points.length == 3
 ?? js response.parsedBody.points[0].periodId == {{p1.id}}
 ?? js response.parsedBody.points[0].budget == 10000
+?? js response.parsedBody.points[0].real == -12000
 ?? js response.parsedBody.points[0].overrun == 2000
 ?? js response.parsedBody.points[1].periodId == {{p2.id}}
 ?? js response.parsedBody.points[1].budget == 0
+?? js response.parsedBody.points[1].real == -7000
 ?? js response.parsedBody.points[1].overrun == 0
 ?? js response.parsedBody.points[2].periodId == {{p3.id}}
 ?? js response.parsedBody.points[2].budget == 8000
+?? js response.parsedBody.points[2].real == -8000
 ?? js response.parsedBody.points[2].overrun == 0
 
 ### CA6 : même dépassement que la liste (Livret P2 = 3000)

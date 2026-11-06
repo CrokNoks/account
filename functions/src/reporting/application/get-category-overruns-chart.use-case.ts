@@ -16,6 +16,8 @@ export interface CategoryOverrunChartPoint {
   startDate: string;
   endDate: string;
   budget: string;
+  /** Réel signé en centimes (dépense négative), `pending` exclues. */
+  real: string;
   overrun: string;
 }
 
@@ -98,6 +100,7 @@ export class GetCategoryOverrunsChartUseCase {
         startDate: period.startDate.toISOString(),
         endDate: (period.endDate ?? period.startDate).toISOString(),
         budget: (entry?.budget ?? 0n).toString(),
+        real: (entry?.real ?? 0n).toString(),
         overrun: (entry?.overrun ?? 0n).toString(),
       });
     }

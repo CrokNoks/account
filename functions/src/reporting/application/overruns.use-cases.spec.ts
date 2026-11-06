@@ -240,6 +240,18 @@ describe('Overruns use cases', () => {
       expect(res.points).toHaveLength(1);
     });
 
+    it('porte le réel signé de chaque période, pending exclues, 0 sans transaction', async () => {
+      allTx.push(tx(-5000, 'courses', '2026-03-12', undefined, true));
+      const res = await chart.execute('acc-1', 'courses', 'p1', 'p3');
+      expect(res.points.map((p) => p.real)).toEqual([
+        '-12000',
+        '-99000',
+        '-8000',
+      ]);
+      const livret = await chart.execute('acc-1', 'livret', 'p1', 'p3');
+      expect(livret.points.map((p) => p.real)).toEqual(['0', '0', '0']);
+    });
+
     it('même dépassement que la liste', async () => {
       const l = await list.execute('acc-1');
       const c = await chart.execute('acc-1', 'courses', 'p1', 'p3');
