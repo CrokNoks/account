@@ -66,7 +66,6 @@
     "todo_error": "Impossible de charger tous les éléments à traiter. Réessayez.",
     "todo_card": "{count} CB à pointer",
     "todo_overrun": "{name} dépasse son budget de {amount}",
-    "budgets_title": "Budgets",
     "new_transaction": "Nouvelle opération",
     "no_period_title": "Aucune période pour ce compte",
     "no_period_desc": "Créez une période pour suivre votre budget et connaître votre solde prévu en fin de période.",
@@ -102,13 +101,11 @@
     "overruns_range_inverted": "La période de début doit être antérieure ou égale à la période de fin.",
     "overruns_pick_category": "Choisissez une catégorie pour afficher le graphique.",
     "breakdown": "Répartition budgétaire",
-    "start_balance": "Solde initial",
     "real_income": "Revenus réels",
     "planned_income": "Revenus prévus",
     "real_expenses": "Dépenses réelles",
     "planned_expenses": "Dépenses prévues",
     "real_bank_balance": "Solde en banque (pointé)",
-    "upcoming_balance": "Solde à venir",
     "forecast_balance": "Solde prévisionnel",
     "no_period": "Aucune période active. Veuillez en créer une dans l'onglet Budgets.",
     "income": "Revenus",
@@ -211,9 +208,7 @@
       "ignore": "Ignorer cette alerte",
       "update_error": "Erreur lors de la mise à jour de l'anomalie"
     },
-    "income_expenses": "Revenus / Dépenses",
-    "planned": "Prévu",
-    "end_of_period_forecast": "Fin de période prévue"
+    "planned": "Prévu"
   },
   "Accounts": {
     "title": "Mes Comptes",
@@ -395,10 +390,6 @@
     "edit_title": "Modifier le tag",
     "view_details": "Voir les détails",
     "name_placeholder": "Voyages, Santé, Cadeaux...",
-    "top_title": "Top Tags de la période",
-    "no_tag_title": "Aucun tag",
-    "no_tag_desc": "Pas d'activité de tag ce mois-ci",
-    "ops_short": "{count, plural, one {# op.} other {# op.}}",
     "selector": {
       "add": "Ajouter des tags...",
       "search_placeholder": "Rechercher ou créer un tag...",

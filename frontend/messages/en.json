@@ -66,7 +66,6 @@
     "todo_error": "Could not load everything to handle. Please try again.",
     "todo_card": "{count} card payments to reconcile",
     "todo_overrun": "{name} is over budget by {amount}",
-    "budgets_title": "Budgets",
     "new_transaction": "New transaction",
     "no_period_title": "No period for this account",
     "no_period_desc": "Create a period to track your budget and see your forecast balance at the end of the period.",
@@ -102,13 +101,11 @@
     "overruns_range_inverted": "The start period must be on or before the end period.",
     "overruns_pick_category": "Pick a category to display the chart.",
     "breakdown": "Budget Breakdown",
-    "start_balance": "Start Balance",
     "real_income": "Real Income",
     "planned_income": "Planned Income",
     "real_expenses": "Real Expenses",
     "planned_expenses": "Planned Expenses",
     "real_bank_balance": "Bank Balance (Reconciled)",
-    "upcoming_balance": "Upcoming Balance",
     "forecast_balance": "Forecast Balance",
     "no_period": "No active period. Please create one in the Budgets tab.",
     "income": "Income",
@@ -211,9 +208,7 @@
       "ignore": "Dismiss this alert",
       "update_error": "Error while updating the anomaly"
     },
-    "income_expenses": "Income / Expenses",
-    "planned": "Planned",
-    "end_of_period_forecast": "Expected end of period"
+    "planned": "Planned"
   },
   "Accounts": {
     "title": "My Accounts",
@@ -395,10 +390,6 @@
     "edit_title": "Edit tag",
     "view_details": "View details",
     "name_placeholder": "Travel, Health, Gifts...",
-    "top_title": "Top tags of the period",
-    "no_tag_title": "No tag",
-    "no_tag_desc": "No tag activity this month",
-    "ops_short": "{count, plural, one {# tx} other {# tx}}",
     "selector": {
       "add": "Add tags...",
       "search_placeholder": "Search or create a tag...",
