@@ -21,6 +21,9 @@ export function useBulkUpdateTransactions() {
     },
     onSuccess: (_, { accountId }) => {
       queryClient.invalidateQueries({ queryKey: ['transactions', accountId] });
+      // Un pointage en lot change les soldes et les anomalies, comme un pointage à l'unité.
+      queryClient.invalidateQueries({ queryKey: ['reporting'] });
+      queryClient.invalidateQueries({ queryKey: ['anomalies', accountId] });
     },
   });
 }

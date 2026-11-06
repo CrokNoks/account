@@ -150,6 +150,28 @@ describe('transactions API hooks', () => {
       });
     });
 
+    it('useBulkUpdateTransactions refreshes the list, the stats (balances) and the anomalies', async () => {
+      const { wrapper, invalidatedKeys } = setup();
+      const { result } = renderHook(() => useBulkUpdateTransactions(), {
+        wrapper,
+      });
+
+      await act(() =>
+        result.current.mutateAsync({
+          accountId: 'acc-1',
+          command: { ids: ['t1'], data: { reconciled: true } },
+        }),
+      );
+
+      expect(invalidatedKeys()).toEqual(
+        expect.arrayContaining([
+          ['transactions', 'acc-1'],
+          ['reporting'],
+          ['anomalies', 'acc-1'],
+        ]),
+      );
+    });
+
     it('useBulkDeleteTransactions DELETEs /transactions/bulk with the ids in the body', async () => {
       const { wrapper } = setup();
       const { result } = renderHook(() => useBulkDeleteTransactions(), {
