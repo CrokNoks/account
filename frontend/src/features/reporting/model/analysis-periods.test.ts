@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { closedPeriodsChronological, defaultComparison } from './analysis-periods';
+import { closedPeriodsChronological, defaultComparison, validCompareWith } from './analysis-periods';
 
 const mk = (n: number, isActive = false) => ({
   id: `p${n}`,
@@ -31,5 +31,22 @@ describe('defaultComparison (choix par défaut de Répartition)', () => {
 
   it("plus de deux : la dernière fermée face à l'avant-dernière ; la période active n'est jamais choisie", () => {
     expect(defaultComparison([mk(1), mk(2), mk(3), mk(4, true)])).toEqual({ periodId: 'p3', compareWithId: 'p2' });
+  });
+});
+
+describe('validCompareWith', () => {
+  const periods = [mk(1), mk(2), mk(3), mk(4, true)];
+
+  it('garde une comparaison différente de la période affichée', () => {
+    expect(validCompareWith(periods, 'p3', 'p1')).toBe('p1');
+    expect(validCompareWith(periods, 'p3', null)).toBeNull();
+  });
+
+  it('remplace la période elle-même par la précédente disponible', () => {
+    expect(validCompareWith(periods, 'p3', 'p3')).toBe('p2');
+  });
+
+  it("n'a aucune comparaison quand la période est la plus ancienne", () => {
+    expect(validCompareWith(periods, 'p1', 'p1')).toBeNull();
   });
 });

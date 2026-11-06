@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { formatCurrency } from '@/shared/lib/format';
 import { usePeriodComparison } from '../../api/use-period-comparison';
-import { defaultComparison } from '../../model/analysis-periods';
+import { defaultComparison, validCompareWith } from '../../model/analysis-periods';
 import { absCents, buildBreakdown } from '../../model/breakdown';
 import { ComparisonGap } from '../period-comparison';
 import { ChartLegend } from './chart-legend';
@@ -28,7 +28,9 @@ export function BreakdownTab() {
   const [periodOverride, setPeriodOverride] = useState<string | null>(null);
   const [compareOverride, setCompareOverride] = useState<string | null | undefined>(undefined);
   const periodId = periodOverride ?? defaults.periodId;
-  const compareWithId = compareOverride === undefined ? defaults.compareWithId : compareOverride;
+  const requestedCompareId = compareOverride === undefined ? defaults.compareWithId : compareOverride;
+  // Choisir pour période affichée la période comparée ne doit pas produire des écarts à 0 % présentés comme réels.
+  const compareWithId = periodId ? validCompareWith(periods, periodId, requestedCompareId) : requestedCompareId;
 
   // Le back exige `compareWith` : sans comparaison, la même période est passée et l'écart n'est pas affiché.
   const { data: comparison, isLoading, isError } = usePeriodComparison(activeAccountId, periodId, compareWithId ?? periodId);

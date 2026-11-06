@@ -1,4 +1,5 @@
 import { fireEvent, render, screen, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { NextIntlClientProvider } from 'next-intl';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import fr from '../../../../messages/fr.json';
@@ -140,6 +141,20 @@ describe('Répartition', () => {
     const gaps = screen.getAllByTestId('comparison-gap').map((g) => g.textContent);
     expect(gaps).toEqual(['+20%', '-50%', 'Nouveau']) // plus gros montant d'abord;
     expect(screen.queryByTestId('breakdown-first-period')).toBeNull();
+  });
+});
+
+describe('Répartition : période affichée égale à la comparaison', () => {
+  it("remet la précédente comme comparaison au lieu d'écarts à 0 %", async () => {
+    const user = userEvent.setup();
+    state.periods = [mk(1), mk(2), mk(3), mk(4, true)];
+    state.comparison = { income: [], savings: [], transfers: [], expenses: [pt('courses', '-10000', '-12000', 20)] };
+    renderScreen('breakdown');
+    // Défaut : p3 face à p2. On affiche p2 : la comparaison ne peut plus être p2.
+    expect(state.comparisonArgs.slice(1)).toEqual(['p3', 'p2']);
+    await user.click(screen.getByRole('combobox', { name: 'Période affichée' }));
+    await user.click(await screen.findByRole('option', { name: /février 2026/i }));
+    expect(state.comparisonArgs.slice(1)).toEqual(['p2', 'p1']);
   });
 });
 
