@@ -3,10 +3,17 @@ import { TransactionRepository } from '../../transactions/domain/transaction.rep
 import { TagRepository } from '../../tags/domain/tag.repository.interface';
 import { PeriodRepository } from '../../periods/domain/period.repository.interface';
 import { CategoryRepository } from '../../categories/domain/category.repository.interface';
-import { TagSummary } from './get-tags-summary.use-case';
 import { NotFoundError } from '../../shared/domain/errors';
 import { ensureBelongsToAccount } from '../../shared/domain/account-ownership';
 import { roundedPercentage } from '../../shared/domain/percentage';
+
+export interface TagSummary {
+  tagId: string;
+  name: string;
+  color: string;
+  totalAmount: string;
+  transactionCount: number;
+}
 
 export interface TagCategoryBreakdown {
   categoryId: string | null;

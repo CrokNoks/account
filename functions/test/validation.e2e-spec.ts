@@ -79,7 +79,6 @@ describe('Request body validation (e2e)', () => {
         'patch',
         '/00000000-0000-4000-8000-000000000101/smart-rules/00000000-0000-4000-8000-000000000115',
       ],
-      ['patch', '/preferences'],
       ['post', '/00000000-0000-4000-8000-000000000101/transactions/transfer'],
       ['post', '/00000000-0000-4000-8000-000000000101/transactions/bulk'],
       [
@@ -822,16 +821,6 @@ describe('Request body validation (e2e)', () => {
       },
     );
 
-    it('PATCH preferences: a widget visibility set to null', async () => {
-      const res = await http()
-        .patch('/preferences')
-        .set(auth())
-        .send({ widgets: [{ id: 'w', width: 1, desktopVisible: null }] });
-
-      expect(res.status).toBe(400);
-      expectNothingWritten();
-    });
-
     it.each([
       ['transactions', `/${acc}/transactions/${id}`, 'categoryId'],
       ['transactions', `/${acc}/transactions/${id}`, 'periodId'],
@@ -877,7 +866,6 @@ describe('Request body validation (e2e)', () => {
 
     it.each([
       `/${acc}/reporting/anomalies?periodId=not-a-uuid`,
-      `/${acc}/reporting/tags-summary?periodId=not-a-uuid`,
       `/${acc}/reporting/tags/${ok}?periodId=not-a-uuid`,
       `/${acc}/periods/${ok}/reporting/comparison?compareWith=not-a-uuid`,
       `/${acc}/periods/${ok}/reporting/comparison`,
@@ -891,7 +879,6 @@ describe('Request body validation (e2e)', () => {
       for (const url of [
         `/${acc}/reporting/anomalies?periodId=${ok}`,
         `/${acc}/reporting/anomalies`,
-        `/${acc}/reporting/tags-summary`,
       ]) {
         const res = await http().get(url).set(auth());
         expect(res.status).not.toBe(400);

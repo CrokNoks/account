@@ -6,7 +6,6 @@ DECLARE
   r text;
 BEGIN
   FOREACH fn IN ARRAY ARRAY[
-    'public.widen_balance_cards(jsonb)',
     'public.repair_mojibake(text)',
     'public.repair_lost_accents(text)'
   ] LOOP

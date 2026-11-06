@@ -11,12 +11,10 @@ import { GetBudgetBreakdownUseCase } from './application/get-budget-breakdown.us
 import { GetEvolutionUseCase } from './application/get-evolution.use-case';
 import { GetPeriodComparisonUseCase } from './application/get-period-comparison.use-case';
 import { GetCashflowForecastUseCase } from './application/get-cashflow-forecast.use-case';
-import { GetTagsSummaryUseCase } from './application/get-tags-summary.use-case';
 import { GetTagDetailsUseCase } from './application/get-tag-details.use-case';
 import { GetCalendarDataUseCase } from './application/get-calendar-data.use-case';
 import { GetAnomaliesUseCase } from './application/get-anomalies.use-case';
 import { IgnoreAnomalyUseCase } from './application/ignore-anomaly.use-case';
-import { GetNetWorthUseCase } from './application/get-net-worth.use-case';
 import { GetOverrunsByPeriodUseCase } from './application/get-overruns-by-period.use-case';
 import { GetCategoryOverrunsChartUseCase } from './application/get-category-overruns-chart.use-case';
 import { ReportingController } from './infrastructure/reporting.controller';
@@ -38,12 +36,10 @@ import { ReportingController } from './infrastructure/reporting.controller';
     GetEvolutionUseCase,
     GetPeriodComparisonUseCase,
     GetCashflowForecastUseCase,
-    GetTagsSummaryUseCase,
     GetTagDetailsUseCase,
     GetCalendarDataUseCase,
     GetAnomaliesUseCase,
     IgnoreAnomalyUseCase,
-    GetNetWorthUseCase,
     GetOverrunsByPeriodUseCase,
     GetCategoryOverrunsChartUseCase,
   ],

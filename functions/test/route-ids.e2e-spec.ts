@@ -45,9 +45,7 @@ const paramsOf = (path: string) =>
  * Routes qui ignorent volontairement le segment `:accountId` de l'URL (jamais lu, aucun accès base :
  * voir docs/reporting.md) : la valeur n'a pas à être un UUID.
  */
-const IGNORED_ACCOUNT_SEGMENT = new Set([
-  'GET /:accountId/reporting/net-worth',
-]);
+const IGNORED_ACCOUNT_SEGMENT = new Set<string>();
 
 describe('Route ids are validated as UUIDs on every route (e2e)', () => {
   let app: INestApplication<App>;
@@ -103,10 +101,9 @@ describe('Route ids are validated as UUIDs on every route (e2e)', () => {
   });
 
   it('still serves routes without id and static segments', async () => {
-    mocks.preferences.findByUserId.mockResolvedValue(null);
     const http = () => request(app.getHttpServer());
     await http().get('/health').expect(200);
-    expect((await http().get('/preferences').set(auth())).status).not.toBe(400);
+    expect((await http().get('/accounts').set(auth())).status).not.toBe(400);
     for (const path of [
       `/${ACC}/periods/draft-init`,
       `/${ACC}/transactions/predict-category`,

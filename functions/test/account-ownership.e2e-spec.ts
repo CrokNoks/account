@@ -320,7 +320,6 @@ describe('Account ownership of :id routes (e2e)', () => {
       'periods/00000000-0000-4000-8000-000000000107/reporting/stats',
       'periods/00000000-0000-4000-8000-000000000107/reporting/budget-breakdown',
       'periods/00000000-0000-4000-8000-000000000107/reporting/comparison?compareWith=00000000-0000-4000-8000-000000000107',
-      'reporting/tags-summary?periodId=00000000-0000-4000-8000-000000000107',
       'reporting/anomalies?periodId=00000000-0000-4000-8000-000000000107',
     ])(
       'GET /00000000-0000-4000-8000-000000000101/%s answers 404',

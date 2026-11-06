@@ -13,7 +13,6 @@ import { PeriodsModule } from './periods/periods.module';
 import { ReportingModule } from './reporting/reporting.module';
 import { RecurringModule } from './recurring/recurring.module';
 import { TagsModule } from './tags/tags.module';
-import { PreferencesModule } from './preferences/preferences.module';
 import { SmartRulesModule } from './smart-rules/smart-rules.module';
 
 @Module({
@@ -31,7 +30,6 @@ import { SmartRulesModule } from './smart-rules/smart-rules.module';
     ReportingModule,
     RecurringModule,
     TagsModule,
-    PreferencesModule,
     SmartRulesModule,
   ],
   controllers: [AppController],

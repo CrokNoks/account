@@ -24,16 +24,6 @@ Authorization: Bearer {{aliceLogin.access_token}}
 ?? status == 200
 ?? js response.parsedBody.currentBalance == 201743
 
-### Net worth: the last point is today and equals the total
-# @name netWorth
-GET {{api}}/{{courant}}/reporting/net-worth
-Authorization: Bearer {{aliceLogin.access_token}}
-
-?? status == 200
-?? js response.parsedBody.history.length == 31
-?? js response.parsedBody.history[30].date == 2026-10-31
-?? js response.parsedBody.history[30].amount == 216743
-
 ### Calendar: October 2026
 GET {{api}}/{{courant}}/reporting/calendar?year=2026&month=10
 Authorization: Bearer {{aliceLogin.access_token}}

@@ -38,11 +38,8 @@ import {
   CashflowForecastResponse,
 } from '../application/get-cashflow-forecast.use-case';
 import {
-  GetTagsSummaryUseCase,
-  TagSummary,
-} from '../application/get-tags-summary.use-case';
-import {
   GetTagDetailsUseCase,
+  TagSummary,
   TagDetails,
   TagCategoryBreakdown,
 } from '../application/get-tag-details.use-case';
@@ -55,10 +52,6 @@ import {
   Anomaly,
 } from '../application/get-anomalies.use-case';
 import { IgnoreAnomalyUseCase } from '../application/ignore-anomaly.use-case';
-import {
-  GetNetWorthUseCase,
-  NetWorthResponse,
-} from '../application/get-net-worth.use-case';
 import {
   GetOverrunsByPeriodUseCase,
   OverrunsByPeriodResponse,
@@ -245,17 +238,6 @@ class EvolutionDataPointDto implements EvolutionDataPoint {
   categories: Record<string, string>;
 }
 
-class NetWorthDataPointDto {
-  @ApiProperty() date: string;
-  @ApiProperty() amount: string;
-}
-
-class NetWorthResponseDto implements NetWorthResponse {
-  @ApiProperty() currentTotal: string;
-  @ApiProperty({ type: [NetWorthDataPointDto] })
-  history: NetWorthDataPointDto[];
-}
-
 @ApiTags('reporting')
 @ApiBearerAuth()
 @UseGuards(SupabaseAuthGuard)
@@ -267,12 +249,10 @@ export class ReportingController {
     private readonly getEvolutionUseCase: GetEvolutionUseCase,
     private readonly getPeriodComparisonUseCase: GetPeriodComparisonUseCase,
     private readonly getCashflowForecastUseCase: GetCashflowForecastUseCase,
-    private readonly getTagsSummaryUseCase: GetTagsSummaryUseCase,
     private readonly getTagDetailsUseCase: GetTagDetailsUseCase,
     private readonly getCalendarDataUseCase: GetCalendarDataUseCase,
     private readonly getAnomaliesUseCase: GetAnomaliesUseCase,
     private readonly ignoreAnomalyUseCase: IgnoreAnomalyUseCase,
-    private readonly getNetWorthUseCase: GetNetWorthUseCase,
     private readonly getOverrunsByPeriodUseCase: GetOverrunsByPeriodUseCase,
     private readonly getCategoryOverrunsChartUseCase: GetCategoryOverrunsChartUseCase,
   ) {}
@@ -316,15 +296,6 @@ export class ReportingController {
       dto.type,
     );
     return { success: true };
-  }
-
-  @Get('reporting/net-worth')
-  @ApiOperation({
-    summary: 'Get total net worth evolution across all accounts',
-  })
-  @ApiResponse({ status: 200, type: NetWorthResponseDto })
-  async getNetWorth(): Promise<NetWorthResponseDto> {
-    return this.getNetWorthUseCase.execute();
   }
 
   @Get('periods/:periodId/reporting/stats')
@@ -388,16 +359,6 @@ export class ReportingController {
     @Query() query: CashflowQueryDto,
   ): Promise<CashflowForecastResponse> {
     return this.getCashflowForecastUseCase.execute(accountId, query.days);
-  }
-
-  @Get('reporting/tags-summary')
-  @ApiOperation({ summary: 'Get summary of all tags for a period or global' })
-  @ApiResponse({ status: 200, type: [TagSummaryDto] })
-  async getTagsSummary(
-    @Param('accountId') accountId: string,
-    @Query() { periodId }: PeriodQueryDto,
-  ): Promise<TagSummaryDto[]> {
-    return this.getTagsSummaryUseCase.execute(accountId, periodId);
   }
 
   @Get('reporting/tags/:tagId')

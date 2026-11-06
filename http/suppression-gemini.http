@@ -20,12 +20,7 @@ Content-Type: application/json
 
 ?? status == 404
 
-### CA7 - une route de reporting conservée existe toujours (401 sans jeton, pas 404)
-GET {{baseUrl}}/{{accountId}}/reporting/net-worth
-
-?? status == 401
-
-### CA7 - idem pour l'évolution (graphique)
+### CA7 - une route de reporting conservée existe toujours (évolution : 401 sans jeton, pas 404)
 GET {{baseUrl}}/{{accountId}}/reporting/evolution
 
 ?? status == 401
