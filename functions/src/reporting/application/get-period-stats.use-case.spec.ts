@@ -266,6 +266,210 @@ describe('GetPeriodStatsUseCase', () => {
       realBankBalance: '120000',
       upcomingBalance: '120000',
       forecastBalance: '120000',
+      cardTotal: '0',
+      cardCount: 0,
+      billsTotal: '0',
+      budgetRemaining: '0',
+      expectedIncome: '0',
+    });
+  });
+
+  describe('composition du prévu', () => {
+    // Base : départ 100000 (initial 100000, rien avant), D budget 30000, I budget 200000.
+    const b = (categoryId: string, amount: number) =>
+      BudgetInstance.create({
+        periodId: 'per-1',
+        categoryId,
+        amountAllocated: BigInt(amount),
+      });
+    const base = () => [
+      tx(200000, 'I', { reconciled: true }),
+      tx(-10000, 'D', { reconciled: true }),
+      tx(-5000, 'D'),
+      tx(-8000, 'D', { pending: true }),
+    ];
+    const setup = (
+      txs: Transaction[],
+      budgetList = [b('D', 30000), b('I', 200000)],
+      cats = [
+        category('D', CategoryType.EXPENSE),
+        category('I', CategoryType.INCOME),
+        category('T', CategoryType.TRANSFER),
+      ],
+    ) => {
+      transactions.sumAmountByAccountBeforeDate.mockResolvedValue(BigInt(0));
+      transactions.findAllByAccountUnpaginated.mockResolvedValue(txs);
+      budgets.findAllByPeriod.mockResolvedValue(budgetList);
+      categories.findAllByAccount.mockResolvedValue(cats);
+    };
+    const sum = (s: Awaited<ReturnType<GetPeriodStatsUseCase['execute']>>) =>
+      (
+        BigInt(s.realBankBalance) +
+        BigInt(s.cardTotal) +
+        BigInt(s.billsTotal) +
+        BigInt(s.budgetRemaining) +
+        BigInt(s.expectedIncome)
+      ).toString();
+
+    const cases: [
+      string,
+      () => Transaction[],
+      Parameters<typeof setup>[1],
+      Parameters<typeof setup>[2],
+      Record<string, string | number>,
+      string,
+    ][] = [
+      [
+        'nominal',
+        base,
+        undefined,
+        undefined,
+        {
+          realBankBalance: '290000',
+          cardTotal: '-5000',
+          billsTotal: '-8000',
+          budgetRemaining: '-7000',
+          expectedIncome: '0',
+        },
+        '270000',
+      ],
+      [
+        'revenu prévu 250000',
+        base,
+        [b('D', 30000), b('I', 250000)],
+        undefined,
+        { expectedIncome: '50000' },
+        '320000',
+      ],
+      [
+        'réel au-dessus du budget D',
+        base,
+        [b('D', 20000), b('I', 200000)],
+        undefined,
+        { budgetRemaining: '0' },
+        '277000',
+      ],
+      [
+        'revenu réel au-dessus du prévu',
+        () => [tx(300000, 'I', { reconciled: true })],
+        undefined,
+        undefined,
+        { expectedIncome: '0' },
+        '370000',
+      ],
+      [
+        'sans catégorie en CB',
+        () => [...base(), tx(-3000, null)],
+        undefined,
+        undefined,
+        { cardTotal: '-8000' },
+        '267000',
+      ],
+      [
+        'sans catégorie pending',
+        () => [...base(), tx(-3000, null, { pending: true })],
+        undefined,
+        undefined,
+        { billsTotal: '-11000' },
+        '267000',
+      ],
+      [
+        'pending rapprochée',
+        () => [
+          tx(200000, 'I', { reconciled: true }),
+          tx(-10000, 'D', { reconciled: true }),
+          tx(-5000, 'D'),
+          tx(-8000, 'D', { pending: true, reconciled: true }),
+        ],
+        undefined,
+        undefined,
+        { realBankBalance: '282000', billsTotal: '0', cardTotal: '-5000' },
+        '270000',
+      ],
+      [
+        'remboursement CB +4000',
+        () => [...base(), tx(4000, 'D')],
+        undefined,
+        undefined,
+        { cardTotal: '-1000', budgetRemaining: '-11000' },
+        '270000',
+      ],
+      [
+        'remboursement CB +9000 (CB positive)',
+        () => [...base(), tx(9000, 'D')],
+        undefined,
+        undefined,
+        { cardTotal: '4000' },
+        '270000',
+      ],
+      [
+        'dépenses nettes positives',
+        () => [tx(5000, 'D', { reconciled: true })],
+        [b('D', 3000)],
+        undefined,
+        { realBankBalance: '105000', budgetRemaining: '-10000' },
+        '95000',
+      ],
+      [
+        'prévu négatif, aucune transaction',
+        () => [],
+        [b('D', 50000)],
+        undefined,
+        { budgetRemaining: '-50000', cardTotal: '0', billsTotal: '0' },
+        '50000',
+      ],
+      [
+        'période vide sans budget',
+        () => [],
+        [],
+        undefined,
+        { budgetRemaining: '0', expectedIncome: '0', cardTotal: '0' },
+        '100000',
+      ],
+      [
+        'virement catégorisé en revenus',
+        () => [tx(10000, 'T', { reconciled: true })],
+        [],
+        undefined,
+        { expectedIncome: '0' },
+        '110000',
+      ],
+      [
+        'revenu net négatif',
+        () => [tx(-2000, 'I', { reconciled: true })],
+        [],
+        undefined,
+        { expectedIncome: '2000' },
+        '100000',
+      ],
+      [
+        'budget D stocké en négatif',
+        base,
+        [b('D', -30000), b('I', 200000)],
+        undefined,
+        { budgetRemaining: '-7000' },
+        '270000',
+      ],
+    ];
+
+    it.each(cases)(
+      '%s',
+      async (_n, txs, budgetList, cats, expected, forecast) => {
+        setup(txs(), budgetList, cats);
+
+        const stats = await useCase.execute('acc-1', 'per-1');
+
+        expect(stats).toMatchObject(expected);
+        expect(stats.forecastBalance).toBe(forecast);
+        // Invariant de la règle critique : la somme des lignes = le prévu, au centime
+        expect(sum(stats)).toBe(stats.forecastBalance);
+      },
+    );
+
+    it('cardCount compte les transactions non rapprochées et non pending', async () => {
+      setup([...base(), tx(-3000, null)]);
+
+      expect((await useCase.execute('acc-1', 'per-1')).cardCount).toBe(2);
     });
   });
 

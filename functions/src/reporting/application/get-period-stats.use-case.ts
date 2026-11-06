@@ -6,6 +6,7 @@ import { BudgetRepository } from '../../budgets/domain/budget.repository.interfa
 import { CategoryRepository } from '../../categories/domain/category.repository.interface';
 import { CategoryType } from '../../categories/domain/category.entity';
 import { NotFoundError } from '../../shared/domain/errors';
+import { computeForecastComposition } from '../domain/forecast-composition';
 
 export interface PeriodStatsResponse {
   startBalance: string;
@@ -16,6 +17,12 @@ export interface PeriodStatsResponse {
   realBankBalance: string;
   upcomingBalance: string;
   forecastBalance: string;
+  /** Composition du prévu (écran Aujourd'hui), lignes signées en centimes. */
+  cardTotal: string;
+  cardCount: number;
+  billsTotal: string;
+  budgetRemaining: string;
+  expectedIncome: string;
 }
 
 @Injectable()
@@ -125,6 +132,14 @@ export class GetPeriodStatsUseCase {
     const forecastBalance =
       startBalance + maxIncome - maxAbsExpenses + uncategorized;
 
+    const composition = computeForecastComposition({
+      transactions: periodTransactions,
+      realIncome,
+      plannedIncome,
+      realExpenses,
+      plannedExpenses,
+    });
+
     return {
       startBalance: startBalance.toString(),
       realIncome: realIncome.toString(),
@@ -134,6 +149,11 @@ export class GetPeriodStatsUseCase {
       realBankBalance: realBankBalance.toString(),
       upcomingBalance: upcomingBalance.toString(),
       forecastBalance: forecastBalance.toString(),
+      cardTotal: composition.cardTotal.toString(),
+      cardCount: composition.cardCount,
+      billsTotal: composition.billsTotal.toString(),
+      budgetRemaining: composition.budgetRemaining.toString(),
+      expectedIncome: composition.expectedIncome.toString(),
     };
   }
 }

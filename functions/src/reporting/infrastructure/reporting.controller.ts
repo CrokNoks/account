@@ -223,6 +223,11 @@ class PeriodStatsResponseDto implements PeriodStatsResponse {
   @ApiProperty() realBankBalance: string;
   @ApiProperty() upcomingBalance: string;
   @ApiProperty() forecastBalance: string;
+  @ApiProperty() cardTotal: string;
+  @ApiProperty() cardCount: number;
+  @ApiProperty() billsTotal: string;
+  @ApiProperty() budgetRemaining: string;
+  @ApiProperty() expectedIncome: string;
 }
 
 class EvolutionDataPointDto implements EvolutionDataPoint {
