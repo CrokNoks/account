@@ -115,7 +115,7 @@ export function CreateTransactionDrawer() {
 
   return (
     <Sheet open={isCreateTransactionDrawerOpen} onOpenChange={handleOpenChange}>
-      <SheetContent side="right" className="flex flex-col gap-0 p-0">
+      <SheetContent side="right" className="flex flex-col gap-0 p-0" closeClassName="max-lg:size-11 max-lg:top-2 max-lg:right-2">
         <SheetHeader className="p-6 border-b space-y-4">
           <div className="flex items-center justify-between">
             <SheetTitle>{mode === 'standard' ? t('new_transaction_title') : t('new_transfer_title')}</SheetTitle>
@@ -150,7 +150,8 @@ export function CreateTransactionDrawer() {
             submitLabel={tc('save')}
             mode={mode}
             onModeChange={setMode}
-            key={`${mode}-${formKey}`}
+            // Bureau : l'onglet repart d'un formulaire neuf. Mobile : la case Virement garde la saisie.
+            key={desktop ? `${mode}-${formKey}` : formKey}
           />
         </div>
       </SheetContent>
