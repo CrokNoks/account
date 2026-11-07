@@ -75,6 +75,19 @@ describe('Écran Aujourd\'hui', () => {
     expect(screen.queryByText('Patrimoine Net')).toBeNull();
   });
 
+  it('titre la page « Aujourd\'hui » avec une accroche qui décrit l\'écran, en fr et en', () => {
+    const fr1 = renderHome('fr');
+    expect(screen.getByRole('heading', { level: 2, name: "Aujourd'hui" })).toBeTruthy();
+    expect(screen.queryByText(/Tableau de bord|Bienvenue/)).toBeNull();
+    expect(screen.getByText(fr.Dashboard.welcome)).toBeTruthy();
+    fr1.unmount();
+
+    renderHome('en');
+    expect(screen.getByRole('heading', { level: 2, name: 'Today' })).toBeTruthy();
+    expect(screen.queryByText(/Dashboard|Welcome/)).toBeNull();
+    expect(en.Dashboard.welcome).not.toBe(fr.Dashboard.welcome);
+  });
+
   it('pose les cibles de la visite guidée sur les blocs de l\'écran fixe', () => {
     const { container } = renderHome();
 

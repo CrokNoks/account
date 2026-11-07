@@ -48,8 +48,8 @@
     "email_placeholder": "nom@exemple.com"
   },
   "Dashboard": {
-    "title": "Tableau de bord",
-    "welcome": "Bienvenue sur votre gestionnaire de finances",
+    "title": "Aujourd'hui",
+    "welcome": "Votre solde prévu, ce qui demande votre attention et vos budgets de la période, sur un seul écran.",
     "stats": "Statistiques de la période",
     "forecast_on": "Prévu le {date}",
     "period_day": "Jour {day} sur {total}",

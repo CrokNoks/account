@@ -48,8 +48,8 @@
     "email_placeholder": "name@example.com"
   },
   "Dashboard": {
-    "title": "Dashboard",
-    "welcome": "Welcome to your personal finance manager",
+    "title": "Today",
+    "welcome": "Your forecast balance, what needs your attention and this period's budgets, on a single screen.",
     "stats": "Period Stats",
     "forecast_on": "Forecast on {date}",
     "period_day": "Day {day} of {total}",
