@@ -35,6 +35,20 @@ La refonte est codée, mais aucun écran n'a été vu en réel. Il faut d'abord 
 3. Ouvrir chaque écran connecté, à 1440 et 390 px, en clair et en sombre, en fr et en, et sur un vrai téléphone pour la saisie.
 4. Corriger ce qui casse par `/quickfix`, puis seulement suivre la procédure de mise en prod.
 
+## Vérification du 2026-11-07 (Supabase local)
+
+- Les 4 migrations en attente sont appliquées à la base locale seulement, sans erreur.
+- Le test SQL `replace_period_budgets_expected_test.sql` passe sur le vrai schéma local.
+- Les 6 fichiers `.http` passent : 173 requêtes sur 173. C'est vu en réel pour le filtre `ids` (aucun accès aux opérations d'un autre compte), le refus 409 `BUDGETS_CHANGED`, la simulation par un membre en lecture seule et la règle « déjà payée ». Deux enregistrements concurrents lancés en même temps donnent un 200 et un 409, sur 3 essais.
+- 21 captures automatisées (bureau en clair et en sombre, mobile 390 px en clair), sans erreur JavaScript ni erreur 500.
+- Défauts vus à l'écran, à traiter par `/quickfix` avant la mise en prod :
+  - La police Geist n'est jamais appliquée : tout s'affiche en police à empattements, et les montants en Courier. Défaut antérieur à la refonte : `--font-sans: var(--font-sans)` se référence lui-même dans `globals.css`.
+  - Accueil mobile : libellés de la composition tronqués à 390 px (« CB non po… », « Factures à v… »).
+  - Budgets : les champs montrent les montants au format anglais (« 3200.00 »), et un budget stocké en négatif s'affiche « -180.00 ». Le ressaisir avec son signe est refusé. 8 budgets de la base locale sont négatifs.
+  - Saisie mobile : le montant vide s'affiche « 0.00 » au format anglais, et les boutons s'appellent « Enregistrer » et « Enregistrer & Nouveau ».
+  - Aujourd'hui garde le titre « Tableau de bord » et le texte « Bienvenue sur votre gestionnaire de finances ».
+- Pas encore vu : un vrai téléphone (clavier décimal), l'anglais, et le mobile en sombre.
+
 ## Points d'attention
 
 - Cycle 1, à voir une fois connecté : menu, onglets, Réglages, F2-F6, visite « compte » (dialogue encore ouvert à l'étape Réglages), bleu en clair et en sombre.
