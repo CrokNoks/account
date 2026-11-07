@@ -25,7 +25,7 @@ describe('TransactionForm default date', () => {
   });
 });
 
-describe('TransactionForm amount field on mobile', () => {
+describe('TransactionForm amount field (bureau : signe tapé ; jsdom sans matchMedia = bureau)', () => {
   it('uses a full keyboard (which has a "-" key) and keeps a typed negative amount', async () => {
     const { default: userEvent } = await import('@testing-library/user-event');
     const { screen } = await import('@testing-library/react');

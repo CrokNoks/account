@@ -316,6 +316,11 @@
       "apply": "Appliquer les filtres",
       "active_suffix": "(Active)"
     },
+    "amount_too_many_decimals": "Maximum 2 décimales (ex. 12,50).",
+    "amount_zero": "Le montant doit être supérieur à 0.",
+    "amount_too_large": "Montant trop élevé (9 999 999 999,99 € au plus).",
+    "direction_expense": "Dépense",
+    "direction_income": "Revenu",
     "more_options": "Plus d'options",
     "suggested_category": "Catégorie suggérée automatiquement",
     "form": {

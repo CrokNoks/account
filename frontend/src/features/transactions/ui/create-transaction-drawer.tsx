@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, SetStateAction } from 'react';
+import { useRef, useState, SetStateAction } from 'react';
 import { 
   Sheet, 
   SheetContent, 
@@ -18,6 +18,8 @@ import { Receipt, ArrowRightLeft } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTranslations } from 'next-intl';
 import { toCents, toAbsCents, isUnreadableAmount } from '@/shared/lib/format';
+import { useIsDesktop } from '@/shared/lib/use-is-desktop';
+import { toEntryCents } from '../model/entry-amount';
 
 export function CreateTransactionDrawer() {
   const t = useTranslations('Transactions');
@@ -33,6 +35,10 @@ export function CreateTransactionDrawer() {
   const [initialValues, setInitialValues] = useState<Partial<TransactionFormValues>>({});
   const [formKey, setFormKey] = useState(0);
 
+  const desktop = useIsDesktop();
+  // Verrou synchrone : isPending n'est vrai qu'au rendu suivant, deux appuis rapprochés passeraient.
+  const submitLock = useRef(false);
+
   const activePeriod = periods?.find(p => p.isActive);
 
   const handleOpenChange = (open: boolean) => {
@@ -45,21 +51,38 @@ export function CreateTransactionDrawer() {
   };
 
   const handleSubmit = (values: TransactionFormValues, addAnother = false) => {
-    if (!activeAccountId) return;
-    if (isUnreadableAmount(values.amount)) {
-      toast.error(tc('invalid_amount'));
-      return;
+    if (!activeAccountId || submitLock.current) return;
+
+    // Mobile : le sens fixe le signe, plus de 2 décimales refusé. Bureau : signe tapé, inchangé.
+    let amount: string;
+    if (desktop) {
+      if (isUnreadableAmount(values.amount)) {
+        toast.error(tc('invalid_amount'));
+        return;
+      }
+      amount = mode === 'transfer' ? toAbsCents(values.amount) : toCents(values.amount);
+    } else {
+      const entry = toEntryCents(values.amount, mode === 'transfer' ? 'transfer' : values.direction ?? 'expense');
+      if (entry.status === 'empty') return;
+      if (entry.status !== 'ok') {
+        toast.error(entry.status === 'unreadable' ? tc('invalid_amount') : t(`amount_${entry.status}`));
+        return;
+      }
+      amount = entry.cents;
     }
+    const release = { onSettled: () => { submitLock.current = false; } };
 
     if (mode === 'transfer') {
       if (!values.destinationAccountId) return;
+      submitLock.current = true;
       createTransfer({
         sourceAccountId: activeAccountId,
         destinationAccountId: values.destinationAccountId,
-        amount: toAbsCents(values.amount),
+        amount,
         date: values.date,
         description: values.description,
       }, {
+        ...release,
         onSuccess: () => {
           toast.success(t('transfer_created', { description: values.description }));
           setInitialValues({});
@@ -68,16 +91,18 @@ export function CreateTransactionDrawer() {
         }
       });
     } else {
+      submitLock.current = true;
       createTransaction({
         accountId: activeAccountId,
         date: values.date,
         description: values.description,
         categoryId: values.categoryId || null,
-        amount: toCents(values.amount),
+        amount,
         periodId: activePeriod?.id,
         pending: values.pending,
         tagIds: values.tagIds,
       }, {
+        ...release,
         onSuccess: () => {
           toast.success(t('transaction_added', { description: values.description }));
           setInitialValues({});

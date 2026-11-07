@@ -316,6 +316,11 @@
       "apply": "Apply filters",
       "active_suffix": "(Active)"
     },
+    "amount_too_many_decimals": "At most 2 decimals (e.g. 12.50).",
+    "amount_zero": "The amount must be greater than 0.",
+    "amount_too_large": "Amount too large (9,999,999,999.99 EUR at most).",
+    "direction_expense": "Expense",
+    "direction_income": "Income",
     "more_options": "More options",
     "suggested_category": "Category suggested automatically",
     "form": {

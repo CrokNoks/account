@@ -296,7 +296,7 @@ describe('Bug 2 — Réinitialisation du formulaire via changement de key (formK
     expect(sameInput.value).toBe('Café');
   });
 
-  it('le changement de mode (standard→transfer) réinitialise le formulaire via la key composite', () => {
+  it('bureau : le changement de mode (standard→transfer) réinitialise le formulaire via la key composite (mobile : conservé, voir create-transaction-drawer.mobile-flow.test.tsx)', () => {
     // La key du drawer est `${mode}-${formKey}` — changer de mode doit re-monter le composant
     const { rerender } = render(
       <TransactionForm

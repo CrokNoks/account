@@ -22,6 +22,21 @@ const CURRENCY_WORDS = /(?<!\p{L})(?:eur|euros?|usd|gbp|chf|cad|jpy|aud)(?!\p{L}
  * Returns null when the input holds no valid amount.
  */
 export function parseAmountToCents(input: string): bigint | null {
+  const parts = splitAmount(input);
+  if (parts === null) return null;
+  const frac = parts.fracRaw.padEnd(3, '0');
+
+  let cents = BigInt(parts.intPart) * BigInt(100) + BigInt(frac.slice(0, 2));
+  if (frac.charCodeAt(2) >= 53) cents += BigInt(1); // third decimal >= 5 rounds up
+  return parts.negative ? -cents : cents;
+}
+
+/**
+ * Reading step shared by parseAmountToCents and the mobile entry (entry-amount.ts):
+ * sign, integer part as typed (intRaw) and without thousands separators (intPart), and RAW decimal digits, no rounding.
+ * Null when the input holds no valid amount.
+ */
+export function splitAmount(input: string): { negative: boolean; intRaw: string; intPart: string; fracRaw: string } | null {
   const withoutCurrency = input.replace(CURRENCY_WORDS, ' ');
   if (/\p{L}/u.test(withoutCurrency)) return null;
   const kept = withoutCurrency.replace(/\u2212/g, '-').replace(/[^\d.,-]/g, '');
@@ -48,11 +63,7 @@ export function parseAmountToCents(input: string): bigint | null {
   const intRaw = decimalIdx >= 0 ? body.slice(0, decimalIdx) : body;
   const fracRaw = decimalIdx >= 0 ? body.slice(decimalIdx + 1) : '';
   const intPart = intRaw.replace(/[.,]/g, '') || '0';
-  const frac = fracRaw.padEnd(3, '0');
-
-  let cents = BigInt(intPart) * BigInt(100) + BigInt(frac.slice(0, 2));
-  if (frac.charCodeAt(2) >= 53) cents += BigInt(1); // third decimal >= 5 rounds up
-  return negative ? -cents : cents;
+  return { negative, intRaw, intPart, fracRaw };
 }
 
 /**

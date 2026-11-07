@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formatCurrency, parseAmountToCents, fromCents, isUnreadableAmount, toAbsCents, toCents, toOptionalCents } from './format';
+import { formatCurrency, splitAmount, parseAmountToCents, fromCents, isUnreadableAmount, toAbsCents, toCents, toOptionalCents } from './format';
 
 // Intl insère des espaces insécables : on les normalise pour comparer.
 const plain = (s: string) => s.replace(/[  ]/g, ' ');
@@ -136,5 +136,20 @@ describe('isUnreadableAmount / toOptionalCents', () => {
     expect(toOptionalCents('0')).toBe('0');
     expect(toOptionalCents('10,5')).toBe('1050');
     expect(toOptionalCents('-10,5')).toBe('-1050');
+  });
+});
+
+describe('splitAmount', () => {
+  it('returns sign, integer digits and the raw decimal digits (no rounding)', () => {
+    expect(splitAmount('-1.234,567')).toEqual({ negative: true, intRaw: '1.234', intPart: '1234', fracRaw: '567' });
+    expect(splitAmount('1.234.567')).toEqual({ negative: false, intRaw: '1.234.567', intPart: '1234567', fracRaw: '' });
+    expect(splitAmount('12,5')).toEqual({ negative: false, intRaw: '12', intPart: '12', fracRaw: '5' });
+    expect(splitAmount(',5')).toEqual({ negative: false, intRaw: '', intPart: '0', fracRaw: '5' });
+  });
+
+  it('returns null for unreadable input', () => {
+    expect(splitAmount('abc')).toBeNull();
+    expect(splitAmount('1e5')).toBeNull();
+    expect(splitAmount('')).toBeNull();
   });
 });

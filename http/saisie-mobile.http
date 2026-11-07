@@ -1,0 +1,108 @@
+# Saisie mobile : ce que le front envoie (sens Dépense/Revenu -> signe, centimes entiers), routes existantes.
+# Lancement : npx httpyac send --all http/saisie-mobile.http --var port=8080 --var anon=<ANON_KEY de `supabase status`>
+# (la clé vient de la ligne de commande, jamais du fichier ; l'utilisateur est jetable, créé par le fichier)
+@baseUrl = http://localhost:{{port}}
+@authUrl = http://127.0.0.1:54321/auth/v1
+
+### Utilisateur jetable
+# @name login
+POST {{authUrl}}/signup
+apikey: {{anon}}
+Content-Type: application/json
+
+{ "email": "saisie-mobile-{{$timestamp}}@example.com", "password": "Password123!" }
+
+?? status == 200
+
+### Compte
+# @name account
+POST {{baseUrl}}/accounts
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "name": "saisie-{{$timestamp}}", "initialBalance": "0" }
+
+?? status == 201
+
+### Catégorie
+# @name category
+POST {{baseUrl}}/{{account.id}}/categories
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "name": "Courses", "color": "#22aa55", "type": "expense" }
+
+?? status == 201
+
+### Dépense 12,50 : le front envoie -1250
+POST {{baseUrl}}/{{account.id}}/transactions
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "categoryId": "{{category.id}}", "date": "2026-10-01", "description": "Carrefour courses", "amount": "-1250" }
+
+?? status == 201
+?? body contains "amount":"-1250"
+
+### Revenu 12,50 : le front envoie +1250
+POST {{baseUrl}}/{{account.id}}/transactions
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "date": "2026-10-02", "description": "Remboursement", "amount": "1250" }
+
+?? status == 201
+?? body contains "amount":"1250"
+
+### Relecture : les deux opérations, signes et centimes exacts
+GET {{baseUrl}}/{{account.id}}/transactions?search=Carrefour
+Authorization: Bearer {{login.access_token}}
+
+?? status == 200
+?? body contains "amount":"-1250"
+
+###
+GET {{baseUrl}}/{{account.id}}/transactions?search=Remboursement
+Authorization: Bearer {{login.access_token}}
+
+?? status == 200
+?? body contains "amount":"1250"
+
+### Prédiction : un libellé proche de l'historique renvoie sa catégorie (suggestion du formulaire)
+GET {{baseUrl}}/{{account.id}}/transactions/predict-category?description=Carrefour samedi
+Authorization: Bearer {{login.access_token}}
+
+?? status == 200
+?? js response.parsedBody.categoryId == {{category.id}}
+
+### Prédiction : mot inconnu, aucune catégorie (le formulaire n'affiche rien)
+GET {{baseUrl}}/{{account.id}}/transactions/predict-category?description=zzxqv
+Authorization: Bearer {{login.access_token}}
+
+?? status == 200
+?? js response.parsedBody.categoryId == null
+
+### Montant illisible refusé côté back
+POST {{baseUrl}}/{{account.id}}/transactions
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "date": "2026-10-03", "description": "illisible", "amount": "12,50" }
+
+?? status == 400
+
+### Montant avec trop de décimales refusé aussi (1.005 n'est pas arrondi)
+POST {{baseUrl}}/{{account.id}}/transactions
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "date": "2026-10-03", "description": "illisible", "amount": "1.005" }
+
+?? status == 400
+
+### Rien n'a été créé par les refus
+GET {{baseUrl}}/{{account.id}}/transactions?search=illisible
+Authorization: Bearer {{login.access_token}}
+
+?? status == 200
+?? js response.parsedBody.total == 0
