@@ -4,7 +4,10 @@ import { Card } from "@/components/ui/card";
 import { formatCurrency } from "@/shared/lib/format";
 import { useAccountStore } from "@/features/accounts/model/use-account-store";
 import { useReportingStats } from "../api/use-reporting-stats";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
+import { usePeriods } from "@/features/budgets/api/use-periods";
+import { formatDateOnly, todayDateOnly } from "@/shared/lib/date-only";
+import { periodProgress } from "../model/period-progress";
 import { cn } from "@/lib/utils";
 
 const signClass = (value: string) => (parseInt(value, 10) < 0 ? "text-red-500" : "text-green-500");
@@ -16,27 +19,42 @@ const signClass = (value: string) => (parseInt(value, 10) < 0 ? "text-red-500" :
 export function BalanceBar() {
   const t = useTranslations('Dashboard');
   const { activeAccountId, activePeriodId } = useAccountStore();
+  const locale = useLocale();
   const { data: stats, isLoading } = useReportingStats(activeAccountId, activePeriodId);
+  const { data: periods } = usePeriods(activeAccountId);
+  const period = periods?.find((p) => p.id === activePeriodId);
+  // Mobile : « Prévu le {fin} » et « Jour X sur Y » (masqués sans fin de période ou hors période).
+  const endDate = period?.endDate ? formatDateOnly(period.endDate, locale) : null;
+  const progress = periodProgress(period?.startDate, period?.endDate, todayDateOnly());
 
   if (isLoading || !stats) return <div data-tour="stats" className="h-32 bg-muted animate-pulse rounded-xl border-2" />;
 
   return (
     <div data-tour="stats">
-      <Card className="border-2 shadow-sm overflow-hidden p-4 max-lg:p-3 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+      <Card className="border-2 shadow-sm overflow-hidden p-4 max-lg:p-3 max-lg:gap-1 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div data-testid="balance-forecast">
-          <p className="text-[10px] max-lg:text-xs font-bold uppercase tracking-wider text-muted-foreground">
+          <p className="max-lg:hidden text-[10px] max-lg:text-xs font-bold uppercase tracking-wider text-muted-foreground">
             {t('forecast_title')}
+          </p>
+          <p data-testid="forecast-title-mobile" className="lg:hidden text-xs font-bold uppercase tracking-wider text-muted-foreground">
+            {endDate ? t('forecast_on', { date: endDate }) : t('forecast_title')}
           </p>
           <p data-amount className={cn("text-3xl max-lg:text-3xl font-black tracking-tight", signClass(stats.forecastBalance))}>
             {formatCurrency(stats.forecastBalance)}
           </p>
+          {progress && (
+            <p data-testid="period-day" className="lg:hidden text-sm text-muted-foreground">
+              {t('period_day', { day: progress.day, total: progress.total })}
+            </p>
+          )}
         </div>
-        <div className="flex gap-8 max-lg:justify-between">
+        {/* Mobile : En banque est dans la composition du prévu, le solde à venir est en tête d'Opérations. */}
+        <div className="max-lg:hidden flex gap-8">
           <div data-testid="balance-bank">
             <p className="text-[10px] max-lg:text-xs font-bold uppercase tracking-wider text-muted-foreground">
               {t('bank_title')}
             </p>
-            <p className={cn("text-lg max-lg:text-xl font-black tracking-tight", signClass(stats.realBankBalance))}>
+            <p className={cn("text-lg font-black tracking-tight", signClass(stats.realBankBalance))}>
               {formatCurrency(stats.realBankBalance)}
             </p>
           </div>
@@ -44,7 +62,7 @@ export function BalanceBar() {
             <p className="text-[10px] max-lg:text-xs font-bold uppercase tracking-wider text-muted-foreground">
               {t('upcoming_title')}
             </p>
-            <p className={cn("text-lg max-lg:text-xl font-black tracking-tight", signClass(stats.upcomingBalance))}>
+            <p className={cn("text-lg font-black tracking-tight", signClass(stats.upcomingBalance))}>
               {formatCurrency(stats.upcomingBalance)}
             </p>
           </div>

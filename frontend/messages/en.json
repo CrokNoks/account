@@ -51,6 +51,11 @@
     "title": "Dashboard",
     "welcome": "Welcome to your personal finance manager",
     "stats": "Period Stats",
+    "forecast_on": "Forecast on {date}",
+    "period_day": "Day {day} of {total}",
+    "watch_title": "Budgets to watch",
+    "watch_marker": "Share of the period elapsed",
+    "watch_empty": "No budget to watch yet",
     "forecast_title": "Forecast at end of period",
     "bank_title": "In bank",
     "upcoming_title": "Upcoming",
@@ -576,7 +581,10 @@
       "stats": "Your forecast balance at the end of the period, your bank balance and your upcoming balance, for the chosen period.",
       "breakdown": "Visualize at a glance your spending distribution by category compared to your budget.",
       "transactions": "What needs your attention: anomalies, card payments to reconcile and exceeded budgets.",
-      "add_btn": "Click \"New transaction\" to add a transaction."
+      "add_btn": "Click \"New transaction\" to add a transaction.",
+      "stats_mobile": "Your forecast balance at the end of the period and how far along the period you are.",
+      "breakdown_mobile": "The most used budgets, with a mark showing where you should be.",
+      "add_btn_mobile": "Tap « + » in the bottom bar to add a transaction."
     },
     "account": {
       "intro": "Setting up an account involves several steps to ensure accurate management.",
@@ -584,7 +592,8 @@
       "create_btn": "Click here to create a new account.",
       "balance": "Enter your current bank balance to start on the right foot.",
       "settings": "Find your categories, tags, rules and recurring items here, to set up once and for all.",
-      "periods": "Finally, create your budget periods (month by month) to track your goals."
+      "periods": "Finally, create your budget periods (month by month) to track your goals.",
+      "more": "Under « More »: your budgets and periods, your due dates and the settings (categories, tags, rules, recurring)."
     },
     "transactions": {
       "date": "Operation date. Defaults to today.",

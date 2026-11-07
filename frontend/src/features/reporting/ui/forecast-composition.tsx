@@ -55,7 +55,7 @@ export function ForecastComposition() {
             </div>
             <ul className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
               {view.segments.map((s) => (
-                <li key={s.key} className="flex items-center justify-between gap-2">
+                <li key={s.key} className="flex items-center justify-between gap-2 max-lg:min-h-12">
                   <span className="flex items-center gap-2 min-w-0">
                     <span className={cn('h-2 w-2 shrink-0 rounded-full', segmentColor[s.key])} />
                     <span className="truncate">{label(s.key)}</span>
@@ -71,7 +71,7 @@ export function ForecastComposition() {
               <li
                 key={row.key}
                 data-testid={`line-${row.key}`}
-                className={cn('flex items-center justify-between gap-2', row.key === 'forecast' && 'border-t pt-1 font-black')}
+                className={cn('flex items-center justify-between gap-2 max-lg:min-h-12', row.key === 'forecast' && 'border-t pt-1 font-black')}
               >
                 <span>{label(row.key)}</span>
                 <span className={cn('font-bold tabular-nums', row.amount < 0 && 'text-red-500')}>

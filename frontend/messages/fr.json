@@ -51,6 +51,11 @@
     "title": "Tableau de bord",
     "welcome": "Bienvenue sur votre gestionnaire de finances",
     "stats": "Statistiques de la période",
+    "forecast_on": "Prévu le {date}",
+    "period_day": "Jour {day} sur {total}",
+    "watch_title": "Budgets à surveiller",
+    "watch_marker": "Part de la période écoulée",
+    "watch_empty": "Aucun budget à surveiller pour l'instant",
     "forecast_title": "Prévu en fin de période",
     "bank_title": "En banque",
     "upcoming_title": "À venir",
@@ -576,7 +581,10 @@
       "stats": "Votre solde prévu en fin de période, votre solde en banque et votre solde à venir, pour la période choisie.",
       "breakdown": "Visualisez en un coup d'œil la répartition de vos dépenses par catégorie par rapport à votre budget.",
       "transactions": "Ici, ce qui demande votre attention : anomalies, cartes bancaires à pointer et budgets dépassés.",
-      "add_btn": "Cliquez sur « Nouvelle opération » pour ajouter une transaction."
+      "add_btn": "Cliquez sur « Nouvelle opération » pour ajouter une transaction.",
+      "stats_mobile": "Votre solde prévu en fin de période et où vous en êtes dans la période.",
+      "breakdown_mobile": "Les budgets les plus consommés, avec un repère de là où vous devriez en être.",
+      "add_btn_mobile": "Touchez « + » dans la barre du bas pour ajouter une transaction."
     },
     "account": {
       "intro": "La configuration d'un compte se fait en plusieurs étapes pour assurer une gestion précise.",
@@ -584,7 +592,8 @@
       "create_btn": "Cliquez ici pour créer un nouveau compte.",
       "balance": "Saisissez le solde actuel de votre compte en banque pour démarrer sur de bonnes bases.",
       "settings": "Retrouvez ici vos catégories, tags, règles et récurrences, à configurer une fois pour toutes.",
-      "periods": "Enfin, créez vos périodes budgétaires (mois par mois) pour suivre vos objectifs."
+      "periods": "Enfin, créez vos périodes budgétaires (mois par mois) pour suivre vos objectifs.",
+      "more": "Sous « Plus » : vos budgets et périodes, vos échéances et les réglages (catégories, tags, règles, récurrences)."
     },
     "transactions": {
       "date": "La date de l'opération. Par défaut, c'est aujourd'hui.",

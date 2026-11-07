@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import { NextIntlClientProvider } from 'next-intl';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import fr from '../../../../messages/fr.json';
 import en from '../../../../messages/en.json';
 import { BalanceBar } from './dashboard-stats';
@@ -25,6 +25,17 @@ const stats = vi.hoisted(() => ({
 
 vi.mock('@/features/accounts/model/use-account-store', () => ({
   useAccountStore: () => ({ activeAccountId: 'a1', activePeriodId: 'p1' }),
+}));
+const periods = vi.hoisted(() => ({
+  value: [{ id: 'p1', startDate: '2026-11-01', endDate: '2026-11-30', isActive: true }] as Array<{
+    id: string;
+    startDate: string;
+    endDate: string | null;
+    isActive: boolean;
+  }>,
+}));
+vi.mock('@/features/budgets/api/use-periods', () => ({
+  usePeriods: () => ({ data: periods.value, isLoading: false }),
 }));
 vi.mock('../api/use-reporting-stats', () => ({
   useReportingStats: () => ({ isLoading: false, data: stats.value }),
@@ -65,6 +76,49 @@ describe('Barre des soldes', () => {
     const { container } = renderBar();
     expect(container.querySelector('[data-tour="stats"]')).not.toBeNull();
     expect(screen.getByTestId('balance-forecast').querySelector('[data-amount]')!.className).toMatch(/max-lg:text-/);
+  });
+
+  describe('accueil mobile', () => {
+    const initialPeriods = periods.value;
+    afterEach(() => {
+      vi.useRealTimers();
+      periods.value = initialPeriods;
+    });
+
+    it('annonce « Prévu le {fin} » puis « Jour X sur Y »', () => {
+      vi.useFakeTimers({ toFake: ['Date'] });
+      vi.setSystemTime(new Date(2026, 10, 15, 12));
+      renderBar();
+      expect(screen.getByTestId('forecast-title-mobile').textContent).toBe('Prévu le 30/11/2026');
+      expect(screen.getByTestId('period-day').textContent).toBe('Jour 15 sur 30');
+    });
+
+    it('en anglais', () => {
+      vi.useFakeTimers({ toFake: ['Date'] });
+      vi.setSystemTime(new Date(2026, 10, 15, 12));
+      renderBar('en');
+      expect(screen.getByTestId('forecast-title-mobile').textContent).toBe('Forecast on 11/30/2026');
+      expect(screen.getByTestId('period-day').textContent).toBe('Day 15 of 30');
+    });
+
+    it('masque « Jour X sur Y » si la période est passée ou sans date de fin, et garde le titre simple', () => {
+      vi.useFakeTimers({ toFake: ['Date'] });
+      vi.setSystemTime(new Date(2026, 11, 2, 12));
+      renderBar();
+      expect(screen.queryByTestId('period-day')).toBeNull();
+      document.body.innerHTML = '';
+      periods.value = [{ id: 'p1', startDate: '2026-11-01', endDate: null, isActive: true }];
+      renderBar();
+      expect(screen.queryByTestId('period-day')).toBeNull();
+      expect(screen.getByTestId('forecast-title-mobile').textContent).toBe('Prévu en fin de période');
+    });
+
+    it('masque En banque et le solde à venir sur mobile (bureau seulement)', () => {
+      renderBar();
+      expect(screen.getByTestId('balance-bank').closest('.max-lg\\:hidden')).not.toBeNull();
+      expect(screen.getByTestId('balance-upcoming').closest('.max-lg\\:hidden')).not.toBeNull();
+      expect(screen.getByTestId('balance-forecast').closest('.max-lg\\:hidden')).toBeNull();
+    });
   });
 
   it('est traduit en anglais', () => {

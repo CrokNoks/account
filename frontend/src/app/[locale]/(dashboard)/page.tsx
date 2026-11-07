@@ -16,6 +16,7 @@ import { ForecastComposition } from "@/features/reporting/ui/forecast-compositio
 import { SpendingPace } from "@/features/reporting/ui/spending-pace";
 import { ToHandle } from "@/features/reporting/ui/to-handle";
 import { BudgetBreakdown } from "@/features/reporting/ui/budget-breakdown";
+import { BudgetsToWatch } from "@/features/reporting/ui/budgets-to-watch";
 import { UpcomingDeadlinesWidget } from "@/features/reporting/ui/upcoming-deadlines-widget";
 import { PeriodSelect } from "@/features/periods/ui/period-select";
 import { CreatePeriodDialog } from "@/features/periods/ui/create-period-dialog";
@@ -76,7 +77,7 @@ export default function Home() {
             {t('welcome')}
           </p>
         </div>
-        <Button className="gap-2" onClick={() => setCreateTransactionDrawerOpen(true)} data-tour="add-transaction">
+        <Button className="gap-2 max-lg:hidden" onClick={() => setCreateTransactionDrawerOpen(true)} data-tour="add-transaction">
           <Plus className="w-4 h-4" />
           {t('new_transaction')}
         </Button>
@@ -88,7 +89,7 @@ export default function Home() {
         <div className="lg:col-span-5">
           <ForecastComposition />
         </div>
-        <div className="lg:col-span-7">
+        <div className="lg:col-span-7 max-lg:hidden">
           <SpendingPace />
         </div>
       </div>
@@ -97,10 +98,14 @@ export default function Home() {
         <div data-tour="to-handle" className="lg:col-span-12">
           <ToHandle />
         </div>
-        <div data-tour="budget-breakdown" className="lg:col-span-7">
+        {/* Mobile : « Budgets à surveiller » à la place de la répartition (une cible de visite par largeur). */}
+        <div data-tour="budgets-to-watch" className="lg:hidden">
+          <BudgetsToWatch />
+        </div>
+        <div data-tour="budget-breakdown" className="lg:col-span-7 max-lg:hidden">
           <BudgetBreakdown />
         </div>
-        <div className="lg:col-span-5">
+        <div className="lg:col-span-5 max-lg:hidden">
           <UpcomingDeadlinesWidget />
         </div>
       </div>

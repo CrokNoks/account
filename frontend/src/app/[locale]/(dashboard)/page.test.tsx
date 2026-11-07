@@ -41,6 +41,7 @@ vi.mock('@/features/reporting/ui/forecast-composition', () => ({
 vi.mock('@/features/reporting/ui/spending-pace', () => ({ SpendingPace: () => <div data-testid="pace" /> }));
 vi.mock('@/features/reporting/ui/to-handle', () => ({ ToHandle: () => <div data-testid="to-handle" /> }));
 vi.mock('@/features/reporting/ui/budget-breakdown', () => ({ BudgetBreakdown: () => <div data-testid="budgets" /> }));
+vi.mock('@/features/reporting/ui/budgets-to-watch', () => ({ BudgetsToWatch: () => <div data-testid="watch" /> }));
 vi.mock('@/features/reporting/ui/upcoming-deadlines-widget', () => ({
   UpcomingDeadlinesWidget: () => <div data-testid="bills" />,
 }));
@@ -67,7 +68,7 @@ describe('Écran Aujourd\'hui', () => {
   it('affiche la barre des soldes, la composition, le rythme puis À traiter, Budgets et Factures, sans personnalisation', () => {
     renderHome();
 
-    for (const id of ['balance-bar', 'composition', 'pace', 'to-handle', 'budgets', 'bills']) {
+    for (const id of ['balance-bar', 'composition', 'pace', 'to-handle', 'budgets', 'bills', 'watch']) {
       expect(screen.getByTestId(id)).toBeTruthy();
     }
     expect(screen.queryByTitle(/Personnaliser/)).toBeNull();
@@ -77,9 +78,23 @@ describe('Écran Aujourd\'hui', () => {
   it('pose les cibles de la visite guidée sur les blocs de l\'écran fixe', () => {
     const { container } = renderHome();
 
-    for (const target of ['stats', 'budget-breakdown', 'to-handle', 'add-transaction']) {
+    for (const target of ['stats', 'budget-breakdown', 'budgets-to-watch', 'to-handle', 'add-transaction']) {
       expect(container.querySelector(`[data-tour="${target}"]`)).not.toBeNull();
     }
+  });
+
+  it('masque sur mobile le rythme, les échéances, la répartition et « Nouvelle opération » ; le bureau garde tout', () => {
+    renderHome();
+    const hiddenOnMobile = (el: HTMLElement) => el.closest('.max-lg\\:hidden') !== null;
+    expect(hiddenOnMobile(screen.getByTestId('pace'))).toBe(true);
+    expect(hiddenOnMobile(screen.getByTestId('bills'))).toBe(true);
+    expect(hiddenOnMobile(screen.getByTestId('budgets'))).toBe(true);
+    expect(hiddenOnMobile(screen.getByRole('button', { name: 'Nouvelle opération' }))).toBe(true);
+    // Mobile : Budgets à surveiller remplace la répartition ; il n'est pas affiché sur bureau.
+    expect(hiddenOnMobile(screen.getByTestId('watch'))).toBe(false);
+    expect(screen.getByTestId('watch').closest('.lg\\:hidden')).not.toBeNull();
+    // Ce qui reste sur mobile : prévu, composition, À traiter.
+    for (const id of ['balance-bar', 'composition', 'to-handle']) expect(hiddenOnMobile(screen.getByTestId(id))).toBe(false);
   });
 
   describe('visite guidée', () => {
