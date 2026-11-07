@@ -464,8 +464,6 @@
     "confirm_delete": "Permanently delete this period? Associated budgets will also be removed.",
     "inject_label": "Inject recurring operations",
     "no_categories": "No category available.",
-    "edit_budgets": "Edit budgets",
-    "edit_budgets_desc": "Adjust the amounts allocated to each category for this period.",
     "edit_dates": "Edit dates",
     "delete_period": "Delete period",
     "close_confirm": "Close the period?"
@@ -678,6 +676,24 @@
     "left": "{amount} left",
     "over": "Over by {amount}",
     "empty": "No category for this period.",
-    "manage_periods": "Manage periods"
+    "manage_periods": "Manage periods",
+    "calculating": "calculating…",
+    "vs_saved": "{amount} compared with the saved forecast",
+    "same_as_saved": "same as the saved forecast",
+    "no_effect": "No effect: the actual is already higher",
+    "unsaved": "Unsaved changes",
+    "save": "Save",
+    "saving": "Saving…",
+    "cancel": "Cancel",
+    "saved": "Budgets saved",
+    "budget_of": "Budget {name}",
+    "unreadable_amount": "Unreadable amount: enter a number (e.g. 12.50).",
+    "negative_amount": "A budget cannot be negative.",
+    "fix_amounts": "Fix the amounts flagged before saving.",
+    "save_error": "Saving failed. Your inputs are kept, try again.",
+    "changed_elsewhere": "The budgets of this period changed since the screen was opened (by someone else). Nothing was saved: the saved amounts are reloaded, your inputs are shown next to them for reference.",
+    "your_input": "Your input: {value}",
+    "simulation_error": "Simulation unavailable: the forecast shown is not up to date.",
+    "discard_confirm": "You have unsaved budgets. Discard them?"
   }
 }

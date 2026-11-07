@@ -464,8 +464,6 @@
     "confirm_delete": "Supprimer définitivement cette période ? Les budgets associés seront également supprimés.",
     "inject_label": "Injecter les opérations récurrentes",
     "no_categories": "Aucune catégorie disponible.",
-    "edit_budgets": "Modifier les budgets",
-    "edit_budgets_desc": "Ajustez les montants alloués pour chaque catégorie pour cette période.",
     "edit_dates": "Modifier les dates",
     "delete_period": "Supprimer la période",
     "close_confirm": "Clôturer la période ?"
@@ -678,6 +676,24 @@
     "left": "{amount} restants",
     "over": "Dépassement {amount}",
     "empty": "Aucune catégorie pour cette période.",
-    "manage_periods": "Gérer les périodes"
+    "manage_periods": "Gérer les périodes",
+    "calculating": "calcul en cours…",
+    "vs_saved": "{amount} par rapport au prévu enregistré",
+    "same_as_saved": "identique au prévu enregistré",
+    "no_effect": "Sans effet : le réel est déjà plus haut",
+    "unsaved": "Modifications non enregistrées",
+    "save": "Enregistrer",
+    "saving": "Enregistrement…",
+    "cancel": "Annuler",
+    "saved": "Budgets enregistrés",
+    "budget_of": "Budget {name}",
+    "unreadable_amount": "Montant illisible : saisissez un nombre (ex. 12,50).",
+    "negative_amount": "Le budget ne peut pas être négatif.",
+    "fix_amounts": "Corrigez les montants signalés avant d'enregistrer.",
+    "save_error": "L'enregistrement a échoué. Vos saisies sont conservées, réessayez.",
+    "changed_elsewhere": "Les budgets de cette période ont changé depuis l'ouverture de l'écran (par une autre personne). Rien n'a été enregistré : les montants enregistrés sont rechargés, vos saisies s'affichent à côté à titre indicatif.",
+    "your_input": "Votre saisie : {value}",
+    "simulation_error": "Simulation indisponible : le prévu affiché n'est pas à jour.",
+    "discard_confirm": "Vous avez des budgets non enregistrés. Les abandonner ?"
   }
 }

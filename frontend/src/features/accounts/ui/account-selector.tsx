@@ -11,6 +11,7 @@ import {
 import { useAccounts } from '../api/use-accounts';
 import { useAccountStore } from '../model/use-account-store';
 import { useTranslations } from 'next-intl';
+import { confirmLeave } from '@/shared/model/leave-guard';
 
 export function AccountSelector() {
   const t = useTranslations('Accounts');
@@ -29,7 +30,7 @@ export function AccountSelector() {
   return (
     <Select 
       value={activeAccountId || ""} 
-      onValueChange={(v) => setActiveAccountId(v)}
+      onValueChange={(v) => confirmLeave() && setActiveAccountId(v)}
     >
       <SelectTrigger className="w-[104px] sm:w-[200px]">
         <SelectValue>

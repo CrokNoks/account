@@ -28,6 +28,19 @@ export interface SpendingPace {
   gap: string | null;
 }
 
+/** Prévu que donneraient les stats si les budgets saisis étaient enregistrés (centimes, texte). */
+export interface ForecastSimulation {
+  forecastBalance: string;
+  savedForecastBalance: string;
+  delta: string;
+  incomeEffect: string;
+  expensesEffect: string;
+  plannedIncome: string;
+  plannedExpenses: string;
+  realIncome: string;
+  realExpenses: string;
+}
+
 export interface BudgetCategoryBreakdown {
   categoryId: string;
   name: string;

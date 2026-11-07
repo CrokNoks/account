@@ -10,7 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { format } from 'date-fns';
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Pencil, Lock, Trash2, PieChart } from 'lucide-react';
+import { Pencil, Lock, Trash2 } from 'lucide-react';
 import { 
   Sheet, 
   SheetContent, 
@@ -22,7 +22,6 @@ import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from 'sonner';
 import { useTranslations } from 'next-intl';
-import { EditPeriodBudgetsSheet } from './edit-period-budgets-sheet';
 
 export function PeriodList() {
   const t = useTranslations('Budgets');
@@ -31,7 +30,6 @@ export function PeriodList() {
   const { mutate: updatePeriod, isPending: isUpdating } = useUpdatePeriod();
   const { mutate: deletePeriod, isPending: isDeleting } = useDeletePeriod();
   const [editingPeriod, setEditingPeriod] = useState<Period | null>(null);
-  const [editingBudgetsPeriodId, setEditingBudgetsPeriodId] = useState<string | null>(null);
 
   const handleClosePeriod = (period: Period) => {
     if (!activeAccountId || !confirm(t('close_confirm'))) return;
@@ -85,15 +83,6 @@ export function PeriodList() {
                   <Button 
                     variant="ghost" 
                     size="icon-sm" 
-                    className="lg:opacity-0 lg:group-hover:opacity-100 transition-opacity h-11 w-11 lg:h-8 lg:w-8 text-muted-foreground hover:text-primary"
-                    onClick={() => setEditingBudgetsPeriodId(period.id)}
-                    title={t('edit_budgets')}
-                  >
-                    <PieChart className="w-3.5 h-3.5" />
-                  </Button>
-                  <Button 
-                    variant="ghost" 
-                    size="icon-sm" 
                     className="lg:opacity-0 lg:group-hover:opacity-100 transition-opacity h-11 w-11 lg:h-8 lg:w-8"
                     onClick={() => setEditingPeriod(period)}
                     title={t('edit_dates')}
@@ -124,14 +113,6 @@ export function PeriodList() {
           period={editingPeriod} 
           open={!!editingPeriod} 
           onOpenChange={(o) => !o && setEditingPeriod(null)} 
-        />
-      )}
-
-      {editingBudgetsPeriodId && (
-        <EditPeriodBudgetsSheet
-          periodId={editingBudgetsPeriodId}
-          open={!!editingBudgetsPeriodId}
-          onOpenChange={(o) => !o && setEditingBudgetsPeriodId(null)}
         />
       )}
     </>

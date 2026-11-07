@@ -50,6 +50,11 @@ export interface UpdateBudgetsDto {
     categoryId: string;
     amountAllocated: string;
   }>;
+  /** Budgets tels que lus par l'écran : l'API refuse (409 BUDGETS_CHANGED) s'ils ont changé depuis. */
+  expectedBudgets?: Array<{
+    categoryId: string;
+    amountAllocated: string;
+  }>;
 }
 
 export interface DeletePeriodData {

@@ -10,9 +10,11 @@ export function useUpdatePeriodBudgets() {
       const { data: result } = await apiClient.put(`/${accountId}/periods/${periodId}/budgets`, data);
       return result;
     },
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['periods', variables.periodId, 'budgets'] });
-      queryClient.invalidateQueries({ queryKey: ['reporting'] });
-    },
+    // Les promesses sont rendues : l'enregistrement n'est « terminé » qu'une fois les stats rechargées.
+    onSuccess: (_, variables) =>
+      Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['periods', variables.periodId, 'budgets'] }),
+        queryClient.invalidateQueries({ queryKey: ['reporting'] }),
+      ]),
   });
 }
