@@ -285,6 +285,7 @@
     },
     "empty": "No transactions found",
     "save_another": "Save & Add Another",
+    "add_another": "Add and enter another",
     "expense_hint": "Use negative value for expenses (ex: -10)",
     "filter_status": "Filter by status",
     "status_all": "All",
@@ -560,6 +561,7 @@
     "edit_title": "Edit rule"
   },
   "Common": {
+    "amount_placeholder": "0.00",
     "add": "Add",
     "save": "Save",
     "update": "Update",

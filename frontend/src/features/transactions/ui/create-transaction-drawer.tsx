@@ -147,7 +147,7 @@ export function CreateTransactionDrawer() {
             onSubmit={(v) => handleSubmit(v, false)}
             onAddAnother={(v) => handleSubmit(v, true)}
             isPending={isPending}
-            submitLabel={tc('save')}
+            submitLabel={desktop ? tc('save') : tc('add')}
             mode={mode}
             onModeChange={setMode}
             // Bureau : l'onglet repart d'un formulaire neuf. Mobile : la case Virement garde la saisie.

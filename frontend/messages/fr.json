@@ -285,6 +285,7 @@
     },
     "empty": "Aucune transaction trouvée",
     "save_another": "Enregistrer & Nouveau",
+    "add_another": "Ajouter et en saisir une autre",
     "expense_hint": "Utilisez une valeur négative pour les dépenses (ex: -10)",
     "filter_status": "Filtrer par statut",
     "status_all": "Toutes",
@@ -560,6 +561,7 @@
     "edit_title": "Modifier la règle"
   },
   "Common": {
+    "amount_placeholder": "0,00",
     "add": "Ajouter",
     "save": "Enregistrer",
     "update": "Mettre à jour",

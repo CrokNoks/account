@@ -257,7 +257,7 @@ export function TransactionForm({
         <AmountInput
           ref={amountInputRef}
           variant={desktop ? 'signed' : 'unsigned'}
-          placeholder="0.00"
+          placeholder={tc('amount_placeholder')}
           value={amount}
           onChange={(e) => setAmount(e.target.value)}
           className="pr-12 h-11 text-lg font-semibold"
@@ -286,6 +286,19 @@ export function TransactionForm({
         </Button>
       ))}
     </div>
+  );
+
+  const submitButton = (
+    <Button 
+      type="submit"
+      className="w-full h-11 text-base font-semibold flex justify-between px-4" 
+      disabled={isPending || !isFormValid}
+    >
+      <span>{isPending ? tc('loading') : submitLabel}</span>
+      <kbd className="hidden lg:inline-flex pointer-events-none h-5 select-none items-center gap-1 rounded border bg-primary-foreground/20 px-1.5 font-mono text-[10px] font-medium text-primary-foreground opacity-100">
+        <span className="text-xs">⇧</span> Enter
+      </kbd>
+    </Button>
   );
 
   return (
@@ -322,6 +335,7 @@ export function TransactionForm({
       )}
 
       <div className="flex flex-col gap-3 pt-4">
+        {!desktop && submitButton}
         {onAddAnother && (
           <Button 
             type="button"
@@ -330,22 +344,13 @@ export function TransactionForm({
             onClick={() => onAddAnother(currentValues)}
             disabled={isPending || !isFormValid}
           >
-            <span>{isPending ? tc('loading') : t('save_another')}</span>
+            <span>{isPending ? tc('loading') : desktop ? t('save_another') : t('add_another')}</span>
             <kbd className="hidden lg:inline-flex pointer-events-none h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground opacity-100">
               Enter
             </kbd>
           </Button>
         )}
-        <Button 
-          type="submit"
-          className="w-full h-11 text-base font-semibold flex justify-between px-4" 
-          disabled={isPending || !isFormValid}
-        >
-          <span>{isPending ? tc('loading') : submitLabel}</span>
-          <kbd className="hidden lg:inline-flex pointer-events-none h-5 select-none items-center gap-1 rounded border bg-primary-foreground/20 px-1.5 font-mono text-[10px] font-medium text-primary-foreground opacity-100">
-            <span className="text-xs">⇧</span> Enter
-          </kbd>
-        </Button>
+        {desktop && submitButton}
       </div>
     </form>
   );

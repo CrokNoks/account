@@ -33,7 +33,7 @@ vi.mock('@/features/categories/ui/category-selector', () => ({
   ),
 }));
 
-const amount = () => screen.getByPlaceholderText('0.00') as HTMLInputElement;
+const amount = () => screen.getByPlaceholderText('amount_placeholder') as HTMLInputElement;
 const label = () => screen.getByPlaceholderText('form.description_placeholder_standard') as HTMLInputElement;
 const transferBox = () => document.getElementById('transfer-field') as HTMLElement;
 const dateInput = () => document.querySelector('input[type="date"]') as HTMLInputElement;

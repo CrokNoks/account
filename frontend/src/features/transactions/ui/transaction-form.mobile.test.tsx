@@ -17,7 +17,7 @@ const renderForm = (props: Partial<React.ComponentProps<typeof TransactionForm>>
   render(
     <TransactionForm accountId="a1" onSubmit={vi.fn()} onAddAnother={vi.fn()} isPending={false} submitLabel="ok" {...props} />,
   );
-const amount = () => screen.getByPlaceholderText('0.00') as HTMLInputElement;
+const amount = () => screen.getByPlaceholderText('amount_placeholder') as HTMLInputElement;
 const fill = (value = '12,50') => {
   fireEvent.change(screen.getByPlaceholderText('form.description_placeholder_standard'), { target: { value: 'Courses' } });
   fireEvent.change(amount(), { target: { value } });

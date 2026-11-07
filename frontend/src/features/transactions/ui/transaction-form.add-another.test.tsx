@@ -87,7 +87,7 @@ function renderForm(overrides: Partial<React.ComponentProps<typeof TransactionFo
 
 async function fillRequiredFields(user: ReturnType<typeof userEvent.setup>) {
   const descriptionInput = screen.getByPlaceholderText(/rent, groceries/i);
-  const amountInput = screen.getByPlaceholderText('0.00');
+  const amountInput = screen.getByPlaceholderText('amount_placeholder');
 
   await user.clear(descriptionInput);
   await user.type(descriptionInput, 'Test transaction');
@@ -124,7 +124,7 @@ describe('Bug 1 — Enter déclenche onAddAnother et non onSubmit', () => {
     renderForm({ onAddAnother, onSubmit });
     await fillRequiredFields(user);
 
-    const amountInput = screen.getByPlaceholderText('0.00');
+    const amountInput = screen.getByPlaceholderText('amount_placeholder');
     await user.click(amountInput);
     await user.keyboard('{Enter}');
 
@@ -170,7 +170,7 @@ describe('Bug 1 — Enter déclenche onAddAnother et non onSubmit', () => {
     const descriptionInput = screen.getByPlaceholderText(/rent, groceries/i);
     await user.clear(descriptionInput);
     await user.type(descriptionInput, 'Test');
-    const amountInput = screen.getByPlaceholderText('0.00');
+    const amountInput = screen.getByPlaceholderText('amount_placeholder');
     await user.clear(amountInput);
     await user.type(amountInput, '10');
     await user.keyboard('{Enter}');
@@ -185,7 +185,7 @@ describe('Bug 1 — Enter déclenche onAddAnother et non onSubmit', () => {
     renderForm({ onAddAnother });
 
     const descriptionInput = screen.getByPlaceholderText(/rent, groceries/i);
-    const amountInput = screen.getByPlaceholderText('0.00');
+    const amountInput = screen.getByPlaceholderText('amount_placeholder');
 
     await user.clear(descriptionInput);
     await user.type(descriptionInput, 'Supermarché');
@@ -209,7 +209,7 @@ describe('Bug 2 — Réinitialisation du formulaire via changement de key (formK
     renderForm();
 
     const descriptionInput = screen.getByPlaceholderText(/rent, groceries/i) as HTMLInputElement;
-    const amountInput = screen.getByPlaceholderText('0.00') as HTMLInputElement;
+    const amountInput = screen.getByPlaceholderText('amount_placeholder') as HTMLInputElement;
 
     expect(descriptionInput.value).toBe('');
     expect(amountInput.value).toBe('');
@@ -224,7 +224,7 @@ describe('Bug 2 — Réinitialisation du formulaire via changement de key (formK
     });
 
     const descriptionInput = screen.getByPlaceholderText(/rent, groceries/i) as HTMLInputElement;
-    const amountInput = screen.getByPlaceholderText('0.00') as HTMLInputElement;
+    const amountInput = screen.getByPlaceholderText('amount_placeholder') as HTMLInputElement;
 
     expect(descriptionInput.value).toBe('Loyer');
     expect(amountInput.value).toBe('-1200');

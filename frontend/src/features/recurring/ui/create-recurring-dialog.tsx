@@ -176,7 +176,7 @@ export function CreateRecurringDialog({
             <label className="text-sm font-medium">{t('fields.amount')}</label>
             <div className="relative">
               <AmountInput
-                placeholder="0.00"
+                placeholder={tc('amount_placeholder')}
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
                 className="pr-12 h-11 text-lg font-semibold"

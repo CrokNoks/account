@@ -4,6 +4,7 @@ import { AxiosError } from 'axios';
 import { NextIntlClientProvider } from 'next-intl';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import fr from '../../../../messages/fr.json';
+import en from '../../../../messages/en.json';
 import { BudgetsScreen } from './budgets-screen';
 
 const breakdown = {
@@ -88,16 +89,23 @@ describe('BudgetsScreen', () => {
     cleanup();
     vi.restoreAllMocks();
   });
-  const renderScreen = () =>
+  const renderScreen = (locale: 'fr' | 'en' = 'fr') =>
     render(
       <QueryClientProvider client={new QueryClient()}>
-        <NextIntlClientProvider locale="fr" messages={fr}>
+        <NextIntlClientProvider locale={locale} messages={locale === 'fr' ? fr : en}>
           <BudgetsScreen />
         </NextIntlClientProvider>
       </QueryClientProvider>,
     );
   const field = (name: string) => screen.getByLabelText(`Budget ${name}`) as HTMLInputElement;
   const type = (name: string, value: string) => fireEvent.change(field(name), { target: { value } });
+  it('le montant vide suit la langue : 0,00 en fr, 0.00 en en', () => {
+    renderScreen('fr');
+    expect(field('Loisirs').placeholder).toBe('0,00');
+    cleanup();
+    renderScreen('en');
+    expect((screen.getAllByPlaceholderText('0.00')).length).toBeGreaterThan(0);
+  });
   it('shows forecast, planned income and total budgeted', () => {
     renderScreen();
     const text = nbsp(document.body.textContent!);

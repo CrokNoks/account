@@ -40,6 +40,7 @@ const signed = (cents: string) => (BigInt(cents) > BigInt(0) ? `+${formatCurrenc
  */
 export function BudgetsScreen() {
   const t = useTranslations('BudgetsScreen');
+  const tc = useTranslations('Common');
   const queryClient = useQueryClient();
   const { activeAccountId, activePeriodId, setActivePeriodId } = useAccountStore();
   const { data: periods } = usePeriods(activeAccountId);
@@ -294,7 +295,7 @@ export function BudgetsScreen() {
                         <AmountInput
                           aria-label={t('budget_of', { name: line.name })}
                           aria-invalid={!!error}
-                          placeholder="0,00"
+                          placeholder={tc('amount_placeholder')}
                           disabled={!ready || isPending}
                           value={displayValue(reference, drafts, id)}
                           onChange={(e) => onEdit(id, e.target.value)}

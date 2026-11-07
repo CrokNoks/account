@@ -34,7 +34,7 @@ describe('TransactionForm amount field (bureau : signe tapé ; jsdom sans matchM
     const onSubmit = vi.fn();
     render(<TransactionForm accountId="acc-1" onSubmit={onSubmit} isPending={false} submitLabel="ok" />);
 
-    const amount = screen.getByPlaceholderText('0.00') as HTMLInputElement;
+    const amount = screen.getByPlaceholderText('amount_placeholder') as HTMLInputElement;
     // type="number", inputMode="decimal"/"numeric" give iOS a keypad without "-"
     expect(amount.type).toBe('text');
     expect(amount.getAttribute('inputmode')).toBe('text');
