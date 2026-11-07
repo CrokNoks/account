@@ -7,7 +7,6 @@
     "settings": "Settings",
     "dashboard": "Dashboard",
     "calendar": "Calendar",
-    "prevision": "Forecast",
     "accounts": "Accounts",
     "categories": "Categories",
     "tags": "Tags",
@@ -130,6 +129,11 @@
         "sat": "Sat",
         "sun": "Sun"
       }
+    },
+    "echeances": {
+      "title": "Due dates",
+      "desc": "Your cash flow and upcoming due dates, on a single screen.",
+      "no_account": "Choose an account to see its due dates."
     },
     "category_breakdown_title": "Expense breakdown by category",
     "no_data_title": "No data",

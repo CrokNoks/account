@@ -7,7 +7,6 @@
     "settings": "Réglages",
     "dashboard": "Tableau de bord",
     "calendar": "Calendrier",
-    "prevision": "Prévisions",
     "accounts": "Comptes",
     "categories": "Catégories",
     "tags": "Tags",
@@ -130,6 +129,11 @@
         "sat": "sam",
         "sun": "dim"
       }
+    },
+    "echeances": {
+      "title": "Échéances",
+      "desc": "Votre trésorerie et vos échéances à venir, sur un seul écran.",
+      "no_account": "Choisissez un compte pour voir ses échéances."
     },
     "category_breakdown_title": "Répartition des dépenses par catégorie",
     "no_data_title": "Aucune donnée",

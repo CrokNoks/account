@@ -14,7 +14,7 @@ import {
 } from '@/components/ui/command';
 import { useUiStore } from '@/shared/model/use-ui-store';
 import { useTranslations } from 'next-intl';
-import { ATTACHED_PAGES, NAV_ENTRIES, SETTINGS_PAGES } from './nav-config';
+import { NAV_ENTRIES, SETTINGS_PAGES } from './nav-config';
 
 export function CommandMenu() {
   const [open, setOpen] = React.useState(false);
@@ -47,7 +47,7 @@ export function CommandMenu() {
       <CommandList>
         <CommandEmpty>{tn('command.empty')}</CommandEmpty>
         <CommandGroup heading={tn('command.group_navigation')}>
-          {[...NAV_ENTRIES, ...ATTACHED_PAGES].map((page) => {
+          {NAV_ENTRIES.map((page) => {
             const Icon = page.icon;
             return (
               <CommandItem key={page.href} onSelect={() => runCommand(() => router.push(page.href))}>

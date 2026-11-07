@@ -42,7 +42,7 @@ export function CashflowForecast({ accountId }: CashflowForecastProps) {
           </CardContent>
         </Card>
 
-        {data?.events.length && (
+        {data && data.events.length > 0 && (
           <Card className="bg-emerald-500/5 border-emerald-500/20">
             <CardContent className="pt-6">
               <div className="flex items-center gap-2 text-muted-foreground mb-1">

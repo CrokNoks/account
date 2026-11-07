@@ -19,7 +19,7 @@ export const NAV_ENTRIES = [
   { icon: Receipt, labelKey: 'operations', href: '/transactions', shortcut: 'F3' },
   { icon: TrendingUp, labelKey: 'analysis', href: '/analyses', shortcut: 'F4' },
   { icon: PieChart, labelKey: 'budgets', href: '/budgets', shortcut: 'F5' },
-  { icon: Calendar, labelKey: 'due_dates', href: '/calendar', shortcut: 'F6' },
+  { icon: Calendar, labelKey: 'due_dates', href: '/echeances', shortcut: 'F6' },
   { icon: Settings, labelKey: 'settings', href: '/settings' },
 ] as const satisfies readonly { icon: LucideIcon; labelKey: string; href: string; shortcut?: string }[];
 
@@ -32,7 +32,7 @@ type Route = {
   titleKey: string;
 };
 
-/** Toutes les routes de `(dashboard)`. Une seule table : titre, entrée active, onglets. */
+/** Toutes les routes de `(dashboard)`. Une seule table : titre, entrée active. */
 const ROUTES: readonly Route[] = [
   { path: '/', entry: '/', titleKey: 'today' },
   { path: '/transactions', entry: '/transactions', titleKey: 'operations' },
@@ -44,8 +44,10 @@ const ROUTES: readonly Route[] = [
   { path: '/depassements', entry: '/analyses', titleKey: 'analysis' },
   { path: '/budgets', entry: '/budgets', titleKey: 'budgets' },
   { path: '/budgets/fixed', entry: '/budgets', titleKey: 'budgets' },
-  { path: '/calendar', entry: '/calendar', titleKey: 'due_dates' },
-  { path: '/cashflow', entry: '/calendar', titleKey: 'prevision' },
+  { path: '/echeances', entry: '/echeances', titleKey: 'due_dates' },
+  // Anciennes adresses : elles affichent l'écran Échéances (sans redirection, jusqu'au cycle 7).
+  { path: '/calendar', entry: '/echeances', titleKey: 'due_dates' },
+  { path: '/cashflow', entry: '/echeances', titleKey: 'due_dates' },
   { path: '/settings', entry: '/settings', titleKey: 'settings' },
   { path: '/accounts', entry: '/settings', titleKey: 'accounts' },
   { path: '/categories', entry: '/settings', titleKey: 'categories' },
@@ -53,14 +55,6 @@ const ROUTES: readonly Route[] = [
   { path: '/smart-rules', entry: '/settings', titleKey: 'smart_rules' },
   { path: '/recurring', entry: '/settings', titleKey: 'recurring' },
 ];
-
-/** Onglets reliant les pages d'un même groupe (libellé = nom propre de la page). Analyses a ses onglets dans l'écran. */
-const TABS: Record<string, readonly { href: string; labelKey: string; icon: LucideIcon }[]> = {
-  '/calendar': [
-    { href: '/calendar', labelKey: 'calendar', icon: Calendar },
-    { href: '/cashflow', labelKey: 'prevision', icon: TrendingUp },
-  ],
-};
 
 /** Pages listées sur la page Réglages, avec leur ligne d'explication (clé `Settings`). */
 export const SETTINGS_PAGES = [
@@ -70,13 +64,6 @@ export const SETTINGS_PAGES = [
   { href: '/smart-rules', labelKey: 'smart_rules', descriptionKey: 'smart_rules_desc', icon: Sparkles },
   { href: '/recurring', labelKey: 'recurring', descriptionKey: 'recurring_desc', icon: Repeat },
 ] as const;
-
-export function tabsFor(entryHref: string) {
-  return TABS[entryHref] ?? [];
-}
-
-/** Pages rattachées proposées par la palette Ctrl/Cmd + K en plus des entrées. */
-export const ATTACHED_PAGES = TABS['/calendar'].slice(1);
 
 function stripLocale(pathname: string): string {
   return pathname.replace(/^\/(fr|en)(?=\/|$)/, '').replace(/\/+$/, '') || '/';

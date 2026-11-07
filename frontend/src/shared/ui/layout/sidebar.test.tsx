@@ -24,7 +24,7 @@ describe('sidebar : 6 entrées', () => {
   it('liste Aujourd\'hui, Opérations, Analyses, Budgets, Échéances, Réglages puis Déconnexion', () => {
     render(<Sidebar />);
     const links = screen.getAllByRole('link');
-    expect(links.map((l) => l.getAttribute('href'))).toEqual(['/', '/transactions', '/analyses', '/budgets', '/calendar', '/settings']);
+    expect(links.map((l) => l.getAttribute('href'))).toEqual(['/', '/transactions', '/analyses', '/budgets', '/echeances', '/settings']);
     expect(links.map((l) => l.textContent)).toEqual([
       'todayF2', 'operationsF3', 'analysisF4', 'budgetsF5', 'due_datesF6', 'settings',
     ]);
@@ -46,7 +46,7 @@ describe('sidebar : F2 à F6', () => {
     ['F3', '/transactions'],
     ['F4', '/analyses'],
     ['F5', '/budgets'],
-    ['F6', '/calendar'],
+    ['F6', '/echeances'],
   ])('%s va sur %s', (key, href) => {
     render(<Sidebar />);
     fireEvent.keyDown(window, { key });
@@ -71,7 +71,9 @@ describe('sidebar : entrée active par groupe', () => {
     ['/fr/evolution', '/analyses'],
     ['/fr/flux', '/analyses'],
     ['/en/depassements', '/analyses'],
-    ['/fr/cashflow', '/calendar'],
+    ['/fr/echeances', '/echeances'],
+    ['/fr/calendar', '/echeances'],
+    ['/en/cashflow', '/echeances'],
     ['/fr/transactions/import', '/transactions'],
     ['/fr/budgets/fixed', '/budgets'],
     ['/fr/categories', '/settings'],
