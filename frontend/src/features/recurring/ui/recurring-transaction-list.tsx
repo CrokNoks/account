@@ -16,7 +16,7 @@ import {
   TableHeader, 
   TableRow 
 } from "@/components/ui/table";
-import { formatCurrency, toCents, fromCents, isUnreadableAmount } from '@/shared/lib/format';
+import { formatCurrency, toCents, centsToInputString, isUnreadableAmount } from '@/shared/lib/format';
 import { Badge } from '@/components/ui/badge';
 import { Trash2, CalendarDays, Pencil } from 'lucide-react';
 import { Button } from "@/components/ui/button";
@@ -31,7 +31,7 @@ import { Input } from "@/components/ui/input";
 import { AmountInput } from '@/components/ui/amount-input';
 import { CategorySelector } from '@/features/categories/ui/category-selector';
 import { toast } from 'sonner';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 
 export function RecurringTransactionList() {
   const t = useTranslations('Recurring');
@@ -117,11 +117,12 @@ export function RecurringTransactionList() {
 function EditRecurringDialog({ transaction, open, onOpenChange }: { transaction: RecurringTransaction, open: boolean, onOpenChange: (o: boolean) => void }) {
   const t = useTranslations('Recurring');
   const tc = useTranslations('Common');
+  const locale = useLocale();
   const { activeAccountId } = useAccountStore();
   
   const [description, setDescription] = useState(transaction.description);
   const [categoryId, setCategoryId] = useState(transaction.categoryId || '');
-  const [amount, setAmount] = useState(fromCents(transaction.amount));
+  const [amount, setAmount] = useState(centsToInputString(BigInt(transaction.amount), locale));
   const [dayOfMonth, setDayOfMonth] = useState(transaction.dayOfMonth.toString());
   
   const { mutate: updateRecurring, isPending } = useUpdateRecurringTransaction();

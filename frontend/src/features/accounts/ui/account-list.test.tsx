@@ -1,11 +1,11 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { NextIntlClientProvider } from 'next-intl';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import fr from '../../../../messages/fr.json';
 import { AccountList } from './account-list';
 
 const accounts = [
-  { id: 'a1', name: 'Mon compte', ownerId: 'me', initialBalance: '1000' },
+  { id: 'a1', name: 'Mon compte', ownerId: 'me', initialBalance: '-320050' },
   { id: 'a2', name: 'Compte partagé', ownerId: 'someone-else', initialBalance: '2000' },
 ];
 let currentUserId: string | undefined;
@@ -54,5 +54,14 @@ describe('AccountList', () => {
     renderList();
 
     expect(screen.queryAllByLabelText('Partager')).toHaveLength(0);
+  });
+
+  it('pre-fills the initial balance in French format, sign unchanged', () => {
+    renderList();
+
+    fireEvent.click(screen.getByLabelText('Modifier'));
+
+    const values = screen.getAllByRole('textbox').map((i) => (i as HTMLInputElement).value);
+    expect(values).toContain('-3200,50');
   });
 });

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formatCurrency, splitAmount, parseAmountToCents, fromCents, isUnreadableAmount, toAbsCents, toCents, toOptionalCents, centsToInputString } from './format';
+import { formatCurrency, splitAmount, parseAmountToCents, isUnreadableAmount, toAbsCents, toCents, toOptionalCents, centsToInputString } from './format';
 
 // Intl insère des espaces insécables : on les normalise pour comparer.
 const plain = (s: string) => s.replace(/[  ]/g, ' ');
@@ -102,25 +102,6 @@ describe('toAbsCents', () => {
   });
 });
 
-describe('fromCents', () => {
-  it.each([
-    ['1050', '10.5'],
-    [1050, '10.5'],
-    ['-4250', '-42.5'],
-    ['1999', '19.99'],
-    ['100', '1'],
-    ['abc', '0'],
-  ])('converts %j cents to %s', (cents, expected) => {
-    expect(fromCents(cents)).toBe(expected);
-  });
-
-  it('round-trips with toCents', () => {
-    for (const cents of ['0', '7', '1050', '-4250', '123456']) {
-      expect(toCents(fromCents(cents))).toBe(cents);
-    }
-  });
-});
-
 describe('isUnreadableAmount / toOptionalCents', () => {
   it('flags non-empty unreadable input only', () => {
     expect(isUnreadableAmount('abc')).toBe(true);
@@ -163,5 +144,24 @@ describe('centsToInputString', () => {
   ])('%s in %s -> %s, read back to the same cents', (cents, locale, text) => {
     expect(centsToInputString(cents, locale)).toBe(text);
     expect(parseAmountToCents(text)).toBe(cents);
+  });
+});
+
+describe('centsToInputString round trip', () => {
+  it.each(['fr', 'en'])('gives back the exact cents in %s, very large amounts included', (locale) => {
+    const samples = [
+      '0', '5', '50', '100', '320050', '-320050', '-5',
+      '9007199254740993', // 2^53 + 1: a float cannot hold it
+      '-9007199254740993',
+      '123456789012345678901234567890',
+    ].map((c) => BigInt(c));
+    for (const cents of samples) {
+      expect(parseAmountToCents(centsToInputString(cents, locale))).toBe(cents);
+    }
+  });
+
+  it('keeps two decimals and the language separator, no float artefact', () => {
+    expect(centsToInputString(BigInt('320050'), 'fr')).toBe('3200,50');
+    expect(centsToInputString(BigInt('9007199254740993'), 'en')).toBe('90071992547409.93');
   });
 });

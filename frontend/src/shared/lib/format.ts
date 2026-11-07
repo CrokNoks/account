@@ -123,12 +123,3 @@ export function toAbsCents(amount: string): string {
   if (cents === null) return '0';
   return (cents < BigInt(0) ? -cents : cents).toString();
 }
-
-/**
- * Converts cents (string or number) to a string amount (e.g. "10.50").
- */
-export function fromCents(amountCents: string | number): string {
-  const amount = typeof amountCents === 'string' ? parseInt(amountCents, 10) : amountCents;
-  if (isNaN(amount)) return '0';
-  return (amount / 100).toString();
-}

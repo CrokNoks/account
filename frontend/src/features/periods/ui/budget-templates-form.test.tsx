@@ -1,10 +1,12 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { NextIntlClientProvider } from 'next-intl';
+import { toast } from 'sonner';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import fr from '../../../../messages/fr.json';
 import { BudgetTemplatesForm } from './budget-templates-form';
 
 const save = vi.fn();
+vi.mock('sonner', () => ({ toast: { error: vi.fn(), success: vi.fn() } }));
 
 // Référence stable, comme react-query (sinon l'effet de chargement boucle).
 const lines = [
@@ -40,6 +42,13 @@ describe('BudgetTemplatesForm', () => {
     expect(screen.getAllByText(/non enregistrée/)).toHaveLength(1);
   });
 
+  it('pre-fills the fields with the exact amount in French format, absolute value, like the Budgets screen', () => {
+    renderForm();
+
+    const values = screen.getAllByRole('textbox').map((i) => (i as HTMLInputElement).value);
+    expect(values).toEqual(['800,00', '12,50']);
+  });
+
   it('saves all lines at once, in cents', () => {
     renderForm();
 
@@ -53,5 +62,26 @@ describe('BudgetTemplatesForm', () => {
         { categoryId: 'c2', amount: '1250' },
       ],
     });
+  });
+
+  it('saves a modified negative default as positive', () => {
+    renderForm();
+    const inputs = screen.getAllByRole('textbox');
+    fireEvent.change(inputs[0], { target: { value: '900,00' } });
+    fireEvent.click(screen.getByRole('button', { name: /enregistrer/i }));
+
+    expect(save.mock.calls[0][0].items).toEqual([
+      { categoryId: 'c1', amount: '90000' },
+      { categoryId: 'c2', amount: '1250' },
+    ]);
+  });
+
+  it('refuses a newly typed negative amount, as the Budgets screen does', () => {
+    renderForm();
+    fireEvent.change(screen.getAllByRole('textbox')[1], { target: { value: '-5' } });
+    fireEvent.click(screen.getByRole('button', { name: /enregistrer/i }));
+
+    expect(save).not.toHaveBeenCalled();
+    expect(toast.error).toHaveBeenCalledWith(fr.BudgetsScreen.negative_amount);
   });
 });

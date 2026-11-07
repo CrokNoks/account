@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { 
   Sheet, 
   SheetContent, 
@@ -18,14 +18,17 @@ import { useAccountStore } from '@/features/accounts/model/use-account-store';
 import { usePeriodDraft } from '../api/use-period-draft';
 import { useCreatePeriod } from '../api/use-create-period';
 import { Plus, Calculator } from 'lucide-react';
-import { formatCurrency, toCents, fromCents, isUnreadableAmount } from '@/shared/lib/format';
-import { useTranslations } from 'next-intl';
+import { formatCurrency } from '@/shared/lib/format';
+import { buildBudgets, displayValue, draftErrors, type Drafts, type SavedBudget } from '@/features/budgets/model/budget-draft';
+import { useLocale, useTranslations } from 'next-intl';
 import { toast } from 'sonner';
 
 export function CreatePeriodDialog() {
   const { activeAccountId } = useAccountStore();
   const t = useTranslations('Budgets');
   const tc = useTranslations('Common');
+  const tb = useTranslations('BudgetsScreen');
+  const locale = useLocale();
   
   const [open, setOpen] = useState(false);
   
@@ -34,7 +37,12 @@ export function CreatePeriodDialog() {
 
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
-  const [budgets, setBudgets] = useState<Record<string, string>>({});
+  // Saisies non enregistrées ; le reste est affiché depuis le brouillon, comme sur l'écran Budgets.
+  const [drafts, setDrafts] = useState<Drafts>({});
+  const reference = useMemo<SavedBudget[]>(
+    () => (draft?.categoriesWithStats ?? []).map((c) => ({ categoryId: c.categoryId, amountAllocated: c.defaultAllocated })),
+    [draft],
+  );
   const [injectRecurring, setInjectRecurring] = useState(true);
 
   // Sync internal state when draft changes OR when dialog opens
@@ -51,19 +59,16 @@ export function CreatePeriodDialog() {
       setStartDate(draft.suggestedStartDate.split('T')[0]);
       setEndDate(draft.suggestedEndDate.split('T')[0]);
       
-      const initialBudgets: Record<string, string> = {};
-      draft.categoriesWithStats.forEach(cat => {
-        initialBudgets[cat.categoryId] = fromCents(cat.defaultAllocated);
-      });
-      setBudgets(initialBudgets);
+      setDrafts({});
     }
   }, [draft, open]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!activeAccountId) return;
-    if (Object.values(budgets).some(isUnreadableAmount)) {
-      toast.error(tc('invalid_amount'));
+    const errors = Object.values(draftErrors(reference, drafts));
+    if (errors.length > 0) {
+      toast.error(errors.includes('unreadable') ? tc('invalid_amount') : tb('negative_amount'));
       return;
     }
 
@@ -71,10 +76,7 @@ export function CreatePeriodDialog() {
       accountId: activeAccountId,
       startDate,
       endDate,
-      budgets: Object.entries(budgets).map(([categoryId, amount]) => ({
-        categoryId,
-        amountAllocated: toCents(amount),
-      })),
+      budgets: buildBudgets(reference, drafts),
       injectRecurring,
     }, {
       onSuccess: () => setOpen(false)
@@ -164,8 +166,8 @@ export function CreatePeriodDialog() {
                         </div>
                         <div className="w-32">
                           <AmountInput
-                            value={budgets[cat.categoryId] || '0'}
-                            onChange={(e) => setBudgets({ ...budgets, [cat.categoryId]: e.target.value })}
+                            value={displayValue(reference, drafts, cat.categoryId, locale) || '0'}
+                            onChange={(e) => setDrafts({ ...drafts, [cat.categoryId]: e.target.value })}
                             className="text-right h-10 font-bold"
                           />
                         </div>

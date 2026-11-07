@@ -8,7 +8,7 @@ import { useDeleteTransaction } from '../api/use-delete-transaction';
 import { usePeriods } from '@/features/budgets/api/use-periods';
 import { useCategories } from '@/features/categories/api/use-categories';
 import { useTags } from '@/features/tags/api/use-tags';
-import { toCents, fromCents, isUnreadableAmount, toOptionalCents } from '@/shared/lib/format';
+import { toCents, centsToInputString, isUnreadableAmount, toOptionalCents } from '@/shared/lib/format';
 import { Plus, Receipt } from 'lucide-react';
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -22,7 +22,7 @@ import {
 import { useUiStore } from '@/shared/model/use-ui-store';
 import { toast } from 'sonner';
 import { getApiErrorMessage } from '@/shared/api/mutation-error';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { CreateRecurringDialog } from '@/features/recurring/ui/create-recurring-dialog';
 import { 
   Pagination, 
@@ -62,6 +62,7 @@ export function TransactionList({
   const t = useTranslations('Transactions');
   const tApi = useTranslations('ApiErrors');
   const tc = useTranslations('Common');
+  const locale = useLocale();
   const { activeAccountId, activePeriodId } = useAccountStore();
   const { setTagDetailId, isCreateTransactionDrawerOpen, setCreateTransactionDrawerOpen } = useUiStore();
   const { data: periods } = usePeriods(activeAccountId);
@@ -476,7 +477,7 @@ export function TransactionList({
           onOpenChange={(o) => !o && setTransactionToMakeRecurring(null)}
           initialData={{
             description: transactionToMakeRecurring.description,
-            amount: fromCents(transactionToMakeRecurring.amount),
+            amount: centsToInputString(BigInt(transactionToMakeRecurring.amount), locale),
             categoryId: transactionToMakeRecurring.categoryId || '',
             dayOfMonth: new Date(transactionToMakeRecurring.date).getDate().toString()
           }}
@@ -489,6 +490,7 @@ export function TransactionList({
 function EditTransactionDialog({ transaction, open, onOpenChange }: { transaction: Transaction, open: boolean, onOpenChange: (o: boolean) => void }) {
   const t = useTranslations('Transactions');
   const tc = useTranslations('Common');
+  const locale = useLocale();
   const { activeAccountId } = useAccountStore();
   const { mutate: updateTransaction, isPending } = useUpdateTransaction();
 
@@ -531,7 +533,7 @@ function EditTransactionDialog({ transaction, open, onOpenChange }: { transactio
               description: transaction.description,
               categoryId: transaction.categoryId || '',
               tagIds: transaction.tagIds || [],
-              amount: fromCents(transaction.amount),
+              amount: centsToInputString(BigInt(transaction.amount), locale),
               pending: transaction.pending,
             }}
             onSubmit={handleSubmit}

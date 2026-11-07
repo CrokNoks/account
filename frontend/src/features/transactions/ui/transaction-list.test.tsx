@@ -9,7 +9,7 @@ const bulkUpdate = vi.fn();
 const update = vi.fn();
 const stats = vi.hoisted(() => ({ cardCount: 7 as number | undefined }));
 
-vi.mock('next-intl', () => ({ useTranslations: () => (key: string) => key }));
+vi.mock('next-intl', () => ({ useTranslations: () => (key: string) => key, useLocale: () => 'fr' }));
 vi.mock('sonner', () => ({ toast: { error: vi.fn(), success: vi.fn(), info: vi.fn() } }));
 vi.mock('@/features/accounts/model/use-account-store', () => ({
   useAccountStore: () => ({ activeAccountId: 'acc-1', activePeriodId: null }),
@@ -39,15 +39,21 @@ vi.mock('../api/use-bulk-transactions', () => ({
   useBulkUpdateTransactions: () => ({ mutate: bulkUpdate }),
   useBulkDeleteTransactions: () => ({ mutate: bulkDelete }),
 }));
-vi.mock('@/features/recurring/ui/create-recurring-dialog', () => ({ CreateRecurringDialog: () => null }));
-vi.mock('./transaction-form', () => ({ TransactionForm: () => null }));
+vi.mock('@/features/recurring/ui/create-recurring-dialog', () => ({
+  CreateRecurringDialog: (p: { initialData?: { amount: string } }) => <span data-testid="recurring-amount">{p.initialData?.amount}</span>,
+}));
+vi.mock('./transaction-form', () => ({
+  TransactionForm: (p: { initialValues?: { amount: string } }) => <span data-testid="form-amount">{p.initialValues?.amount}</span>,
+}));
 vi.mock('./transaction-table', () => ({
-  TransactionTable: (p: { transactions: { id: string }[]; onToggleSelect: (id: string) => void; onTogglePointage: (tx: { id: string }) => void }) => (
+  TransactionTable: (p: { transactions: { id: string }[]; onToggleSelect: (id: string) => void; onTogglePointage: (tx: { id: string }) => void; onEdit: (tx: { id: string }) => void; onMakeRecurring: (tx: { id: string }) => void }) => (
     <div>
       {p.transactions.map(tx => (
         <span key={tx.id}>
           <button onClick={() => p.onToggleSelect(tx.id)}>{`select ${tx.id}`}</button>
           <button onClick={() => p.onTogglePointage(tx)}>{`point ${tx.id}`}</button>
+          <button onClick={() => p.onEdit(tx)}>{`edit ${tx.id}`}</button>
+          <button onClick={() => p.onMakeRecurring(tx)}>{`recurring ${tx.id}`}</button>
         </span>
       ))}
     </div>
@@ -399,5 +405,28 @@ describe('TransactionList en erreur (ids invalides : 400 du back)', () => {
 
     fireEvent.click(screen.getByText('back_to_full_list'));
     expect(lastOptions().ids).toBeUndefined();
+  });
+});
+
+describe('TransactionList pre-filled amounts', () => {
+  beforeEach(() => {
+    useTransactions.mockReset();
+    const rows = [{ id: 'x', amount: '-320050', date: '2026-11-05T00:00:00.000Z', description: 'Loyer', reconciled: false, pending: false }];
+    useTransactions.mockImplementation(() => ({
+      data: { data: rows, meta: { page: 1, totalPages: 1, total: 1, limit: 25 } },
+      isLoading: false,
+    }));
+  });
+
+  it('edit form: exact amount in French format, sign unchanged', () => {
+    render(<TransactionList />);
+    fireEvent.click(screen.getByText('edit x'));
+    expect(screen.getByTestId('form-amount').textContent).toBe('-3200,50');
+  });
+
+  it('make-recurring form: exact amount in French format, sign unchanged', () => {
+    render(<TransactionList />);
+    fireEvent.click(screen.getByText('recurring x'));
+    expect(screen.getByTestId('recurring-amount').textContent).toBe('-3200,50');
   });
 });

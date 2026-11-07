@@ -5,7 +5,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Account } from '../model/types';
 import { useAccounts } from '../api/use-accounts';
 import { useUpdateAccount } from '../api/use-update-account';
-import { formatCurrency, toCents, fromCents, isUnreadableAmount } from '@/shared/lib/format';
+import { formatCurrency, toCents, centsToInputString, isUnreadableAmount } from '@/shared/lib/format';
 import { Landmark, Pencil, Share2 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { 
@@ -15,7 +15,7 @@ import {
   SheetTitle, 
 } from "@/components/ui/sheet";
 import { toast } from 'sonner';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { useCurrentUserId } from '@/features/auth/api/use-current-user-id';
 import { ShareAccountDialog } from './share-account-dialog';
 import { AccountForm, AccountFormValues } from './account-form';
@@ -105,6 +105,7 @@ export function AccountList() {
 function EditAccountDialog({ account, open, onOpenChange }: { account: Account, open: boolean, onOpenChange: (o: boolean) => void }) {
   const t = useTranslations('Accounts');
   const tc = useTranslations('Common');
+  const locale = useLocale();
   const { mutate: updateAccount, isPending } = useUpdateAccount();
 
   const handleSubmit = (values: AccountFormValues) => {
@@ -136,7 +137,7 @@ function EditAccountDialog({ account, open, onOpenChange }: { account: Account, 
           <AccountForm 
             initialValues={{
               name: account.name,
-              balance: fromCents(account.initialBalance),
+              balance: centsToInputString(BigInt(account.initialBalance), locale),
             }}
             onSubmit={handleSubmit}
             isPending={isPending}

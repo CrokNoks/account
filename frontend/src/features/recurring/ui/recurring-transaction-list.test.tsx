@@ -16,7 +16,7 @@ vi.mock('@/features/categories/api/use-categories', () => ({ useCategories: () =
 vi.mock('../api/use-recurring-transactions', () => ({
   useRecurringTransactions: () => ({
     isLoading: false,
-    data: [{ id: 'r1', description: 'Netflix', amount: '-1500', categoryId: null, dayOfMonth: 5 }],
+    data: [{ id: 'r1', description: 'Netflix', amount: '-320050', categoryId: null, dayOfMonth: 5 }],
   }),
 }));
 
@@ -40,5 +40,22 @@ describe('RecurringTransactionList delete', () => {
 
     await waitFor(() => expect(toast.success).toHaveBeenCalledWith(fr.Recurring.deleted));
     expect(toast.success).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('RecurringTransactionList edit', () => {
+  it('pre-fills the amount in French format, sign unchanged', () => {
+    render(
+      <NextIntlClientProvider locale="fr" messages={fr}>
+        <QueryClientProvider client={new QueryClient()}>
+          <RecurringTransactionList />
+        </QueryClientProvider>
+      </NextIntlClientProvider>,
+    );
+    const buttons = screen.getAllByRole('button');
+    fireEvent.click(buttons[buttons.length - 2]); // pencil, just before the trash
+
+    const values = screen.getAllByRole('textbox').map((i) => (i as HTMLInputElement).value);
+    expect(values).toContain('-3200,50');
   });
 });

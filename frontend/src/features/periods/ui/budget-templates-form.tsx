@@ -1,48 +1,49 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import { AmountInput } from '@/components/ui/amount-input';
 import { useAccountStore } from '@/features/accounts/model/use-account-store';
-import { fromCents, isUnreadableAmount, toCents } from '@/shared/lib/format';
+import { buildBudgets, displayValue, draftErrors, type Drafts, type SavedBudget } from '@/features/budgets/model/budget-draft';
 import { useBudgetTemplates } from '../api/use-budget-templates';
 import { useSaveBudgetTemplates } from '../api/use-save-budget-templates';
 
 export function BudgetTemplatesForm() {
   const t = useTranslations('BudgetTemplates');
   const tc = useTranslations('Common');
+  const tb = useTranslations('BudgetsScreen');
+  const locale = useLocale();
   const { activeAccountId } = useAccountStore();
   const { data: lines, isLoading } = useBudgetTemplates(activeAccountId);
   const { mutate: save, isPending } = useSaveBudgetTemplates();
-  const [amounts, setAmounts] = useState<Record<string, string>>({});
+  // Saisies non enregistrées ; le reste est affiché depuis `lines`, comme sur l'écran Budgets.
+  const [drafts, setDrafts] = useState<Drafts>({});
+  const reference = useMemo<SavedBudget[]>(
+    () => (lines ?? []).map((l) => ({ categoryId: l.categoryId, amountAllocated: l.amount })),
+    [lines],
+  );
 
   // Relu à chaque rechargement : une catégorie ajoutée/supprimée apparaît/disparaît.
   useEffect(() => {
     if (!lines) return;
-    const initial: Record<string, string> = {};
-    lines.forEach((l) => {
-      initial[l.categoryId] = fromCents(l.amount);
-    });
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    setAmounts(initial);
+    setDrafts({});
   }, [lines]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!activeAccountId || !lines) return;
-    if (lines.some((l) => isUnreadableAmount(amounts[l.categoryId] ?? ''))) {
-      toast.error(tc('invalid_amount'));
+    const errors = Object.values(draftErrors(reference, drafts));
+    if (errors.length > 0) {
+      toast.error(errors.includes('unreadable') ? tc('invalid_amount') : tb('negative_amount'));
       return;
     }
     save(
       {
         accountId: activeAccountId,
-        items: lines.map((l) => ({
-          categoryId: l.categoryId,
-          amount: toCents(amounts[l.categoryId] ?? ''),
-        })),
+        items: buildBudgets(reference, drafts).map((b) => ({ categoryId: b.categoryId, amount: b.amountAllocated })),
       },
       {
         onSuccess: () => toast.success(t('saved')),
@@ -73,8 +74,8 @@ export function BudgetTemplatesForm() {
             </div>
             <div className="w-32">
               <AmountInput
-                value={amounts[line.categoryId] ?? ''}
-                onChange={(e) => setAmounts({ ...amounts, [line.categoryId]: e.target.value })}
+                value={displayValue(reference, drafts, line.categoryId, locale)}
+                onChange={(e) => setDrafts({ ...drafts, [line.categoryId]: e.target.value })}
                 className="text-right h-10 font-bold"
               />
             </div>
