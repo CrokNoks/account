@@ -158,6 +158,29 @@ describe('BudgetsScreen', () => {
     expect(nbsp(screen.getByTestId('over-budget').textContent!)).toContain('100,00 €');
   });
 
+  it('shows what is left on a line within budget, and 0 for an income above its budget', () => {
+    renderScreen();
+    const row = (name: string) => nbsp(screen.getAllByRole('row').find((r) => r.textContent!.includes(name))!.textContent!);
+    expect(row('Loisirs')).toContain('70,00 €');
+    expect(row('Salaire')).toContain('0,00 €');
+  });
+
+  it('stays exact beyond 2^53 for the overrun and what is left', () => {
+    const saveExpenses = breakdown.expenses;
+    breakdown.expenses = [
+      { categoryId: 'e1', name: 'Loisirs', real: '-3000', budget: '10000', remaining: '9007199254740993', percentage: 30 },
+      { categoryId: 'e2', name: 'Courses', real: '-60000', budget: '50000', remaining: '-9007199254740993', percentage: 120 },
+    ];
+    try {
+      renderScreen();
+      expect(nbsp(screen.getByTestId('over-budget').textContent!)).toContain('90 071 992 547 409,93 €');
+      const loisirs = screen.getAllByRole('row').find((r) => r.textContent!.includes('Loisirs'))!;
+      expect(nbsp(loisirs.textContent!)).toContain('90 071 992 547 409,93 €');
+    } finally {
+      breakdown.expenses = saveExpenses;
+    }
+  });
+
   it('does not show an income above its budget as an overrun', () => {
     renderScreen();
     const salaire = screen.getAllByRole('row').find((r) => r.textContent!.includes('Salaire'))!;

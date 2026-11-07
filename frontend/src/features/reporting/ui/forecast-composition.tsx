@@ -41,15 +41,15 @@ export function ForecastComposition() {
         {view.mode === 'bar' ? (
           <div data-testid="composition-bar" className="space-y-3">
             <div className="flex h-4 w-full overflow-hidden rounded-full bg-secondary">
-              {view.total > 0 &&
+              {view.total > BigInt(0) &&
                 view.segments
-                  .filter((s) => s.amount > 0)
+                  .filter((s) => s.amount > BigInt(0))
                   .map((s) => (
                     <div
                       key={s.key}
                       data-testid={`segment-${s.key}`}
                       className={segmentColor[s.key]}
-                      style={{ width: `${(s.amount / view.total) * 100}%` }}
+                      style={{ width: `${Number((s.amount * BigInt(10000)) / view.total) / 100}%` }}
                     />
                   ))}
             </div>
@@ -74,7 +74,7 @@ export function ForecastComposition() {
                 className={cn('flex items-center justify-between gap-2 max-lg:min-h-12', row.key === 'forecast' && 'border-t pt-1 font-black')}
               >
                 <span>{label(row.key)}</span>
-                <span className={cn('font-bold tabular-nums', row.amount < 0 && 'text-red-500')}>
+                <span className={cn('font-bold tabular-nums', row.amount < BigInt(0) && 'text-red-500')}>
                   {formatCurrency(row.amount)}
                 </span>
               </li>

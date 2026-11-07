@@ -66,4 +66,28 @@ describe('BudgetBreakdown overrun', () => {
     const over = screen.getAllByTestId('over-budget');
     expect(nbsp(over[0].textContent!)).toBe('over_budget_income(100,00 €)');
   });
+
+  it('figé : montants réel / budget en valeur absolue et restant', () => {
+    render(<BudgetBreakdown />);
+    const text = nbsp(document.body.textContent!);
+    expect(text).toContain('600,00 € / 500,00 €');
+    expect(text).toContain('30,00 € / 100,00 €');
+    expect(text).toContain('remaining: 70,00 €');
+  });
+
+  it('reste exact au-delà de 2^53 : montants, dépassement, restant et couleur de barre', () => {
+    breakdown.expenses = [
+      { categoryId: 'b1', name: 'Gros', real: '-9007199254740995', budget: '9007199254740994', remaining: '-1', percentage: 100 },
+      { categoryId: 'b2', name: 'Pile', real: '-9007199254740994', budget: '9007199254740994', remaining: '0', percentage: 100 },
+      { categoryId: 'b3', name: 'Reste', real: '-1', budget: '9007199254740993', remaining: '9007199254740992', percentage: 0 },
+    ];
+    render(<BudgetBreakdown />);
+    const text = nbsp(document.body.textContent!);
+    expect(text).toContain('90 071 992 547 409,95 € / 90 071 992 547 409,94 €');
+    expect(text).toContain('over_budget_expense(0,01 €)');
+    expect(text).toContain('remaining: 90 071 992 547 409,92 €');
+    const bars = screen.getAllByTestId('budget-bar');
+    expect(bars[0].className).toContain('bg-red-500'); // 2^53+3 > 2^53+2 : indiscernable en flottant
+    expect(bars[1].className).toContain('bg-green-500'); // égaux : pas rouge
+  });
 });

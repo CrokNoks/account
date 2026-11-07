@@ -1,9 +1,10 @@
-import { render, screen } from '@testing-library/react';
+import { cleanup, render, screen } from '@testing-library/react';
 import { NextIntlClientProvider } from 'next-intl';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import fr from '../../../../messages/fr.json';
 import en from '../../../../messages/en.json';
 import { SpendingPace } from './spending-pace';
+import { paceChartData, paceTooltipAmount } from '../model/pace-chart';
 
 const state = vi.hoisted(() => ({ pace: undefined as unknown }));
 
@@ -68,5 +69,26 @@ describe('Rythme de dépense', () => {
     show('en');
     expect(screen.getByText('Spending pace')).toBeTruthy();
     expect(text(screen.getByTestId('pace-gap'))).toContain('morethanonthesamedate');
+  });
+
+  it('affiche un écart exact au-delà de 2^53 (plus et moins)', () => {
+    state.pace = { points: [point(1, '1500', '1000')], previousPeriodId: 'p0', gap: '9007199254740993' };
+    show();
+    expect(text(screen.getByTestId('pace-gap'))).toBe("90071992547409,93€deplusqu'àlamêmedate");
+    cleanup();
+    state.pace = { points: [point(1, '1500', '1000')], previousPeriodId: 'p0', gap: '-9007199254740993' };
+    show();
+    expect(text(screen.getByTestId('pace-gap'))).toBe("90071992547409,93€demoinsqu'àlamêmedate");
+  });
+});
+
+describe('Infobulle du rythme de dépense', () => {
+  it('lit le montant exact, même au-delà de 2^53', () => {
+    const data = paceChartData([point(1, '9007199254740993', '-1234'), point(2, '800', null)]);
+    expect(text({ textContent: paceTooltipAmount(data[0], 'current') } as HTMLElement)).toBe('90071992547409,93€');
+    expect(text({ textContent: paceTooltipAmount(data[0], 'previous') } as HTMLElement)).toBe('-12,34€');
+    expect(data[1].previous).toBeNull();
+    expect(data[0].day).toBe(1);
+    expect(data[1].current).toBe(800);
   });
 });

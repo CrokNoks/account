@@ -155,4 +155,14 @@ describe('Bloc Factures (prochaines échéances)', () => {
     expect(text()).toContain('Rien de prévu cette semaine'.replace(/\s/g, ''));
     expect(text()).not.toContain('Total');
   });
+
+  it('somme exactement au-delà de 2^53', () => {
+    events.list = [
+      { id: 'g1', date: '2026-11-12', description: 'Gros', amount: '-9007199254740993', type: 'actual', categoryId: null },
+      { id: 'g2', date: '2026-11-13', description: 'Petit', amount: '-1', type: 'actual', categoryId: null },
+    ];
+    renderWidget();
+    expect(text()).toContain('-90071992547409,93€');
+    expect(text()).toContain('-90071992547409,94€');
+  });
 });

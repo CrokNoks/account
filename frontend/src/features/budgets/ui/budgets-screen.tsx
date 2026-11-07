@@ -276,7 +276,7 @@ export function BudgetsScreen() {
               </TableHeader>
               <TableBody>
                 {lines.map(({ line, isIncome }) => {
-                  const over = isIncome ? 0 : overrunAmount(line);
+                  const over = isIncome ? BigInt(0) : overrunAmount(line);
                   const id = line.categoryId;
                   const error = errors[id];
                   return (
@@ -284,12 +284,12 @@ export function BudgetsScreen() {
                       <TableCell className="font-medium">{line.name}</TableCell>
                       <TableCell className="text-right tabular-nums">{formatCurrency(line.real)}</TableCell>
                       <TableCell className="text-right tabular-nums">
-                        {over > 0 ? (
+                        {over > BigInt(0) ? (
                           <span data-testid="over-budget" className="font-semibold text-destructive">
                             {t('over', { amount: formatCurrency(over) })}
                           </span>
                         ) : (
-                          t('left', { amount: formatCurrency(Math.max(0, parseInt(line.remaining, 10))) })
+                          t('left', { amount: formatCurrency(BigInt(line.remaining) > BigInt(0) ? BigInt(line.remaining) : BigInt(0)) })
                         )}
                       </TableCell>
                       <TableCell className="min-w-40 text-right">

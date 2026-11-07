@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react';
+import { cleanup, render, screen, within } from '@testing-library/react';
 import { NextIntlClientProvider } from 'next-intl';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import fr from '../../../../messages/fr.json';
@@ -97,5 +97,19 @@ describe('Composition du prévu', () => {
     show('en');
     expect(screen.getByText('Forecast breakdown')).toBeTruthy();
     expect(screen.getByText('Upcoming bills')).toBeTruthy();
+  });
+
+  it('affiche les montants exacts au-delà de 2^53 (barre et lignes)', () => {
+    state.stats = { ...base, realBankBalance: '9007199254740995', forecastBalance: '9007199254740991', cardTotal: '-1', billsTotal: '-1', budgetRemaining: '-2' };
+    show();
+    const bar = text(screen.getByTestId('composition-bar'));
+    expect(bar).toContain('90071992547409,91€');
+    expect(bar).toContain('0,02€');
+    cleanup();
+    state.stats = { ...base, realBankBalance: '9007199254740995', expectedIncome: '1', forecastBalance: '9007199254740993', cardTotal: '-1', billsTotal: '-1', budgetRemaining: '-1' };
+    show();
+    const lines = text(screen.getByTestId('composition-lines'));
+    expect(lines).toContain('90071992547409,95€');
+    expect(lines).toContain('90071992547409,93€');
   });
 });

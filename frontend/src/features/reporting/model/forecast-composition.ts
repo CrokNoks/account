@@ -3,17 +3,17 @@ import { ReportingStats } from './types';
 export interface CompositionRow {
   key: 'bank' | 'card' | 'bills' | 'budget' | 'income' | 'forecast';
   /** Centimes, signé : une dépense est négative. */
-  amount: number;
+  amount: bigint;
 }
 
 export interface CompositionSegment {
   key: 'forecast' | 'card' | 'bills' | 'budget';
   /** Centimes avant signe (positif). */
-  amount: number;
+  amount: bigint;
 }
 
 export type CompositionView =
-  | { mode: 'bar'; total: number; segments: CompositionSegment[] }
+  | { mode: 'bar'; total: bigint; segments: CompositionSegment[] }
   | { mode: 'lines'; rows: CompositionRow[] };
 
 /**
@@ -23,14 +23,15 @@ export type CompositionView =
  * Les montants viennent de « stats » : le prévu n'est jamais recalculé ici.
  */
 export function compositionView(stats: ReportingStats): CompositionView {
-  const bank = parseInt(stats.realBankBalance, 10);
-  const card = parseInt(stats.cardTotal, 10);
-  const bills = parseInt(stats.billsTotal, 10);
-  const budget = parseInt(stats.budgetRemaining, 10);
-  const income = parseInt(stats.expectedIncome, 10);
-  const forecast = parseInt(stats.forecastBalance, 10);
+  const bank = BigInt(stats.realBankBalance);
+  const card = BigInt(stats.cardTotal);
+  const bills = BigInt(stats.billsTotal);
+  const budget = BigInt(stats.budgetRemaining);
+  const income = BigInt(stats.expectedIncome);
+  const forecast = BigInt(stats.forecastBalance);
+  const zero = BigInt(0);
 
-  const asBar = bank >= 0 && forecast >= 0 && card <= 0 && bills <= 0 && budget <= 0 && income === 0;
+  const asBar = bank >= zero && forecast >= zero && card <= zero && bills <= zero && budget <= zero && income === zero;
   if (asBar) {
     return {
       mode: 'bar',

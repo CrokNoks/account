@@ -12,6 +12,8 @@ import { PieChart } from "lucide-react";
 
 import { NoDataState } from "@/shared/ui/no-data-state";
 
+const abs = (value: bigint): bigint => (value < BigInt(0) ? -value : value);
+
 export function BudgetBreakdown() {
   const t = useTranslations('Reporting');
   const { activeAccountId, activePeriodId } = useAccountStore();
@@ -85,19 +87,19 @@ function BudgetGroup({ title, items, isExpense }: { title: string, items: Budget
     <div className="flex-1 overflow-y-auto space-y-6 pr-2 -mr-2">
         {items.map((item) => {
           // remaining < 0 means the budget is exceeded (expense, saving or income alike)
-          const remaining = parseInt(item.remaining, 10);
+          const remaining = BigInt(item.remaining);
           const overrun = overrunAmount(item);
-          const real = parseInt(item.real, 10);
-          const budget = parseInt(item.budget, 10);
+          const real = BigInt(item.real);
+          const budget = BigInt(item.budget);
           // Without budget the API returns 0 %: an amount spent or received
           // on a 0 budget fills the whole bar.
-          const unbudgeted = budget === 0 && real !== 0;
+          const unbudgeted = budget === BigInt(0) && real !== BigInt(0);
           const percentage = unbudgeted ? 100 : Math.min(Math.abs(item.percentage), 100);
 
           // Expense real is negative and budget positive: compare absolute values.
           // Red only when the budget is exceeded.
           const variant = isExpense
-            ? (Math.abs(real) > Math.abs(budget) ? "bg-red-500" : "bg-green-500")
+            ? (abs(real) > abs(budget) ? "bg-red-500" : "bg-green-500")
             : (real >= budget ? "bg-green-500" : "bg-yellow-500");
 
           return (
@@ -105,7 +107,7 @@ function BudgetGroup({ title, items, isExpense }: { title: string, items: Budget
               <div className="flex justify-between text-sm font-medium">
                 <span className="truncate pr-4">{item.name}</span>
                 <span className="text-muted-foreground whitespace-nowrap">
-                  {formatCurrency(Math.abs(parseInt(item.real, 10)).toString())} / {formatCurrency(Math.abs(parseInt(item.budget, 10)).toString())}
+                  {formatCurrency(abs(real))} / {formatCurrency(abs(budget))}
                 </span>
               </div>
               <div className="relative h-2 w-full overflow-hidden rounded-full bg-secondary">
@@ -117,17 +119,17 @@ function BudgetGroup({ title, items, isExpense }: { title: string, items: Budget
               </div>
               <div className="flex justify-between text-[10px] max-lg:text-xs text-muted-foreground uppercase tracking-wider">
                 <span>{item.percentage}%</span>
-                {overrun > 0 ? (
+                {overrun > BigInt(0) ? (
                   <span
                     data-testid="over-budget"
                     className={isExpense ? "text-red-600 font-bold" : "text-green-600 font-bold"}
                   >
                     {t(isExpense ? 'over_budget_expense' : 'over_budget_income', {
-                      amount: formatCurrency(overrun.toString()),
+                      amount: formatCurrency(overrun),
                     })}
                   </span>
                 ) : (
-                  <span>{t('remaining')}: {formatCurrency(remaining.toString())}</span>
+                  <span>{t('remaining')}: {formatCurrency(remaining)}</span>
                 )}
               </div>
             </div>

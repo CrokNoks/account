@@ -5,6 +5,7 @@ import { formatCurrency } from '@/shared/lib/format';
 import { useAccountStore } from '@/features/accounts/model/use-account-store';
 import { useSpendingPace } from '../api/use-spending-pace';
 import { useTranslations } from 'next-intl';
+import { paceChartData, paceTooltipAmount, type PaceChartPoint } from '../model/pace-chart';
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 
 /**
@@ -18,13 +19,10 @@ export function SpendingPace() {
 
   if (isLoading || !pace) return <div className="h-48 bg-muted animate-pulse rounded-xl border-2" />;
 
-  const gap = pace.gap === null ? null : parseInt(pace.gap, 10);
+  const gap = pace.gap === null ? null : BigInt(pace.gap);
+  const zero = BigInt(0);
   const hasPrevious = pace.previousPeriodId !== null;
-  const data = pace.points.map((p) => ({
-    day: p.day,
-    current: parseInt(p.cumulative, 10),
-    previous: p.previousCumulative === null ? null : parseInt(p.previousCumulative, 10),
-  }));
+  const data = paceChartData(pace.points);
 
   return (
     <Card data-testid="spending-pace" className="border-2 shadow-sm h-full overflow-hidden">
@@ -36,9 +34,9 @@ export function SpendingPace() {
       <CardContent className="pt-3 space-y-2">
         {gap !== null && (
           <p data-testid="pace-gap" className="text-sm font-bold">
-            {gap > 0
+            {gap > zero
               ? t('pace_more', { amount: formatCurrency(gap) })
-              : gap < 0
+              : gap < zero
                 ? t('pace_less', { amount: formatCurrency(-gap) })
                 : t('pace_same')}
           </p>
@@ -53,7 +51,10 @@ export function SpendingPace() {
                 <XAxis dataKey="day" tick={{ fontSize: 10 }} />
                 <YAxis hide />
                 <Tooltip
-                  formatter={(value, name) => [formatCurrency(Number(value)), name === 'previous' ? t('pace_previous') : t('pace_current')]}
+                  formatter={(_value, name, item) => [
+                    paceTooltipAmount(item.payload as PaceChartPoint, name === 'previous' ? 'previous' : 'current'),
+                    name === 'previous' ? t('pace_previous') : t('pace_current'),
+                  ]}
                   labelFormatter={(day) => t('pace_day', { day: String(day) })}
                 />
                 <Line type="monotone" dataKey="current" stroke="var(--color-primary, #6366f1)" strokeWidth={2} dot={false} isAnimationActive={false} />

@@ -67,4 +67,17 @@ describe('Budgets à surveiller', () => {
     expect(bar.className).toContain('bg-red-500');
     expect(bar.style.width).toBe('100%');
   });
+
+  it('figé : montants réel / budget en valeur absolue', () => {
+    state.breakdown = { income: [], transfers: [], savings: [], expenses: [line('A', '-15000', '10000')] };
+    renderIt();
+    expect(screen.getByTestId('watch-row').textContent!.replace(/[\u00a0\u202f]/g, ' ')).toContain('150,00 € / 100,00 €');
+  });
+
+  it('reste exact au-delà de 2^53 (texte et couleur)', () => {
+    state.breakdown = { income: [], transfers: [], savings: [], expenses: [line('A', '-9007199254740995', '9007199254740994')] };
+    renderIt();
+    expect(screen.getByTestId('watch-row').textContent!.replace(/[\u00a0\u202f]/g, ' ')).toContain('90 071 992 547 409,95 € / 90 071 992 547 409,94 €');
+    expect(screen.getByTestId('watch-bar').className).toContain('bg-red-500');
+  });
 });

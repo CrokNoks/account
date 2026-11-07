@@ -32,8 +32,15 @@ describe('currentOverruns', () => {
 
 describe('overrunAmount', () => {
   it('est le seul calcul du dépassement : l\'opposé d\'un restant négatif, sinon 0', () => {
-    expect(overrunAmount(item('e1', 'Courses', '-10000'))).toBe(10000);
-    expect(overrunAmount(item('e2', 'Loisirs', '7000'))).toBe(0);
-    expect(overrunAmount(item('e3', 'Cadeaux', '0'))).toBe(0);
+    expect(overrunAmount(item('e1', 'Courses', '-10000'))).toBe(BigInt(10000));
+    expect(overrunAmount(item('e2', 'Loisirs', '7000'))).toBe(BigInt(0));
+    expect(overrunAmount(item('e3', 'Cadeaux', '0'))).toBe(BigInt(0));
+  });
+
+  it('reste exact au-delà de 2^53', () => {
+    expect(overrunAmount(item('e1', 'Courses', '-9007199254740993'))).toBe(BigInt('9007199254740993'));
+    expect(currentOverruns({ expenses: [item('e1', 'Courses', '-9007199254740993')], savings: [], income: [], transfers: [] })).toEqual([
+      { categoryId: 'e1', name: 'Courses', amount: '9007199254740993' },
+    ]);
   });
 });

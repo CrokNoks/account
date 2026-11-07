@@ -25,12 +25,12 @@ describe('compositionView', () => {
     expect(view.mode).toBe('bar');
     if (view.mode === 'bar') {
       // Montants avant signe, la barre représente le solde en banque
-      expect(view.total).toBe(290000);
+      expect(view.total).toBe(BigInt(290000));
       expect(view.segments.map((s) => [s.key, s.amount])).toEqual([
-        ['forecast', 270000],
-        ['card', 5000],
-        ['bills', 8000],
-        ['budget', 7000],
+        ['forecast', BigInt(270000)],
+        ['card', BigInt(5000)],
+        ['bills', BigInt(8000)],
+        ['budget', BigInt(7000)],
       ]);
     }
   });
@@ -58,7 +58,16 @@ describe('compositionView', () => {
   it('les lignes gardent leur signe', () => {
     const view = compositionView(stats({ expectedIncome: '50000', forecastBalance: '320000' }));
     if (view.mode === 'lines') {
-      expect(view.rows.map((r) => r.amount)).toEqual([290000, -5000, -8000, -7000, 50000, 320000]);
+      expect(view.rows.map((r) => r.amount)).toEqual([290000, -5000, -8000, -7000, 50000, 320000].map(BigInt));
+    }
+  });
+
+  it('reste exact au-delà de 2^53', () => {
+    const view = compositionView(stats({ realBankBalance: '9007199254740995', forecastBalance: '9007199254740991', cardTotal: '-1', billsTotal: '-1', budgetRemaining: '-2' }));
+    expect(view.mode).toBe('bar');
+    if (view.mode === 'bar') {
+      expect(view.total).toBe(BigInt('9007199254740995'));
+      expect(view.segments.map((s) => s.amount)).toEqual([BigInt('9007199254740991'), BigInt(1), BigInt(1), BigInt(2)]);
     }
   });
 });
