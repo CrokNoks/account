@@ -10,7 +10,7 @@ import { FinancialCalendar } from './financial-calendar';
 
 /**
  * Écran Échéances : courbe de trésorerie, calendrier et liste sur une même page, sans onglets.
- * Servi par `/echeances` et par les anciennes adresses `/calendar` et `/cashflow` (sans redirection).
+ * Servi par `/echeances`.
  */
 export function EcheancesScreen() {
   const t = useTranslations('Reporting.echeances');

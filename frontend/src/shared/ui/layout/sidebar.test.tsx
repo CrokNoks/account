@@ -68,12 +68,7 @@ describe('sidebar : entrée active par groupe', () => {
   it.each([
     ['/fr', '/'],
     ['/fr/analyses', '/analyses'],
-    ['/fr/evolution', '/analyses'],
-    ['/fr/flux', '/analyses'],
-    ['/en/depassements', '/analyses'],
     ['/fr/echeances', '/echeances'],
-    ['/fr/calendar', '/echeances'],
-    ['/en/cashflow', '/echeances'],
     ['/fr/transactions/import', '/transactions'],
     ['/fr/budgets/fixed', '/budgets'],
     ['/fr/categories', '/settings'],

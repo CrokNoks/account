@@ -6,22 +6,17 @@ import { activeEntryHref, NAV_ENTRIES, SETTINGS_PAGES } from './nav-config';
 const DASHBOARD = join(__dirname, '../../../app/[locale]/(dashboard)');
 
 /**
- * Ancienne route -> comment on l'atteint désormais (entrée, ancienne adresse d'un écran, onglet de l'écran Analyses,
- * Réglages ou sous-page de l'entrée).
+ * Page -> comment on l'atteint (entrée, Réglages ou sous-page de l'entrée). Les 5 anciennes adresses
+ * (/evolution, /flux, /depassements, /calendar, /cashflow) sont retirées volontairement : 404.
  */
-const REACHED_BY: Record<string, { entry: string; via: 'entry' | 'screen-alias' | 'screen-tab' | 'settings' | 'subpage'; screenTab?: string }> = {
+const REACHED_BY: Record<string, { entry: string; via: 'entry' | 'settings' | 'subpage' }> = {
   '/': { entry: '/', via: 'entry' },
   '/transactions': { entry: '/transactions', via: 'entry' },
   '/transactions/import': { entry: '/transactions', via: 'subpage' },
   '/analyses': { entry: '/analyses', via: 'entry' },
-  '/evolution': { entry: '/analyses', via: 'screen-tab', screenTab: 'evolution' },
-  '/flux': { entry: '/analyses', via: 'screen-tab', screenTab: 'breakdown' },
-  '/depassements': { entry: '/analyses', via: 'screen-tab', screenTab: 'overruns' },
   '/budgets': { entry: '/budgets', via: 'entry' },
   '/budgets/fixed': { entry: '/budgets', via: 'subpage' },
   '/echeances': { entry: '/echeances', via: 'entry' },
-  '/calendar': { entry: '/echeances', via: 'screen-alias' },
-  '/cashflow': { entry: '/echeances', via: 'screen-alias' },
   '/accounts': { entry: '/settings', via: 'settings' },
   '/categories': { entry: '/settings', via: 'settings' },
   '/tags': { entry: '/settings', via: 'settings' },
@@ -43,24 +38,10 @@ describe('aucune page existante ne devient inaccessible', () => {
     expect(pageRoutes(DASHBOARD).sort()).toEqual([...Object.keys(REACHED_BY), '/settings'].sort());
   });
 
-  for (const [route, { entry, via, screenTab }] of Object.entries(REACHED_BY)) {
+  for (const [route, { entry, via }] of Object.entries(REACHED_BY)) {
     it(`${route} est atteignable (${via} ${entry}) et active l'entrée ${entry}`, () => {
       expect(activeEntryHref(route)).toBe(entry);
       if (via === 'entry') expect(NAV_ENTRIES.map((e) => e.href)).toContain(route);
-      if (via === 'screen-alias') {
-        // Ancienne adresse d'Échéances : la page affiche l'écran, sans redirection (jusqu'au cycle 7).
-        const page = readFileSync(join(DASHBOARD, route, 'page.tsx'), 'utf8');
-        expect(page).toContain('<EcheancesScreen />');
-        expect(page).not.toMatch(/redirect/);
-      }
-      if (via === 'screen-tab') {
-        // Un onglet de l'écran Analyses : la page affiche l'écran sur cet onglet, sans redirection.
-        const page = readFileSync(join(DASHBOARD, route, 'page.tsx'), 'utf8');
-        const screen = readFileSync(join(__dirname, '../../../features/reporting/ui/analyses-screen.tsx'), 'utf8');
-        expect(page).toContain(`<AnalysesScreen initialTab="${screenTab}" />`);
-        expect(page).not.toMatch(/redirect/);
-        expect(screen).toContain(`'${screenTab}'`);
-      }
       if (via === 'settings') expect(SETTINGS_PAGES.map((p) => p.href)).toContain(route);
       if (via === 'subpage') expect(route.startsWith(`${entry}/`)).toBe(true);
     });
@@ -69,6 +50,14 @@ describe('aucune page existante ne devient inaccessible', () => {
   it("les adresses des entrées Analyses et Échéances n'ont pas de redirection non plus", () => {
     expect(readFileSync(join(DASHBOARD, 'analyses/page.tsx'), 'utf8')).not.toMatch(/redirect/);
     expect(readFileSync(join(DASHBOARD, 'echeances/page.tsx'), 'utf8')).not.toMatch(/redirect/);
+  });
+
+  it('les 5 anciennes adresses ne sont plus des pages ni des routes connues', () => {
+    for (const r of ['/evolution', '/flux', '/depassements', '/calendar', '/cashflow']) {
+      expect(pageRoutes(DASHBOARD)).not.toContain(r);
+      expect(activeEntryHref(r)).toBeUndefined();
+      expect(activeEntryHref(`/fr${r}`)).toBeUndefined();
+    }
   });
 
   it('Réglages est une entrée, atteignable', () => {

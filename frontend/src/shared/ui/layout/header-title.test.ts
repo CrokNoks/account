@@ -21,14 +21,20 @@ describe('headerTitleKey', () => {
     expect(headerTitleKey('/settings')).toBe('settings');
   });
 
-  it('titles « Échéances » the new screen and its two former addresses', () => {
-    for (const path of ['/echeances', '/calendar', '/cashflow', '/fr/calendar', '/en/cashflow']) {
+  it('titles « Échéances » the screen', () => {
+    for (const path of ['/echeances', '/fr/echeances', '/en/echeances']) {
       expect(headerTitleKey(path), path).toBe('due_dates');
     }
     expect(fr.Navigation.due_dates).toBe('Échéances');
     expect(en.Navigation.due_dates).toBe('Due dates');
     expect('prevision' in fr.Navigation).toBe(false);
     expect('prevision' in en.Navigation).toBe(false);
+  });
+
+  it('gives the 5 removed former addresses no title of their own (404 pages: the default title)', () => {
+    for (const path of ['/evolution', '/flux', '/depassements', '/calendar', '/cashflow', '/fr/flux']) {
+      expect(headerTitleKey(path), path).toBe('today');
+    }
   });
 
   it('uses the own name of an attached page', () => {
@@ -39,15 +45,15 @@ describe('headerTitleKey', () => {
     expect(headerTitleKey('/recurring')).toBe('recurring');
   });
 
-  it('titles « Analyses » the new screen and its three former addresses, with or without a language', () => {
-    for (const path of ['/analyses', '/evolution', '/flux', '/depassements', '/fr/flux', '/en/depassements', '/en/evolution']) {
+  it('titles « Analyses » the screen, with or without a language', () => {
+    for (const path of ['/analyses', '/fr/analyses', '/en/analyses']) {
       expect(headerTitleKey(path), path).toBe('analysis');
     }
     expect(fr.Navigation.analysis).toBe('Analyses');
   });
 
   it('only returns keys that exist in both languages', () => {
-    for (const path of ['/', '/settings', '/echeances', '/calendar', '/analyses', '/evolution', '/depassements', '/flux', '/cashflow', '/accounts', '/categories', '/tags', '/smart-rules', '/recurring', '/budgets', '/transactions', '/transactions/import']) {
+    for (const path of ['/', '/settings', '/echeances', '/analyses', '/accounts', '/categories', '/tags', '/smart-rules', '/recurring', '/budgets', '/transactions', '/transactions/import']) {
       const key = headerTitleKey(path) as keyof typeof fr.Navigation;
       expect(fr.Navigation[key], path).toBeTruthy();
       expect(en.Navigation[key], path).toBeTruthy();

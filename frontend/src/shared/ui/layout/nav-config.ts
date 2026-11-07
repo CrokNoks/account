@@ -38,16 +38,9 @@ const ROUTES: readonly Route[] = [
   { path: '/transactions', entry: '/transactions', titleKey: 'operations' },
   { path: '/transactions/import', entry: '/transactions', titleKey: 'import' },
   { path: '/analyses', entry: '/analyses', titleKey: 'analysis' },
-  // Anciennes adresses : elles affichent l'écran Analyses sur leur onglet (sans redirection).
-  { path: '/evolution', entry: '/analyses', titleKey: 'analysis' },
-  { path: '/flux', entry: '/analyses', titleKey: 'analysis' },
-  { path: '/depassements', entry: '/analyses', titleKey: 'analysis' },
   { path: '/budgets', entry: '/budgets', titleKey: 'budgets' },
   { path: '/budgets/fixed', entry: '/budgets', titleKey: 'budgets' },
   { path: '/echeances', entry: '/echeances', titleKey: 'due_dates' },
-  // Anciennes adresses : elles affichent l'écran Échéances (sans redirection, jusqu'au cycle 7).
-  { path: '/calendar', entry: '/echeances', titleKey: 'due_dates' },
-  { path: '/cashflow', entry: '/echeances', titleKey: 'due_dates' },
   { path: '/settings', entry: '/settings', titleKey: 'settings' },
   { path: '/accounts', entry: '/settings', titleKey: 'accounts' },
   { path: '/categories', entry: '/settings', titleKey: 'categories' },

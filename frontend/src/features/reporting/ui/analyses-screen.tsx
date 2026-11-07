@@ -13,7 +13,7 @@ const TABS: readonly AnalysesTab[] = ['breakdown', 'evolution', 'overruns'];
 
 /**
  * Écran Analyses : trois onglets dans un même écran. L'onglet est un état local
- * (aucune navigation, aucune adresse) ; `initialTab` vient de l'adresse ouverte.
+ * (aucune navigation, aucune adresse) ; `initialTab` fixe l'onglet de départ.
  */
 export function AnalysesScreen({ initialTab = 'breakdown' }: { initialTab?: AnalysesTab }) {
   const t = useTranslations('Reporting.analyses');
