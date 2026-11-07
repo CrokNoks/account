@@ -20,14 +20,15 @@ export function UpcomingDeadlinesWidget() {
   const now = startOfDay(new Date());
   const next7Days = addDays(now, 7);
   const { data: events, isLoading } = useCalendarData(activeAccountId, now.getFullYear(), now.getMonth() + 1);
-  const { data: nextEvents, isError: nextMonthFailed } = useCalendarData(
+  const { data: nextEvents, isError: nextMonthFailed, isLoading: nextMonthLoading } = useCalendarData(
     activeAccountId,
     next7Days.getFullYear(),
     next7Days.getMonth() + 1,
   );
   const spansTwoMonths = now.getMonth() !== next7Days.getMonth() || now.getFullYear() !== next7Days.getFullYear();
 
-  if (isLoading) return <div className="h-64 bg-muted animate-pulse rounded-xl" />;
+  // Un seul état de chargement couvre les deux mois : pas de total partiel qui change quand le second arrive.
+  if (isLoading || (spansTwoMonths && nextMonthLoading)) return <div className="h-64 bg-muted animate-pulse rounded-xl" />;
 
   const byId = new Map<string, CalendarEvent>();
   for (const e of [...(events ?? []), ...(spansTwoMonths ? (nextEvents ?? []) : [])]) byId.set(e.id, e);

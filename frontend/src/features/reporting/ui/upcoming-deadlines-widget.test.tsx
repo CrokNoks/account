@@ -7,7 +7,7 @@ import { UpcomingDeadlinesWidget } from './upcoming-deadlines-widget';
 const events = vi.hoisted(() => ({
   list: [] as unknown[],
   /** Mois suivant, lu par un second appel (`${année}-${mois}`). */
-  byMonth: {} as Record<string, { data?: unknown[]; isError?: boolean }>,
+  byMonth: {} as Record<string, { data?: unknown[]; isError?: boolean; isLoading?: boolean }>,
   asked: [] as string[],
 }));
 
@@ -19,7 +19,7 @@ vi.mock('../api/use-calendar-data', () => ({
     const key = `${year}-${month}`;
     events.asked.push(key);
     const other = events.byMonth[key];
-    if (other) return { isLoading: false, isError: !!other.isError, data: other.data };
+    if (other) return { isLoading: !!other.isLoading, isError: !!other.isError, data: other.data };
     return { isLoading: false, isError: false, data: events.list };
   },
 }));
@@ -127,6 +127,19 @@ describe('Bloc Factures (prochaines échéances)', () => {
     expect(text()).toContain('Mobile');
     expect(text()).toContain('-10,00€');
     expect(text()).toContain('moissuivant');
+  });
+
+  it('tant que le mois suivant charge, un seul état de chargement et aucun total partiel', () => {
+    vi.setSystemTime(new Date(2026, 10, 28, 12));
+    events.list = [
+      { id: 'a', date: '2026-11-29', description: 'Mobile', amount: '-1000', type: 'recurring', categoryId: null },
+    ];
+    events.byMonth['2026-12'] = { isLoading: true };
+    const { container } = renderWidget();
+
+    expect(container.querySelector('.animate-pulse')).not.toBeNull();
+    expect(text()).not.toContain('Mobile');
+    expect(text()).not.toContain('Total');
   });
 
   it('ne lit pas de second mois quand la fenêtre reste dans le mois', () => {
