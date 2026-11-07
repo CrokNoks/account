@@ -103,6 +103,35 @@ describe('useForecastSimulation', () => {
     expect(result.current.isStale).toBe(false);
   });
 
+  it('asks again for a list already seen (actuals may have changed) and flags the cached figure stale meanwhile', async () => {
+    let resolveThird: (v: unknown) => void = () => {};
+    const post = vi
+      .spyOn(apiClient, 'post')
+      .mockResolvedValueOnce({ data: sim('100') })
+      .mockResolvedValueOnce({ data: sim('200') })
+      .mockImplementationOnce((() => new Promise((r) => (resolveThird = r))) as never);
+    const A: B = [{ categoryId: 'c', amountAllocated: '1' }];
+    const { result, rerender } = setup();
+    rerender({ b: A });
+    await act(async () => { await vi.advanceTimersByTimeAsync(301); });
+    await flush();
+    rerender({ b: [{ categoryId: 'c', amountAllocated: '2' }] });
+    await act(async () => { await vi.advanceTimersByTimeAsync(301); });
+    await flush();
+
+    // retour à la liste A : sa réponse en cache (100) n'est pas présentée comme à jour
+    rerender({ b: [...A] });
+    await act(async () => { await vi.advanceTimersByTimeAsync(301); });
+    await flush();
+    expect(post).toHaveBeenCalledTimes(3);
+    expect(result.current.isStale).toBe(true);
+
+    resolveThird({ data: sim('150') });
+    await flush();
+    expect(result.current.data?.forecastBalance).toBe('150');
+    expect(result.current.isStale).toBe(false);
+  });
+
   it('does not call the API when disabled', async () => {
     const post = vi.spyOn(apiClient, 'post');
     const client = new QueryClient();

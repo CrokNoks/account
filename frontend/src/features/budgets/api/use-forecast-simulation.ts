@@ -45,7 +45,9 @@ export function useForecastSimulation(params: {
     // Pas d'appel tant que la frappe n'est pas posée : seule la dernière valeur est envoyée.
     enabled: enabled && debouncedKey === key && !!accountId && !!periodId,
     placeholderData: keepPreviousData,
-    staleTime: Infinity,
+    // Le réel (dépenses) bouge : une réponse déjà vue pour la même liste n'est jamais réutilisée
+    // telle quelle, elle est redemandée (et signalée périmée en attendant).
+    staleTime: 0,
     retry: false,
   });
 
