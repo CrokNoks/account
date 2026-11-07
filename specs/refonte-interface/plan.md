@@ -23,7 +23,7 @@ Un cycle = un `/quickcycle`, livrable seul. L'ordre compte : chacun s'appuie sur
 | 3 | `refonte-operations` | Pointage dans la liste, filtres d'état, soldes à jour | Part d'opérations pointées sans passer par un dialogue | complet | codé, écran à voir en réel, `functions/http/operations-pointage.http` jamais exécuté |
 | 4 | `refonte-analyses` | Répartition, Évolution, Dépassements sur un seul écran à onglets | Nombre de pages à ouvrir pour une analyse | complet | codé, écran à voir en réel, `http/depassements-par-periode.http` à rejouer |
 | 5 | `refonte-budgets` | Saisie d'un budget avec effet immédiat sur le prévu | Effet d'un budget sur le prévu, visible sans quitter l'écran | complet, parties sensibles (prévu, concurrence) | codé, écran à voir en réel, `http/budgets-simulation.http` et test SQL à jouer sur Supabase |
-| 6 | `refonte-echeances` | Courbe de trésorerie, point bas, calendrier, liste | Consultation des échéances avant une grosse dépense | complet | à faire |
+| 6 | `refonte-echeances` | Courbe de trésorerie, point bas, calendrier, liste | Consultation des échéances avant une grosse dépense | complet, partie sensible (déjà payée, point bas) | codé, écran à voir en réel, `http/echeances.http` à rejouer |
 | 7 | `refonte-mobile` | Accueil et saisie mobile, nettoyage des anciennes pages | Temps de saisie d'une opération sur mobile | complet | à faire |
 
 ## Points d'attention
@@ -32,6 +32,7 @@ Un cycle = un `/quickcycle`, livrable seul. L'ordre compte : chacun s'appuie sur
 - Cycle 2, à voir une fois connecté : écran à 1440 et 390 px, barre ou lignes signées, clair et sombre, visite `dashboard`. Rejouer `http/aujourdhui.http` avec Supabase local démarré.
 - Cycle 3, à voir avec Supabase démarré : jouer `functions/http/operations-pointage.http`, dont l'exclusion des autres comptes par le filtre `ids` (vérifiée seulement sur dépôts simulés), le pointage, le dépointage et les liens de À traiter.
 - Cycle 4, à voir une fois connecté : graphiques en clair et en sombre, à 1440 et 390 px, lien d'une catégorie vers Opérations.
+- Cycle 6, à voir avec Supabase démarré : jouer `http/echeances.http`, dont la comparaison des dates à minuit UTC.
 - Mise en prod, dans cet ordre : appliquer `20261107100000_replace_period_budgets_expected.sql`, déployer back puis front, et seulement ensuite appliquer `20261106100000_drop_user_preferences.sql`, irréversible sans sauvegarde. Un nouveau back sur l'ancienne base répond 500 dès qu'il reçoit `expectedBudgets`. `supabase db push` applique les migrations dans l'ordre des dates : il faudra les passer une par une.
 - Les soldes gardent leurs définitions : `pending` hors soldes, CB non pointée comptée dans le solde à venir (`docs/reporting.md`).
 - Les montants restent en centimes entiers.
