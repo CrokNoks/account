@@ -7,6 +7,7 @@ import {
   Post,
   Body,
   Request,
+  HttpCode,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -66,7 +67,14 @@ import {
   SpendingPaceResponse,
 } from '../application/get-spending-pace.use-case';
 import {
+  SimulatePeriodForecastUseCase,
+  PeriodForecastSimulationResponse,
+} from '../application/simulate-period-forecast.use-case';
+import { BudgetInitDto } from '../../periods/infrastructure/periods.controller';
+import { parseCents } from '../../shared/domain/cents';
+import {
   IsArray,
+  ValidateNested,
   IsString,
   IsIn,
   IsInt,
@@ -82,6 +90,30 @@ export class PeriodQueryDto {
   @IsUUID()
   @ApiProperty({ required: false, format: 'uuid' })
   periodId?: string;
+}
+
+export class SimulateForecastDto {
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => BudgetInitDto)
+  @ApiProperty({
+    type: [BudgetInitDto],
+    description:
+      'Liste complète des budgets saisis : une catégorie absente = sans budget',
+  })
+  budgets: BudgetInitDto[];
+}
+
+class PeriodForecastSimulationResponseDto implements PeriodForecastSimulationResponse {
+  @ApiProperty() forecastBalance: string;
+  @ApiProperty() savedForecastBalance: string;
+  @ApiProperty() delta: string;
+  @ApiProperty() incomeEffect: string;
+  @ApiProperty() expensesEffect: string;
+  @ApiProperty() plannedIncome: string;
+  @ApiProperty() plannedExpenses: string;
+  @ApiProperty() realIncome: string;
+  @ApiProperty() realExpenses: string;
 }
 
 export class CalendarQueryDto {
@@ -283,6 +315,7 @@ export class ReportingController {
     private readonly getOverrunsByPeriodUseCase: GetOverrunsByPeriodUseCase,
     private readonly getCategoryOverrunsChartUseCase: GetCategoryOverrunsChartUseCase,
     private readonly getSpendingPaceUseCase: GetSpendingPaceUseCase,
+    private readonly simulatePeriodForecastUseCase: SimulatePeriodForecastUseCase,
   ) {}
 
   @Get('reporting/overruns')
@@ -334,6 +367,28 @@ export class ReportingController {
     @Param('periodId') periodId: string,
   ): Promise<PeriodStatsResponseDto> {
     return this.getPeriodStatsUseCase.execute(accountId, periodId);
+  }
+
+  @Post('periods/:periodId/reporting/forecast-simulation')
+  @HttpCode(200)
+  @ApiOperation({
+    summary:
+      'Simulate the period forecast with a full list of budgets (read only, nothing is saved)',
+  })
+  @ApiResponse({ status: 200, type: PeriodForecastSimulationResponseDto })
+  async simulateForecast(
+    @Param('accountId') accountId: string,
+    @Param('periodId') periodId: string,
+    @Body() dto: SimulateForecastDto,
+  ): Promise<PeriodForecastSimulationResponseDto> {
+    return this.simulatePeriodForecastUseCase.execute({
+      accountId,
+      periodId,
+      budgets: dto.budgets.map((b) => ({
+        categoryId: b.categoryId,
+        amount: parseCents(b.amountAllocated),
+      })),
+    });
   }
 
   @Get('periods/:periodId/reporting/spending-pace')

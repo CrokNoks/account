@@ -18,6 +18,8 @@ import { IgnoreAnomalyUseCase } from './application/ignore-anomaly.use-case';
 import { GetOverrunsByPeriodUseCase } from './application/get-overruns-by-period.use-case';
 import { GetCategoryOverrunsChartUseCase } from './application/get-category-overruns-chart.use-case';
 import { GetSpendingPaceUseCase } from './application/get-spending-pace.use-case';
+import { SimulatePeriodForecastUseCase } from './application/simulate-period-forecast.use-case';
+import { AccountReferencesModule } from '../shared/account-references.module';
 import { ReportingController } from './infrastructure/reporting.controller';
 
 @Module({
@@ -29,6 +31,7 @@ import { ReportingController } from './infrastructure/reporting.controller';
     BudgetsModule,
     RecurringModule,
     TagsModule,
+    AccountReferencesModule,
   ],
   controllers: [ReportingController],
   providers: [
@@ -44,6 +47,7 @@ import { ReportingController } from './infrastructure/reporting.controller';
     GetOverrunsByPeriodUseCase,
     GetCategoryOverrunsChartUseCase,
     GetSpendingPaceUseCase,
+    SimulatePeriodForecastUseCase,
   ],
 })
 export class ReportingModule {}

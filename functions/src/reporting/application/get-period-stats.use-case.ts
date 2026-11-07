@@ -4,9 +4,9 @@ import { PeriodRepository } from '../../periods/domain/period.repository.interfa
 import { TransactionRepository } from '../../transactions/domain/transaction.repository.interface';
 import { BudgetRepository } from '../../budgets/domain/budget.repository.interface';
 import { CategoryRepository } from '../../categories/domain/category.repository.interface';
-import { CategoryType } from '../../categories/domain/category.entity';
-import { NotFoundError } from '../../shared/domain/errors';
 import { computeForecastComposition } from '../domain/forecast-composition';
+import { computePeriodForecast } from '../domain/period-forecast';
+import { loadPeriodForecastInput } from './load-period-forecast-input';
 
 export interface PeriodStatsResponse {
   startBalance: string;
@@ -39,69 +39,40 @@ export class GetPeriodStatsUseCase {
     accountId: string,
     periodId: string,
   ): Promise<PeriodStatsResponse> {
-    const account = await this.accountRepository.findById(accountId);
-    const period = await this.periodRepository.findById(periodId);
-    if (!account || !period || period.accountId !== accountId)
-      throw new NotFoundError('Account or Period not found');
-
-    const categories =
-      await this.categoryRepository.findAllByAccount(accountId);
+    const {
+      categories,
+      startBalance,
+      periodTransactions,
+      realByCategory,
+      uncategorized,
+    } = await loadPeriodForecastInput(
+      {
+        accountRepository: this.accountRepository,
+        periodRepository: this.periodRepository,
+        transactionRepository: this.transactionRepository,
+        categoryRepository: this.categoryRepository,
+      },
+      accountId,
+      periodId,
+    );
     const budgets = await this.budgetRepository.findAllByPeriod(periodId);
 
-    // 1. Start Balance (Initial + transactions before start date calculated in DB)
-    const sumBeforeStart =
-      await this.transactionRepository.sumAmountByAccountBeforeDate(
-        accountId,
-        period.startDate,
-      );
-    const startBalance = account.initialBalance + sumBeforeStart;
-
-    // 2. Period Transactions (Only fetch what's needed)
-    const periodTransactions =
-      await this.transactionRepository.findAllByAccountUnpaginated(accountId, {
-        startDate: period.startDate,
-        endDate: period.endDate || undefined,
-      });
-
-    // Categorize real sums by categoryId ; sans catégorie à part (pas de budget possible)
-    const realByCategory = new Map<string, bigint>();
-    let uncategorized = BigInt(0);
-    for (const t of periodTransactions) {
-      if (t.categoryId) {
-        const current = realByCategory.get(t.categoryId) || BigInt(0);
-        realByCategory.set(t.categoryId, current + t.amount);
-      } else {
-        uncategorized += t.amount;
-      }
-    }
-
-    // Totals Real
-    let realIncome = BigInt(0);
-    let realExpenses = BigInt(0);
-
-    // Totals Planned
-    let plannedIncome = BigInt(0);
-    let plannedExpenses = BigInt(0);
-
-    for (const cat of categories) {
-      const catReal = realByCategory.get(cat.id) || BigInt(0);
-      const budget = budgets.find((b) => b.categoryId === cat.id);
-      // Signe du budget non imposé : on le compte toujours en valeur absolue
-      // (comme get-budget-breakdown).
-      const rawBudget = budget?.amountAllocated || BigInt(0);
-      const catBudget = rawBudget < BigInt(0) ? -rawBudget : rawBudget;
-
-      const isIncome =
-        cat.type === CategoryType.INCOME || cat.type === CategoryType.TRANSFER;
-
-      if (isIncome) {
-        realIncome += catReal;
-        plannedIncome += catBudget;
-      } else {
-        realExpenses += catReal;
-        plannedExpenses += catBudget;
-      }
-    }
+    const {
+      realIncome,
+      plannedIncome,
+      realExpenses,
+      plannedExpenses,
+      forecastBalance,
+    } = computePeriodForecast({
+      startBalance,
+      categories,
+      realByCategory,
+      uncategorized,
+      budgets: budgets.map((b) => ({
+        categoryId: b.categoryId,
+        amount: b.amountAllocated,
+      })),
+    });
 
     // 4. Real Bank Balance (Start + reconciled in this period)
     const reconciledInPeriod = periodTransactions
@@ -114,23 +85,6 @@ export class GetPeriodStatsUseCase {
       .filter((t) => !t.pending)
       .reduce((sum, t) => sum + t.amount, BigInt(0));
     const upcomingBalance = startBalance + nonPendingInPeriod;
-
-    // 6. Forecast Balance
-    // Formula: startBalance + max(realIncome, plannedIncome) - max(abs(realExpenses), abs(plannedExpenses))
-    //   + uncategorized (import pas encore trié, virement entre comptes : compté au réel)
-    const absRealExpenses =
-      realExpenses < BigInt(0) ? -realExpenses : realExpenses;
-    const absPlannedExpenses =
-      plannedExpenses < BigInt(0) ? -plannedExpenses : plannedExpenses;
-
-    const maxIncome = realIncome > plannedIncome ? realIncome : plannedIncome;
-    const maxAbsExpenses =
-      absRealExpenses > absPlannedExpenses
-        ? absRealExpenses
-        : absPlannedExpenses;
-
-    const forecastBalance =
-      startBalance + maxIncome - maxAbsExpenses + uncategorized;
 
     const composition = computeForecastComposition({
       transactions: periodTransactions,
