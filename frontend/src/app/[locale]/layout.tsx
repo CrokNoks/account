@@ -1,21 +1,10 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import QueryProvider from "./providers/query-provider";
 import {Toaster} from "@/components/ui/sonner";
 import {NextIntlClientProvider} from 'next-intl';
 import {getMessages} from 'next-intl/server';
 import { ThemeProvider } from '../providers/theme-provider';
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
 
 export const metadata: Metadata = {
   title: "Account V2",
@@ -41,7 +30,7 @@ export default async function LocalizedLayout({
   const messages = await getMessages();
 
   return (
-    <div className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+    <div>
       <ThemeProvider
         attribute="class"
         defaultTheme="system"

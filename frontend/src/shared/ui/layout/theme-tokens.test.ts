@@ -20,4 +20,15 @@ describe('jetons de la maquette', () => {
     expect(css).toContain('--color-warn: var(--warn);');
     expect(css).toContain('--color-prev: var(--prev);');
   });
+
+  it('mappe les polices sur les variables posées par next/font, sans référence circulaire', () => {
+    expect(css).toContain('--font-sans: var(--font-geist-sans);');
+    expect(css).toContain('--font-mono: var(--font-geist-mono);');
+    expect(css).not.toMatch(/--([a-z-]+): var\(--\1\)/);
+  });
+
+  it('pose les variables de police sur <html>, ancêtre de tout le rendu (portails compris)', () => {
+    const root = readFileSync(join(__dirname, '../../../app/layout.tsx'), 'utf8');
+    expect(root).toMatch(/<html[^>]*geistSans\.variable[^>]*geistMono\.variable/);
+  });
 });
