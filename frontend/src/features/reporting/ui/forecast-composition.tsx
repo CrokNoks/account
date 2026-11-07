@@ -53,12 +53,12 @@ export function ForecastComposition() {
                     />
                   ))}
             </div>
-            <ul className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
+            <ul className="grid grid-cols-1 lg:grid-cols-2 gap-x-4 gap-y-1 text-sm">
               {view.segments.map((s) => (
                 <li key={s.key} className="flex items-center justify-between gap-2 max-lg:min-h-12">
                   <span className="flex items-center gap-2 min-w-0">
                     <span className={cn('h-2 w-2 shrink-0 rounded-full', segmentColor[s.key])} />
-                    <span className="truncate">{label(s.key)}</span>
+                    <span className="lg:truncate">{label(s.key)}</span>
                   </span>
                   <span className="font-bold tabular-nums">{formatCurrency(s.amount)}</span>
                 </li>

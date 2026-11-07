@@ -52,6 +52,16 @@ describe('Composition du prévu', () => {
     expect(text(bar)).toContain('2700,00');
   });
 
+  it('la légende ne tronque pas les libellés sur mobile (une colonne, pas de truncate hors bureau)', () => {
+    show();
+
+    const legend = screen.getByTestId('composition-bar').querySelector('ul')!;
+    expect(legend.className.split(' ')).toContain('grid-cols-1');
+    expect(legend.className.split(' ')).toContain('lg:grid-cols-2');
+    const label = screen.getByText('CB non pointées');
+    expect(label.className.split(' ')).not.toContain('truncate');
+  });
+
   it('un segment à 0 garde la barre', () => {
     state.stats = { ...base, cardTotal: '0', cardCount: 0, forecastBalance: '275000' };
     show();
