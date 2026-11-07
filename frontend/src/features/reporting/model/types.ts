@@ -81,6 +81,8 @@ export interface CashflowEvent {
 export interface CashflowForecastResponse {
   currentBalance: string;
   events: CashflowEvent[];
+  /** Plus bas solde de fin de journée de l'horizon, calculé par le back (le front ne le recalcule pas). */
+  lowPoint: { date: string; balance: string };
 }
 
 export interface CalendarEvent {
@@ -90,8 +92,8 @@ export interface CalendarEvent {
   amount: string;
   type: 'actual' | 'recurring';
   categoryId: string | null;
-  /** Facture en attente (transaction `pending`) ; fourni par le back à l'étape suivante du cycle. */
-  pending?: boolean;
+  /** Facture en attente (transaction `pending`) ; toujours fourni par le back (faux pour une récurrence projetée). */
+  pending: boolean;
 }
 
 export interface Anomaly {

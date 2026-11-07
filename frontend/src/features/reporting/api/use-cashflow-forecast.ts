@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { apiClient } from '@/shared/api/api-client';
 import { CashflowForecastResponse } from '../model/types';
 
-export function useCashflowForecast(accountId: string | null, days: number = 90) {
+export function useCashflowForecast(accountId: string | null, days: number = 30) {
   return useQuery({
     queryKey: ['cashflow-forecast', accountId, days],
     queryFn: async () => {

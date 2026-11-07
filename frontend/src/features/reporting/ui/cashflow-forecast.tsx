@@ -1,126 +1,152 @@
 'use client';
 
-import { useCashflowForecast } from '../api/use-cashflow-forecast';
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { formatCurrency } from '@/shared/lib/format';
-import { format, isToday, isTomorrow, parseISO } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 import { fr, enUS } from 'date-fns/locale';
 import { useLocale, useTranslations } from 'next-intl';
-import { Loader2, TrendingUp, Calendar, ArrowRight, Wallet } from 'lucide-react';
+import { Link } from '@/i18n/routing';
 import { cn } from '@/lib/utils';
+import { formatCurrency } from '@/shared/lib/format';
+import { Area, AreaChart, CartesianGrid, ReferenceDot, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+import { useCashflowForecast } from '../api/use-cashflow-forecast';
+
+export const CASHFLOW_HORIZONS = [30, 60, 90] as const;
+export type CashflowHorizon = (typeof CASHFLOW_HORIZONS)[number];
 
 interface CashflowForecastProps {
   accountId: string | null;
+  /** Horizon choisi (30 par défaut) ; l'écran le garde pour lire le point bas du même horizon. */
+  days?: CashflowHorizon;
+  onDaysChange?: (days: CashflowHorizon) => void;
 }
 
-export function CashflowForecast({ accountId }: CashflowForecastProps) {
+/** Jour d'une date ISO du back (`2026-07-15T00:00:00.000Z`) : on garde le jour tel qu'écrit, sans décalage de fuseau. */
+const dayOf = (iso: string) => parseISO(iso.slice(0, 10));
+
+/**
+ * Courbe de trésorerie : solde du jour puis récurrences, sur 30, 60 ou 90 jours.
+ * Le point bas (montant et date) vient du back ; le front ne le recalcule pas.
+ */
+export function CashflowForecast({ accountId, days = 30, onDaysChange }: CashflowForecastProps) {
   const t = useTranslations('Reporting.cashflow');
   const dateLocale = useLocale() === 'fr' ? fr : enUS;
-  const { data, isLoading } = useCashflowForecast(accountId);
+  const { data, isLoading, isError } = useCashflowForecast(accountId, days);
 
   if (!accountId) return null;
 
-  const getDayLabel = (dateStr: string) => {
-    const date = parseISO(dateStr);
-    if (isToday(date)) return t('today');
-    if (isTomorrow(date)) return t('tomorrow');
-    return format(date, 'dd MMMM yyyy', { locale: dateLocale });
-  };
+  const lowDay = data ? dayOf(data.lowPoint.date) : null;
+
+  // Un point par jour porteur d'événement (solde de fin de journée), borné par aujourd'hui et la fin d'horizon.
+  const points = (() => {
+    if (!data) return [];
+    const byDay = new Map<string, number>();
+    const start = data.lowPoint.date;
+    byDay.set(format(new Date(), 'yyyy-MM-dd'), Number(data.currentBalance));
+    for (const e of data.events) byDay.set(e.date.slice(0, 10), Number(e.projectedBalance));
+    byDay.set(start.slice(0, 10), byDay.get(start.slice(0, 10)) ?? Number(data.lowPoint.balance));
+    const last = data.events.length > 0 ? Number(data.events[data.events.length - 1].projectedBalance) : Number(data.currentBalance);
+    const end = new Date();
+    end.setDate(end.getDate() + days);
+    byDay.set(format(end, 'yyyy-MM-dd'), last);
+    return Array.from(byDay.entries())
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([day, balance]) => ({ time: parseISO(day).getTime(), balance }));
+  })();
 
   return (
-    <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card className="bg-primary/5 border-primary/20">
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-2 text-muted-foreground mb-1">
-              <Wallet className="w-4 h-4" />
-              <span className="text-xs font-medium uppercase tracking-wider">{t('current_balance')}</span>
-            </div>
-            <div className="text-2xl font-bold">
-              {data ? formatCurrency(data.currentBalance) : '...'}
-            </div>
-          </CardContent>
-        </Card>
+    <section aria-labelledby="echeances-curve-title" className="flex flex-col gap-3 rounded-xl border bg-card p-4 lg:p-5">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div className="flex min-w-0 flex-col gap-1">
+          <h2 id="echeances-curve-title" className="text-lg font-semibold">
+            {data && lowDay
+              ? t('title', {
+                  amount: formatCurrency(data.lowPoint.balance),
+                  date: format(lowDay, 'd MMMM yyyy', { locale: dateLocale }),
+                })
+              : t('title_loading')}
+          </h2>
+          <p className="text-sm text-muted-foreground">{t('scope')}</p>
+        </div>
 
-        {data && data.events.length > 0 && (
-          <Card className="bg-emerald-500/5 border-emerald-500/20">
-            <CardContent className="pt-6">
-              <div className="flex items-center gap-2 text-muted-foreground mb-1">
-                <TrendingUp className="w-4 h-4 text-emerald-600" />
-                <span className="text-xs font-medium uppercase tracking-wider">{t('projection_90')}</span>
-              </div>
-              <div className="text-2xl font-bold text-emerald-700">
-                {formatCurrency(data.events[data.events.length - 1].projectedBalance)}
-              </div>
-            </CardContent>
-          </Card>
-        )}
+        <div role="group" aria-label={t('horizon_label')} className="flex shrink-0 gap-1">
+          {CASHFLOW_HORIZONS.map((h) => (
+            <button
+              key={h}
+              type="button"
+              aria-pressed={days === h}
+              onClick={() => onDaysChange?.(h)}
+              className={cn(
+                'min-h-11 min-w-11 rounded-md border-2 px-3 text-sm focus-visible:outline-2 focus-visible:outline-primary',
+                days === h ? 'border-primary bg-muted font-semibold underline underline-offset-4' : 'border-transparent text-muted-foreground',
+              )}
+            >
+              {t('horizon_option', { days: h })}
+            </button>
+          ))}
+        </div>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-sm font-semibold flex items-center gap-2">
-            <Calendar className="w-4 h-4 text-primary" />
-            {t('schedule_title')}
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <div className="h-64 flex items-center justify-center">
-              <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
-            </div>
-          ) : !data || data.events.length === 0 ? (
-            <div className="h-32 flex items-center justify-center text-sm text-muted-foreground border-2 border-dashed rounded-lg">
+      {isError ? (
+        <p role="alert" className="rounded-lg border border-warn/40 p-3 text-sm text-warn">
+          {t('load_error')}
+        </p>
+      ) : isLoading || !data ? (
+        <div className="h-48 animate-pulse rounded-lg bg-muted" />
+      ) : (
+        <>
+          <div role="img" aria-label={t('chart_label', { days })} className="h-48 w-full lg:h-56">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={points} margin={{ top: 8, right: 12, bottom: 0, left: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                <XAxis
+                  dataKey="time"
+                  type="number"
+                  scale="time"
+                  domain={['dataMin', 'dataMax']}
+                  tick={{ fontSize: 12 }}
+                  tickFormatter={(v) => format(new Date(Number(v)), 'd MMM', { locale: dateLocale })}
+                />
+                <YAxis hide domain={['auto', 'auto']} />
+                <Tooltip
+                  formatter={(value) => [formatCurrency(Number(value)), t('balance')]}
+                  labelFormatter={(v) => format(new Date(Number(v)), 'd MMMM yyyy', { locale: dateLocale })}
+                />
+                <Area
+                  type="stepAfter"
+                  dataKey="balance"
+                  stroke="var(--color-primary, #6366f1)"
+                  fill="var(--color-primary, #6366f1)"
+                  fillOpacity={0.1}
+                  strokeWidth={2}
+                  isAnimationActive={false}
+                />
+                {lowDay && (
+                  <ReferenceDot
+                    x={lowDay.getTime()}
+                    y={Number(data.lowPoint.balance)}
+                    r={6}
+                    fill="var(--color-warn, #d97706)"
+                    stroke="var(--color-background, #fff)"
+                    strokeWidth={2}
+                    ifOverflow="visible"
+                  />
+                )}
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+
+          {data.events.length === 0 && (
+            <p role="status" className="flex flex-wrap items-center gap-x-3 text-sm text-muted-foreground">
               {t('no_recurring')}
-            </div>
-          ) : (
-            <div className="relative space-y-0 pb-4">
-              {/* Timeline Line */}
-              <div className="absolute left-[17px] top-2 bottom-0 w-px bg-muted" />
-
-              {data.events.map((event, idx) => {
-                const amount = parseInt(event.amount, 10);
-                const isPositive = amount > 0;
-
-                return (
-                  <div key={idx} className="relative pl-10 pb-8 last:pb-0">
-                    {/* Dot */}
-                    <div className={cn(
-                      "absolute left-0 top-1.5 w-[35px] h-[35px] rounded-full border-4 border-background flex items-center justify-center z-10",
-                      isPositive ? "bg-emerald-100 text-emerald-600" : "bg-rose-100 text-rose-600"
-                    )}>
-                      <ArrowRight className="w-4 h-4" />
-                    </div>
-
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-muted/50 pb-4">
-                      <div className="min-w-0">
-                        <p className="text-[10px] max-lg:text-xs font-bold uppercase text-muted-foreground tracking-tight">
-                          {getDayLabel(event.date)}
-                        </p>
-                        <p className="text-sm font-semibold truncate">{event.description}</p>
-                      </div>
-
-                      <div className="flex items-center gap-6 text-right shrink-0">
-                        <div className="flex flex-col items-end">
-                          <span className={cn("text-sm font-bold", isPositive ? "text-emerald-600" : "text-rose-600")}>
-                            {isPositive ? '+' : ''}{formatCurrency(event.amount)}
-                          </span>
-                        </div>
-                        <div className="flex flex-col items-end bg-muted/30 px-3 py-1 rounded-md min-w-[100px]">
-                          <span className="text-[10px] max-lg:text-xs text-muted-foreground leading-none mb-1">{t('estimated_balance')}</span>
-                          <span className="text-xs font-mono font-bold leading-none">
-                            {formatCurrency(event.projectedBalance)}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+              <Link href="/recurring" className="inline-flex min-h-11 items-center font-medium text-primary hover:underline">
+                {t('manage_recurring')}
+              </Link>
+            </p>
           )}
-        </CardContent>
-      </Card>
-    </div>
+
+          <p className="text-sm text-muted-foreground">{t('gap_note')}</p>
+          <p className="text-sm text-muted-foreground">{t('bills_note')}</p>
+        </>
+      )}
+    </section>
   );
 }
