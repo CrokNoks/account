@@ -77,7 +77,7 @@ Nouvelles règles intelligentes ; pavé numérique dessiné (réponse de Lucas :
 - Le sélecteur de période est gardé sur mobile (cycle 2, CA8) bien que la maquette ne le montre pas.
 - Un même bloc ne doit pas exister en double dans la page (cibles `data-tour` uniques et visibles à chaque largeur) : la visite « tableau de bord » (`stats`, `budget-breakdown`, `to-handle`, `add-transaction`) doit continuer de trouver un bloc visible sur mobile, ou sauter l'étape sans erreur. Le bouton « Nouvelle transaction » de la page (`page.tsx:79`) porte `data-tour="add-transaction"` et est retiré sur mobile : l'étape `add-transaction` de la visite « tableau de bord » (`dashboard-tour.ts:26`) doit y être sautée sans erreur (ou pointer le « + » de la barre : à trancher au développement, sans incidence sur les critères).
 - Le formulaire de bureau est inchangé (signe tapé dans le montant).
-- Montant 0 : accepté comme aujourd'hui (`isFormValid` teste « non vide »).
+- Montant 0 : refusé sur mobile avec un message, sans envoi (décision de Lucas au contrôle 2). Le bureau l'accepte toujours.
 - Après « Ajouter et en saisir une autre », le sens repasse à Dépense. Le curseur sur Montant n'ouvrira peut-être pas le clavier sur iOS (appel asynchrone) : non vérifiable ici.
 - `AnalysesScreen` garde sa propriété `initialTab` (plus qu'un usage).
 - Vérifications réelles des cycles 1 à 6 non faites (Lucas continue sans). Ce cycle non plus ne pourra être « livré ✅ » qu'après vue en réel à 390 px.
