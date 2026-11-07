@@ -38,6 +38,22 @@ describe('DomainExceptionFilter', () => {
     });
   });
 
+  it('transmits the code of an error that carries one, only then', () => {
+    class Coded extends ConflictError {
+      readonly code = 'SOME_CODE';
+    }
+    expect(run(new Coded('changed')).json).toHaveBeenCalledWith({
+      statusCode: 409,
+      message: 'changed',
+      error: 'Conflict',
+      code: 'SOME_CODE',
+    });
+    const plain = (
+      run(new ConflictError('dup')).json.mock.calls as object[][]
+    )[0][0];
+    expect(plain).not.toHaveProperty('code');
+  });
+
   it('keeps the error message and class name', () => {
     const error = new NotFoundError('Account not found');
     expect(error).toBeInstanceOf(Error);

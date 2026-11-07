@@ -10,6 +10,14 @@ export interface UpdatePeriodBudgetsCommand {
     categoryId: string;
     amountAllocated: bigint;
   }>;
+  /**
+   * Budgets tels que l'appelant les a lus. Présent : refus (BudgetsChangedError) si la
+   * base n'a plus ce contenu ; absent : pas de contrôle (dernier arrivé gagne).
+   */
+  expectedBudgets?: Array<{
+    categoryId: string;
+    amountAllocated: bigint;
+  }>;
 }
 
 @Injectable()
@@ -40,10 +48,19 @@ export class UpdatePeriodBudgetsUseCase {
 
     // 2. Remplacement atomique : suppression des anciens + insertion des nouveaux
     // en une seule transaction (en cas d'échec, les anciens budgets restent).
-    await this.budgetRepository.replaceForPeriod(
-      command.periodId,
-      budgetInstances,
-    );
+    const { expectedBudgets } = command;
+    if (expectedBudgets) {
+      await this.budgetRepository.replaceForPeriod(
+        command.periodId,
+        budgetInstances,
+        expectedBudgets.filter((b) => b.amountAllocated !== BigInt(0)),
+      );
+    } else {
+      await this.budgetRepository.replaceForPeriod(
+        command.periodId,
+        budgetInstances,
+      );
+    }
 
     return budgetInstances;
   }

@@ -33,8 +33,11 @@ export class DomainExceptionFilter implements ExceptionFilter<DomainError> {
   catch(exception: DomainError, host: ArgumentsHost): void {
     const response = host.switchToHttp().getResponse<HttpResponseLike>();
     const { status, label } = describe(exception);
-    response
-      .status(status)
-      .json({ statusCode: status, message: exception.message, error: label });
+    response.status(status).json({
+      statusCode: status,
+      message: exception.message,
+      error: label,
+      ...(exception.code ? { code: exception.code } : {}),
+    });
   }
 }

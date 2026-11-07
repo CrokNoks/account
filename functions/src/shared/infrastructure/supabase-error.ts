@@ -1,4 +1,5 @@
 import {
+  BudgetsChangedError,
   ConflictError,
   DomainValidationError,
   ForbiddenError,
@@ -25,6 +26,8 @@ const UNIQUE_VIOLATION = '23505';
 const FOREIGN_KEY_VIOLATION = '23503';
 const EXCLUSION_VIOLATION = '23P01';
 const NO_DATA_FOUND = 'P0002';
+/** Code levé par `replace_period_budgets` quand les budgets attendus ne sont plus ceux de la base. */
+const BUDGETS_CHANGED = 'P0409';
 
 /**
  * Traduit une erreur d'écriture Supabase en erreur métier.
@@ -46,6 +49,8 @@ export function toDomainError(
       break;
     case NO_DATA_FOUND:
       return new NotFoundError(context.notFound ?? 'Resource not found');
+    case BUDGETS_CHANGED:
+      return new BudgetsChangedError();
     case FOREIGN_KEY_VIOLATION:
       return new DomainValidationError('Referenced resource does not exist');
   }

@@ -106,6 +106,18 @@ export class UpdateBudgetsDto {
   @Type(() => BudgetInitDto)
   @ApiProperty({ type: [BudgetInitDto] })
   budgets: BudgetInitDto[];
+
+  @IsOptionalNotNull()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => BudgetInitDto)
+  @ApiProperty({
+    type: [BudgetInitDto],
+    required: false,
+    description:
+      'Budgets tels que lus par le client : refus 409 (code BUDGETS_CHANGED) si la base a changé depuis. Absent = pas de contrôle.',
+  })
+  expectedBudgets?: BudgetInitDto[];
 }
 
 @ApiTags('periods')
@@ -166,6 +178,10 @@ export class PeriodsController {
       accountId,
       periodId: id,
       budgets: dto.budgets.map((b) => ({
+        categoryId: b.categoryId,
+        amountAllocated: parseCents(b.amountAllocated),
+      })),
+      expectedBudgets: dto.expectedBudgets?.map((b) => ({
         categoryId: b.categoryId,
         amountAllocated: parseCents(b.amountAllocated),
       })),

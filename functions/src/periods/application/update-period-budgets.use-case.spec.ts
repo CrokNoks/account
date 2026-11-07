@@ -2,7 +2,10 @@ import { UpdatePeriodBudgetsUseCase } from './update-period-budgets.use-case';
 import { BudgetRepository } from '../../budgets/domain/budget.repository.interface';
 import { BudgetInstance } from '../../budgets/domain/budget-instance.entity';
 import { AccountReferencesService } from '../../shared/application/account-references.service';
-import { DomainValidationError } from '../../shared/domain/errors';
+import {
+  BudgetsChangedError,
+  DomainValidationError,
+} from '../../shared/domain/errors';
 
 describe('UpdatePeriodBudgetsUseCase', () => {
   let repository: {
@@ -93,5 +96,63 @@ describe('UpdatePeriodBudgetsUseCase', () => {
       'cat-foreign',
     ]);
     expect(repository.replaceForPeriod).not.toHaveBeenCalled();
+  });
+
+  describe('expectedBudgets (concurrent change)', () => {
+    it('does not send any expectation when expectedBudgets is absent', async () => {
+      await useCase.execute({
+        accountId: 'acc-1',
+        periodId: 'per-1',
+        budgets: [{ categoryId: 'cat-a', amountAllocated: BigInt(-100) }],
+      });
+
+      expect(repository.replaceForPeriod).toHaveBeenCalledWith(
+        'per-1',
+        expect.any(Array),
+      );
+      expect(repository.replaceForPeriod.mock.calls[0]).toHaveLength(2);
+    });
+
+    it('forwards the expected budgets without the ones at 0', async () => {
+      await useCase.execute({
+        accountId: 'acc-1',
+        periodId: 'per-1',
+        budgets: [{ categoryId: 'cat-a', amountAllocated: BigInt(-100) }],
+        expectedBudgets: [
+          { categoryId: 'cat-a', amountAllocated: BigInt(-90) },
+          { categoryId: 'cat-b', amountAllocated: BigInt(0) },
+        ],
+      });
+
+      expect(repository.replaceForPeriod).toHaveBeenCalledWith(
+        'per-1',
+        expect.any(Array),
+        [{ categoryId: 'cat-a', amountAllocated: BigInt(-90) }],
+      );
+    });
+
+    it('an empty expected list is a value: it is forwarded', async () => {
+      await useCase.execute({
+        accountId: 'acc-1',
+        periodId: 'per-1',
+        budgets: [],
+        expectedBudgets: [],
+      });
+
+      expect(repository.replaceForPeriod).toHaveBeenCalledWith('per-1', [], []);
+    });
+
+    it('propagates BudgetsChangedError', async () => {
+      repository.replaceForPeriod.mockRejectedValue(new BudgetsChangedError());
+
+      await expect(
+        useCase.execute({
+          accountId: 'acc-1',
+          periodId: 'per-1',
+          budgets: [],
+          expectedBudgets: [],
+        }),
+      ).rejects.toBeInstanceOf(BudgetsChangedError);
+    });
   });
 });

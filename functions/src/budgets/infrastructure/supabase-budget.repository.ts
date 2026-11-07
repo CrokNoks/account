@@ -4,6 +4,7 @@ import {
   BudgetRepository,
   BudgetTemplate,
   CategoryStats,
+  ExpectedBudget,
 } from '../domain/budget.repository.interface';
 import { BudgetInstance } from '../domain/budget-instance.entity';
 import { toBudgetPayload } from './budget-payload';
@@ -93,11 +94,21 @@ export class SupabaseBudgetRepository implements BudgetRepository {
   async replaceForPeriod(
     periodId: string,
     instances: BudgetInstance[],
+    expected?: ExpectedBudget[],
   ): Promise<void> {
     // Fonction SQL replace_period_budgets : suppression + insertion dans une seule transaction.
+    // p_expected n'est envoyé que s'il est fourni (base sans la migration : ancien appel).
     const { error } = await this.supabase.rpc('replace_period_budgets', {
       p_period_id: periodId,
       p_budgets: instances.map(toBudgetPayload),
+      ...(expected
+        ? {
+            p_expected: expected.map((e) => ({
+              category_id: e.categoryId,
+              amount_allocated: e.amountAllocated.toString(),
+            })),
+          }
+        : {}),
     });
 
     if (error) throw toDomainError(error, { conflict: DUPLICATE_BUDGET });

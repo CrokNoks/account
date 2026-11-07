@@ -1,0 +1,570 @@
+# Écran Budgets : simulation du prévu (POST .../reporting/forecast-simulation), enregistrement des budgets et refus d'un changement concurrent.
+# Lancement : npx httpyac send --all http/budgets-simulation.http --var port=<PORT> --var anon=<ANON_KEY de `supabase status`>
+# (la clé vient de la ligne de commande, jamais du fichier ; les utilisateurs sont jetables, créés par le fichier)
+# Prérequis : Supabase local avec la migration 20261107100000_replace_period_budgets_expected.sql, back local démarré sur <PORT>.
+# Cas qu'un .http ne permet pas (deux enregistrements simultanés) : deux `curl … &` du même PUT avec le même expectedBudgets,
+# attendu : un 200 et un 409 BUDGETS_CHANGED.
+@baseUrl = http://localhost:{{port}}
+@authUrl = http://127.0.0.1:54321/auth/v1
+
+### Propriétaire jetable
+# @name login
+POST {{authUrl}}/signup
+apikey: {{anon}}
+Content-Type: application/json
+
+{ "email": "budgets-sim-{{$timestamp}}@example.com", "password": "Password123!" }
+
+?? status == 200
+
+### Membre en écriture jetable
+# @name writer
+POST {{authUrl}}/signup
+apikey: {{anon}}
+Content-Type: application/json
+
+{ "email": "budgets-sim-w-{{$timestamp}}@example.com", "password": "Password123!" }
+
+?? status == 200
+
+### Membre en lecture seule jetable
+# @name reader
+POST {{authUrl}}/signup
+apikey: {{anon}}
+Content-Type: application/json
+
+{ "email": "budgets-sim-r-{{$timestamp}}@example.com", "password": "Password123!" }
+
+?? status == 200
+
+### Autre utilisateur connecté (non membre)
+# @name other
+POST {{authUrl}}/signup
+apikey: {{anon}}
+Content-Type: application/json
+
+{ "email": "budgets-sim-o-{{$timestamp}}@example.com", "password": "Password123!" }
+
+?? status == 200
+
+### Compte : solde de départ 1000,00 €
+# @name account
+POST {{baseUrl}}/accounts
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "name": "budgets-sim-{{$timestamp}}", "initialBalance": "100000" }
+
+?? status == 201
+
+### Partage en écriture
+POST {{baseUrl}}/accounts/{{account.id}}/shares
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "email": "budgets-sim-w-{{$timestamp}}@example.com", "permission": "write" }
+
+?? status >= 200
+?? status < 300
+
+### Partage en lecture seule
+POST {{baseUrl}}/accounts/{{account.id}}/shares
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "email": "budgets-sim-r-{{$timestamp}}@example.com", "permission": "read" }
+
+?? status >= 200
+?? status < 300
+
+### Catégorie dépense Courses
+# @name dep
+POST {{baseUrl}}/{{account.id}}/categories
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "name": "Courses", "color": "#112233", "type": "expense" }
+
+?? status == 201
+
+### Catégorie dépense Loyer
+# @name dep2
+POST {{baseUrl}}/{{account.id}}/categories
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "name": "Loyer", "color": "#223344", "type": "expense" }
+
+?? status == 201
+
+### Catégorie revenu
+# @name rev
+POST {{baseUrl}}/{{account.id}}/categories
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "name": "Salaire", "color": "#445566", "type": "income" }
+
+?? status == 201
+
+### Période : courses 400,00, loyer 800,00, salaire 2000,00
+# @name per
+POST {{baseUrl}}/{{account.id}}/periods
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "startDate": "2026-11-01", "endDate": "2026-11-30", "budgets": [
+  { "categoryId": "{{dep.id}}", "amountAllocated": "40000" },
+  { "categoryId": "{{dep2.id}}", "amountAllocated": "80000" },
+  { "categoryId": "{{rev.id}}", "amountAllocated": "200000" }
+] }
+
+?? status == 201
+
+### Salaire réel +1500,00
+POST {{baseUrl}}/{{account.id}}/transactions
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "date": "2026-11-02", "description": "salaire", "amount": "150000", "categoryId": "{{rev.id}}" }
+
+?? status == 201
+
+### Courses réelles -500,00
+POST {{baseUrl}}/{{account.id}}/transactions
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "date": "2026-11-03", "description": "courses", "amount": "-50000", "categoryId": "{{dep.id}}" }
+
+?? status == 201
+
+### Loyer réel -1000,00 en attente (pending : compté par les stats)
+POST {{baseUrl}}/{{account.id}}/transactions
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "date": "2026-11-04", "description": "loyer", "amount": "-100000", "categoryId": "{{dep2.id}}", "pending": true }
+
+?? status == 201
+
+### Sans catégorie -20,00 en attente
+POST {{baseUrl}}/{{account.id}}/transactions
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "date": "2026-11-05", "description": "import", "amount": "-2000", "pending": true }
+
+?? status == 201
+
+### Stats enregistrées
+# départ 100000 ; revenus max(150000, 200000) = 200000 ; dépenses max(150000, 120000) = 150000 ; sans catégorie -2000
+# prévu = 100000 + 200000 - 150000 - 2000 = 148000
+# @name stats
+GET {{baseUrl}}/{{account.id}}/periods/{{per.id}}/reporting/stats
+Authorization: Bearer {{login.access_token}}
+
+?? status == 200
+?? body contains "plannedExpenses":"120000"
+?? body contains "plannedIncome":"200000"
+?? body contains "forecastBalance":"148000"
+
+### Simulation = budgets enregistrés : égale aux stats, écart 0
+# @name simSaved
+POST {{baseUrl}}/{{account.id}}/periods/{{per.id}}/reporting/forecast-simulation
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "budgets": [
+  { "categoryId": "{{dep.id}}", "amountAllocated": "40000" },
+  { "categoryId": "{{dep2.id}}", "amountAllocated": "80000" },
+  { "categoryId": "{{rev.id}}", "amountAllocated": "200000" }
+] }
+
+?? status == 200
+?? body contains "forecastBalance":"{{stats.forecastBalance}}"
+?? body contains "savedForecastBalance":"148000"
+?? body contains "delta":"0"
+?? body contains "incomeEffect":"0"
+?? body contains "expensesEffect":"0"
+
+### CA3 : loyer abaissé sous le réel : le total prévu change, pas le prévu (sans effet)
+# dépenses prévues 40000 + 20000 = 60000 < réel 150000
+POST {{baseUrl}}/{{account.id}}/periods/{{per.id}}/reporting/forecast-simulation
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "budgets": [
+  { "categoryId": "{{dep.id}}", "amountAllocated": "40000" },
+  { "categoryId": "{{dep2.id}}", "amountAllocated": "20000" },
+  { "categoryId": "{{rev.id}}", "amountAllocated": "200000" }
+] }
+
+?? status == 200
+?? body contains "plannedExpenses":"60000"
+?? body contains "expensesEffect":"0"
+?? body contains "delta":"0"
+?? body contains "forecastBalance":"148000"
+
+### Budget courses relevé à 1000,00 : dépenses prévues 180000 > réel 150000 : le prévu baisse de 300,00
+POST {{baseUrl}}/{{account.id}}/periods/{{per.id}}/reporting/forecast-simulation
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "budgets": [
+  { "categoryId": "{{dep.id}}", "amountAllocated": "100000" },
+  { "categoryId": "{{dep2.id}}", "amountAllocated": "80000" },
+  { "categoryId": "{{rev.id}}", "amountAllocated": "200000" }
+] }
+
+?? status == 200
+?? body contains "plannedExpenses":"180000"
+?? body contains "expensesEffect":"-30000"
+?? body contains "delta":"-30000"
+?? body contains "forecastBalance":"118000"
+
+### Revenu prévu relevé à 2500,00 : +500,00
+POST {{baseUrl}}/{{account.id}}/periods/{{per.id}}/reporting/forecast-simulation
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "budgets": [
+  { "categoryId": "{{dep.id}}", "amountAllocated": "40000" },
+  { "categoryId": "{{dep2.id}}", "amountAllocated": "80000" },
+  { "categoryId": "{{rev.id}}", "amountAllocated": "250000" }
+] }
+
+?? status == 200
+?? body contains "incomeEffect":"50000"
+?? body contains "expensesEffect":"0"
+?? body contains "forecastBalance":"198000"
+
+### Liste vide : aucun budget (le revenu retombe au réel)
+POST {{baseUrl}}/{{account.id}}/periods/{{per.id}}/reporting/forecast-simulation
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "budgets": [] }
+
+?? status == 200
+?? body contains "plannedExpenses":"0"
+?? body contains "plannedIncome":"0"
+?? body contains "forecastBalance":"98000"
+
+### Budget négatif = budget positif (valeur absolue)
+POST {{baseUrl}}/{{account.id}}/periods/{{per.id}}/reporting/forecast-simulation
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "budgets": [
+  { "categoryId": "{{dep.id}}", "amountAllocated": "-40000" },
+  { "categoryId": "{{dep2.id}}", "amountAllocated": "80000" },
+  { "categoryId": "{{rev.id}}", "amountAllocated": "200000" }
+] }
+
+?? status == 200
+?? body contains "plannedExpenses":"120000"
+?? body contains "forecastBalance":"148000"
+
+### La simulation n'a rien écrit : trois budgets, courses toujours à 400,00
+# @name before
+GET {{baseUrl}}/{{account.id}}/periods/{{per.id}}/budgets
+Authorization: Bearer {{login.access_token}}
+
+?? status == 200
+?? js response.parsedBody.length == 3
+?? body contains "amountAllocated":"40000"
+
+### Validation : catégorie inconnue du compte
+POST {{baseUrl}}/{{account.id}}/periods/{{per.id}}/reporting/forecast-simulation
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "budgets": [ { "categoryId": "11111111-1111-4111-8111-111111111111", "amountAllocated": "100" } ] }
+
+?? status == 400
+
+### Validation : catégorie en double
+POST {{baseUrl}}/{{account.id}}/periods/{{per.id}}/reporting/forecast-simulation
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "budgets": [
+  { "categoryId": "{{dep.id}}", "amountAllocated": "100" },
+  { "categoryId": "{{dep.id}}", "amountAllocated": "200" }
+] }
+
+?? status == 400
+
+### Validation : montant illisible
+POST {{baseUrl}}/{{account.id}}/periods/{{per.id}}/reporting/forecast-simulation
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "budgets": [ { "categoryId": "{{dep.id}}", "amountAllocated": "abc" } ] }
+
+?? status == 400
+
+### Droits : membre en lecture seule, comme pour les stats
+POST {{baseUrl}}/{{account.id}}/periods/{{per.id}}/reporting/forecast-simulation
+Authorization: Bearer {{reader.access_token}}
+Content-Type: application/json
+
+{ "budgets": [ { "categoryId": "{{dep.id}}", "amountAllocated": "40000" } ] }
+
+?? status == 200
+
+### Droits : autre utilisateur connecté
+POST {{baseUrl}}/{{account.id}}/periods/{{per.id}}/reporting/forecast-simulation
+Authorization: Bearer {{other.access_token}}
+Content-Type: application/json
+
+{ "budgets": [] }
+
+?? status == 404
+
+### Droits : anonyme
+POST {{baseUrl}}/{{account.id}}/periods/{{per.id}}/reporting/forecast-simulation
+Content-Type: application/json
+
+{ "budgets": [] }
+
+?? status == 401
+
+### Parité : simulation de X (courses 1500,00, loyer 800,00, salaire 2500,00)
+# dépenses prévues 230000 > réel ; revenus max(150000, 250000) ; prévu = 100000 + 250000 - 230000 - 2000 = 118000
+# @name simX
+POST {{baseUrl}}/{{account.id}}/periods/{{per.id}}/reporting/forecast-simulation
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "budgets": [
+  { "categoryId": "{{dep.id}}", "amountAllocated": "150000" },
+  { "categoryId": "{{dep2.id}}", "amountAllocated": "80000" },
+  { "categoryId": "{{rev.id}}", "amountAllocated": "250000" }
+] }
+
+?? status == 200
+?? body contains "forecastBalance":"118000"
+
+### Parité : enregistrement de X
+PUT {{baseUrl}}/{{account.id}}/periods/{{per.id}}/budgets
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "budgets": [
+  { "categoryId": "{{dep.id}}", "amountAllocated": "150000" },
+  { "categoryId": "{{dep2.id}}", "amountAllocated": "80000" },
+  { "categoryId": "{{rev.id}}", "amountAllocated": "250000" }
+] }
+
+?? status == 200
+
+### Parité : les stats après enregistrement = le prévu simulé, au centime
+GET {{baseUrl}}/{{account.id}}/periods/{{per.id}}/reporting/stats
+Authorization: Bearer {{login.access_token}}
+
+?? status == 200
+?? body contains "forecastBalance":"{{simX.forecastBalance}}"
+?? body contains "plannedExpenses":"{{simX.plannedExpenses}}"
+?? body contains "plannedIncome":"{{simX.plannedIncome}}"
+
+### Budget à 0 : simulation (loyer à 0)
+# dépenses prévues 150000 ; prévu = 100000 + 250000 - 150000 - 2000 = 198000
+# @name simZero
+POST {{baseUrl}}/{{account.id}}/periods/{{per.id}}/reporting/forecast-simulation
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "budgets": [
+  { "categoryId": "{{dep.id}}", "amountAllocated": "150000" },
+  { "categoryId": "{{dep2.id}}", "amountAllocated": "0" },
+  { "categoryId": "{{rev.id}}", "amountAllocated": "250000" }
+] }
+
+?? status == 200
+?? body contains "plannedExpenses":"150000"
+?? body contains "forecastBalance":"198000"
+
+### Budget à 0 : enregistrement, le budget du loyer n'est plus enregistré
+PUT {{baseUrl}}/{{account.id}}/periods/{{per.id}}/budgets
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "budgets": [
+  { "categoryId": "{{dep.id}}", "amountAllocated": "150000" },
+  { "categoryId": "{{dep2.id}}", "amountAllocated": "0" },
+  { "categoryId": "{{rev.id}}", "amountAllocated": "250000" }
+] }
+
+?? status == 200
+?? js response.parsedBody.length == 2
+
+### Budget à 0 : deux budgets relus, stats = simulation
+GET {{baseUrl}}/{{account.id}}/periods/{{per.id}}/budgets
+Authorization: Bearer {{login.access_token}}
+
+?? status == 200
+?? js response.parsedBody.length == 2
+
+###
+GET {{baseUrl}}/{{account.id}}/periods/{{per.id}}/reporting/stats
+Authorization: Bearer {{login.access_token}}
+
+?? status == 200
+?? body contains "forecastBalance":"{{simZero.forecastBalance}}"
+?? body contains "plannedExpenses":"150000"
+
+### Concurrence : le membre en écriture enregistre avec les budgets qu'il a vus (courses 1500, salaire 2500) -> 200
+PUT {{baseUrl}}/{{account.id}}/periods/{{per.id}}/budgets
+Authorization: Bearer {{writer.access_token}}
+Content-Type: application/json
+
+{ "budgets": [
+  { "categoryId": "{{dep.id}}", "amountAllocated": "160000" },
+  { "categoryId": "{{rev.id}}", "amountAllocated": "250000" }
+],
+"expectedBudgets": [
+  { "categoryId": "{{dep.id}}", "amountAllocated": "150000" },
+  { "categoryId": "{{rev.id}}", "amountAllocated": "250000" }
+] }
+
+?? status == 200
+
+### Concurrence : le propriétaire enregistre avec les budgets périmés (courses 1500) -> 409 BUDGETS_CHANGED
+# @name stale
+PUT {{baseUrl}}/{{account.id}}/periods/{{per.id}}/budgets
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "budgets": [
+  { "categoryId": "{{dep.id}}", "amountAllocated": "10000" },
+  { "categoryId": "{{rev.id}}", "amountAllocated": "250000" }
+],
+"expectedBudgets": [
+  { "categoryId": "{{dep.id}}", "amountAllocated": "150000" },
+  { "categoryId": "{{rev.id}}", "amountAllocated": "250000" }
+] }
+
+?? status == 409
+?? body contains "code":"BUDGETS_CHANGED"
+?? body contains "error":"Conflict"
+
+### Concurrence : rien n'a été écrit par le refus, les montants du membre sont là
+GET {{baseUrl}}/{{account.id}}/periods/{{per.id}}/budgets
+Authorization: Bearer {{login.access_token}}
+
+?? status == 200
+?? js response.parsedBody.length == 2
+?? body contains "amountAllocated":"160000"
+
+### Concurrence : après rechargement, le propriétaire enregistre -> 200
+PUT {{baseUrl}}/{{account.id}}/periods/{{per.id}}/budgets
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "budgets": [
+  { "categoryId": "{{dep.id}}", "amountAllocated": "10000" },
+  { "categoryId": "{{rev.id}}", "amountAllocated": "250000" }
+],
+"expectedBudgets": [
+  { "categoryId": "{{dep.id}}", "amountAllocated": "160000" },
+  { "categoryId": "{{rev.id}}", "amountAllocated": "250000" }
+] }
+
+?? status == 200
+
+### Concurrence : attendu vide alors que la base ne l'est pas -> 409
+PUT {{baseUrl}}/{{account.id}}/periods/{{per.id}}/budgets
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "budgets": [ { "categoryId": "{{dep.id}}", "amountAllocated": "1" } ], "expectedBudgets": [] }
+
+?? status == 409
+?? body contains "code":"BUDGETS_CHANGED"
+
+### Concurrence : membre en lecture seule avec un attendu juste -> 403 comme avant
+PUT {{baseUrl}}/{{account.id}}/periods/{{per.id}}/budgets
+Authorization: Bearer {{reader.access_token}}
+Content-Type: application/json
+
+{ "budgets": [ { "categoryId": "{{dep.id}}", "amountAllocated": "1" } ],
+"expectedBudgets": [
+  { "categoryId": "{{dep.id}}", "amountAllocated": "10000" },
+  { "categoryId": "{{rev.id}}", "amountAllocated": "250000" }
+] }
+
+?? status == 403
+
+### Concurrence : catégorie en double avec un attendu juste -> 409 sans code (autre cause)
+# @name dup
+PUT {{baseUrl}}/{{account.id}}/periods/{{per.id}}/budgets
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "budgets": [
+  { "categoryId": "{{dep.id}}", "amountAllocated": "100" },
+  { "categoryId": "{{dep.id}}", "amountAllocated": "200" }
+],
+"expectedBudgets": [
+  { "categoryId": "{{dep.id}}", "amountAllocated": "10000" },
+  { "categoryId": "{{rev.id}}", "amountAllocated": "250000" }
+] }
+
+?? status == 409
+?? js response.parsedBody.code isFalse
+
+### Concurrence : le doublon refusé a laissé les budgets en place
+GET {{baseUrl}}/{{account.id}}/periods/{{per.id}}/budgets
+Authorization: Bearer {{login.access_token}}
+
+?? status == 200
+?? js response.parsedBody.length == 2
+?? body contains "amountAllocated":"10000"
+
+### Compatibilité : sans expectedBudgets (ancien front), pas de contrôle -> 200
+PUT {{baseUrl}}/{{account.id}}/periods/{{per.id}}/budgets
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "budgets": [ { "categoryId": "{{dep.id}}", "amountAllocated": "20000" } ] }
+
+?? status == 200
+
+### Validation : expectedBudgets avec un montant illisible
+PUT {{baseUrl}}/{{account.id}}/periods/{{per.id}}/budgets
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "budgets": [], "expectedBudgets": [ { "categoryId": "{{dep.id}}", "amountAllocated": "abc" } ] }
+
+?? status == 400
+
+### CA7 : période fermée, simulation et enregistrement restent possibles
+PATCH {{baseUrl}}/{{account.id}}/periods/{{per.id}}
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "isActive": false }
+
+?? status == 200
+
+###
+POST {{baseUrl}}/{{account.id}}/periods/{{per.id}}/reporting/forecast-simulation
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "budgets": [ { "categoryId": "{{dep.id}}", "amountAllocated": "20000" } ] }
+
+?? status == 200
+
+###
+PUT {{baseUrl}}/{{account.id}}/periods/{{per.id}}/budgets
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "budgets": [ { "categoryId": "{{dep.id}}", "amountAllocated": "30000" } ],
+"expectedBudgets": [ { "categoryId": "{{dep.id}}", "amountAllocated": "20000" } ] }
+
+?? status == 200

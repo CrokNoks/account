@@ -12,6 +12,12 @@ export interface BudgetTemplate {
   amount: bigint;
 }
 
+/** Budget tel que l'appelant l'a lu : sert à détecter un changement concurrent. */
+export interface ExpectedBudget {
+  categoryId: string;
+  amountAllocated: bigint;
+}
+
 export abstract class BudgetRepository {
   abstract findAllByPeriod(periodId: string): Promise<BudgetInstance[]>;
   abstract findById(id: string): Promise<BudgetInstance | null>;
@@ -21,10 +27,16 @@ export abstract class BudgetRepository {
    * Remplace tous les budgets d'une période (suppression puis insertion) dans une
    * seule transaction base de données : si l'insertion échoue, les anciens budgets
    * sont conservés. Lève `ConflictError` si deux budgets visent la même catégorie.
+   *
+   * `expected` (facultatif) : les budgets tels que l'appelant les a lus. Vérifié dans la
+   * même transaction, sous verrou : s'ils ne sont plus ceux de la base (montants à 0
+   * ignorés des deux côtés), lève `BudgetsChangedError` et rien n'est écrit. `[]` est une
+   * valeur (« aucun budget vu ») ; absent = pas de contrôle.
    */
   abstract replaceForPeriod(
     periodId: string,
     instances: BudgetInstance[],
+    expected?: ExpectedBudget[],
   ): Promise<void>;
 
   /**

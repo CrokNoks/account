@@ -1,5 +1,9 @@
 import { SupabaseClient } from '@supabase/supabase-js';
-import { ConflictError, ForbiddenError } from '../../shared/domain/errors';
+import {
+  BudgetsChangedError,
+  ConflictError,
+  ForbiddenError,
+} from '../../shared/domain/errors';
 import { BudgetInstance } from '../domain/budget-instance.entity';
 import { SupabaseBudgetRepository } from './supabase-budget.repository';
 
@@ -79,6 +83,54 @@ describe('SupabaseBudgetRepository.replaceForPeriod', () => {
       p_period_id: 'per-1',
       p_budgets: [],
     });
+  });
+
+  it('does not send p_expected when no expectation is given (old database)', async () => {
+    const { repository, rpc } = rpcRepo(null);
+
+    await repository.replaceForPeriod('per-1', []);
+
+    expect(Object.keys(rpc.mock.calls[0][1])).not.toContain('p_expected');
+  });
+
+  it('sends the expected budgets as p_expected', async () => {
+    const { repository, rpc } = rpcRepo(null);
+
+    await repository.replaceForPeriod(
+      'per-1',
+      [],
+      [{ categoryId: 'cat-1', amountAllocated: BigInt(-40000) }],
+    );
+
+    expect(rpc.mock.calls[0][1]).toEqual({
+      p_period_id: 'per-1',
+      p_budgets: [],
+      p_expected: [{ category_id: 'cat-1', amount_allocated: '-40000' }],
+    });
+  });
+
+  it('turns P0409 into BudgetsChangedError', async () => {
+    const { repository } = rpcRepo({
+      code: 'P0409',
+      message: 'budgets changed',
+    });
+
+    const result = repository.replaceForPeriod('per-1', [], []);
+
+    await expect(result).rejects.toBeInstanceOf(BudgetsChangedError);
+    await expect(result).rejects.toBeInstanceOf(ConflictError);
+  });
+
+  it('a duplicated category stays a ConflictError without code', async () => {
+    const { repository } = rpcRepo(duplicate);
+
+    const error = await repository
+      .replaceForPeriod('per-1', [instance, instance], [])
+      .catch((e: unknown) => e);
+
+    expect(error).toBeInstanceOf(ConflictError);
+    expect(error).not.toBeInstanceOf(BudgetsChangedError);
+    expect(error).not.toHaveProperty('code');
   });
 
   it('turns 23505 into a ConflictError', async () => {
