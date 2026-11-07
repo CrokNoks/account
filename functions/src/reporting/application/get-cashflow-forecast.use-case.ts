@@ -19,6 +19,8 @@ export interface CashflowEvent {
 export interface CashflowForecastResponse {
   currentBalance: string;
   events: CashflowEvent[];
+  /** Jour 0 de la courbe (aujourd'hui dans le fuseau métier), comme les dates des événements. */
+  startDate: string;
   /** Plus bas solde de fin de journée de l'horizon (premier jour en cas d'égalité). */
   lowPoint: { date: string; balance: string };
 }
@@ -114,6 +116,7 @@ export class GetCashflowForecastUseCase {
     return {
       currentBalance: currentBalance.toString(),
       events,
+      startDate: startDate.toISOString(),
       lowPoint: {
         date: lowPoint.date,
         balance: lowPoint.balance.toString(),

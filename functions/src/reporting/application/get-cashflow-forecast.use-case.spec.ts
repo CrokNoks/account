@@ -169,8 +169,18 @@ describe('GetCashflowForecastUseCase', () => {
     expect(await useCase.execute('acc-1', 30)).toEqual({
       currentBalance: '105000',
       events: [],
+      startDate: '2026-04-28T00:00:00.000Z',
       lowPoint: { date: '2026-04-28T00:00:00.000Z', balance: '105000' },
     });
+  });
+
+  it('gives the first day of the curve in the business time zone', async () => {
+    // 31 oct. 23:30 UTC = 1er nov. 00:30 à Paris
+    jest.setSystemTime(new Date('2026-10-31T23:30:00Z'));
+
+    const { startDate } = await useCase.execute('acc-1', 5);
+
+    expect(startDate).toBe('2026-11-01T00:00:00.000Z');
   });
 
   it('rejects an unknown account', async () => {

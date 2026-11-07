@@ -127,6 +127,7 @@ describe('Front/back contract (e2e)', () => {
       expect(res.body).toEqual({
         currentBalance: '0',
         events: [],
+        startDate: expect.stringMatching(/^\d{4}-\d{2}-\d{2}T/),
         lowPoint: {
           date: expect.stringMatching(/^\d{4}-\d{2}-\d{2}T/),
           balance: '0',
