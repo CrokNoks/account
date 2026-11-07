@@ -16,7 +16,7 @@ Sur téléphone, saisir une opération demande trop de gestes (tiroir à champs 
 Fr et en, clair et sombre : accueil, saisie, barre du bas et « Plus » doivent être lisibles dans les 4 combinaisons, sans texte en dur (contrainte de livraison, vérifiée à la main, pas un critère de plus).
 
 ## Règle critique
-Le sens choisi fixe le signe, la valeur absolue de la saisie fixe le montant, en centimes entiers sans flottant : Dépense « 12,50 » → −1250 ; Revenu « 12,50 » → +1250 ; un « - » tapé est ignoré ; saisie illisible → rien n'est envoyé. Testée avant le code (cas : virgule, point, milliers, `€`, 0,5, 1,005 → 101, illisible). Une opération au signe inversé fausse tous les soldes. Les fonctions `isUnreadableAmount`, `toCents`, `toAbsCents` (`frontend/src/shared/lib/format.ts`) existent déjà : le test fixe leur emploi, il ne redéfinit pas l'arrondi.
+Le sens choisi fixe le signe, la valeur absolue de la saisie fixe le montant, en centimes entiers sans flottant : Dépense « 12,50 » → −1250 ; Revenu « 12,50 » → +1250 ; un « - » tapé est ignoré ; saisie illisible → rien n'est envoyé. Testée avant le code (cas : virgule, point, milliers, `€`, 0,5, 1,005 refusé avec un message, illisible). Une opération au signe inversé fausse tous les soldes. Les fonctions `isUnreadableAmount`, `toCents`, `toAbsCents` (`frontend/src/shared/lib/format.ts`) existent déjà : le test fixe leur emploi, il ne redéfinit pas l'arrondi.
 
 ## Mesure d'impact
 - Indicateur qui doit bouger : temps de saisie d'une opération sur mobile (3 gestes : ouvrir, toucher « + », saisir et enregistrer avec catégorie suggérée).
