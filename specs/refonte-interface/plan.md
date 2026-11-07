@@ -24,7 +24,16 @@ Un cycle = un `/quickcycle`, livrable seul. L'ordre compte : chacun s'appuie sur
 | 4 | `refonte-analyses` | Répartition, Évolution, Dépassements sur un seul écran à onglets | Nombre de pages à ouvrir pour une analyse | complet | codé, écran à voir en réel, `http/depassements-par-periode.http` à rejouer |
 | 5 | `refonte-budgets` | Saisie d'un budget avec effet immédiat sur le prévu | Effet d'un budget sur le prévu, visible sans quitter l'écran | complet, parties sensibles (prévu, concurrence) | codé, écran à voir en réel, `http/budgets-simulation.http` et test SQL à jouer sur Supabase |
 | 6 | `refonte-echeances` | Courbe de trésorerie, point bas, calendrier, liste | Consultation des échéances avant une grosse dépense | complet, partie sensible (déjà payée, point bas) | codé, écran à voir en réel, `http/echeances.http` à rejouer |
-| 7 | `refonte-mobile` | Accueil et saisie mobile, nettoyage des anciennes pages | Temps de saisie d'une opération sur mobile | complet | à faire |
+| 7 | `refonte-mobile` | Accueil et saisie mobile, nettoyage des anciennes pages | Saisie mobile en 3 gestes | complet, partie sensible (montant signé, envoi unique) | codé, écran à voir en réel, `http/saisie-mobile.http` à rejouer |
+
+## Avant toute mise en prod
+
+La refonte est codée, mais aucun écran n'a été vu en réel. Il faut d'abord :
+
+1. Démarrer Docker et Supabase local, appliquer les migrations au local seulement.
+2. Jouer les fichiers `http/aujourdhui.http`, `functions/http/operations-pointage.http`, `http/depassements-par-periode.http`, `http/budgets-simulation.http`, `http/echeances.http`, `http/saisie-mobile.http`, et le test SQL `supabase/tests/replace_period_budgets_expected_test.sql`.
+3. Ouvrir chaque écran connecté, à 1440 et 390 px, en clair et en sombre, en fr et en, et sur un vrai téléphone pour la saisie.
+4. Corriger ce qui casse par `/quickfix`, puis seulement suivre la procédure de mise en prod.
 
 ## Points d'attention
 
