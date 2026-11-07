@@ -173,7 +173,9 @@
       "none": "Nothing planned this week",
       "recurring": "Recurring",
       "planned": "Planned",
-      "total": "Total"
+      "total": "{count, plural, one {Total of the displayed due date} other {Total of the # displayed due dates}}",
+      "others": "{count, plural, one {# other not included} other {# others not included}}",
+      "next_month_error": "Next month's due dates could not be loaded."
     },
     "anomalies": {
       "all_good": "All clear",

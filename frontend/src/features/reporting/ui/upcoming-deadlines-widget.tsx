@@ -9,32 +9,38 @@ import { format, isAfter, startOfDay, addDays, parseISO } from 'date-fns';
 import { fr, enUS } from 'date-fns/locale';
 import { useLocale, useTranslations } from 'next-intl';
 import { cn } from '@/lib/utils';
+import { CalendarEvent } from '../model/types';
 
 export function UpcomingDeadlinesWidget() {
   const t = useTranslations('Reporting.deadlines');
   const dateLocale = useLocale() === 'fr' ? fr : enUS;
   const { activeAccountId } = useAccountStore();
   
-  const today = new Date();
-  const year = today.getFullYear();
-  const month = today.getMonth() + 1;
-  
-  const { data: events, isLoading } = useCalendarData(activeAccountId, year, month);
-
-  if (isLoading) return <div className="h-64 bg-muted animate-pulse rounded-xl" />;
-  
-  // Filter for upcoming events in the next 7 days
+  // La fenêtre de 7 jours peut déborder sur le mois suivant : il est lu à part (même requête quand elle n'y déborde pas).
   const now = startOfDay(new Date());
   const next7Days = addDays(now, 7);
-  
-  const upcoming = events
-    ?.filter(e => {
+  const { data: events, isLoading } = useCalendarData(activeAccountId, now.getFullYear(), now.getMonth() + 1);
+  const { data: nextEvents, isError: nextMonthFailed } = useCalendarData(
+    activeAccountId,
+    next7Days.getFullYear(),
+    next7Days.getMonth() + 1,
+  );
+  const spansTwoMonths = now.getMonth() !== next7Days.getMonth() || now.getFullYear() !== next7Days.getFullYear();
+
+  if (isLoading) return <div className="h-64 bg-muted animate-pulse rounded-xl" />;
+
+  const byId = new Map<string, CalendarEvent>();
+  for (const e of [...(events ?? []), ...(spansTwoMonths ? (nextEvents ?? []) : [])]) byId.set(e.id, e);
+
+  const inWindow = Array.from(byId.values())
+    .filter(e => {
       const date = parseISO(e.date);
       return isAfter(date, now) && !isAfter(date, next7Days);
     })
-    .sort((a, b) => a.date.localeCompare(b.date))
-    .slice(0, 5);
-  const total = (upcoming ?? []).reduce((sum, e) => sum + parseInt(e.amount, 10), 0);
+    .sort((a, b) => a.date.localeCompare(b.date));
+  const upcoming = inWindow.slice(0, 5);
+  const others = inWindow.length - upcoming.length;
+  const total = upcoming.reduce((sum, e) => sum + parseInt(e.amount, 10), 0);
 
   return (
     <Card className="h-full border-2 shadow-sm overflow-hidden flex flex-col">
@@ -76,13 +82,19 @@ export function UpcomingDeadlinesWidget() {
             ))
           )}
         </div>
-        {upcoming && upcoming.length > 0 && (
-          <div className="mt-4 flex items-center justify-between border-t pt-3 text-xs max-lg:text-sm font-bold">
-            <span className="uppercase tracking-widest text-muted-foreground">{t('total')}</span>
-            <span className={cn("font-black tracking-tight", total < 0 ? "text-red-500" : "text-green-500")}>
-              {formatCurrency(total)}
-            </span>
+        {upcoming.length > 0 && (
+          <div className="mt-4 border-t pt-3 text-xs max-lg:text-sm">
+            <div className="flex items-center justify-between gap-3 font-bold">
+              <span className="uppercase tracking-widest text-muted-foreground">{t('total', { count: upcoming.length })}</span>
+              <span className={cn("font-black tracking-tight shrink-0", total < 0 ? "text-red-500" : "text-green-500")}>
+                {formatCurrency(total)}
+              </span>
+            </div>
+            {others > 0 && <p className="mt-1 text-muted-foreground">{t('others', { count: others })}</p>}
           </div>
+        )}
+        {spansTwoMonths && nextMonthFailed && (
+          <p className="mt-2 text-xs max-lg:text-sm text-muted-foreground">{t('next_month_error')}</p>
         )}
       </CardContent>
     </Card>

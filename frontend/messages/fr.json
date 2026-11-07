@@ -173,7 +173,9 @@
       "none": "Rien de prévu cette semaine",
       "recurring": "Récurrent",
       "planned": "Prévu",
-      "total": "Total"
+      "total": "{count, plural, one {Total de l'échéance affichée} other {Total des # échéances affichées}}",
+      "others": "{count, plural, one {# autre non comprise} other {# autres non comprises}}",
+      "next_month_error": "Les échéances du mois suivant n'ont pas pu être lues."
     },
     "anomalies": {
       "all_good": "Tout est en ordre",
