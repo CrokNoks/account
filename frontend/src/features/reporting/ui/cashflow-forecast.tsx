@@ -38,17 +38,18 @@ export function CashflowForecast({ accountId, days = 30, onDaysChange }: Cashflo
   // Un point par jour porteur d'événement (solde de fin de journée), borné par aujourd'hui et la fin d'horizon.
   const points = (() => {
     if (!data) return [];
-    const byDay = new Map<string, number>();
+    // Soldes en centimes (texte) : le nombre ne sert qu'à tracer, le libellé de l'infobulle vient du texte exact.
+    const byDay = new Map<string, string>();
     const start = data.lowPoint.date;
     const startDay = data.startDate.slice(0, 10);
-    byDay.set(startDay, Number(data.currentBalance));
-    for (const e of data.events) byDay.set(e.date.slice(0, 10), Number(e.projectedBalance));
-    byDay.set(start.slice(0, 10), byDay.get(start.slice(0, 10)) ?? Number(data.lowPoint.balance));
-    const last = data.events.length > 0 ? Number(data.events[data.events.length - 1].projectedBalance) : Number(data.currentBalance);
+    byDay.set(startDay, data.currentBalance);
+    for (const e of data.events) byDay.set(e.date.slice(0, 10), e.projectedBalance);
+    byDay.set(start.slice(0, 10), byDay.get(start.slice(0, 10)) ?? data.lowPoint.balance);
+    const last = data.events.length > 0 ? data.events[data.events.length - 1].projectedBalance : data.currentBalance;
     byDay.set(format(addDays(parseISO(startDay), days), 'yyyy-MM-dd'), last);
     return Array.from(byDay.entries())
       .sort(([a], [b]) => a.localeCompare(b))
-      .map(([day, balance]) => ({ time: parseISO(day).getTime(), balance }));
+      .map(([day, cents]) => ({ time: parseISO(day).getTime(), balance: Number(cents), label: formatCurrency(cents) }));
   })();
 
   return (
@@ -106,7 +107,7 @@ export function CashflowForecast({ accountId, days = 30, onDaysChange }: Cashflo
                 />
                 <YAxis hide domain={['auto', 'auto']} />
                 <Tooltip
-                  formatter={(value) => [formatCurrency(Number(value)), t('balance')]}
+                  formatter={(_value, _name, item) => [item.payload.label, t('balance')]}
                   labelFormatter={(v) => format(new Date(Number(v)), 'd MMMM yyyy', { locale: dateLocale })}
                 />
                 <Area

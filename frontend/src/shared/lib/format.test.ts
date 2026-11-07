@@ -21,6 +21,58 @@ describe('formatCurrency', () => {
   });
 });
 
+// Texte exact (espaces insécables compris) : N = U+202F (milliers), E = U+00A0 (avant le symbole).
+const N = ' ';
+const E = ' ';
+
+describe('formatCurrency, texte exact', () => {
+  it.each([
+    ['0', `0,00${E}€`],
+    ['1', `0,01${E}€`],
+    ['5', `0,05${E}€`],
+    ['99', `0,99${E}€`],
+    ['100', `1,00${E}€`],
+    ['-1', `-0,01${E}€`],
+    ['-99', `-0,99${E}€`],
+    ['-0', `-0,00${E}€`],
+    ['12345', `123,45${E}€`],
+    ['-12345', `-123,45${E}€`],
+    ['100000', `1${N}000,00${E}€`],
+    ['-123456', `-1${N}234,56${E}€`],
+    ['123456789', `1${N}234${N}567,89${E}€`],
+    ['-123456789', `-1${N}234${N}567,89${E}€`],
+    ['123456789012', `1${N}234${N}567${N}890,12${E}€`],
+    ['900719925474099', `9${N}007${N}199${N}254${N}740,99${E}€`],
+    [150000, `1${N}500,00${E}€`],
+    [-4250, `-42,50${E}€`],
+    [0, `0,00${E}€`],
+    [-0, `-0,00${E}€`],
+  ])('formats %j cents as the exact text', (cents, expected) => {
+    expect(formatCurrency(cents)).toBe(expected);
+  });
+
+  it('keeps reading a decimal or non numeric string like before', () => {
+    expect(formatCurrency('12.5')).toBe(`0,12${E}€`);
+    expect(formatCurrency('abc')).toBe(`NaN${E}€`);
+    expect(formatCurrency(NaN)).toBe(`NaN${E}€`);
+  });
+});
+
+describe('formatCurrency, au-delà de 2^53', () => {
+  it.each([
+    ['9007199254740991', `90${N}071${N}992${N}547${N}409,91${E}€`],
+    ['9007199254740993', `90${N}071${N}992${N}547${N}409,93${E}€`],
+    ['-9007199254740993', `-90${N}071${N}992${N}547${N}409,93${E}€`],
+    ['12345678901234567890', `123${N}456${N}789${N}012${N}345${N}678,90${E}€`],
+  ])('formats %s cents without losing a cent', (cents, expected) => {
+    expect(formatCurrency(cents)).toBe(expected);
+  });
+
+  it('accepts a bigint', () => {
+    expect(formatCurrency(BigInt('9007199254740993'))).toBe(`90${N}071${N}992${N}547${N}409,93${E}€`);
+  });
+});
+
 describe('toCents', () => {
   it.each([
     ['10.50', '1050'],

@@ -19,7 +19,9 @@ import { shortPeriodLabel } from './period-label';
 
 const CHOICE_TYPES = [CategoryType.EXPENSE, CategoryType.SAVINGS];
 
-const eur = (cents: unknown) => formatCurrency(Number(cents));
+/** Infobulle : le texte exact est porté par la ligne de données (`{série}Label`), le nombre tracé ne sert qu'à la position. */
+const tooltipLabel = (_value: unknown, _name: unknown, item: { dataKey?: unknown; payload?: Record<string, unknown> }) =>
+  String(item.payload?.[`${String(item.dataKey)}Label`]);
 const axisEuros = (cents: unknown) => `${Math.round(Number(cents) / 100)}`;
 
 /** Graphique qui défile horizontalement quand les périodes sont nombreuses (mobile). */
@@ -75,15 +77,19 @@ export function EvolutionTab() {
   const totals = closedEvolution.map((d) => ({
     name: shortPeriodLabel(d.startDate, locale),
     total: Number(absCents(d.realExpenses)),
+    totalLabel: formatCurrency(absCents(d.realExpenses)),
   }));
   const balances = closedEvolution.map((d) => ({
     name: shortPeriodLabel(d.startDate, locale),
     balance: Number(d.realBankBalance),
+    balanceLabel: formatCurrency(d.realBankBalance),
   }));
   const categoryPoints = (categoryChart?.points ?? []).map((p) => ({
     name: shortPeriodLabel(p.startDate, locale),
     real: Number(absCents(p.real)),
+    realLabel: formatCurrency(absCents(p.real)),
     budget: Number(absCents(p.budget)),
+    budgetLabel: formatCurrency(absCents(p.budget)),
     overrun: BigInt(p.overrun) > BigInt(0),
   }));
 
@@ -96,9 +102,9 @@ export function EvolutionTab() {
             <CartesianGrid stroke={CHART.grid} vertical={false} />
             <XAxis dataKey="name" tick={AXIS_TICK} />
             <YAxis tick={AXIS_TICK} tickFormatter={axisEuros} width={48} />
-            <Tooltip {...TOOLTIP_STYLE} formatter={(v) => eur(v)} />
+            <Tooltip {...TOOLTIP_STYLE} formatter={tooltipLabel} />
             <Bar dataKey="total" name={te('total_series')} fill={CHART.strong} radius={[4, 4, 0, 0]}>
-              <LabelList dataKey="total" position="top" formatter={eur} fill={CHART.text} fontSize={12} />
+              <LabelList dataKey="totalLabel" position="top" fill={CHART.text} fontSize={12} />
             </Bar>
           </BarChart>
         </Scrollable>
@@ -125,9 +131,9 @@ export function EvolutionTab() {
                 <CartesianGrid stroke={CHART.grid} vertical={false} />
                 <XAxis dataKey="name" tick={AXIS_TICK} />
                 <YAxis tick={AXIS_TICK} tickFormatter={axisEuros} width={48} />
-                <Tooltip {...TOOLTIP_STYLE} formatter={(v) => eur(v)} />
+                <Tooltip {...TOOLTIP_STYLE} formatter={tooltipLabel} />
                 <Bar dataKey="real" name={te('real')} fill={CHART.strong} radius={[4, 4, 0, 0]}>
-                  <LabelList dataKey="real" position="top" formatter={eur} fill={CHART.text} fontSize={12} />
+                  <LabelList dataKey="realLabel" position="top" fill={CHART.text} fontSize={12} />
                 </Bar>
                 <Bar dataKey="budget" name={te('budget')} fill={CHART.budget} radius={[4, 4, 0, 0]} />
               </BarChart>
@@ -145,8 +151,8 @@ export function EvolutionTab() {
                 {categoryPoints.map((p, i) => (
                   <TableRow key={categoryChart.points[i].periodId}>
                     <TableCell className="py-2 text-sm">{p.name}</TableCell>
-                    <TableCell className="py-2 text-right text-sm tabular-nums">{eur(p.real)}</TableCell>
-                    <TableCell className="py-2 text-right text-sm tabular-nums">{eur(p.budget)}</TableCell>
+                    <TableCell className="py-2 text-right text-sm tabular-nums">{p.realLabel}</TableCell>
+                    <TableCell className="py-2 text-right text-sm tabular-nums">{p.budgetLabel}</TableCell>
                     <TableCell className="py-2 text-right text-sm font-semibold text-destructive" data-testid={p.overrun ? 'overrun-mark' : undefined}>
                       {p.overrun ? `▲ ${te('overrun_mark')}` : <span className="font-normal text-muted-foreground">—</span>}
                     </TableCell>
@@ -172,9 +178,9 @@ export function EvolutionTab() {
             <CartesianGrid stroke={CHART.grid} vertical={false} />
             <XAxis dataKey="name" tick={AXIS_TICK} />
             <YAxis tick={AXIS_TICK} tickFormatter={axisEuros} width={48} />
-            <Tooltip {...TOOLTIP_STYLE} formatter={(v) => eur(v)} />
+            <Tooltip {...TOOLTIP_STYLE} formatter={tooltipLabel} />
             <Line type="monotone" dataKey="balance" name={te('balance_series')} stroke={CHART.strong} strokeWidth={2.5} dot={{ r: 4, fill: CHART.strong }}>
-              <LabelList dataKey="balance" position="top" formatter={eur} fill={CHART.text} fontSize={12} />
+              <LabelList dataKey="balanceLabel" position="top" fill={CHART.text} fontSize={12} />
             </Line>
           </LineChart>
         </Scrollable>

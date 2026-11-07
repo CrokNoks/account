@@ -1,9 +1,29 @@
-export function formatCurrency(amountCents: string | number): string {
-  const amount = typeof amountCents === 'string' ? parseInt(amountCents, 10) : amountCents;
-  return new Intl.NumberFormat('fr-FR', {
-    style: 'currency',
-    currency: 'EUR',
-  }).format(amount / 100);
+const EUR = new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' });
+
+/**
+ * Integer cents as a euro amount, without floating point: the cents are cut into a decimal
+ * string ("-123456" -> "-1234.56") that Intl formats exactly, so it stays exact beyond 2^53.
+ * Reading is unchanged: a string is read like parseInt (leading integer), anything unreadable gives "NaN €".
+ */
+export function formatCurrency(amountCents: string | number | bigint): string {
+  let digits: string;
+  let negative: boolean;
+  if (typeof amountCents === 'bigint') {
+    negative = amountCents < BigInt(0);
+    digits = (negative ? -amountCents : amountCents).toString();
+  } else if (typeof amountCents === 'number') {
+    if (!Number.isInteger(amountCents)) return EUR.format(amountCents / 100);
+    negative = amountCents < 0 || Object.is(amountCents, -0);
+    digits = BigInt(Math.abs(amountCents)).toString();
+  } else {
+    const match = /^\s*([+-]?)(\d+)/.exec(amountCents);
+    if (!match) return EUR.format(NaN);
+    negative = match[1] === '-';
+    digits = match[2].replace(/^0+(?=\d)/, '');
+  }
+  const padded = digits.padStart(3, '0');
+  const decimal = `${negative ? '-' : ''}${padded.slice(0, -2)}.${padded.slice(-2)}` as `${number}`;
+  return EUR.format(decimal);
 }
 
 const CURRENCY_WORDS = /(?<!\p{L})(?:eur|euros?|usd|gbp|chf|cad|jpy|aud)(?!\p{L})/giu;
