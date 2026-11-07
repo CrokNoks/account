@@ -8,6 +8,7 @@ const setOpen = vi.fn();
 
 vi.mock('next-intl', () => ({ useTranslations: () => (key: string) => key }));
 vi.mock('next/navigation', () => ({ usePathname: () => '/fr' }));
+vi.mock('./more-menu', () => ({ MoreMenu: () => <button className="min-h-11 min-w-11">more</button> }));
 vi.mock('@/i18n/routing', () => ({
   Link: ({ href, children, ...p }: { href: string; children: React.ReactNode }) => <a href={href} {...p}>{children}</a>,
 }));
@@ -22,14 +23,22 @@ describe('barre du bas (mobile)', () => {
     const items = screen.getByRole('navigation').children;
     const plus = screen.getByRole('button', { name: 'add_transaction' });
 
-    expect(items).toHaveLength(4);
-    expect(Array.from(items).map((i) => i.textContent)).toEqual(['today', 'operations', '', 'analysis']);
+    expect(items).toHaveLength(5);
+    expect(Array.from(items).map((i) => i.textContent)).toEqual(['today', 'operations', '', 'analysis', 'more']);
     expect(items[2]).toBe(plus);
-    // Analyses pointe vers le nouvel écran, plus vers /evolution.
+    // Analyses pointe vers /analyses.
     expect(screen.getByRole('link', { name: 'analysis' }).getAttribute('href')).toBe('/analyses');
 
     fireEvent.click(plus);
     expect(setOpen).toHaveBeenCalledWith(true);
+  });
+
+  it('chaque cible de la barre fait 44 px au moins', () => {
+    render(<BottomNav />);
+    for (const el of Array.from(screen.getByRole('navigation').children)) {
+      expect(el.className).toMatch(/min-h-11|h-12|h-16/);
+      expect(el.className).toMatch(/min-w-11|w-12/);
+    }
   });
 
   it('the floating button no longer exists in the layout', () => {

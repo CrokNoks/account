@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { useEffect } from 'react';
 import { LogOut } from 'lucide-react';
-import { createClient } from '@/shared/lib/supabase/supabase-browser';
+import { useLogout } from './use-logout';
 import { useRouter } from '@/i18n/routing';
 import {useTranslations} from 'next-intl';
 import { NAV_ENTRIES, activeEntryHref } from './nav-config';
@@ -15,7 +15,7 @@ const TOUR_TARGETS: Record<string, string> = { budgets: 'nav-budgets', settings:
 export function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
-  const supabase = createClient();
+  const handleLogout = useLogout();
   const t = useTranslations('Navigation');
 
   useEffect(() => {
@@ -44,12 +44,6 @@ export function Sidebar() {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [router]);
-
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    router.push('/login');
-    router.refresh();
-  };
 
   return (
     <div className="flex flex-col w-64 border-r bg-card h-full">

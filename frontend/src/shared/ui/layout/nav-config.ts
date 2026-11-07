@@ -23,6 +23,9 @@ export const NAV_ENTRIES = [
   { icon: Settings, labelKey: 'settings', href: '/settings' },
 ] as const satisfies readonly { icon: LucideIcon; labelKey: string; href: string; shortcut?: string }[];
 
+/** Entrées que la barre du bas range sous « Plus » (les autres y ont leur propre bouton). */
+export const MORE_ENTRY_HREFS: readonly string[] = ['/budgets', '/echeances', '/settings'];
+
 type Route = {
   /** Route sans préfixe de langue. */
   path: string;
