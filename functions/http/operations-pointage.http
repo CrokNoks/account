@@ -1,36 +1,58 @@
-@api = http://localhost:8080
+@api = http://localhost:{{port}}
 @supabase = http://127.0.0.1:54321
-@anon = sb_publishable_ACJWlzQHlZjBrEguHvfOxg_3BJgxAaH
-@courant = 7385d77b-78f2-4709-87de-074f22f0721f
-@period = dc439a24-b481-4aac-af83-f93831ae7f80
 
-# Local stack only (back sur PORT, ex. --var ... ou @api ci-dessus). Alice possède E2E Courant, Bob est un autre utilisateur.
+# Local stack only. Lancement : npx httpyac send --all functions/http/operations-pointage.http --var port=<port du back local> --var anon=<ANON_KEY de `supabase status`>
+# (la clé vient de la ligne de commande, jamais du fichier). Alice et Bob sont des utilisateurs jetables créés par le fichier ;
+# le compte et la période sont créés ici aussi, rien n'est supprimé à la fin (données jetables).
 # Refonte Opérations : états À pointer / Facture à venir / Pointée, filtres reconciled + pending + ids, pointage et dépointage.
-# Toutes les transactions créées ici sont supprimées à la fin du fichier.
 
 {{
   exports.tag = 'pt' + Date.now();
 }}
 
-### Alice token
+### Alice (propriétaire jetable)
 # @name aliceLogin
-POST {{supabase}}/auth/v1/token?grant_type=password
+POST {{supabase}}/auth/v1/signup
 apikey: {{anon}}
 Content-Type: application/json
 
-{"email":"e2e-alice@test.local","password":"Test-1234!"}
+{"email":"pointage-alice-{{$timestamp}}@example.com","password":"Password123!"}
 
-### Bob token
+?? status == 200
+
+### Bob (autre utilisateur connecté, non membre)
 # @name bobLogin
-POST {{supabase}}/auth/v1/token?grant_type=password
+POST {{supabase}}/auth/v1/signup
 apikey: {{anon}}
 Content-Type: application/json
 
-{"email":"e2e-bob@test.local","password":"Test-1234!"}
+{"email":"pointage-bob-{{$timestamp}}@example.com","password":"Password123!"}
+
+?? status == 200
+
+### Compte courant d'Alice
+# @name courantAcc
+POST {{api}}/accounts
+Authorization: Bearer {{aliceLogin.access_token}}
+Content-Type: application/json
+
+{"name":"pointage-{{$timestamp}}","initialBalance":"0"}
+
+?? status == 201
+
+### Période d'octobre 2026 (sans budget)
+# @name periodAcc
+POST {{api}}/{{courantAcc.id}}/periods
+Authorization: Bearer {{aliceLogin.access_token}}
+Content-Type: application/json
+
+{"startDate":"2026-10-01","endDate":"2026-10-31","budgets":[]}
+
+?? status == 201
 
 ### Les 4 combinaisons : CB à pointer (faux, faux)
 # @name cb
-POST {{api}}/{{courant}}/transactions
+POST {{api}}/{{courantAcc.id}}/transactions
 Authorization: Bearer {{aliceLogin.access_token}}
 Content-Type: application/json
 
@@ -42,7 +64,7 @@ Content-Type: application/json
 
 ### Facture à venir (faux, vrai)
 # @name facture
-POST {{api}}/{{courant}}/transactions
+POST {{api}}/{{courantAcc.id}}/transactions
 Authorization: Bearer {{aliceLogin.access_token}}
 Content-Type: application/json
 
@@ -54,7 +76,7 @@ Content-Type: application/json
 
 ### Pointée (vrai, faux)
 # @name pointee
-POST {{api}}/{{courant}}/transactions
+POST {{api}}/{{courantAcc.id}}/transactions
 Authorization: Bearer {{aliceLogin.access_token}}
 Content-Type: application/json
 
@@ -66,7 +88,7 @@ Content-Type: application/json
 
 ### Pending rapprochée (vrai, vrai) : créée avec les deux
 # @name pendingRapprochee
-POST {{api}}/{{courant}}/transactions
+POST {{api}}/{{courantAcc.id}}/transactions
 Authorization: Bearer {{aliceLogin.access_token}}
 Content-Type: application/json
 
@@ -77,25 +99,25 @@ Content-Type: application/json
 ?? js response.parsedBody.pending == true
 
 ### Filtre « À pointer » : seulement la CB
-GET {{api}}/{{courant}}/transactions?search={{tag}}&reconciled=false&pending=false
+GET {{api}}/{{courantAcc.id}}/transactions?search={{tag}}&reconciled=false&pending=false
 Authorization: Bearer {{aliceLogin.access_token}}
 
 ?? status == 200
 ?? js response.parsedBody.meta.total == 1
 ?? body contains "{{tag}} cb"
-?? body not contains "{{tag}} facture"
+?? js !response.body.includes(`{{tag}} facture`)
 
 ### Filtre « Factures à venir » : la facture, pas la pending rapprochée
-GET {{api}}/{{courant}}/transactions?search={{tag}}&reconciled=false&pending=true
+GET {{api}}/{{courantAcc.id}}/transactions?search={{tag}}&reconciled=false&pending=true
 Authorization: Bearer {{aliceLogin.access_token}}
 
 ?? status == 200
 ?? js response.parsedBody.meta.total == 1
 ?? body contains "{{tag}} facture"
-?? body not contains "pendingrapprochee"
+?? js !response.body.includes(`pendingrapprochee`)
 
 ### Filtre « Pointées » (pending non envoyé) : les deux pointées, dont la pending rapprochée
-GET {{api}}/{{courant}}/transactions?search={{tag}}&reconciled=true
+GET {{api}}/{{courantAcc.id}}/transactions?search={{tag}}&reconciled=true
 Authorization: Bearer {{aliceLogin.access_token}}
 
 ?? status == 200
@@ -104,65 +126,84 @@ Authorization: Bearer {{aliceLogin.access_token}}
 ?? body contains "{{tag}} pendingrapprochee"
 
 ### pending=true seul : facture + pending rapprochée
-GET {{api}}/{{courant}}/transactions?search={{tag}}&pending=true
+GET {{api}}/{{courantAcc.id}}/transactions?search={{tag}}&pending=true
 Authorization: Bearer {{aliceLogin.access_token}}
 
 ?? status == 200
 ?? js response.parsedBody.meta.total == 2
 
 ### Sans filtre d'état : les 4
-GET {{api}}/{{courant}}/transactions?search={{tag}}
+GET {{api}}/{{courantAcc.id}}/transactions?search={{tag}}
 Authorization: Bearer {{aliceLogin.access_token}}
 
 ?? status == 200
 ?? js response.parsedBody.meta.total == 4
 
 ### pending=maybe est refusé
-GET {{api}}/{{courant}}/transactions?pending=maybe
+GET {{api}}/{{courantAcc.id}}/transactions?pending=maybe
 Authorization: Bearer {{aliceLogin.access_token}}
 
 ?? status == 400
 
 ### N d'Aujourd'hui = lignes « À pointer » de la période (cardCount des stats)
 # @name stats
-GET {{api}}/{{courant}}/periods/{{period}}/reporting/stats
+GET {{api}}/{{courantAcc.id}}/periods/{{periodAcc.id}}/reporting/stats
 Authorization: Bearer {{aliceLogin.access_token}}
 
 ?? status == 200
 
 ###
-GET {{api}}/{{courant}}/transactions?periodId={{period}}&reconciled=false&pending=false&limit=1
+GET {{api}}/{{courantAcc.id}}/transactions?periodId={{periodAcc.id}}&reconciled=false&pending=false&limit=1
 Authorization: Bearer {{aliceLogin.access_token}}
 
 ?? status == 200
 ?? js response.parsedBody.meta.total == {{stats.cardCount}}
 
 ### Filtre ids : exactement les lignes demandées
-GET {{api}}/{{courant}}/transactions?ids={{cb.id}},{{facture.id}}
+GET {{api}}/{{courantAcc.id}}/transactions?ids={{cb.id}},{{facture.id}}
 Authorization: Bearer {{aliceLogin.access_token}}
 
 ?? status == 200
 ?? js response.parsedBody.meta.total == 2
 
 ### Filtre ids : identifiant invalide refusé
-GET {{api}}/{{courant}}/transactions?ids={{cb.id}},pas-un-uuid
+GET {{api}}/{{courantAcc.id}}/transactions?ids={{cb.id}},pas-un-uuid
 Authorization: Bearer {{aliceLogin.access_token}}
 
 ?? status == 400
 
-### Filtre ids : un autre utilisateur ne reçoit rien de ces identifiants (pas d'accès au compte)
-GET {{api}}/{{courant}}/transactions?ids={{cb.id}}
+### Filtre ids : un autre utilisateur ne reçoit rien de ces identifiants (200 et liste vide : l'accès est filtré par RLS, pas de 403 sur cette route)
+GET {{api}}/{{courantAcc.id}}/transactions?ids={{cb.id}}
 Authorization: Bearer {{bobLogin.access_token}}
 
-?? status == 403
+?? status == 200
+?? js response.parsedBody.meta.total == 0
+?? js !response.body.includes(`{{cb.id}}`)
+
+### Second compte d'Alice
+# @name autreAcc
+POST {{api}}/accounts
+Authorization: Bearer {{aliceLogin.access_token}}
+Content-Type: application/json
+
+{"name":"pointage-autre-{{$timestamp}}","initialBalance":"0"}
+
+?? status == 201
+
+### Filtre ids : les identifiants d'un autre compte (même propriétaire) sont exclus
+GET {{api}}/{{autreAcc.id}}/transactions?ids={{cb.id}},{{facture.id}}
+Authorization: Bearer {{aliceLogin.access_token}}
+
+?? status == 200
+?? js response.parsedBody.meta.total == 0
 
 ### Anonyme : refusé
-GET {{api}}/{{courant}}/transactions?reconciled=false&pending=false
+GET {{api}}/{{courantAcc.id}}/transactions?reconciled=false&pending=false
 
 ?? status == 401
 
 ### Pointer la facture à venir : elle sort de l'attente (resolvePending inchangée)
-PATCH {{api}}/{{courant}}/transactions/{{facture.id}}
+PATCH {{api}}/{{courantAcc.id}}/transactions/{{facture.id}}
 Authorization: Bearer {{aliceLogin.access_token}}
 Content-Type: application/json
 
@@ -173,7 +214,7 @@ Content-Type: application/json
 ?? js response.parsedBody.pending == false
 
 ### Dépointer : elle redevient « À pointer » (pending non restaurée)
-PATCH {{api}}/{{courant}}/transactions/{{facture.id}}
+PATCH {{api}}/{{courantAcc.id}}/transactions/{{facture.id}}
 Authorization: Bearer {{aliceLogin.access_token}}
 Content-Type: application/json
 
@@ -184,7 +225,7 @@ Content-Type: application/json
 ?? js response.parsedBody.pending == false
 
 ### « Remettre en facture à venir » : pending seul, reste non rapprochée
-PATCH {{api}}/{{courant}}/transactions/{{facture.id}}
+PATCH {{api}}/{{courantAcc.id}}/transactions/{{facture.id}}
 Authorization: Bearer {{aliceLogin.access_token}}
 Content-Type: application/json
 
@@ -195,7 +236,7 @@ Content-Type: application/json
 ?? js response.parsedBody.pending == true
 
 ### Pointage en lot de la CB et de la facture
-PATCH {{api}}/{{courant}}/transactions/bulk
+PATCH {{api}}/{{courantAcc.id}}/transactions/bulk
 Authorization: Bearer {{aliceLogin.access_token}}
 Content-Type: application/json
 
@@ -204,32 +245,8 @@ Content-Type: application/json
 ?? status == 200
 
 ###
-GET {{api}}/{{courant}}/transactions?search={{tag}}&reconciled=false&pending=false
+GET {{api}}/{{courantAcc.id}}/transactions?search={{tag}}&reconciled=false&pending=false
 Authorization: Bearer {{aliceLogin.access_token}}
 
 ?? status == 200
 ?? js response.parsedBody.meta.total == 0
-
-### Nettoyage
-DELETE {{api}}/{{courant}}/transactions/{{cb.id}}
-Authorization: Bearer {{aliceLogin.access_token}}
-
-?? status == 204
-
-###
-DELETE {{api}}/{{courant}}/transactions/{{facture.id}}
-Authorization: Bearer {{aliceLogin.access_token}}
-
-?? status == 204
-
-###
-DELETE {{api}}/{{courant}}/transactions/{{pointee.id}}
-Authorization: Bearer {{aliceLogin.access_token}}
-
-?? status == 204
-
-###
-DELETE {{api}}/{{courant}}/transactions/{{pendingRapprochee.id}}
-Authorization: Bearer {{aliceLogin.access_token}}
-
-?? status == 204

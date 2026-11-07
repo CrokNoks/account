@@ -62,7 +62,7 @@ POST {{baseUrl}}/accounts/{{account.id}}/shares
 Authorization: Bearer {{login.access_token}}
 Content-Type: application/json
 
-{ "email": "budgets-sim-w-{{$timestamp}}@example.com", "permission": "write" }
+{ "email": "{{writer.user.email}}", "permission": "write" }
 
 ?? status >= 200
 ?? status < 300
@@ -72,7 +72,7 @@ POST {{baseUrl}}/accounts/{{account.id}}/shares
 Authorization: Bearer {{login.access_token}}
 Content-Type: application/json
 
-{ "email": "budgets-sim-r-{{$timestamp}}@example.com", "permission": "read" }
+{ "email": "{{reader.user.email}}", "permission": "read" }
 
 ?? status >= 200
 ?? status < 300

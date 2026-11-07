@@ -105,4 +105,4 @@ GET {{baseUrl}}/{{account.id}}/transactions?search=illisible
 Authorization: Bearer {{login.access_token}}
 
 ?? status == 200
-?? js response.parsedBody.total == 0
+?? js response.parsedBody.meta.total == 0
