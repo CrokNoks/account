@@ -8,6 +8,7 @@ import {
   todayDateOnly,
 } from '../../shared/domain/date-only';
 import { isRecurringDueOn } from '../../shared/domain/recurring-day';
+import { isRecurringAlreadyPaid } from '../domain/recurring-already-paid';
 
 export interface CalendarEvent {
   id: string;
@@ -16,6 +17,8 @@ export interface CalendarEvent {
   amount: string;
   type: 'actual' | 'recurring';
   categoryId: string | null;
+  /** Facture en attente (toujours faux pour une récurrence projetée). */
+  pending: boolean;
 }
 
 @Injectable()
@@ -48,6 +51,7 @@ export class GetCalendarDataUseCase {
       amount: t.amount.toString(),
       type: 'actual',
       categoryId: t.categoryId,
+      pending: t.pending,
     }));
 
     // 2. Project recurring transactions for future days in the same month
@@ -64,15 +68,10 @@ export class GetCalendarDataUseCase {
         );
 
         for (const match of matches) {
-          // Check if an actual transaction already exists for this recurring transaction today
-          // Simple heuristic: same description and same amount on the same day
-          const alreadyPaid = actualTransactions.some(
-            (at) =>
-              at.date.getTime() === day.getTime() &&
-              at.description
-                .toLowerCase()
-                .includes(match.description.toLowerCase()) &&
-              at.amount === match.amount,
+          const alreadyPaid = isRecurringAlreadyPaid(
+            match,
+            day,
+            actualTransactions,
           );
 
           if (!alreadyPaid) {
@@ -83,6 +82,7 @@ export class GetCalendarDataUseCase {
               amount: match.amount.toString(),
               type: 'recurring',
               categoryId: match.categoryId,
+              pending: false,
             });
           }
         }

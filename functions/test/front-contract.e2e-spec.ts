@@ -33,6 +33,7 @@ describe('Front/back contract (e2e)', () => {
       BigInt(0),
     );
     mocks.recurring.findAllByAccount.mockResolvedValue([]);
+    mocks.transactions.findAllByAccountUnpaginated.mockResolvedValue([]);
   });
 
   describe('account creation', () => {
@@ -123,7 +124,39 @@ describe('Front/back contract (e2e)', () => {
         .set(auth())
         .expect(200);
 
-      expect(res.body).toEqual({ currentBalance: '0', events: [] });
+      expect(res.body).toEqual({
+        currentBalance: '0',
+        events: [],
+        lowPoint: {
+          date: expect.stringMatching(/^\d{4}-\d{2}-\d{2}T/),
+          balance: '0',
+        },
+      });
+    });
+
+    it('returns the lowest end-of-day balance of the horizon', async () => {
+      mocks.transactions.sumAmountByAccountBeforeDate.mockResolvedValue(
+        BigInt(5000),
+      );
+      inSixtyDays();
+      const body = (
+        await http()
+          .get('/00000000-0000-4000-8000-000000000101/reporting/cashflow')
+          .query({ days: '90' })
+          .set(auth())
+          .expect(200)
+      ).body as {
+        events: { date: string; projectedBalance: string }[];
+        lowPoint: { date: string; balance: string };
+      };
+
+      // Que des sorties : le plus bas est la dernière occurrence.
+      const last = body.events[body.events.length - 1];
+      expect(body.events.length).toBeGreaterThan(0);
+      expect(body.lowPoint).toEqual({
+        date: last.date,
+        balance: last.projectedBalance,
+      });
     });
 
     it('converts days to a number (a 10-day horizon hides a 60-day event)', async () => {

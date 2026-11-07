@@ -198,6 +198,7 @@ class CalendarEventDto implements CalendarEvent {
   @ApiProperty() amount: string;
   @ApiProperty({ enum: ['actual', 'recurring'] }) type: 'actual' | 'recurring';
   @ApiProperty({ nullable: true }) categoryId: string | null;
+  @ApiProperty() pending: boolean;
 }
 
 class TagSummaryDto implements TagSummary {

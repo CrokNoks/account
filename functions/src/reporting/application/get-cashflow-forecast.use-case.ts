@@ -1,10 +1,12 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { AccountRepository } from '../../accounts/domain/account.repository.interface';
 import { TransactionRepository } from '../../transactions/domain/transaction.repository.interface';
 import { RecurringTransactionRepository } from '../../recurring/domain/recurring-transaction.repository.interface';
 import { addDaysDateOnly, todayDateOnly } from '../../shared/domain/date-only';
 import { isRecurringDueOn } from '../../shared/domain/recurring-day';
 import { NotFoundError } from '../../shared/domain/errors';
+import { isRecurringAlreadyPaid } from '../domain/recurring-already-paid';
+import { computeLowPoint } from '../domain/cashflow-low-point';
 
 export interface CashflowEvent {
   date: string;
@@ -17,10 +19,14 @@ export interface CashflowEvent {
 export interface CashflowForecastResponse {
   currentBalance: string;
   events: CashflowEvent[];
+  /** Plus bas solde de fin de journée de l'horizon (premier jour en cas d'égalité). */
+  lowPoint: { date: string; balance: string };
 }
 
 @Injectable()
 export class GetCashflowForecastUseCase {
+  private readonly logger = new Logger(GetCashflowForecastUseCase.name);
+
   constructor(
     private readonly accountRepository: AccountRepository,
     private readonly transactionRepository: TransactionRepository,
@@ -48,6 +54,14 @@ export class GetCashflowForecastUseCase {
     const recurringTxs =
       await this.recurringRepository.findAllByAccount(accountId);
 
+    // Transactions d'aujourd'hui : seules à pouvoir « payer » une récurrence (déjà dans le solde du jour)
+    const todayTransactions =
+      await this.transactionRepository.findAllByAccountUnpaginated(accountId, {
+        startDate,
+        endDate: startDate,
+      });
+    let alreadyPaidCount = 0;
+
     // 3. Project events
     const events: CashflowEvent[] = [];
     let runningBalance = currentBalance;
@@ -62,9 +76,15 @@ export class GetCashflowForecastUseCase {
       );
 
       for (const match of matches) {
-        // Optimization: Avoid showing recurring if it already happened today (it would be in current balance)
-        // But for simplicity in a 90-day forecast, we show all future occurrences.
-        // If d=0 (today), we check if a transaction with same description/amount exists today.
+        // Aujourd'hui seulement : une récurrence déjà payée est dans le solde du jour.
+        // Un jour futur n'est jamais écarté (sa transaction n'est pas dans le solde).
+        if (
+          d === 0 &&
+          isRecurringAlreadyPaid(match, currentDay, todayTransactions)
+        ) {
+          alreadyPaidCount++;
+          continue;
+        }
 
         runningBalance += match.amount;
         events.push({
@@ -77,9 +97,27 @@ export class GetCashflowForecastUseCase {
       }
     }
 
+    const lowPoint = computeLowPoint(
+      startDate,
+      currentBalance,
+      events.map((e) => ({ date: e.date, amount: BigInt(e.amount) })),
+    );
+
+    this.logger.log({
+      event: 'cashflow_forecast_built',
+      accountId,
+      days,
+      recurringCount: recurringTxs.length,
+      alreadyPaidCount,
+    });
+
     return {
       currentBalance: currentBalance.toString(),
       events,
+      lowPoint: {
+        date: lowPoint.date,
+        balance: lowPoint.balance.toString(),
+      },
     };
   }
 }

@@ -3,6 +3,7 @@ import { GetCalendarDataUseCase } from './get-calendar-data.use-case';
 import { TransactionRepository } from '../../transactions/domain/transaction.repository.interface';
 import { RecurringTransactionRepository } from '../../recurring/domain/recurring-transaction.repository.interface';
 import { Transaction } from '../../transactions/domain/transaction.entity';
+import * as alreadyPaid from '../domain/recurring-already-paid';
 import { RecurringTransaction } from '../../recurring/domain/recurring-transaction.entity';
 
 describe('GetCalendarDataUseCase', () => {
@@ -150,6 +151,89 @@ describe('GetCalendarDataUseCase', () => {
     expect(result.find((e) => e.type === 'recurring')?.date).toBe(
       '2026-03-20T00:00:00.000Z',
     );
+    jest.useRealTimers();
+  });
+
+  it('marks the pending flag on actual events', async () => {
+    jest.useFakeTimers().setSystemTime(new Date('2026-03-01T09:00:00Z'));
+    transactionRepository.findAllByAccountUnpaginated.mockResolvedValue([
+      mockActualTransactions[0],
+      Transaction.create({
+        accountId,
+        categoryId: null,
+        date: new Date('2026-03-25'),
+        description: 'Facture eau',
+        amount: BigInt(-4000),
+        reconciled: false,
+        pending: true,
+        metadata: {},
+      }),
+    ]);
+
+    const result = await useCase.execute(accountId, year, month);
+
+    expect(
+      result
+        .filter((e) => e.type === 'actual')
+        .map((e) => [e.description, e.pending]),
+    ).toEqual([
+      ['Groceries', false],
+      ['Facture eau', true],
+    ]);
+    jest.useRealTimers();
+  });
+
+  it('discards the recurring of a future pending transaction with same amount and label', async () => {
+    jest.useFakeTimers().setSystemTime(new Date('2026-03-01T09:00:00Z'));
+    transactionRepository.findAllByAccountUnpaginated.mockResolvedValue([
+      Transaction.create({
+        accountId,
+        categoryId: 'cat-2',
+        date: new Date('2026-03-20'),
+        description: 'Internet',
+        amount: BigInt(-3000),
+        reconciled: false,
+        pending: true,
+        metadata: {},
+      }),
+    ]);
+
+    const result = await useCase.execute(accountId, year, month);
+
+    expect(result).toHaveLength(1);
+    expect(result[0]).toMatchObject({ type: 'actual', pending: true });
+    jest.useRealTimers();
+  });
+
+  it('takes the same decision as the cashflow for a recurring paid today', async () => {
+    jest.useFakeTimers().setSystemTime(new Date('2026-03-20T09:00:00Z'));
+    transactionRepository.findAllByAccountUnpaginated.mockResolvedValue([
+      Transaction.create({
+        accountId,
+        categoryId: null,
+        date: new Date('2026-03-20'),
+        description: 'Prélèvement INTERNET',
+        amount: BigInt(-3000),
+        reconciled: false,
+        pending: false,
+        metadata: {},
+      }),
+    ]);
+
+    const result = await useCase.execute(accountId, year, month);
+
+    expect(result.filter((e) => e.type === 'recurring')).toHaveLength(0);
+    jest.useRealTimers();
+  });
+
+  it('calls the shared predicate', async () => {
+    jest.useFakeTimers().setSystemTime(new Date('2026-03-01T09:00:00Z'));
+    const spy = jest.spyOn(alreadyPaid, 'isRecurringAlreadyPaid');
+
+    await useCase.execute(accountId, year, month);
+
+    expect(spy).toHaveBeenCalled();
+    spy.mockRestore();
     jest.useRealTimers();
   });
 });
