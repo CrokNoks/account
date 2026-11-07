@@ -10,7 +10,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { Badge } from '@/components/ui/badge';
-import { formatCurrency } from '@/shared/lib/format';
+import { formatSignedAmount } from '../../lib/signed-amount';
 import { cn } from '@/lib/utils';
 import { useTranslations } from 'next-intl';
 import { CalendarEvent } from '../../model/types';
@@ -51,11 +51,8 @@ export function CalendarDayDetail({
               <div className="grid grid-cols-2 gap-4">
                 <div className="p-4 rounded-xl border bg-muted/10 space-y-1">
                   <span className="text-[10px] max-lg:text-xs font-bold text-muted-foreground uppercase">{t('day_balance')}</span>
-                  <div className={cn(
-                    "text-xl font-black",
-                    dayTotal < BigInt(0) ? "text-red-500" : "text-green-500"
-                  )}>
-                    {formatCurrency(dayTotal.toString())}
+                  <div className={cn("text-xl font-black font-mono tabular-nums", dayTotal > BigInt(0) && "text-primary")}>
+                    {formatSignedAmount(dayTotal)}
                   </div>
                 </div>
                 <div className="p-4 rounded-xl border bg-muted/10 space-y-1">
@@ -92,20 +89,20 @@ export function CalendarDayDetail({
                           <div>
                             <p className="text-sm font-bold leading-none">{event.description}</p>
                             <div className="flex items-center gap-2 mt-1">
-                              <Badge variant="secondary" className="text-[9px] max-lg:text-xs py-0 px-1.5 h-4 font-normal">
+                              <Badge variant="secondary" className="text-xs py-0 px-1.5 h-5 font-normal">
                                 {event.type === 'recurring' ? t('forecast') : t('real')}
                               </Badge>
-                              <span className="text-[10px] max-lg:text-xs text-muted-foreground">
+                              <span className="text-xs text-muted-foreground">
                                 {categories?.find(c => c.id === event.categoryId)?.name || t('no_category')}
                               </span>
                             </div>
                           </div>
                         </div>
                         <span className={cn(
-                          "text-sm font-black tracking-tight",
-                          BigInt(event.amount) < BigInt(0) ? "text-red-500" : "text-green-500"
+                          "text-sm font-black tracking-tight font-mono tabular-nums",
+                          BigInt(event.amount) > BigInt(0) && "text-primary"
                         )}>
-                          {formatCurrency(event.amount)}
+                          {formatSignedAmount(event.amount)}
                         </span>
                       </div>
                     ))

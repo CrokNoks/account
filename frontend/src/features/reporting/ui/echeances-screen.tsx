@@ -1,8 +1,10 @@
 'use client';
 
+import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { useAccountStore } from '@/features/accounts/model/use-account-store';
 import { CashflowForecast } from './cashflow-forecast';
+import { EcheancesUpcomingList } from './echeances-upcoming-list';
 import { FinancialCalendar } from './financial-calendar';
 
 /**
@@ -12,6 +14,8 @@ import { FinancialCalendar } from './financial-calendar';
 export function EcheancesScreen() {
   const t = useTranslations('Reporting.echeances');
   const { activeAccountId } = useAccountStore();
+  // Mois (ou semaine) affiché : partagé entre le calendrier et la liste « À venir en {mois} ».
+  const [currentDate, setCurrentDate] = useState(() => new Date());
 
   return (
     <div className="flex flex-col gap-4 lg:gap-8">
@@ -23,7 +27,14 @@ export function EcheancesScreen() {
       {activeAccountId ? (
         <>
           <CashflowForecast accountId={activeAccountId} />
-          <FinancialCalendar />
+          <div className="flex flex-col gap-4 lg:gap-5 xl:flex-row xl:items-start">
+            <div className="min-w-0 xl:flex-[2]">
+              <FinancialCalendar currentDate={currentDate} onDateChange={setCurrentDate} />
+            </div>
+            <div className="min-w-0 xl:flex-1">
+              <EcheancesUpcomingList currentDate={currentDate} />
+            </div>
+          </div>
         </>
       ) : (
         <p role="status" className="rounded-xl border border-dashed p-6 text-sm text-muted-foreground">

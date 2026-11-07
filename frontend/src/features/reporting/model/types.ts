@@ -90,6 +90,8 @@ export interface CalendarEvent {
   amount: string;
   type: 'actual' | 'recurring';
   categoryId: string | null;
+  /** Facture en attente (transaction `pending`) ; fourni par le back à l'étape suivante du cycle. */
+  pending?: boolean;
 }
 
 export interface Anomaly {

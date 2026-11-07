@@ -113,13 +113,13 @@
       "operations": "Opérations",
       "movements_detail": "Détail des mouvements",
       "no_movement": "Aucun mouvement pour cette journée",
-      "forecast": "Prévision",
+      "forecast": "Prévue",
       "real": "Réel",
       "no_category": "Sans catégorie",
       "forecast_note": "Les prévisions sont basées sur vos opérations récurrentes. Elles disparaissent automatiquement une fois l'opération réelle détectée.",
       "others": "autres",
-      "legend_real": "Opération réelle",
-      "legend_recurring": "Prévision récurrente",
+      "legend_real": "Réel",
+      "legend_recurring": "Prévue",
       "weekdays": {
         "mon": "lun",
         "tue": "mar",
@@ -128,12 +128,26 @@
         "fri": "ven",
         "sat": "sam",
         "sun": "dim"
-      }
+      },
+      "legend_low_point": "Point bas",
+      "legend_label": "Légende",
+      "previous": "Mois précédent",
+      "next": "Mois suivant",
+      "view_label": "Choisir la vue",
+      "load_error": "Impossible de charger le calendrier. Les autres blocs restent utilisables."
     },
     "echeances": {
       "title": "Échéances",
       "desc": "Votre trésorerie et vos échéances à venir, sur un seul écran.",
-      "no_account": "Choisissez un compte pour voir ses échéances."
+      "no_account": "Choisissez un compte pour voir ses échéances.",
+      "list_title": "À venir en {month}",
+      "list_none": "Aucune échéance à venir en {month}.",
+      "list_past_month": "Ce mois est passé : plus rien à venir en {month}.",
+      "list_error": "Impossible de charger les échéances. Les autres blocs restent utilisables.",
+      "manage_recurring": "Gérer les récurrences",
+      "state_planned": "Prévue",
+      "state_pending": "Facture en attente",
+      "state_real": "Réel"
     },
     "category_breakdown_title": "Répartition des dépenses par catégorie",
     "no_data_title": "Aucune donnée",

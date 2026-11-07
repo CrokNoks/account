@@ -113,13 +113,13 @@
       "operations": "Transactions",
       "movements_detail": "Movement details",
       "no_movement": "No movement on this day",
-      "forecast": "Forecast",
+      "forecast": "Planned",
       "real": "Actual",
       "no_category": "No category",
       "forecast_note": "Forecasts are based on your recurring transactions. They disappear automatically once the actual transaction is detected.",
       "others": "more",
-      "legend_real": "Actual transaction",
-      "legend_recurring": "Recurring forecast",
+      "legend_real": "Actual",
+      "legend_recurring": "Planned",
       "weekdays": {
         "mon": "Mon",
         "tue": "Tue",
@@ -128,12 +128,26 @@
         "fri": "Fri",
         "sat": "Sat",
         "sun": "Sun"
-      }
+      },
+      "legend_low_point": "Low point",
+      "legend_label": "Legend",
+      "previous": "Previous",
+      "next": "Next",
+      "view_label": "Choose the view",
+      "load_error": "Could not load the calendar. The other blocks are still usable."
     },
     "echeances": {
       "title": "Due dates",
       "desc": "Your cash flow and upcoming due dates, on a single screen.",
-      "no_account": "Choose an account to see its due dates."
+      "no_account": "Choose an account to see its due dates.",
+      "list_title": "Coming up in {month}",
+      "list_none": "Nothing due in {month}.",
+      "list_past_month": "This month is over: nothing left to come in {month}.",
+      "list_error": "Could not load the due dates. The other blocks are still usable.",
+      "manage_recurring": "Manage recurring transactions",
+      "state_planned": "Planned",
+      "state_pending": "Pending bill",
+      "state_real": "Actual"
     },
     "category_breakdown_title": "Expense breakdown by category",
     "no_data_title": "No data",

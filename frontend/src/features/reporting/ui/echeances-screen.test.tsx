@@ -11,6 +11,7 @@ vi.mock('@/features/accounts/model/use-account-store', () => ({
   useAccountStore: () => ({ activeAccountId: account.id }),
 }));
 vi.mock('./cashflow-forecast', () => ({ CashflowForecast: () => <section aria-label="bloc-courbe" /> }));
+vi.mock('./echeances-upcoming-list', () => ({ EcheancesUpcomingList: () => <section aria-label="bloc-liste" /> }));
 vi.mock('./financial-calendar', () => ({ FinancialCalendar: () => <section aria-label="bloc-calendrier" /> }));
 
 const renderScreen = (locale: 'fr' | 'en' = 'fr') =>
@@ -21,11 +22,12 @@ const renderScreen = (locale: 'fr' | 'en' = 'fr') =>
   );
 
 describe('Écran Échéances', () => {
-  it('met courbe et calendrier sur la même page, sans onglets', () => {
+  it('met courbe, calendrier et liste sur la même page, sans onglets', () => {
     account.id = 'a1';
     renderScreen();
     expect(screen.getByLabelText('bloc-courbe')).toBeTruthy();
     expect(screen.getByLabelText('bloc-calendrier')).toBeTruthy();
+    expect(screen.getByLabelText('bloc-liste')).toBeTruthy();
     expect(screen.queryByRole('tab')).toBeNull();
     expect(screen.getByRole('heading', { name: 'Échéances' })).toBeTruthy();
   });

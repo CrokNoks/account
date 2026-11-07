@@ -1,21 +1,21 @@
 'use client';
 
 import * as React from 'react';
-import { 
-  addMonths, 
-  subMonths, 
-  startOfMonth, 
-  endOfMonth, 
-  startOfWeek, 
-  endOfWeek, 
-  eachDayOfInterval, 
-  isSameDay, 
+import {
+  addMonths,
+  subMonths,
+  startOfMonth,
+  endOfMonth,
+  startOfWeek,
+  endOfWeek,
+  eachDayOfInterval,
+  isSameDay,
+  isSameMonth,
   parseISO,
   addWeeks,
-  subWeeks
+  subWeeks,
 } from 'date-fns';
 import { fr, enUS } from 'date-fns/locale';
-import { Card, CardContent } from '@/components/ui/card';
 import { useAccountStore } from '@/features/accounts/model/use-account-store';
 import { useCalendarData } from '../api/use-calendar-data';
 import { useCategories } from '@/features/categories/api/use-categories';
@@ -25,120 +25,129 @@ import { CalendarGrid } from './calendar/calendar-grid';
 import { CalendarDayDetail } from './calendar/calendar-day-detail';
 import { CalendarEvent } from '../model/types';
 
-export function FinancialCalendar() {
+interface FinancialCalendarProps {
+  /** Date affichée (mois, ou semaine en vue semaine) ; l'écran la partage avec la liste « À venir ». */
+  currentDate: Date;
+  onDateChange: (date: Date) => void;
+  /** Jour du point bas (ISO `yyyy-MM-dd`) à marquer dans la grille, quand il est connu. */
+  lowPointDate?: string | null;
+}
+
+export function FinancialCalendar({ currentDate, onDateChange, lowPointDate = null }: FinancialCalendarProps) {
   const t = useTranslations('Reporting.calendar');
   const localeStr = useLocale();
   const dateLocale = localeStr === 'fr' ? fr : enUS;
   const { activeAccountId } = useAccountStore();
-  
-  const [currentDate, setCurrentDate] = React.useState(new Date());
+
   const [selectedDay, setSelectedDay] = React.useState<Date | null>(null);
   const [view, setView] = React.useState<'month' | 'week'>('month');
-  
-  const year = currentDate.getFullYear();
-  const month = currentDate.getMonth() + 1;
-  
-  const { data: events } = useCalendarData(activeAccountId, year, month);
-  const { data: categories } = useCategories(activeAccountId);
 
   const monthStart = startOfMonth(currentDate);
   const monthEnd = endOfMonth(monthStart);
-  
-  const calendarStart = view === 'month' 
-    ? startOfWeek(monthStart, { weekStartsOn: 1 })
-    : startOfWeek(currentDate, { weekStartsOn: 1 });
-    
-  const calendarEnd = view === 'month'
-    ? endOfWeek(monthEnd, { weekStartsOn: 1 })
-    : endOfWeek(currentDate, { weekStartsOn: 1 });
 
-  const days = eachDayOfInterval({
-    start: calendarStart,
-    end: calendarEnd,
-  });
+  const calendarStart = view === 'month' ? startOfWeek(monthStart, { weekStartsOn: 1 }) : startOfWeek(currentDate, { weekStartsOn: 1 });
+  const calendarEnd = view === 'month' ? endOfWeek(monthEnd, { weekStartsOn: 1 }) : endOfWeek(currentDate, { weekStartsOn: 1 });
 
-  const next = () => {
-    if (view === 'month') setCurrentDate(addMonths(currentDate, 1));
-    else setCurrentDate(addWeeks(currentDate, 1));
-  };
+  const days = eachDayOfInterval({ start: calendarStart, end: calendarEnd });
 
-  const prev = () => {
-    if (view === 'month') setCurrentDate(subMonths(currentDate, 1));
-    else setCurrentDate(subWeeks(currentDate, 1));
-  };
+  // Une semaine à cheval sur deux mois lit les deux ; sinon les deux lectures visent le même mois (une seule requête).
+  const first = view === 'week' ? calendarStart : currentDate;
+  const last = view === 'week' ? calendarEnd : currentDate;
+  const firstQuery = useCalendarData(activeAccountId, first.getFullYear(), first.getMonth() + 1);
+  const lastQuery = useCalendarData(activeAccountId, last.getFullYear(), last.getMonth() + 1);
+  const queries = isSameMonth(first, last) ? [firstQuery] : [firstQuery, lastQuery];
+  const failed = queries.filter((q) => q.isError).length;
 
-  const goToToday = () => setCurrentDate(new Date());
+  const events = React.useMemo(() => {
+    const byId = new Map<string, CalendarEvent>();
+    for (const q of queries) for (const e of q.data ?? []) byId.set(e.id, e);
+    return Array.from(byId.values());
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [firstQuery.data, lastQuery.data, view, currentDate]);
 
-  const getDayEvents = (day: Date) => {
-    return events?.filter((e) => isSameDay(parseISO(e.date), day)) || [];
-  };
+  const { data: categories } = useCategories(activeAccountId);
 
-  const getDayTotal = (dayEvents: CalendarEvent[]) => {
-    return dayEvents.reduce((sum, e) => sum + BigInt(e.amount), BigInt(0));
-  };
+  const next = () => onDateChange(view === 'month' ? addMonths(currentDate, 1) : addWeeks(currentDate, 1));
+  const prev = () => onDateChange(view === 'month' ? subMonths(currentDate, 1) : subWeeks(currentDate, 1));
+  const goToToday = () => onDateChange(new Date());
+
+  const getDayEvents = (day: Date) => events.filter((e) => isSameDay(parseISO(e.date), day));
+  const getDayTotal = (dayEvents: CalendarEvent[]) => dayEvents.reduce((sum, e) => sum + BigInt(e.amount), BigInt(0));
 
   const totals = React.useMemo(() => {
-    if (!events) return { income: BigInt(0), expenses: BigInt(0) };
-    
-    // Only count events that are in the currently displayed days
-    const visibleEvents = events.filter(e => {
+    const visible = events.filter((e) => {
       const date = parseISO(e.date);
-      return days.some(d => isSameDay(d, date));
+      return days.some((d) => isSameDay(d, date));
     });
+    return visible.reduce(
+      (acc, e) => {
+        const amount = BigInt(e.amount);
+        if (amount > 0) acc.income += amount;
+        else acc.expenses += amount;
+        return acc;
+      },
+      { income: BigInt(0), expenses: BigInt(0) },
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [events, view, currentDate]);
 
-    return visibleEvents.reduce((acc, e) => {
-      const amount = BigInt(e.amount);
-      if (amount > 0) acc.income += amount;
-      else acc.expenses += amount;
-      return acc;
-    }, { income: BigInt(0), expenses: BigInt(0) });
-  }, [events, days]);
+  const allFailed = failed === queries.length;
 
   return (
-    <div className="space-y-6">
-      <Card className="shadow-sm overflow-hidden border-2">
-        <CalendarHeader 
-          currentDate={currentDate}
+    <section aria-labelledby="echeances-calendar-title" className="space-y-4 rounded-xl border bg-card p-4 lg:p-5">
+      <CalendarHeader
+        currentDate={currentDate}
+        view={view}
+        setView={setView}
+        onNext={next}
+        onPrev={prev}
+        onToday={goToToday}
+        totals={totals}
+        dateLocale={dateLocale}
+        calendarStart={calendarStart}
+      />
+
+      {failed > 0 && (
+        <p role="alert" className="rounded-lg border border-warn/40 p-3 text-sm text-warn">
+          {t('load_error')}
+        </p>
+      )}
+
+      {!allFailed && (
+        <CalendarGrid
+          days={days}
           view={view}
-          setView={setView}
-          onNext={next}
-          onPrev={prev}
-          onToday={goToToday}
-          totals={totals}
+          monthStart={monthStart}
+          selectedDay={selectedDay}
+          onDayClick={setSelectedDay}
+          getDayEvents={getDayEvents}
+          getDayTotal={getDayTotal}
+          categories={categories}
+          lowPointDate={lowPointDate}
           dateLocale={dateLocale}
-          calendarStart={calendarStart}
         />
-        <CardContent className="p-0">
-          <CalendarGrid 
-            days={days}
-            view={view}
-            monthStart={monthStart}
-            selectedDay={selectedDay}
-            onDayClick={setSelectedDay}
-            getDayEvents={getDayEvents}
-            getDayTotal={getDayTotal}
-            categories={categories}
-          />
-        </CardContent>
-      </Card>
+      )}
 
-      {/* Legend */}
-      <div className="flex items-center gap-6 text-xs text-muted-foreground px-2">
-        <div className="flex items-center gap-2">
-          <div className="w-3 h-3 rounded-sm border bg-card shadow-sm" />
-          <span>{t('legend_real')}</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="w-3 h-3 rounded-sm border border-dashed bg-muted/30" />
-          <span>{t('legend_recurring')}</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="w-2 h-2 rounded-full bg-primary" />
-          <span>{t('today')}</span>
-        </div>
-      </div>
+      <ul aria-label={t('legend_label')} className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-muted-foreground">
+        <li className="flex items-center gap-2">
+          <span aria-hidden className="h-4 w-6 rounded-sm border-2 border-solid border-foreground/60" />
+          {t('legend_real')}
+        </li>
+        <li className="flex items-center gap-2">
+          <span aria-hidden className="h-4 w-6 rounded-sm border-2 border-dashed border-foreground/60" />
+          {t('legend_recurring')}
+        </li>
+        <li className="flex items-center gap-2">
+          <span aria-hidden className="h-4 w-6 rounded-sm border-2 border-primary bg-muted" />
+          {t('today')}
+        </li>
+        <li className="flex items-center gap-2">
+          <span aria-hidden className="h-3 w-3 rounded-full bg-warn" />
+          {t('legend_low_point')}
+        </li>
+      </ul>
 
-      <CalendarDayDetail 
+      <CalendarDayDetail
         selectedDay={selectedDay}
         onClose={() => setSelectedDay(null)}
         dayEvents={selectedDay ? getDayEvents(selectedDay) : []}
@@ -146,6 +155,6 @@ export function FinancialCalendar() {
         dateLocale={dateLocale}
         categories={categories}
       />
-    </div>
+    </section>
   );
 }
