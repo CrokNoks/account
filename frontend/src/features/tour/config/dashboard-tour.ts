@@ -1,7 +1,11 @@
 import { _Translator } from 'next-intl';
 import { Step } from 'react-joyride';
 
-export const DASHBOARD_STEPS = (t: _Translator): Step[] => [
+/**
+ * Étapes de la visite « tableau de bord ». Sur mobile (`desktop = false`), les blocs du bureau sont masqués :
+ * l'étape Budgets pointe « Budgets à surveiller » et l'étape d'ajout pointe le « + » de la barre du bas.
+ */
+export const DASHBOARD_STEPS = (t: _Translator, desktop = true): Step[] => [
   {
     target: 'body',
     content: t('dashboard.welcome'),
@@ -9,12 +13,12 @@ export const DASHBOARD_STEPS = (t: _Translator): Step[] => [
   },
   {
     target: '[data-tour="stats"]',
-    content: t('dashboard.stats'),
+    content: t(desktop ? 'dashboard.stats' : 'dashboard.stats_mobile'),
     placement: 'top',
   },
   {
-    target: '[data-tour="budget-breakdown"]',
-    content: t('dashboard.breakdown'),
+    target: desktop ? '[data-tour="budget-breakdown"]' : '[data-tour="budgets-to-watch"]',
+    content: t(desktop ? 'dashboard.breakdown' : 'dashboard.breakdown_mobile'),
     placement: 'top',
   },
   {
@@ -23,8 +27,8 @@ export const DASHBOARD_STEPS = (t: _Translator): Step[] => [
     placement: 'top',
   },
   {
-    target: '[data-tour="add-transaction"]',
-    content: t('dashboard.add_btn'),
-    placement: 'bottom',
+    target: desktop ? '[data-tour="add-transaction"]' : '[data-tour="nav-add"]',
+    content: t(desktop ? 'dashboard.add_btn' : 'dashboard.add_btn_mobile'),
+    placement: desktop ? 'bottom' : 'top',
   }
 ];

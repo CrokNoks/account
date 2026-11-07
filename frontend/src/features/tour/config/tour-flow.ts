@@ -11,3 +11,19 @@ export function nextIndexOnMissingTarget(tour: TourName, index: number, action: 
   if (WAITING_STEPS[tour]?.includes(index)) return null;
   return index + (action === 'prev' ? -1 : 1);
 }
+
+export type AccountDialogAction = 'open' | 'close' | null;
+
+/**
+ * Ouverture/fermeture du dialogue de création de compte quand on quitte une étape de la visite « compte ».
+ * Bureau : fermé en sortant de l'étape 4. Mobile : fermé dès la sortie de l'étape 3 (solde), sinon il masque
+ * la barre du bas où l'étape « Plus » (4) pointe.
+ */
+export function accountDialogAction(index: number, action: 'next' | 'prev', desktop: boolean): AccountDialogAction {
+  if (index === 1 && action === 'next') return 'open';
+  if (index === 2 && action === 'prev') return 'close';
+  const lastInDialog = desktop ? 4 : 3;
+  if (index === lastInDialog && action === 'next') return 'close';
+  if (index === lastInDialog + 1 && action === 'prev') return 'open';
+  return null;
+}

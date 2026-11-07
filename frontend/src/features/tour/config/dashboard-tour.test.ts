@@ -24,6 +24,17 @@ describe('visite guidée de l\'écran Aujourd\'hui', () => {
     ]);
   });
 
+  it('sur mobile, ne pointe aucun bloc masqué : Budgets à surveiller et le « + » de la barre', () => {
+    const t = ((key: string) => key) as Parameters<typeof DASHBOARD_STEPS>[0];
+    expect(DASHBOARD_STEPS(t, false).map((s) => s.target)).toEqual([
+      'body',
+      '[data-tour="stats"]',
+      '[data-tour="budgets-to-watch"]',
+      '[data-tour="to-handle"]',
+      '[data-tour="nav-add"]',
+    ]);
+  });
+
   it.each([
     ['français', fr],
     ['anglais', en],

@@ -29,6 +29,7 @@ describe('barre du bas (mobile)', () => {
     // Analyses pointe vers /analyses.
     expect(screen.getByRole('link', { name: 'analysis' }).getAttribute('href')).toBe('/analyses');
 
+    expect(plus.getAttribute('data-tour')).toBe('nav-add');
     fireEvent.click(plus);
     expect(setOpen).toHaveBeenCalledWith(true);
   });

@@ -50,7 +50,9 @@ describe('cibles des visites guidées', () => {
 
   for (const [name, steps] of [
     ['dashboard', DASHBOARD_STEPS(t)],
+    ['dashboard (mobile)', DASHBOARD_STEPS(t, false)],
     ['account', ACCOUNT_STEPS(t)],
+    ['account (mobile)', ACCOUNT_STEPS(t, false)],
     ['transactions', TRANSACTION_STEPS(t)],
   ] as const) {
     it(`chaque étape de la visite « ${name} » vise un élément posé dans le code`, () => {

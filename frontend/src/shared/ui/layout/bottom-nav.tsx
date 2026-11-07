@@ -26,6 +26,7 @@ export function BottomNav() {
   const plusButton = (
     <button
       type="button"
+      data-tour="nav-add"
       aria-label={tt('add_transaction')}
       onClick={() => setCreateTransactionDrawerOpen(true)}
       className="flex items-center justify-center shrink-0 h-12 w-12 min-h-11 min-w-11 rounded-full bg-primary text-primary-foreground shadow-md active:scale-95 transition-transform"

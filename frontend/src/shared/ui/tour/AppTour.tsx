@@ -7,14 +7,16 @@ import { useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
 import { DASHBOARD_STEPS } from '@/features/tour/config/dashboard-tour';
 import { ACCOUNT_STEPS } from '@/features/tour/config/account-tour';
-import { nextIndexOnMissingTarget } from '@/features/tour/config/tour-flow';
+import { accountDialogAction, nextIndexOnMissingTarget } from '@/features/tour/config/tour-flow';
 import { tourLocale, tourStyles } from '@/features/tour/config/tour-ui';
+import { useIsDesktop } from '@/shared/lib/use-is-desktop';
 import { TRANSACTION_STEPS } from '@/features/tour/config/transactions-tour';
 
 export function AppTour() {
   const { theme } = useTheme();
   const t = useTranslations('Tour');
   const tc = useTranslations('Common');
+  const desktop = useIsDesktop();
   
   const { 
     activeTour, 
@@ -40,10 +42,20 @@ export function AppTour() {
     };
   }, [activeTour, tourRun, setCreateTransactionDrawerOpen]);
 
+  // Sur mobile, le dialogue de création de compte ne doit jamais rester ouvert à la fin de la visite
+  // « compte » (terminée, passée ou interrompue) : il masquerait la barre du bas.
+  const previousTour = React.useRef(activeTour);
+  React.useEffect(() => {
+    if (previousTour.current === 'account' && activeTour !== 'account' && !desktop) {
+      setCreateAccountDialogOpen(false);
+    }
+    previousTour.current = activeTour;
+  }, [activeTour, desktop, setCreateAccountDialogOpen]);
+
   const getSteps = () => {
     switch (activeTour) {
-      case 'dashboard': return DASHBOARD_STEPS(t);
-      case 'account': return ACCOUNT_STEPS(t);
+      case 'dashboard': return DASHBOARD_STEPS(t, desktop);
+      case 'account': return ACCOUNT_STEPS(t, desktop);
       case 'transactions': return TRANSACTION_STEPS(t);
       default: return [];
     }
@@ -55,36 +67,22 @@ export function AppTour() {
     // Logic to open/close dialogs during tours
     if (activeTour === 'account') {
       if (type === EVENTS.STEP_AFTER) {
-        // After step index 1 (pointing to add-account-btn), open the dialog
-        if (index === 1 && action === ACTIONS.NEXT) {
-          setCreateAccountDialogOpen(true);
-        } 
-        // If going back from step index 2 (inside dialog), close it
-        else if (index === 2 && action === ACTIONS.PREV) {
-          setCreateAccountDialogOpen(false);
-        }
-        // After step index 4 (last field in dialog), close it to point to sidebar
-        else if (index === 4 && action === ACTIONS.NEXT) {
-          setCreateAccountDialogOpen(false);
-        }
-        // If going back from step index 5 (sidebar), reopen dialog
-        else if (index === 5 && action === ACTIONS.PREV) {
-          setCreateAccountDialogOpen(true);
-        }
+        const dialog = accountDialogAction(index, action === ACTIONS.PREV ? 'prev' : 'next', desktop);
+        if (dialog) setCreateAccountDialogOpen(dialog === 'open');
       }
     }
 
     if (([STATUS.FINISHED, STATUS.SKIPPED] as string[]).includes(status)) {
       if (activeTour === 'transactions') setCreateTransactionDrawerOpen(false);
+      if (activeTour === 'account' && !desktop) setCreateAccountDialogOpen(false);
       completeTour(activeTour);
     } else if (([EVENTS.STEP_AFTER, EVENTS.TARGET_NOT_FOUND] as string[]).includes(type)) {
       const nextStepIndex = index + (action === ACTIONS.PREV ? -1 : 1);
       
-      // If we are opening a dialog, add a small delay to let it animate/render
-      const needsDelay = activeTour === 'account' && (
-        (index === 1 && action === ACTIONS.NEXT) || // Opening dialog
-        (index === 5 && action === ACTIONS.PREV)    // Re-opening dialog
-      );
+      // If we are opening a dialog, add a small delay to let it animate/render; on mobile the closing one
+      // too, so the bottom bar is free when the « Plus » step is shown.
+      const dialog = activeTour === 'account' ? accountDialogAction(index, action === ACTIONS.PREV ? 'prev' : 'next', desktop) : null;
+      const needsDelay = dialog === 'open' || (!desktop && dialog === 'close');
 
       if (needsDelay && type !== EVENTS.TARGET_NOT_FOUND) {
         setTimeout(() => {
@@ -97,6 +95,7 @@ export function AppTour() {
           console.warn('Tour target not found, waiting...', data.step.target);
         } else if (skipTo >= getSteps().length) {
           if (activeTour === 'transactions') setCreateTransactionDrawerOpen(false);
+          if (activeTour === 'account' && !desktop) setCreateAccountDialogOpen(false);
           completeTour(activeTour);
         } else {
           setTourStepIndex(Math.max(skipTo, 0));
