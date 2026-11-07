@@ -81,6 +81,8 @@ export interface CashflowEvent {
 export interface CashflowForecastResponse {
   currentBalance: string;
   events: CashflowEvent[];
+  /** Jour 0 de la courbe, donné par le back (fuseau métier) ; le front n'utilise pas la date du navigateur. */
+  startDate: string;
   /** Plus bas solde de fin de journée de l'horizon, calculé par le back (le front ne le recalcule pas). */
   lowPoint: { date: string; balance: string };
 }

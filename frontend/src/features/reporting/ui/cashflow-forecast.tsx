@@ -1,6 +1,6 @@
 'use client';
 
-import { format, parseISO } from 'date-fns';
+import { addDays, format, parseISO } from 'date-fns';
 import { fr, enUS } from 'date-fns/locale';
 import { useLocale, useTranslations } from 'next-intl';
 import { Link } from '@/i18n/routing';
@@ -40,13 +40,12 @@ export function CashflowForecast({ accountId, days = 30, onDaysChange }: Cashflo
     if (!data) return [];
     const byDay = new Map<string, number>();
     const start = data.lowPoint.date;
-    byDay.set(format(new Date(), 'yyyy-MM-dd'), Number(data.currentBalance));
+    const startDay = data.startDate.slice(0, 10);
+    byDay.set(startDay, Number(data.currentBalance));
     for (const e of data.events) byDay.set(e.date.slice(0, 10), Number(e.projectedBalance));
     byDay.set(start.slice(0, 10), byDay.get(start.slice(0, 10)) ?? Number(data.lowPoint.balance));
     const last = data.events.length > 0 ? Number(data.events[data.events.length - 1].projectedBalance) : Number(data.currentBalance);
-    const end = new Date();
-    end.setDate(end.getDate() + days);
-    byDay.set(format(end, 'yyyy-MM-dd'), last);
+    byDay.set(format(addDays(parseISO(startDay), days), 'yyyy-MM-dd'), last);
     return Array.from(byDay.entries())
       .sort(([a], [b]) => a.localeCompare(b))
       .map(([day, balance]) => ({ time: parseISO(day).getTime(), balance }));

@@ -1,3 +1,4 @@
+import { format } from 'date-fns';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { NextIntlClientProvider } from 'next-intl';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -20,7 +21,11 @@ vi.mock('@/i18n/routing', () => ({
 }));
 vi.mock('recharts', async () => {
   const actual = await vi.importActual<typeof import('recharts')>('recharts');
-  return { ...actual, ResponsiveContainer: ({ children }: { children: React.ReactNode }) => <div>{children}</div> };
+  return {
+    ...actual,
+    ResponsiveContainer: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+    AreaChart: ({ data }: { data: { time: number }[] }) => <div data-testid="chart" data-times={JSON.stringify(data.map((p) => p.time))} />,
+  };
 });
 
 const renderCurve = (props: { days?: 30 | 60 | 90; onDaysChange?: (d: 30 | 60 | 90) => void } = {}) =>
@@ -32,6 +37,7 @@ const renderCurve = (props: { days?: 30 | 60 | 90; onDaysChange?: (d: 30 | 60 | 
 
 const withEvents = {
   currentBalance: '105000',
+  startDate: '2026-07-01T00:00:00.000Z',
   events: [{ date: '2026-07-15T00:00:00.000Z', description: 'Gros', amount: '-405000', projectedBalance: '-300000', type: 'recurring' }],
   lowPoint: { date: '2026-07-15T00:00:00.000Z', balance: '-300000' },
 };
@@ -69,7 +75,7 @@ describe('Courbe de trésorerie', () => {
   });
 
   it("sans récurrence, n'écrit pas de « 0 » parasite et renvoie vers les récurrences", () => {
-    state.result = { isLoading: false, data: { currentBalance: '100000', events: [], lowPoint: { date: '2026-04-28T00:00:00.000Z', balance: '100000' } } };
+    state.result = { isLoading: false, data: { currentBalance: '100000', startDate: '2026-04-28T00:00:00.000Z', events: [], lowPoint: { date: '2026-04-28T00:00:00.000Z', balance: '100000' } } };
     const { container } = renderCurve();
     const stray = Array.from(container.querySelectorAll('*')).filter(
       (el) => Array.from(el.childNodes).some((n) => n.nodeType === 3 && n.textContent === '0'),
@@ -77,6 +83,20 @@ describe('Courbe de trésorerie', () => {
     expect(stray).toEqual([]);
     expect(container.textContent).toContain('Aucune récurrence');
     expect(screen.getByRole('link', { name: 'Gérer les récurrences' }).getAttribute('href')).toBe('/recurring');
+  });
+
+  it("borne la courbe par le jour 0 du back, pas par la date du navigateur", () => {
+    // Le navigateur croit être en 2030 : l'axe doit rester sur 2026-07-01 -> 2026-07-31.
+    vi.useFakeTimers().setSystemTime(new Date('2030-01-15T12:00:00Z'));
+    try {
+      renderCurve({ days: 30 });
+      const times: number[] = JSON.parse(screen.getByTestId('chart').getAttribute('data-times')!);
+      const days = times.map((t) => format(new Date(t), 'yyyy-MM-dd'));
+      expect(days[0]).toBe('2026-07-01');
+      expect(days[days.length - 1]).toBe('2026-07-31');
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it('affiche une erreur propre à la courbe', () => {
