@@ -102,7 +102,8 @@ export function CreateTransactionDrawer() {
               <kbd className="font-mono">Tab</kbd>
             </div>
           </div>
-          <Tabs value={mode} onValueChange={(v) => setMode(v as SetStateAction<'standard' | 'transfer'>)} className="w-full">
+          {/* Mobile : le virement se choisit dans « Plus d'options » du formulaire. */}
+          <Tabs value={mode} onValueChange={(v) => setMode(v as SetStateAction<'standard' | 'transfer'>)} className="w-full max-lg:hidden">
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="standard" className="gap-2">
                 <Receipt className="w-4 h-4" /> {t('mode_standard')}
@@ -123,6 +124,7 @@ export function CreateTransactionDrawer() {
             isPending={isPending}
             submitLabel={tc('save')}
             mode={mode}
+            onModeChange={setMode}
             key={`${mode}-${formKey}`}
           />
         </div>

@@ -316,6 +316,7 @@
       "apply": "Apply filters",
       "active_suffix": "(Active)"
     },
+    "more_options": "More options",
     "suggested_category": "Category suggested automatically",
     "form": {
       "description_placeholder_transfer": "Savings transfer, Shared rent...",

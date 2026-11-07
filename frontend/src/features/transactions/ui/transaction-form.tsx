@@ -13,7 +13,8 @@ import { useTranslations } from 'next-intl';
 import { useAccounts } from '@/features/accounts/api/use-accounts';
 import { usePredictCategory } from '../api/use-predict-category';
 import { Sparkles } from 'lucide-react';
-import { toast } from 'sonner';
+import { useIsDesktop } from '@/shared/lib/use-is-desktop';
+import { MoreOptions } from './more-options';
 
 export interface TransactionFormValues {
   date: string;
@@ -33,6 +34,8 @@ interface TransactionFormProps {
   submitLabel: string;
   mode?: 'standard' | 'transfer';
   onAddAnother?: (values: TransactionFormValues) => void;
+  /** Mobile : le virement se choisit dans « Plus d'options » ; absent, aucun choix n'est proposé. */
+  onModeChange?: (mode: 'standard' | 'transfer') => void;
 }
 
 export function TransactionForm({
@@ -43,11 +46,13 @@ export function TransactionForm({
   submitLabel,
   mode = 'standard',
   onAddAnother,
+  onModeChange,
 }: TransactionFormProps) {
   const t = useTranslations('Transactions');
   const tc = useTranslations('Common');
   const { data: accounts } = useAccounts();
   const { mutate: predictCategory } = usePredictCategory();
+  const desktop = useIsDesktop();
 
   const [date, setDate] = useState(initialValues?.date || todayDateOnly());
   const [description, setDescription] = useState(initialValues?.description || '');
@@ -59,26 +64,35 @@ export function TransactionForm({
 
   const predictionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const dateInputRef = useRef<HTMLInputElement>(null);
+  // Catégorie courante lue au retour de la prédiction : un choix fait entre-temps n'est jamais remplacé.
+  const categoryRef = useRef(categoryId);
+  const latestDescriptionRef = useRef(description);
+  const [suggested, setSuggested] = useState(false);
+
+  const chooseCategory = (value: string) => {
+    categoryRef.current = value;
+    setCategoryId(value);
+    setSuggested(false);
+  };
 
   const handleDescriptionChange = (value: string) => {
     setDescription(value);
+    latestDescriptionRef.current = value;
 
     if (predictionTimeoutRef.current) {
       clearTimeout(predictionTimeoutRef.current);
     }
 
-    if (mode === 'standard' && accountId && value.length >= 3 && !categoryId) {
+    if (mode === 'standard' && accountId && value.trim().length >= 3 && !categoryRef.current) {
       predictionTimeoutRef.current = setTimeout(() => {
         predictCategory({ accountId, description: value }, {
           onSuccess: (data) => {
-            if (data.categoryId) {
-              setCategoryId(data.categoryId);
-              toast.info(t('new_transaction_title'), {
-                description: t('suggested_category'),
-                icon: <Sparkles className="w-4 h-4 text-yellow-500" />
-              });
-            }
-          }
+            // Réponse périmée (libellé modifié depuis) ou catégorie déjà choisie : on ne touche à rien.
+            if (!data.categoryId || categoryRef.current || latestDescriptionRef.current !== value) return;
+            categoryRef.current = data.categoryId;
+            setCategoryId(data.categoryId);
+            setSuggested(true);
+          },
         });
       }, 600);
     }
@@ -114,6 +128,46 @@ export function TransactionForm({
   const availableDestinations = accounts?.filter(a => a.id !== accountId) || [];
   const isFormValid = accountId && description && amount && (mode === 'standard' || (mode === 'transfer' && destinationAccountId));
 
+  const tagsField = (
+    <div className="space-y-2 flex flex-col">
+      <label className="text-sm font-medium">{t('filters.tags')}</label>
+      {accountId && (
+        <TagSelector
+          accountId={accountId}
+          selectedTagIds={tagIds}
+          onChange={setTagIds}
+        />
+      )}
+    </div>
+  );
+
+  const pendingField = (
+    <div className="flex items-center gap-2 p-3 rounded-lg border bg-muted/30" data-tour="tx-pending">
+      <Checkbox 
+        id="pending-field" 
+        checked={pending} 
+        onCheckedChange={(checked) => setPending(!!checked)} 
+      />
+      <label htmlFor="pending-field" className="text-sm font-medium cursor-pointer select-none flex-1">
+        {t('fields.pending')}
+      </label>
+      <p className="text-[10px] max-lg:text-xs text-muted-foreground">{t('form.excluded_from_forecast')}</p>
+    </div>
+  );
+
+  const transferField = (
+    <div className="flex items-center gap-2 min-h-11">
+      <Checkbox
+        id="transfer-field"
+        checked={mode === 'transfer'}
+        onCheckedChange={(checked) => onModeChange?.(checked ? 'transfer' : 'standard')}
+      />
+      <label htmlFor="transfer-field" className="text-sm font-medium cursor-pointer select-none flex-1">
+        {t('mode_transfer')}
+      </label>
+    </div>
+  );
+
   return (
     <form onSubmit={handleFormSubmit} onKeyDown={handleKeyDown} className="space-y-6">
       <div className="space-y-2" data-tour="tx-date">
@@ -147,20 +201,17 @@ export function TransactionForm({
               key={accountId}
               accountId={accountId}
               value={categoryId}
-              onChange={setCategoryId}
+              onChange={chooseCategory}
             />
-          </div>
-
-          <div className="space-y-2 flex flex-col">
-            <label className="text-sm font-medium">{t('filters.tags')}</label>
-            {accountId && (
-              <TagSelector 
-                accountId={accountId} 
-                selectedTagIds={tagIds} 
-                onChange={setTagIds} 
-              />
+            {suggested && categoryId && (
+              <p data-testid="suggested-category" className="flex items-center gap-1 text-xs text-muted-foreground">
+                <Sparkles className="w-3 h-3 text-yellow-500" />
+                {t('suggested_category')}
+              </p>
             )}
           </div>
+
+          {desktop && tagsField}
         </>
       )}
 
@@ -203,18 +254,14 @@ export function TransactionForm({
         )}
       </div>
 
-      {mode === 'standard' && (
-        <div className="flex items-center gap-2 p-3 rounded-lg border bg-muted/30" data-tour="tx-pending">
-          <Checkbox 
-            id="pending-field" 
-            checked={pending} 
-            onCheckedChange={(checked) => setPending(!!checked)} 
-          />
-          <label htmlFor="pending-field" className="text-sm font-medium cursor-pointer select-none flex-1">
-            {t('fields.pending')}
-          </label>
-          <p className="text-[10px] max-lg:text-xs text-muted-foreground">{t('form.excluded_from_forecast')}</p>
-        </div>
+      {desktop && mode === 'standard' && pendingField}
+
+      {!desktop && (mode === 'standard' || onModeChange) && (
+        <MoreOptions defaultOpen={mode === 'transfer'}>
+          {mode === 'standard' && tagsField}
+          {mode === 'standard' && pendingField}
+          {onModeChange && transferField}
+        </MoreOptions>
       )}
 
       <div className="flex flex-col gap-3 pt-4">

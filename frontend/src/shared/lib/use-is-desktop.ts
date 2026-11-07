@@ -5,7 +5,11 @@ import { useSyncExternalStore } from 'react';
 /** Même seuil que le point de rupture `lg` de Tailwind (`--breakpoint-lg`, globals.css). */
 const DESKTOP_QUERY = '(min-width: 60rem)';
 
+// Sans matchMedia (tests jsdom, anciens navigateurs) : bureau.
+const hasMatchMedia = () => typeof window !== 'undefined' && typeof window.matchMedia === 'function';
+
 function subscribe(onChange: () => void) {
+  if (!hasMatchMedia()) return () => {};
   const mql = window.matchMedia(DESKTOP_QUERY);
   mql.addEventListener('change', onChange);
   return () => mql.removeEventListener('change', onChange);
@@ -15,7 +19,7 @@ function subscribe(onChange: () => void) {
 export function useIsDesktop(): boolean {
   return useSyncExternalStore(
     subscribe,
-    () => window.matchMedia(DESKTOP_QUERY).matches,
+    () => (hasMatchMedia() ? window.matchMedia(DESKTOP_QUERY).matches : true),
     () => true,
   );
 }

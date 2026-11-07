@@ -10,5 +10,6 @@ export function usePredictCategory() {
       });
       return data as { categoryId: string | null };
     },
+    meta: { skipGlobalErrorToast: true }, // suggestion facultative : un échec reste silencieux
   });
 }
