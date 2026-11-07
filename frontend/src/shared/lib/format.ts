@@ -78,6 +78,17 @@ export function centsToDecimalString(cents: bigint): string {
 }
 
 /**
+ * Integer cents as the text of an input field in the language's decimal separator, no thousands
+ * separator, always 2 decimals (-123456n, "fr" -> "-1234,56"; "en" -> "-1234.56"). Pure string work, no float.
+ * parseAmountToCents reads it back.
+ */
+export function centsToInputString(cents: bigint, locale: string): string {
+  const separator =
+    new Intl.NumberFormat(locale).formatToParts(1.5).find((part) => part.type === 'decimal')?.value ?? '.';
+  return centsToDecimalString(cents).replace('.', separator);
+}
+
+/**
  * True when the input is non-empty but holds no readable amount (so toCents would
  * silently turn it into "0"). Empty input is NOT unreadable: each form decides
  * whether an empty field is required or means 0.

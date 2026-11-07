@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { useQueryClient } from '@tanstack/react-query';
 import { isAxiosError } from 'axios';
 import { toast } from 'sonner';
@@ -41,6 +41,7 @@ const signed = (cents: string) => (BigInt(cents) > BigInt(0) ? `+${formatCurrenc
 export function BudgetsScreen() {
   const t = useTranslations('BudgetsScreen');
   const tc = useTranslations('Common');
+  const locale = useLocale();
   const queryClient = useQueryClient();
   const { activeAccountId, activePeriodId, setActivePeriodId } = useAccountStore();
   const { data: periods } = usePeriods(activeAccountId);
@@ -297,7 +298,7 @@ export function BudgetsScreen() {
                           aria-invalid={!!error}
                           placeholder={tc('amount_placeholder')}
                           disabled={!ready || isPending}
-                          value={displayValue(reference, drafts, id)}
+                          value={displayValue(reference, drafts, id, locale)}
                           onChange={(e) => onEdit(id, e.target.value)}
                           className="h-11 text-right tabular-nums"
                         />

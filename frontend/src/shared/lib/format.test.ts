@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formatCurrency, splitAmount, parseAmountToCents, fromCents, isUnreadableAmount, toAbsCents, toCents, toOptionalCents } from './format';
+import { formatCurrency, splitAmount, parseAmountToCents, fromCents, isUnreadableAmount, toAbsCents, toCents, toOptionalCents, centsToInputString } from './format';
 
 // Intl insère des espaces insécables : on les normalise pour comparer.
 const plain = (s: string) => s.replace(/[  ]/g, ' ');
@@ -151,5 +151,17 @@ describe('splitAmount', () => {
     expect(splitAmount('abc')).toBeNull();
     expect(splitAmount('1e5')).toBeNull();
     expect(splitAmount('')).toBeNull();
+  });
+});
+
+describe('centsToInputString', () => {
+  it.each([
+    [BigInt(320000), 'fr', '3200,00'],
+    [BigInt(320000), 'en', '3200.00'],
+    [BigInt(-18050), 'fr', '-180,50'],
+    [BigInt(5), 'en', '0.05'],
+  ])('%s in %s -> %s, read back to the same cents', (cents, locale, text) => {
+    expect(centsToInputString(cents, locale)).toBe(text);
+    expect(parseAmountToCents(text)).toBe(cents);
   });
 });

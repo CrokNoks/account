@@ -1,4 +1,4 @@
-import { centsToDecimalString, parseAmountToCents } from '@/shared/lib/format';
+import { centsToInputString, parseAmountToCents } from '@/shared/lib/format';
 
 /** Un budget tel que lu par l'écran (centimes, texte). */
 export interface SavedBudget {
@@ -12,6 +12,8 @@ export type Drafts = Record<string, string>;
 export type DraftError = 'unreadable' | 'negative';
 
 const ZERO = BigInt(0);
+
+const abs = (n: bigint): bigint => (n < ZERO ? -n : n);
 
 const savedCents = (reference: SavedBudget[], categoryId: string): bigint => {
   const found = reference.find((b) => b.categoryId === categoryId);
@@ -29,7 +31,10 @@ export function changedDrafts(reference: SavedBudget[], drafts: Drafts): Drafts 
   const changed: Drafts = {};
   for (const [categoryId, text] of Object.entries(drafts)) {
     const cents = draftCents(text);
-    if (cents === null || cents !== savedCents(reference, categoryId)) changed[categoryId] = text;
+    // Le champ montre la valeur absolue (le signe du budget n'a pas d'effet, tous les calculs la prennent) :
+    // la retaper telle quelle n'est pas un changement, le budget négatif enregistré est renvoyé tel quel.
+    if (cents === null || (cents !== savedCents(reference, categoryId) && cents !== abs(savedCents(reference, categoryId))))
+      changed[categoryId] = text;
   }
   return changed;
 }
@@ -64,9 +69,12 @@ export function buildBudgets(reference: SavedBudget[], drafts: Drafts): SavedBud
   return list;
 }
 
-/** Valeur du champ : ce qui est tapé, sinon l'enregistré (vide pour une catégorie sans budget). */
-export function displayValue(reference: SavedBudget[], drafts: Drafts, categoryId: string): string {
+/**
+ * Valeur du champ : ce qui est tapé, sinon l'enregistré en valeur absolue, au format de la langue
+ * (vide pour une catégorie sans budget). Un budget négatif modifié est enregistré en positif.
+ */
+export function displayValue(reference: SavedBudget[], drafts: Drafts, categoryId: string, locale: string): string {
   if (categoryId in drafts) return drafts[categoryId];
   const cents = savedCents(reference, categoryId);
-  return cents === ZERO ? '' : centsToDecimalString(cents);
+  return cents === ZERO ? '' : centsToInputString(abs(cents), locale);
 }

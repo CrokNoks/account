@@ -169,6 +169,20 @@ describe('SimulatePeriodForecastUseCase', () => {
         ],
       ],
       [
+        'negative budget left as read next to a positive one',
+        [
+          ['A', -40000],
+          ['B', 30000],
+        ],
+      ],
+      [
+        'negative budget re-entered as positive',
+        [
+          ['A', 40000],
+          ['B', 30000],
+        ],
+      ],
+      [
         'budget at 0',
         [
           ['A', 0],

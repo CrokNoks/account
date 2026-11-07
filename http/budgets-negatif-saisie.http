@@ -1,0 +1,143 @@
+# Écran Budgets : un budget enregistré en négatif (affiché en valeur absolue) puis modifié, enregistré en positif ; le prévu ne dépend pas du signe.
+# Lancement : npx httpyac send --all http/budgets-negatif-saisie.http --var port=<PORT> --var anon=<ANON_KEY de functions/.env ou `supabase status`>
+# (la clé vient de la ligne de commande, jamais du fichier ; l'utilisateur est jetable, créé par le fichier)
+# Ce que le front envoie : budgets = liste complète (le champ modifié en positif), expectedBudgets = la liste lue (signe d'origine).
+@baseUrl = http://localhost:{{port}}
+@authUrl = http://127.0.0.1:54321/auth/v1
+
+### Utilisateur jetable
+# @name login
+POST {{authUrl}}/signup
+apikey: {{anon}}
+Content-Type: application/json
+
+{ "email": "budgets-neg-{{$timestamp}}@example.com", "password": "Password123!" }
+
+?? status == 200
+
+### Compte : solde de départ 1000,00 €
+# @name account
+POST {{baseUrl}}/accounts
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "name": "budgets-neg-{{$timestamp}}", "initialBalance": "100000" }
+
+?? status == 201
+
+### Catégorie dépense
+# @name dep
+POST {{baseUrl}}/{{account.id}}/categories
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "name": "Loisirs", "color": "#112233", "type": "expense" }
+
+?? status == 201
+
+### Catégorie revenu
+# @name rev
+POST {{baseUrl}}/{{account.id}}/categories
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "name": "Salaire", "color": "#445566", "type": "income" }
+
+?? status == 201
+
+### Période : budget de dépense stocké en négatif (-180,00), revenu 2000,00
+# @name per
+POST {{baseUrl}}/{{account.id}}/periods
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "startDate": "2026-11-01", "endDate": "2026-11-30", "budgets": [
+  { "categoryId": "{{dep.id}}", "amountAllocated": "-18000" },
+  { "categoryId": "{{rev.id}}", "amountAllocated": "200000" }
+] }
+
+?? status == 201
+
+### Dépense réelle -50,00
+POST {{baseUrl}}/{{account.id}}/transactions
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "date": "2026-11-03", "description": "loisirs", "amount": "-5000", "categoryId": "{{dep.id}}" }
+
+?? status == 201
+
+### Le budget est lu en négatif (c'est ce que l'écran reçoit et affiche « 180,00 »)
+GET {{baseUrl}}/{{account.id}}/periods/{{per.id}}/budgets
+Authorization: Bearer {{login.access_token}}
+
+?? status == 200
+?? body contains "-18000"
+
+### Prévu enregistré : 100000 + 200000 - max(5000, |-18000|) = 282000
+# @name stats
+GET {{baseUrl}}/{{account.id}}/periods/{{per.id}}/reporting/stats
+Authorization: Bearer {{login.access_token}}
+
+?? status == 200
+?? body contains "plannedExpenses":"18000"
+?? body contains "forecastBalance":"282000"
+
+### Simulation du budget retapé en positif (180,00) : écart 0, comme le négatif
+POST {{baseUrl}}/{{account.id}}/periods/{{per.id}}/reporting/forecast-simulation
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "budgets": [
+  { "categoryId": "{{dep.id}}", "amountAllocated": "18000" },
+  { "categoryId": "{{rev.id}}", "amountAllocated": "200000" }
+] }
+
+?? status == 200
+?? body contains "forecastBalance":"282000"
+?? body contains "delta":"0"
+
+### Simulation du budget modifié à 200,50 (saisi en positif)
+# @name sim
+POST {{baseUrl}}/{{account.id}}/periods/{{per.id}}/reporting/forecast-simulation
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "budgets": [
+  { "categoryId": "{{dep.id}}", "amountAllocated": "20050" },
+  { "categoryId": "{{rev.id}}", "amountAllocated": "200000" }
+] }
+
+?? status == 200
+?? body contains "forecastBalance":"279950"
+
+### Enregistrement du budget modifié : positif, expectedBudgets = ce que l'écran avait lu (signe d'origine)
+PUT {{baseUrl}}/{{account.id}}/periods/{{per.id}}/budgets
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "budgets": [
+  { "categoryId": "{{dep.id}}", "amountAllocated": "20050" },
+  { "categoryId": "{{rev.id}}", "amountAllocated": "200000" }
+], "expectedBudgets": [
+  { "categoryId": "{{dep.id}}", "amountAllocated": "-18000" },
+  { "categoryId": "{{rev.id}}", "amountAllocated": "200000" }
+] }
+
+?? status == 200
+
+### Relecture : le budget est maintenant positif
+GET {{baseUrl}}/{{account.id}}/periods/{{per.id}}/budgets
+Authorization: Bearer {{login.access_token}}
+
+?? status == 200
+?? body contains "20050"
+?? js response.parsedBody.some(b => b.amountAllocated === "-18000") == false
+
+### Parité : les stats après enregistrement = le prévu simulé, au centime
+GET {{baseUrl}}/{{account.id}}/periods/{{per.id}}/reporting/stats
+Authorization: Bearer {{login.access_token}}
+
+?? status == 200
+?? body contains "forecastBalance":"{{sim.forecastBalance}}"
+?? body contains "plannedExpenses":"20050"

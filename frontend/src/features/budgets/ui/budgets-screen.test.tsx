@@ -106,6 +106,33 @@ describe('BudgetsScreen', () => {
     renderScreen('en');
     expect((screen.getAllByPlaceholderText('0.00')).length).toBeGreaterThan(0);
   });
+  it('les champs affichent le montant dans le format de la langue', () => {
+    renderScreen('fr');
+    expect(field('Loisirs').value).toBe('100,00');
+    expect(field('Salaire').value).toBe('2500,00');
+    cleanup();
+    renderScreen('en');
+    expect(field('Loisirs').value).toBe('100.00');
+    expect(field('Salaire').value).toBe('2500.00');
+  });
+
+  it('un budget enregistré en négatif s\'affiche en positif et se modifie sans erreur', async () => {
+    saved[0] = { id: 'b1', categoryId: 'e1', amountAllocated: '-18000' };
+    try {
+      renderScreen('fr');
+      expect(field('Loisirs').value).toBe('180,00');
+      type('Loisirs', '200,50');
+      expect(screen.queryByTestId('row-error')).toBeNull();
+      await act(async () => {
+        fireEvent.click(screen.getByText('Enregistrer'));
+      });
+      expect(saveMock.mock.calls[0][0].data.budgets[0]).toEqual({ categoryId: 'e1', amountAllocated: '20050' });
+      expect(saveMock.mock.calls[0][0].data.expectedBudgets[0]).toEqual({ categoryId: 'e1', amountAllocated: '-18000' });
+    } finally {
+      saved[0] = { id: 'b1', categoryId: 'e1', amountAllocated: '10000' };
+    }
+  });
+
   it('shows forecast, planned income and total budgeted', () => {
     renderScreen();
     const text = nbsp(document.body.textContent!);
@@ -145,7 +172,7 @@ describe('BudgetsScreen', () => {
   describe('saisie et simulation', () => {
     it('shows the saved amounts in the fields, empty for a category without budget', () => {
       renderScreen();
-      expect(field('Courses').value).toBe('500.00');
+      expect(field('Courses').value).toBe('500,00');
       expect(field('Cadeaux').value).toBe('');
     });
 
@@ -218,7 +245,7 @@ describe('BudgetsScreen', () => {
       renderScreen();
       type('Loisirs', '20');
       fireEvent.click(screen.getByText('Annuler'));
-      expect(field('Loisirs').value).toBe('100.00');
+      expect(field('Loisirs').value).toBe('100,00');
       expect(screen.queryByText('Enregistrer')).toBeNull();
       expect(saveMock).not.toHaveBeenCalled();
     });
@@ -304,7 +331,7 @@ describe('BudgetsScreen', () => {
         fireEvent.click(screen.getByText('Enregistrer'));
       });
       expect(screen.getByTestId('budgets-banner').textContent).toContain('ont changé');
-      expect(field('Loisirs').value).toBe('100.00');
+      expect(field('Loisirs').value).toBe('100,00');
       expect(screen.getByTestId('rejected-input').textContent).toContain('20');
       expect(screen.queryByText('Enregistrer')).toBeNull();
     });

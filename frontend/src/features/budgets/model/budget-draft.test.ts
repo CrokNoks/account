@@ -68,9 +68,45 @@ describe('buildBudgets', () => {
 
 describe('displayValue', () => {
   it('shows the draft text as typed, else the saved amount, empty for no budget', () => {
-    expect(displayValue(reference, {}, 'a')).toBe('400.00');
-    expect(displayValue(reference, {}, 'b')).toBe('-80.00');
-    expect(displayValue(reference, { a: '4' }, 'a')).toBe('4');
-    expect(displayValue(reference, {}, 'zz')).toBe('');
+    expect(displayValue(reference, {}, 'a', 'en')).toBe('400.00');
+    expect(displayValue(reference, { a: '4' }, 'a', 'en')).toBe('4');
+    expect(displayValue(reference, {}, 'zz', 'en')).toBe('');
+  });
+
+  it('writes the amount in the decimal separator of the language', () => {
+    expect(displayValue(reference, {}, 'a', 'fr')).toBe('400,00');
+    expect(displayValue(reference, {}, 'c', 'fr')).toBe('250,00');
+    expect(displayValue(reference, {}, 'a', 'en')).toBe('400.00');
+  });
+
+  it('shows a budget stored as negative by its absolute value', () => {
+    expect(displayValue(reference, {}, 'b', 'fr')).toBe('80,00');
+    expect(displayValue(reference, {}, 'b', 'en')).toBe('80.00');
+  });
+
+  it('the displayed text is read back to the same amount (no change, no error)', () => {
+    for (const locale of ['fr', 'en']) {
+      const drafts = Object.fromEntries(reference.map((b) => [b.categoryId, displayValue(reference, {}, b.categoryId, locale)]));
+      expect(changedDrafts(reference, drafts)).toEqual({});
+      expect(draftErrors(reference, drafts)).toEqual({});
+      expect(buildBudgets(reference, drafts)).toEqual(reference);
+    }
+  });
+});
+
+describe('negative stored budget', () => {
+  it('typing a new amount saves it positive; the other negative budgets stay as read', () => {
+    const two = [...reference, { categoryId: 'd', amountAllocated: '-500' }];
+    expect(draftErrors(two, { b: '95,50' })).toEqual({});
+    expect(buildBudgets(two, { b: '95,50' })).toEqual([
+      { categoryId: 'a', amountAllocated: '40000' },
+      { categoryId: 'b', amountAllocated: '9550' },
+      { categoryId: 'c', amountAllocated: '25000' },
+      { categoryId: 'd', amountAllocated: '-500' },
+    ]);
+  });
+
+  it('a new negative typed amount is still refused', () => {
+    expect(draftErrors(reference, { b: '-95' })).toEqual({ b: 'negative' });
   });
 });
