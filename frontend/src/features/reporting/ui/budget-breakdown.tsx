@@ -1,7 +1,8 @@
 'use client';
 
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
-import { formatCurrency, formatPercent } from "@/shared/lib/format";
+import { formatPercent } from "@/shared/lib/format";
+import { useFormatCurrency } from "@/shared/lib/use-format-currency";
 import { useAccountStore } from "@/features/accounts/model/use-account-store";
 import { useBudgetBreakdown } from "../api/use-budget-breakdown";
 import { overrunAmount } from "../model/current-overruns";
@@ -76,6 +77,7 @@ export function BudgetBreakdown() {
 }
 
 function BudgetGroup({ title, items, isExpense }: { title: string, items: BudgetCategoryBreakdown[], isExpense?: boolean }) {
+  const formatCurrency = useFormatCurrency();
   const t = useTranslations('Reporting');
   const locale = useLocale();
   if (items.length === 0) return (

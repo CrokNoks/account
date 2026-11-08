@@ -1,11 +1,21 @@
-const EUR = new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' });
+const EUR_BY_LOCALE = new Map<string, Intl.NumberFormat>();
+function eurFormat(locale: string): Intl.NumberFormat {
+  let format = EUR_BY_LOCALE.get(locale);
+  if (!format) {
+    format = new Intl.NumberFormat(locale === 'fr' ? 'fr-FR' : locale, { style: 'currency', currency: 'EUR' });
+    EUR_BY_LOCALE.set(locale, format);
+  }
+  return format;
+}
 
 /**
  * Integer cents as a euro amount, without floating point: the cents are cut into a decimal
  * string ("-123456" -> "-1234.56") that Intl formats exactly, so it stays exact beyond 2^53.
+ * The text follows the language ("1 500,00 €" in fr, "€1,500.00" in en), French by default.
  * Reading is unchanged: a string is read like parseInt (leading integer), anything unreadable gives "NaN €".
  */
-export function formatCurrency(amountCents: string | number | bigint): string {
+export function formatCurrency(amountCents: string | number | bigint, locale = 'fr'): string {
+  const EUR = eurFormat(locale);
   let digits: string;
   let negative: boolean;
   if (typeof amountCents === 'bigint') {

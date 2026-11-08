@@ -3,7 +3,7 @@
 import { useTranslations } from 'next-intl';
 import { Card } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
-import { formatCurrency } from '@/shared/lib/format';
+import { useFormatCurrency } from '@/shared/lib/use-format-currency';
 import { useAccountStore } from '@/features/accounts/model/use-account-store';
 import { useReportingStats } from '@/features/reporting/api/use-reporting-stats';
 
@@ -15,6 +15,7 @@ const signClass = (value: string) => (parseInt(value, 10) < 0 ? 'text-red-500' :
  * Sans période : une explication à la place.
  */
 export function OperationsBalances({ hasPeriod }: { hasPeriod: boolean }) {
+  const formatCurrency = useFormatCurrency();
   const t = useTranslations('Transactions.balances');
   const { activeAccountId, activePeriodId } = useAccountStore();
   const { data: stats, isLoading } = useReportingStats(activeAccountId, hasPeriod ? activePeriodId : null);

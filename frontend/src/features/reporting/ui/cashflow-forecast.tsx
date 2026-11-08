@@ -5,7 +5,7 @@ import { fr, enUS } from 'date-fns/locale';
 import { useLocale, useTranslations } from 'next-intl';
 import { Link } from '@/i18n/routing';
 import { cn } from '@/lib/utils';
-import { formatCurrency } from '@/shared/lib/format';
+import { useFormatCurrency } from '@/shared/lib/use-format-currency';
 import { Area, AreaChart, CartesianGrid, ReferenceDot, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { useCashflowForecast } from '../api/use-cashflow-forecast';
 
@@ -27,6 +27,7 @@ const dayOf = (iso: string) => parseISO(iso.slice(0, 10));
  * Le point bas (montant et date) vient du back ; le front ne le recalcule pas.
  */
 export function CashflowForecast({ accountId, days = 30, onDaysChange }: CashflowForecastProps) {
+  const formatCurrency = useFormatCurrency();
   const t = useTranslations('Reporting.cashflow');
   const dateLocale = useLocale() === 'fr' ? fr : enUS;
   const { data, isLoading, isError } = useCashflowForecast(accountId, days);

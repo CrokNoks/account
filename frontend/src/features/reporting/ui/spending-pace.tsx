@@ -1,10 +1,10 @@
 'use client';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { formatCurrency } from '@/shared/lib/format';
+import { useFormatCurrency } from '@/shared/lib/use-format-currency';
 import { useAccountStore } from '@/features/accounts/model/use-account-store';
 import { useSpendingPace } from '../api/use-spending-pace';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { paceChartData, paceTooltipAmount, type PaceChartPoint } from '../model/pace-chart';
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 
@@ -13,6 +13,8 @@ import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YA
  * précédente au même jour. Sans précédente : courbe seule, sans phrase d'écart.
  */
 export function SpendingPace() {
+  const formatCurrency = useFormatCurrency();
+  const locale = useLocale();
   const t = useTranslations('Dashboard');
   const { activeAccountId, activePeriodId } = useAccountStore();
   const { data: pace, isLoading } = useSpendingPace(activeAccountId, activePeriodId);
@@ -52,7 +54,7 @@ export function SpendingPace() {
                 <YAxis hide />
                 <Tooltip
                   formatter={(_value, name, item) => [
-                    paceTooltipAmount(item.payload as PaceChartPoint, name === 'previous' ? 'previous' : 'current'),
+                    paceTooltipAmount(item.payload as PaceChartPoint, name === 'previous' ? 'previous' : 'current', locale),
                     name === 'previous' ? t('pace_previous') : t('pace_current'),
                   ]}
                   labelFormatter={(day) => t('pace_day', { day: String(day) })}

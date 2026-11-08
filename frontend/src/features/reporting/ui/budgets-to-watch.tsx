@@ -1,7 +1,7 @@
 'use client';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { formatCurrency } from '@/shared/lib/format';
+import { useFormatCurrency } from '@/shared/lib/use-format-currency';
 import { useAccountStore } from '@/features/accounts/model/use-account-store';
 import { usePeriods } from '@/features/budgets/api/use-periods';
 import { todayDateOnly } from '@/shared/lib/date-only';
@@ -17,6 +17,7 @@ const abs = (value: string): bigint => (BigInt(value) < BigInt(0) ? -BigInt(valu
  * avec un repère « où l'on devrait en être » (part de période écoulée). Mêmes données que la répartition.
  */
 export function BudgetsToWatch() {
+  const formatCurrency = useFormatCurrency();
   const t = useTranslations('Dashboard');
   const { activeAccountId, activePeriodId } = useAccountStore();
   const { data: breakdown, isLoading } = useBudgetBreakdown(activeAccountId, activePeriodId);

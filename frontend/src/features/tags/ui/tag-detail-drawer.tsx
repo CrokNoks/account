@@ -10,7 +10,8 @@ import {
   SheetHeader, 
   SheetTitle,
 } from "@/components/ui/sheet";
-import { formatCurrency, formatPercent } from '@/shared/lib/format';
+import { formatPercent } from '@/shared/lib/format';
+import { useFormatCurrency } from '@/shared/lib/use-format-currency';
 import { Progress } from '@/components/ui/progress';
 import { format } from 'date-fns';
 import { Receipt, BarChart3, List } from 'lucide-react';
@@ -18,6 +19,7 @@ import { cn } from '@/lib/utils';
 import { useLocale, useTranslations } from 'next-intl';
 
 export function TagDetailDrawer() {
+  const formatCurrency = useFormatCurrency();
   const t = useTranslations('Tags.detail');
   const locale = useLocale();
   const { tagDetailId, setTagDetailId } = useUiStore();

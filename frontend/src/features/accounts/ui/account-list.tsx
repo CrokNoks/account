@@ -5,7 +5,8 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Account } from '../model/types';
 import { useAccounts } from '../api/use-accounts';
 import { useUpdateAccount } from '../api/use-update-account';
-import { formatCurrency, toCents, centsToInputString, isUnreadableAmount } from '@/shared/lib/format';
+import { toCents, centsToInputString, isUnreadableAmount } from '@/shared/lib/format';
+import { useFormatCurrency } from '@/shared/lib/use-format-currency';
 import { Landmark, Pencil, Share2 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { 
@@ -21,6 +22,7 @@ import { ShareAccountDialog } from './share-account-dialog';
 import { AccountForm, AccountFormValues } from './account-form';
 
 export function AccountList() {
+  const formatCurrency = useFormatCurrency();
   const t = useTranslations('Accounts');
   const tc = useTranslations('Common');
   const { data: accounts, isLoading } = useAccounts();

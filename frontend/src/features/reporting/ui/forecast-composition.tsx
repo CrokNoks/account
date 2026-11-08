@@ -1,7 +1,7 @@
 'use client';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { formatCurrency } from '@/shared/lib/format';
+import { useFormatCurrency } from '@/shared/lib/use-format-currency';
 import { useAccountStore } from '@/features/accounts/model/use-account-store';
 import { useReportingStats } from '../api/use-reporting-stats';
 import { compositionView, CompositionRow, CompositionSegment } from '../model/forecast-composition';
@@ -21,6 +21,7 @@ const segmentColor: Record<CompositionSegment['key'], string> = {
  * montants viennent de « stats » (le prévu n'est jamais recalculé).
  */
 export function ForecastComposition() {
+  const formatCurrency = useFormatCurrency();
   const t = useTranslations('Dashboard');
   const { activeAccountId, activePeriodId } = useAccountStore();
   const { data: stats, isLoading } = useReportingStats(activeAccountId, activePeriodId);

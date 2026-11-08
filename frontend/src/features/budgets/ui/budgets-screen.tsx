@@ -17,7 +17,7 @@ import { Button } from '@/components/ui/button';
 import { AmountInput } from '@/components/ui/amount-input';
 import { Card, CardContent } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { formatCurrency } from '@/shared/lib/format';
+import { useFormatCurrency } from '@/shared/lib/use-format-currency';
 import { confirmLeave, registerLeaveGuard } from '@/shared/model/leave-guard';
 import { useForecastSimulation } from '../api/use-forecast-simulation';
 import {
@@ -32,13 +32,14 @@ import { sortBudgetRows, type BudgetRow } from '../model/sort-budget-lines';
 import { ClosedPeriodWarning } from './closed-period-warning';
 
 const NO_BUDGETS: SavedBudget[] = [];
-const signed = (cents: string) => (BigInt(cents) > BigInt(0) ? `+${formatCurrency(cents)}` : formatCurrency(cents));
 
 /**
  * Budgets de la période choisie : saisie des montants avec simulation immédiate du prévu.
  * Rien n'est écrit avant « Enregistrer ». Le calcul du prévu est fait par l'API (pas de formule ici).
  */
 export function BudgetsScreen() {
+  const formatCurrency = useFormatCurrency();
+  const signed = (cents: string) => (BigInt(cents) > BigInt(0) ? `+${formatCurrency(cents)}` : formatCurrency(cents));
   const t = useTranslations('BudgetsScreen');
   const tc = useTranslations('Common');
   const locale = useLocale();

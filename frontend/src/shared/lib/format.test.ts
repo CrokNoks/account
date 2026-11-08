@@ -232,3 +232,19 @@ describe('formatPercent', () => {
     expect(plain(formatPercent(0, 'fr', { signed: true }))).toBe('0 %');
   });
 });
+
+describe('formatCurrency, selon la langue', () => {
+  it('suit la langue demandée, en français par défaut', () => {
+    expect(plain(formatCurrency('150000', 'fr'))).toBe('1 500,00 €');
+    expect(formatCurrency('150000', 'en')).toBe('€1,500.00');
+    expect(formatCurrency('-160805', 'en')).toBe('-€1,608.05');
+    expect(plain(formatCurrency('150000'))).toBe('1 500,00 €');
+  });
+
+  it("reste exact au-delà de 2^53 dans les deux langues, pour string, number et bigint", () => {
+    expect(formatCurrency('9007199254740993', 'en')).toBe('€90,071,992,547,409.93');
+    expect(formatCurrency(BigInt('-9007199254740993'), 'en')).toBe('-€90,071,992,547,409.93');
+    expect(plain(formatCurrency(BigInt('9007199254740993'), 'fr'))).toBe('90 071 992 547 409,93 €');
+    expect(formatCurrency(-4250, 'en')).toBe('-€42.50');
+  });
+});

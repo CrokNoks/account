@@ -4,7 +4,7 @@ import { AlertTriangle, CheckCircle2, CreditCard, ListChecks, TrendingUp } from 
 import { useTranslations } from 'next-intl';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Link } from '@/i18n/routing';
-import { formatCurrency } from '@/shared/lib/format';
+import { useFormatCurrency } from '@/shared/lib/use-format-currency';
 import { useAccountStore } from '@/features/accounts/model/use-account-store';
 import { useAnomalies } from '../api/use-anomalies';
 import { useBudgetBreakdown } from '../api/use-budget-breakdown';
@@ -21,6 +21,7 @@ const rowClass =
  * l'écran concerné ; sinon « tout est à jour ».
  */
 export function ToHandle() {
+  const formatCurrency = useFormatCurrency();
   const t = useTranslations('Dashboard');
   const { activeAccountId, activePeriodId } = useAccountStore();
   const { data: anomalies, isLoading: loadingAnomalies, isError: errorAnomalies } = useAnomalies(activeAccountId, activePeriodId);

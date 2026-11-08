@@ -5,7 +5,7 @@ import { format, type Locale } from 'date-fns';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useTranslations } from 'next-intl';
-import { formatSignedAmount } from '../../lib/signed-amount';
+import { useFormatSignedAmount } from '../../lib/signed-amount';
 
 interface CalendarHeaderProps {
   currentDate: Date;
@@ -36,6 +36,7 @@ export function CalendarHeader({
   dateLocale,
   calendarStart,
 }: CalendarHeaderProps) {
+  const formatSignedAmount = useFormatSignedAmount();
   const t = useTranslations('Reporting.calendar');
   const net = totals.income + totals.expenses;
   return (

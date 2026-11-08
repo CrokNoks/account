@@ -15,7 +15,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from "@/components/ui/button";
 import { CheckCircle2, Circle, Pencil, Trash2, Repeat } from 'lucide-react';
 import { format } from 'date-fns';
-import { formatCurrency } from '@/shared/lib/format';
+import { useFormatCurrency } from '@/shared/lib/use-format-currency';
 import { cn } from "@/lib/utils";
 import { AnomalyBadges } from './anomaly-badges';
 import { OperationStateLabel } from './operation-state-label';
@@ -63,6 +63,7 @@ export function TransactionTable({
   anomalyMarks,
   t
 }: TransactionTableProps) {
+  const formatCurrency = useFormatCurrency();
   return (
     <div className="hidden lg:block border rounded-xl overflow-hidden bg-card shadow-sm">
       <Table>

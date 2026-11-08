@@ -16,7 +16,8 @@ import {
   TableHeader, 
   TableRow 
 } from "@/components/ui/table";
-import { formatCurrency, toCents, centsToInputString, isUnreadableAmount } from '@/shared/lib/format';
+import { toCents, centsToInputString, isUnreadableAmount } from '@/shared/lib/format';
+import { useFormatCurrency } from '@/shared/lib/use-format-currency';
 import { Badge } from '@/components/ui/badge';
 import { Trash2, CalendarDays, Pencil } from 'lucide-react';
 import { Button } from "@/components/ui/button";
@@ -34,6 +35,7 @@ import { toast } from 'sonner';
 import { useLocale, useTranslations } from 'next-intl';
 
 export function RecurringTransactionList() {
+  const formatCurrency = useFormatCurrency();
   const t = useTranslations('Recurring');
   const { activeAccountId } = useAccountStore();
   const { data: transactions, isLoading } = useRecurringTransactions(activeAccountId);

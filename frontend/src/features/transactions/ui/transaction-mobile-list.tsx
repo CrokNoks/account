@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { tintedBadgeStyle } from '@/shared/lib/badge-color';
 import { CheckCircle2, Circle } from 'lucide-react';
 import { format } from 'date-fns';
-import { formatCurrency } from '@/shared/lib/format';
+import { useFormatCurrency } from '@/shared/lib/use-format-currency';
 import { cn } from "@/lib/utils";
 import { Checkbox } from "@/components/ui/checkbox";
 import { AnomalyBadges } from './anomaly-badges';
@@ -47,6 +47,7 @@ export function TransactionMobileList({
   anomalyMarks,
   t
 }: TransactionMobileListProps) {
+  const formatCurrency = useFormatCurrency();
   return (
     <div className="lg:hidden space-y-3">
       {transactions.length === 0 ? (

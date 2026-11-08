@@ -7,7 +7,7 @@ import { useAccountStore } from '@/features/accounts/model/use-account-store';
 import { CategoryType } from '@/features/categories/model/types';
 import { CategorySelector } from '@/features/categories/ui/category-selector';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { formatCurrency } from '@/shared/lib/format';
+import { useFormatCurrency } from '@/shared/lib/use-format-currency';
 import { useEvolution } from '../../api/use-evolution';
 import { usePeriods } from '@/features/budgets/api/use-periods';
 import { useCategoryOverrunsChart } from '../../api/use-overruns';
@@ -38,6 +38,7 @@ function Scrollable({ count, children }: { count: number; children: React.ReactN
 }
 
 export function EvolutionTab() {
+  const formatCurrency = useFormatCurrency();
   const t = useTranslations('Reporting.analyses');
   const te = useTranslations('Reporting.analyses.evolution');
   const locale = useLocale();

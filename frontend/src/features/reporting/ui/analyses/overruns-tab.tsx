@@ -5,13 +5,14 @@ import { useLocale, useTranslations } from 'next-intl';
 import { Link } from '@/i18n/routing';
 import { useAccountStore } from '@/features/accounts/model/use-account-store';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { formatCurrency } from '@/shared/lib/format';
+import { useFormatCurrency } from '@/shared/lib/use-format-currency';
 import { operationsHref } from '@/features/transactions/model/operations-link';
 import { useOverrunsByPeriod } from '../../api/use-overruns';
 import { buildOverrunsGrid } from '../../model/overruns-grid';
 import { shortPeriodLabel } from './period-label';
 
 export function OverrunsTab() {
+  const formatCurrency = useFormatCurrency();
   const t = useTranslations('Reporting.analyses');
   const to = useTranslations('Reporting.analyses.overruns');
   const locale = useLocale();

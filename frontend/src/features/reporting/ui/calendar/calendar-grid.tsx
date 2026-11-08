@@ -6,7 +6,7 @@ import { cn } from '@/lib/utils';
 import { useTranslations } from 'next-intl';
 import { CalendarEvent } from '../../model/types';
 import { Category } from '@/features/categories/model/types';
-import { formatSignedAmount } from '../../lib/signed-amount';
+import { useFormatSignedAmount } from '../../lib/signed-amount';
 
 interface CalendarGridProps {
   days: Date[];
@@ -33,6 +33,7 @@ export function CalendarGrid({
   lowPointDate = null,
   dateLocale,
 }: CalendarGridProps) {
+  const formatSignedAmount = useFormatSignedAmount();
   const t = useTranslations('Reporting.calendar');
   const maxChips = view === 'week' ? 15 : 3;
   return (

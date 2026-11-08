@@ -3,7 +3,7 @@
 import { useCalendarData } from '../api/use-calendar-data';
 import { useAccountStore } from '@/features/accounts/model/use-account-store';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { formatCurrency } from '@/shared/lib/format';
+import { useFormatCurrency } from '@/shared/lib/use-format-currency';
 import { Clock, CalendarDays } from 'lucide-react';
 import { format, isAfter, startOfDay, addDays, parseISO } from 'date-fns';
 import { fr, enUS } from 'date-fns/locale';
@@ -12,6 +12,7 @@ import { cn } from '@/lib/utils';
 import { CalendarEvent } from '../model/types';
 
 export function UpcomingDeadlinesWidget() {
+  const formatCurrency = useFormatCurrency();
   const t = useTranslations('Reporting.deadlines');
   const dateLocale = useLocale() === 'fr' ? fr : enUS;
   const { activeAccountId } = useAccountStore();

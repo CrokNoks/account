@@ -1,7 +1,7 @@
 'use client';
 
 import { Card } from "@/components/ui/card";
-import { formatCurrency } from "@/shared/lib/format";
+import { useFormatCurrency } from "@/shared/lib/use-format-currency";
 import { useAccountStore } from "@/features/accounts/model/use-account-store";
 import { useReportingStats } from "../api/use-reporting-stats";
 import { useLocale, useTranslations } from "next-intl";
@@ -17,6 +17,7 @@ const signClass = (value: string) => (parseInt(value, 10) < 0 ? "text-red-500" :
  * « stats », jamais recalculé ici), le solde en banque et le solde à venir.
  */
 export function BalanceBar() {
+  const formatCurrency = useFormatCurrency();
   const t = useTranslations('Dashboard');
   const { activeAccountId, activePeriodId } = useAccountStore();
   const locale = useLocale();

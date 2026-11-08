@@ -28,7 +28,7 @@ export function paceChartData(points: PacePointInput[]): PaceChartPoint[] {
 }
 
 /** Texte de l'infobulle d'une série, depuis le montant exact (jamais depuis la position tracée). */
-export function paceTooltipAmount(point: PaceChartPoint, series: 'current' | 'previous'): string {
+export function paceTooltipAmount(point: PaceChartPoint, series: 'current' | 'previous', locale = 'fr'): string {
   const cents = series === 'previous' ? point.previousCents : point.currentCents;
-  return cents === null ? '' : formatCurrency(BigInt(cents));
+  return cents === null ? '' : formatCurrency(BigInt(cents), locale);
 }

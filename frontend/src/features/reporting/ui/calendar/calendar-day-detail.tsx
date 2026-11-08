@@ -10,7 +10,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { Badge } from '@/components/ui/badge';
-import { formatSignedAmount } from '../../lib/signed-amount';
+import { useFormatSignedAmount } from '../../lib/signed-amount';
 import { cn } from '@/lib/utils';
 import { useTranslations } from 'next-intl';
 import { CalendarEvent } from '../../model/types';
@@ -33,6 +33,7 @@ export function CalendarDayDetail({
   dateLocale,
   categories
 }: CalendarDayDetailProps) {
+  const formatSignedAmount = useFormatSignedAmount();
   const t = useTranslations('Reporting.calendar');
   return (
     <Sheet open={!!selectedDay} onOpenChange={(open) => !open && onClose()}>

@@ -82,6 +82,6 @@ describe('ComparisonGap', () => {
     expect(text(fr.getByTestId('comparison-gap'))).toContain(`-53,11 %`);
     fr.unmount();
     lang.locale = 'en';
-    expect(text(gap(point('-8560', '-4014', -53.11), true))).toContain('-53.11%');
+    expect(text(gap(point('-8560', '-4014', -53.11), true))).toContain('-€45.46 -53.11%');
   });
 });

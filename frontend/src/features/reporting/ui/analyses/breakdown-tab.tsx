@@ -6,7 +6,7 @@ import { useAccountStore } from '@/features/accounts/model/use-account-store';
 import { usePeriods } from '@/features/budgets/api/use-periods';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { formatCurrency } from '@/shared/lib/format';
+import { useFormatCurrency } from '@/shared/lib/use-format-currency';
 import { usePeriodComparison } from '../../api/use-period-comparison';
 import { defaultComparison, validCompareWith } from '../../model/analysis-periods';
 import { absCents, buildBreakdown } from '../../model/breakdown';
@@ -18,6 +18,7 @@ const NO_COMPARISON = 'none';
 const triggerClass = 'w-[190px] data-[size=default]:h-11 lg:data-[size=default]:h-8 text-sm lg:text-xs font-medium bg-muted/30';
 
 export function BreakdownTab() {
+  const formatCurrency = useFormatCurrency();
   const t = useTranslations('Reporting.analyses');
   const tc = useTranslations('Reporting.comparison');
   const locale = useLocale();

@@ -18,12 +18,13 @@ import { useAccountStore } from '@/features/accounts/model/use-account-store';
 import { usePeriodDraft } from '../api/use-period-draft';
 import { useCreatePeriod } from '../api/use-create-period';
 import { Plus, Calculator } from 'lucide-react';
-import { formatCurrency } from '@/shared/lib/format';
+import { useFormatCurrency } from '@/shared/lib/use-format-currency';
 import { buildBudgets, displayValue, draftErrors, type Drafts, type SavedBudget } from '@/features/budgets/model/budget-draft';
 import { useLocale, useTranslations } from 'next-intl';
 import { toast } from 'sonner';
 
 export function CreatePeriodDialog() {
+  const formatCurrency = useFormatCurrency();
   const { activeAccountId } = useAccountStore();
   const t = useTranslations('Budgets');
   const tc = useTranslations('Common');

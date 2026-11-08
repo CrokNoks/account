@@ -141,6 +141,14 @@ describe('BudgetsScreen', () => {
     expect(text).toContain('700,00 €');
   });
 
+  it("écrit les montants au format de la langue : « €1,234.56 » en anglais, « 1 234,56 € » en français", () => {
+    renderScreen('en');
+    const text = document.body.textContent!;
+    expect(text).toContain('€1,234.56');
+    expect(text).toContain('€2,500.00');
+    expect(text).not.toMatch(/\d,\d\d\s€/);
+  });
+
   it('lists fixed and variable categories in one sorted list, overruns first, without the income', () => {
     renderScreen();
     const rows = within(screen.getByRole('table', { name: 'Dépenses' })).getAllByRole('row').slice(1);

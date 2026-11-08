@@ -12,7 +12,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { useLocale, useTranslations } from 'next-intl';
 import { X } from 'lucide-react';
-import { formatCurrency, toCents } from '@/shared/lib/format';
+import { toCents } from '@/shared/lib/format';
+import { useFormatCurrency } from '@/shared/lib/use-format-currency';
 import { formatDateOnly } from '@/shared/lib/date-only';
 import { ParsedTransaction } from '../../model/import-types';
 import { CategorySelector } from '@/features/categories/ui/category-selector';
@@ -28,6 +29,7 @@ export function ImportValidationStep({
   setParsedData,
   accountId
 }: ImportValidationStepProps) {
+  const formatCurrency = useFormatCurrency();
   const t = useTranslations('Import.validation');
   const locale = useLocale();
   const invalidCount = parsedData.filter((row) => row.invalidReason).length;

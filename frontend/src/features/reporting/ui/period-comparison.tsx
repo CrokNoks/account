@@ -4,7 +4,8 @@ import { ComparisonPoint } from '../model/types';
 import { ArrowUpRight, ArrowDownRight, Minus } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { cn } from '@/lib/utils';
-import { formatCurrency, formatPercent } from '@/shared/lib/format';
+import { formatPercent } from '@/shared/lib/format';
+import { useFormatCurrency } from '@/shared/lib/use-format-currency';
 
 const abs = (value: string): bigint => {
   const n = BigInt(value);
@@ -15,6 +16,7 @@ const abs = (value: string): bigint => {
 // The gap in euros is the same change on the amounts (absolute values, bigint), shown before the percentage.
 // Direction is carried by the arrow and the sign, never by the colour alone.
 export function ComparisonGap({ item, isExpense, isSavings }: { item: ComparisonPoint, isExpense?: boolean, isSavings?: boolean }) {
+  const formatCurrency = useFormatCurrency();
   const t = useTranslations('Reporting.comparison');
   const locale = useLocale();
   const isNew = item.period1Real === '0' && item.period2Real !== '0';
