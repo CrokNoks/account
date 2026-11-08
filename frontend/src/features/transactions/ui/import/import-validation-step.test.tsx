@@ -39,6 +39,19 @@ function renderStep(locale: 'fr' | 'en') {
   );
 }
 
+describe('ImportValidationStep montants', () => {
+  it('écrit les montants en encre avec leur signe : ni vert ni rouge', () => {
+    renderStep('fr');
+    const cell = (text: RegExp) => screen.getByText(text).closest('td')!;
+    const spent = cell(/-12,50/);
+    const received = cell(/\+3,00/);
+    for (const c of [spent, received]) {
+      expect(c.className).toContain('text-foreground');
+      expect(c.className).not.toMatch(/text-(red|green)/);
+    }
+  });
+});
+
 describe('ImportValidationStep dates', () => {
   it('shows the dates in the French format', () => {
     renderStep('fr');

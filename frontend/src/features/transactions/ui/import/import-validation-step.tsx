@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/button";
 import { useLocale, useTranslations } from 'next-intl';
 import { X } from 'lucide-react';
 import { toCents } from '@/shared/lib/format';
-import { useFormatCurrency } from '@/shared/lib/use-format-currency';
+import { usePresentAmount } from '@/features/reporting/lib/signed-amount';
 import { formatDateOnly } from '@/shared/lib/date-only';
 import { ParsedTransaction } from '../../model/import-types';
 import { CategorySelector } from '@/features/categories/ui/category-selector';
@@ -29,7 +29,7 @@ export function ImportValidationStep({
   setParsedData,
   accountId
 }: ImportValidationStepProps) {
-  const formatCurrency = useFormatCurrency();
+  const present = usePresentAmount();
   const t = useTranslations('Import.validation');
   const locale = useLocale();
   const invalidCount = parsedData.filter((row) => row.invalidReason).length;
@@ -59,11 +59,11 @@ export function ImportValidationStep({
                 {row.invalidReason === 'date' && <span className="block text-destructive">{t('unreadable_date')}</span>}
               </TableCell>
               <TableCell className="truncate text-xs" title={row.description}>{row.description}</TableCell>
-              <TableCell className={`text-right font-bold text-xs ${parseFloat(row.amount) < 0 ? 'text-red-500' : 'text-green-500'}`}>
+              <TableCell className={`text-right font-bold text-xs ${row.invalidReason === 'amount' ? '' : present(toCents(row.amount), 'flow').className}`}>
                 {row.invalidReason === 'amount' ? (
                   <span className="text-destructive">{t('unreadable_amount')}</span>
                 ) : (
-                  formatCurrency(toCents(row.amount))
+                  present(toCents(row.amount), 'flow').text
                 )}
               </TableCell>
               <TableCell>

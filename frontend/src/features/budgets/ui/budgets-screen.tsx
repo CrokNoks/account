@@ -227,7 +227,7 @@ export function BudgetsScreen() {
         {withRemaining && (
           <TableCell className="text-right tabular-nums">
             {over > BigInt(0) ? (
-              <span data-testid="over-budget" className="font-semibold text-destructive">
+              <span data-testid="over-budget" className="font-semibold text-warn">
                 {t('over', { amount: formatCurrency(over) })}
               </span>
             ) : (

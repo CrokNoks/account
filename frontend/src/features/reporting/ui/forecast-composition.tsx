@@ -2,6 +2,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useFormatCurrency } from '@/shared/lib/use-format-currency';
+import { usePresentAmount } from '../lib/signed-amount';
 import { useAccountStore } from '@/features/accounts/model/use-account-store';
 import { useReportingStats } from '../api/use-reporting-stats';
 import { compositionView, CompositionRow, CompositionSegment } from '../model/forecast-composition';
@@ -9,7 +10,7 @@ import { useTranslations } from 'next-intl';
 import { cn } from '@/lib/utils';
 
 const segmentColor: Record<CompositionSegment['key'], string> = {
-  forecast: 'bg-emerald-500',
+  forecast: 'bg-primary',
   card: 'bg-amber-500',
   bills: 'bg-sky-500',
   budget: 'bg-slate-400',
@@ -22,6 +23,7 @@ const segmentColor: Record<CompositionSegment['key'], string> = {
  */
 export function ForecastComposition() {
   const formatCurrency = useFormatCurrency();
+  const present = usePresentAmount();
   const t = useTranslations('Dashboard');
   const { activeAccountId, activePeriodId } = useAccountStore();
   const { data: stats, isLoading } = useReportingStats(activeAccountId, activePeriodId);
@@ -75,8 +77,8 @@ export function ForecastComposition() {
                 className={cn('flex items-center justify-between gap-2 max-lg:min-h-12', row.key === 'forecast' && 'border-t pt-1 font-black')}
               >
                 <span>{label(row.key)}</span>
-                <span className={cn('font-bold tabular-nums', row.amount < BigInt(0) && 'text-red-500')}>
-                  {formatCurrency(row.amount)}
+                <span className={cn('font-bold tabular-nums', present(row.amount, 'balance').className)}>
+                  {present(row.amount, 'balance').text}
                 </span>
               </li>
             ))}

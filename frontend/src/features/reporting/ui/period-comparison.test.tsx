@@ -34,10 +34,10 @@ describe('ComparisonGap', () => {
     expect(cell.className).toContain('text-primary');
   });
 
-  it('shows an expense that went up as a red increase', () => {
+  it('shows an expense that went up as an orange increase', () => {
     const cell = gap(point('-3683', '-3685', 0.05), true);
     expect(text(cell)).toBe(`+0,02 € +0,05 %`);
-    expect(cell.className).toContain('text-destructive');
+    expect(cell.className).toContain('text-warn');
   });
 
   it('shows an income that went up as a green increase', () => {
@@ -49,7 +49,7 @@ describe('ComparisonGap', () => {
   it('shows a category absent from the base period as new, red for an expense', () => {
     const cell = gap(point('0', '-16410', 0), true);
     expect(cell.textContent).toBe('new');
-    expect(cell.className).toContain('text-destructive');
+    expect(cell.className).toContain('text-warn');
   });
 
   it('shows an unchanged amount as neutral', () => {
@@ -62,7 +62,7 @@ describe('ComparisonGap', () => {
     const up = gap(point('-1000', '-2000', 100), true, true);
     expect(text(up)).toBe(`+10,00 € +100 %`);
     expect(up.className).toContain('text-muted-foreground');
-    expect(up.className).not.toContain('text-destructive');
+    expect(up.className).not.toContain('text-warn');
     expect(up.className).not.toContain('text-primary');
     expect(up.querySelector('svg')).not.toBeNull();
   });

@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { tintedBadgeStyle } from '@/shared/lib/badge-color';
 import { CheckCircle2, Circle } from 'lucide-react';
 import { format } from 'date-fns';
-import { useFormatCurrency } from '@/shared/lib/use-format-currency';
+import { usePresentAmount } from '@/features/reporting/lib/signed-amount';
 import { cn } from "@/lib/utils";
 import { Checkbox } from "@/components/ui/checkbox";
 import { AnomalyBadges } from './anomaly-badges';
@@ -47,7 +47,7 @@ export function TransactionMobileList({
   anomalyMarks,
   t
 }: TransactionMobileListProps) {
-  const formatCurrency = useFormatCurrency();
+  const present = usePresentAmount();
   return (
     <div className="lg:hidden space-y-3">
       {transactions.length === 0 ? (
@@ -106,9 +106,9 @@ export function TransactionMobileList({
                 <div className="flex flex-col items-end gap-1 shrink-0">
                   <span className={cn(
                     "text-sm font-black tracking-tight",
-                    parseInt(transaction.amount, 10) < 0 ? "text-red-500" : "text-green-500"
+                    present(transaction.amount, 'flow').className
                   )}>
-                    {formatCurrency(transaction.amount)}
+                    {present(transaction.amount, 'flow').text}
                   </span>
                   <OperationStateLabel state={operationState(transaction)} t={t} />
                 </div>

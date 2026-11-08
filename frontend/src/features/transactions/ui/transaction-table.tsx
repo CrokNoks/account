@@ -15,7 +15,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from "@/components/ui/button";
 import { CheckCircle2, Circle, Pencil, Trash2, Repeat } from 'lucide-react';
 import { format } from 'date-fns';
-import { useFormatCurrency } from '@/shared/lib/use-format-currency';
+import { usePresentAmount } from '@/features/reporting/lib/signed-amount';
 import { cn } from "@/lib/utils";
 import { AnomalyBadges } from './anomaly-badges';
 import { OperationStateLabel } from './operation-state-label';
@@ -63,7 +63,7 @@ export function TransactionTable({
   anomalyMarks,
   t
 }: TransactionTableProps) {
-  const formatCurrency = useFormatCurrency();
+  const present = usePresentAmount();
   return (
     <div className="hidden lg:block border rounded-xl overflow-hidden bg-card shadow-sm">
       <Table>
@@ -169,10 +169,10 @@ export function TransactionTable({
                 </TableCell>
                 <TableCell className={cn(
                   "text-right font-black tracking-tight",
-                  parseInt(transaction.amount, 10) < 0 ? "text-red-500" : "text-green-500"
+                  present(transaction.amount, 'flow').className
                 )}>
                   <div className="flex flex-col items-end gap-0.5">
-                    {formatCurrency(transaction.amount)}
+                    {present(transaction.amount, 'flow').text}
                     <OperationStateLabel state={operationState(transaction)} t={t} />
                   </div>
                 </TableCell>

@@ -9,6 +9,7 @@ import { useTranslations } from 'next-intl';
 import { useBudgetBreakdown } from '../api/use-budget-breakdown';
 import { budgetsToWatch } from '../model/budgets-to-watch';
 import { periodProgress } from '../model/period-progress';
+import { budgetBarClass } from '../lib/signed-amount';
 
 const abs = (value: string): bigint => (BigInt(value) < BigInt(0) ? -BigInt(value) : BigInt(value));
 
@@ -53,7 +54,7 @@ export function BudgetsToWatch() {
               <div className="relative h-2 w-full rounded-full bg-secondary">
                 <div
                   data-testid="watch-bar"
-                  className={`h-full rounded-full ${over ? 'bg-red-500' : 'bg-green-500'}`}
+                  className={`h-full rounded-full ${budgetBarClass(over)}`}
                   style={{ width: `${Math.min(percent, 100)}%` }}
                 />
                 {progress && (

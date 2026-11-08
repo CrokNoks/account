@@ -46,10 +46,10 @@ describe('BudgetBreakdown overrun', () => {
     expect(text).not.toContain('120%');
   });
 
-  it('shows a full red bar for an expense spent without any budget', () => {
+  it('shows a full orange bar for an expense spent without any budget', () => {
     render(<BudgetBreakdown />);
     const bar = screen.getAllByTestId('budget-bar')[2]; // Imprévus: 20 spent on 0
-    expect(bar.className).toContain('bg-red-500');
+    expect(bar.className).toContain('bg-warn');
     expect(bar.style.width).toBe('100%');
   });
 
@@ -62,8 +62,8 @@ describe('BudgetBreakdown overrun', () => {
   it('colours an expense bar red only when the budget is exceeded', () => {
     render(<BudgetBreakdown />);
     const bars = screen.getAllByTestId('budget-bar');
-    expect(bars[0].className).toContain('bg-red-500'); // Courses: 600 spent on 500
-    expect(bars[1].className).toContain('bg-green-500'); // Loisirs: 30 spent on 100
+    expect(bars[0].className).toContain('bg-warn'); // Courses: 600 spent on 500
+    expect(bars[1].className).toContain('bg-primary'); // Loisirs: 30 spent on 100
   });
 
   it('shows an income above its budget as beyond budget', () => {
@@ -95,7 +95,7 @@ describe('BudgetBreakdown overrun', () => {
     expect(text).toContain('over_budget_expense(0,01 €)');
     expect(text).toContain('remaining: 90 071 992 547 409,92 €');
     const bars = screen.getAllByTestId('budget-bar');
-    expect(bars[0].className).toContain('bg-red-500'); // 2^53+3 > 2^53+2 : indiscernable en flottant
-    expect(bars[1].className).toContain('bg-green-500'); // égaux : pas rouge
+    expect(bars[0].className).toContain('bg-warn'); // 2^53+3 > 2^53+2 : indiscernable en flottant
+    expect(bars[1].className).toContain('bg-primary'); // égaux : pas orange
   });
 });

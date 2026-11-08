@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/sheet";
 import { formatPercent } from '@/shared/lib/format';
 import { useFormatCurrency } from '@/shared/lib/use-format-currency';
+import { usePresentAmount } from '@/features/reporting/lib/signed-amount';
 import { Progress } from '@/components/ui/progress';
 import { format } from 'date-fns';
 import { Receipt, BarChart3, List } from 'lucide-react';
@@ -20,6 +21,7 @@ import { useLocale, useTranslations } from 'next-intl';
 
 export function TagDetailDrawer() {
   const formatCurrency = useFormatCurrency();
+  const present = usePresentAmount();
   const t = useTranslations('Tags.detail');
   const locale = useLocale();
   const { tagDetailId, setTagDetailId } = useUiStore();
@@ -76,9 +78,9 @@ export function TagDetailDrawer() {
                   </div>
                   <div className={cn(
                     "text-xl font-bold",
-                    BigInt(details.summary.totalAmount) < BigInt(0) ? "text-red-500" : "text-green-500"
+                    present(details.summary.totalAmount, 'balance').className
                   )}>
-                    {formatCurrency(details.summary.totalAmount)}
+                    {present(details.summary.totalAmount, 'balance').text}
                   </div>
                 </div>
                 <div className="p-4 rounded-xl border bg-card shadow-sm space-y-1">
@@ -144,9 +146,9 @@ export function TagDetailDrawer() {
                         </div>
                         <div className={cn(
                           "text-sm font-bold ml-2",
-                          parseInt(tx.amount, 10) < 0 ? "text-red-500" : "text-green-500"
+                          present(tx.amount, 'flow').className
                         )}>
-                          {formatCurrency(tx.amount)}
+                          {present(tx.amount, 'flow').text}
                         </div>
                       </div>
                     ))

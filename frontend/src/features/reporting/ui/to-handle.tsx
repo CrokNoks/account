@@ -51,13 +51,13 @@ export function ToHandle() {
           <p className="text-sm text-muted-foreground">{t('todo_loading')}</p>
         )}
         {isError && (
-          <div role="alert" className="flex items-center gap-2 text-sm font-medium text-red-600 dark:text-red-400">
+          <div role="alert" className="flex items-center gap-2 text-sm font-medium text-warn">
             <AlertTriangle className="w-5 h-5 shrink-0" />
             {t('todo_error')}
           </div>
         )}
         {allGood && (
-          <div className="flex items-center gap-2 text-sm font-medium text-emerald-700 dark:text-emerald-400">
+          <div className="flex items-center gap-2 text-sm font-medium text-foreground">
             <CheckCircle2 className="w-5 h-5" />
             {t('todo_all_good')}
           </div>
@@ -74,7 +74,7 @@ export function ToHandle() {
         )}
         {overruns.map((overrun) => (
           <Link key={overrun.categoryId} href={operationsHref({ categoryId: overrun.categoryId })} className={rowClass}>
-            <span className="flex items-center gap-2 min-w-0 text-red-600 dark:text-red-400">
+            <span className="flex items-center gap-2 min-w-0 text-warn">
               <TrendingUp className="w-4 h-4 shrink-0" />
               {t('todo_overrun', { name: overrun.name, amount: formatCurrency(overrun.amount) })}
             </span>

@@ -63,7 +63,7 @@ export function OverrunsTab() {
                       <span className="sr-only">{to('no_excess')}</span>
                     </>
                   ) : (
-                    <span className="font-semibold text-destructive">{formatCurrency(cell)}</span>
+                    <span className="font-semibold text-warn">{formatCurrency(cell)}</span>
                   )}
                 </TableCell>
               ))}

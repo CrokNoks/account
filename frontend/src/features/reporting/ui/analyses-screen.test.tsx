@@ -157,7 +157,7 @@ describe('Répartition : épargne', () => {
     const gaps = screen.getAllByTestId('comparison-gap');
     const byText = (t: string) => gaps.find((g) => g.textContent!.replace(/[\u00a0\u202f]/g, ' ') === t)!;
     expect(byText('+10,00 € +100 %').className).toContain('text-muted-foreground');
-    expect(byText('+20,00 € +20 %').className).toContain('text-destructive');
+    expect(byText('+20,00 € +20 %').className).toContain('text-warn');
     expect(screen.getByTestId('chart-legend').textContent).toContain('épargne');
   });
 });

@@ -64,7 +64,7 @@ describe('Budgets à surveiller', () => {
     state.breakdown = { income: [], transfers: [], savings: [], expenses: [line('A', '-15000', '10000')] };
     renderIt();
     const bar = screen.getByTestId('watch-bar');
-    expect(bar.className).toContain('bg-red-500');
+    expect(bar.className).toContain('bg-warn');
     expect(bar.style.width).toBe('100%');
   });
 
@@ -78,6 +78,6 @@ describe('Budgets à surveiller', () => {
     state.breakdown = { income: [], transfers: [], savings: [], expenses: [line('A', '-9007199254740995', '9007199254740994')] };
     renderIt();
     expect(screen.getByTestId('watch-row').textContent!.replace(/[\u00a0\u202f]/g, ' ')).toContain('90 071 992 547 409,95 € / 90 071 992 547 409,94 €');
-    expect(screen.getByTestId('watch-bar').className).toContain('bg-red-500');
+    expect(screen.getByTestId('watch-bar').className).toContain('bg-warn');
   });
 });

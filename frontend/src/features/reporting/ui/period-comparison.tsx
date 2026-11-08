@@ -33,7 +33,7 @@ export function ComparisonGap({ item, isExpense, isSavings }: { item: Comparison
       className={cn(
         "text-xs font-bold inline-flex items-center justify-end gap-1",
         // Épargner plus n'est ni bon ni mauvais ici : couleur neutre, le sens reste porté par la flèche et le signe.
-        isNeutral || isSavings ? "text-muted-foreground" : (isGood ? "text-primary" : "text-destructive")
+        isNeutral || isSavings ? "text-muted-foreground" : (isGood ? "text-primary" : "text-warn")
       )}
     >
       {isNeutral ? <Minus className="w-3 h-3" /> : (isUp ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />)}

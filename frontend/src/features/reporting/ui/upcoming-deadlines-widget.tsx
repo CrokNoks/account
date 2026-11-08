@@ -3,7 +3,7 @@
 import { useCalendarData } from '../api/use-calendar-data';
 import { useAccountStore } from '@/features/accounts/model/use-account-store';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { useFormatCurrency } from '@/shared/lib/use-format-currency';
+import { usePresentAmount } from '../lib/signed-amount';
 import { Clock, CalendarDays } from 'lucide-react';
 import { format, isAfter, startOfDay, addDays, parseISO } from 'date-fns';
 import { fr, enUS } from 'date-fns/locale';
@@ -12,7 +12,7 @@ import { cn } from '@/lib/utils';
 import { CalendarEvent } from '../model/types';
 
 export function UpcomingDeadlinesWidget() {
-  const formatCurrency = useFormatCurrency();
+  const present = usePresentAmount();
   const t = useTranslations('Reporting.deadlines');
   const dateLocale = useLocale() === 'fr' ? fr : enUS;
   const { activeAccountId } = useAccountStore();
@@ -76,9 +76,9 @@ export function UpcomingDeadlinesWidget() {
                 </div>
                 <span className={cn(
                   "text-xs max-lg:text-sm font-black tracking-tight shrink-0",
-                  parseInt(event.amount, 10) < 0 ? "text-red-500" : "text-green-500"
+                  present(event.amount, 'flow').className
                 )}>
-                  {formatCurrency(event.amount)}
+                  {present(event.amount, 'flow').text}
                 </span>
               </div>
             ))
@@ -88,8 +88,8 @@ export function UpcomingDeadlinesWidget() {
           <div className="mt-4 border-t pt-3 text-xs max-lg:text-sm">
             <div className="flex items-center justify-between gap-3 font-bold">
               <span className="uppercase tracking-widest text-muted-foreground">{t('total', { count: upcoming.length })}</span>
-              <span className={cn("font-black tracking-tight shrink-0", total < BigInt(0) ? "text-red-500" : "text-green-500")}>
-                {formatCurrency(total)}
+              <span className={cn("font-black tracking-tight shrink-0", present(total, 'flow').className)}>
+                {present(total, 'flow').text}
               </span>
             </div>
             {others > 0 && <p className="mt-1 text-muted-foreground">{t('others', { count: others })}</p>}

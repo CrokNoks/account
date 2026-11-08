@@ -17,7 +17,7 @@ import {
   TableRow 
 } from "@/components/ui/table";
 import { toCents, centsToInputString, isUnreadableAmount } from '@/shared/lib/format';
-import { useFormatCurrency } from '@/shared/lib/use-format-currency';
+import { usePresentAmount } from '@/features/reporting/lib/signed-amount';
 import { Badge } from '@/components/ui/badge';
 import { Trash2, CalendarDays, Pencil } from 'lucide-react';
 import { Button } from "@/components/ui/button";
@@ -35,7 +35,7 @@ import { toast } from 'sonner';
 import { useLocale, useTranslations } from 'next-intl';
 
 export function RecurringTransactionList() {
-  const formatCurrency = useFormatCurrency();
+  const present = usePresentAmount();
   const t = useTranslations('Recurring');
   const { activeAccountId } = useAccountStore();
   const { data: transactions, isLoading } = useRecurringTransactions(activeAccountId);
@@ -85,8 +85,8 @@ export function RecurringTransactionList() {
                       <span className="italic text-xs text-muted-foreground">{t('uncategorized')}</span>
                     )}
                   </TableCell>
-                  <TableCell className={`text-right font-bold ${parseInt(tr.amount, 10) < 0 ? 'text-red-500' : 'text-green-500'}`}>
-                    {formatCurrency(tr.amount)}
+                  <TableCell className={`text-right font-bold ${present(tr.amount, 'flow').className}`}>
+                    {present(tr.amount, 'flow').text}
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">

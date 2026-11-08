@@ -61,15 +61,20 @@ describe('Barre des soldes', () => {
     expect(text(screen.getByTestId('balance-upcoming'))).toContain('3450,00€');
   });
 
-  it('colore le prévu en rouge quand il est négatif, en vert sinon', () => {
+  it('met le prévu négatif en orange avec son « - », sinon en encre (ni vert ni rouge)', () => {
     stats.value = { ...stats.value, forecastBalance: '-103255' };
     renderBar();
-    expect(screen.getByTestId('balance-forecast').querySelector('[data-amount]')!.className).toContain('text-red-500');
+    const negative = screen.getByTestId('balance-forecast').querySelector('[data-amount]')!;
+    expect(negative.className).toContain('text-warn');
+    expect(negative.className).not.toMatch(/text-(red|green)/);
+    expect(text(negative as HTMLElement)).toContain('-1032,55');
 
     stats.value = { ...stats.value, forecastBalance: '5000' };
     document.body.innerHTML = '';
     renderBar();
-    expect(screen.getByTestId('balance-forecast').querySelector('[data-amount]')!.className).toContain('text-green-500');
+    const positive = screen.getByTestId('balance-forecast').querySelector('[data-amount]')!;
+    expect(positive.className).toContain('text-foreground');
+    expect(positive.className).not.toMatch(/text-(red|green)/);
   });
 
   it('garde une taille lisible sur mobile et porte la cible de la visite guidée', () => {

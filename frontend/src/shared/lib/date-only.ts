@@ -27,3 +27,24 @@ export function formatDateOnly(value: string, locale: string): string {
     timeZone: 'UTC',
   }).format(new Date(Date.UTC(Number(year), Number(month) - 1, Number(day))));
 }
+
+/**
+ * Short calendar date in the language ("6 nov." in fr, "Nov 6" in en); the year is added only when
+ * it differs from the current one ("6 nov. 2025"). `now` is injectable so server and tests agree.
+ */
+export function formatShortDate(value: string, locale: string, now: Date = new Date()): string {
+  const match = DATE_ONLY.exec(value);
+  if (!match) return value;
+  const [, year, month, day] = match;
+  return new Intl.DateTimeFormat(locale, {
+    day: 'numeric',
+    month: 'short',
+    ...(Number(year) !== now.getFullYear() ? { year: 'numeric' as const } : {}),
+    timeZone: 'UTC',
+  }).format(new Date(Date.UTC(Number(year), Number(month) - 1, Number(day))));
+}
+
+/** Two short dates joined by an arrow ("25 oct. → 24 nov."). */
+export function formatShortRange(start: string, end: string, locale: string, now: Date = new Date()): string {
+  return `${formatShortDate(start, locale, now)} → ${formatShortDate(end, locale, now)}`;
+}

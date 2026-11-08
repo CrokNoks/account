@@ -154,7 +154,7 @@ export function EvolutionTab() {
                     <TableCell className="py-2 text-sm">{p.name}</TableCell>
                     <TableCell className="py-2 text-right text-sm tabular-nums">{p.realLabel}</TableCell>
                     <TableCell className="py-2 text-right text-sm tabular-nums">{p.budgetLabel}</TableCell>
-                    <TableCell className="py-2 text-right text-sm font-semibold text-destructive" data-testid={p.overrun ? 'overrun-mark' : undefined}>
+                    <TableCell className="py-2 text-right text-sm font-semibold text-warn" data-testid={p.overrun ? 'overrun-mark' : undefined}>
                       {p.overrun ? `▲ ${te('overrun_mark')}` : <span className="font-normal text-muted-foreground">—</span>}
                     </TableCell>
                   </TableRow>

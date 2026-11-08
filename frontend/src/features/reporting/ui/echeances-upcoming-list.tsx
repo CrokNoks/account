@@ -7,11 +7,11 @@ import { Link } from '@/i18n/routing';
 import { useAccountStore } from '@/features/accounts/model/use-account-store';
 import { cn } from '@/lib/utils';
 import { useCalendarData } from '../api/use-calendar-data';
-import { useFormatSignedAmount } from '../lib/signed-amount';
+import { usePresentAmount } from '../lib/signed-amount';
 
 /** Liste des échéances d'aujourd'hui et des jours suivants du mois affiché. */
 export function EcheancesUpcomingList({ currentDate }: { currentDate: Date }) {
-  const formatSignedAmount = useFormatSignedAmount();
+  const present = usePresentAmount();
   const t = useTranslations('Reporting.echeances');
   const dateLocale = useLocale() === 'fr' ? fr : enUS;
   const { activeAccountId } = useAccountStore();
@@ -54,8 +54,8 @@ export function EcheancesUpcomingList({ currentDate }: { currentDate: Date }) {
                   {format(parseISO(e.date), 'd MMM', { locale: dateLocale })} · {stateLabel(e)}
                 </span>
               </span>
-              <span className={cn('whitespace-nowrap font-mono tabular-nums', BigInt(e.amount) > BigInt(0) && 'text-primary')}>
-                {formatSignedAmount(e.amount)}
+              <span className={cn('whitespace-nowrap font-mono tabular-nums', present(e.amount, 'flow').className)}>
+                {present(e.amount, 'flow').text}
               </span>
             </li>
           ))}

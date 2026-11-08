@@ -57,6 +57,19 @@ describe('Liste « À venir en {mois} »', () => {
     expect(screen.getByRole('heading', { name: 'À venir en novembre' })).toBeTruthy();
   });
 
+  it("écrit les montants en encre : le sens se lit au signe, pas à la couleur", () => {
+    state.list = [
+      ev('in', '2026-11-25', 'Salaire', '320000', 'recurring'),
+      ev('out', '2026-11-26', 'Internet', '-4000', 'recurring'),
+    ];
+    renderList(new Date(2026, 10, 15));
+
+    for (const amount of [screen.getByText(/\+3\s?200,00/), screen.getByText(/-40,00/)]) {
+      expect(amount.className).toContain('text-foreground');
+      expect(amount.className).not.toMatch(/text-(red|green|primary)/);
+    }
+  });
+
   it('ouvre /recurring avec « Gérer les récurrences »', () => {
     state.list = [];
     renderList(new Date(2026, 10, 15));

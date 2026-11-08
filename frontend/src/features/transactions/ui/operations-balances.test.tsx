@@ -43,6 +43,18 @@ describe('Soldes de tête des opérations', () => {
     expect(text('balance-to-reconcile')).toContain('2CB');
   });
 
+  it('met un solde négatif en orange (avec son « - ») et les autres en encre, jamais en vert ni en rouge', () => {
+    renderBalances(true);
+
+    const amount = (id: string) => screen.getByTestId(id).querySelector('p.font-black')!.className;
+    expect(amount('balance-bank')).toContain('text-foreground');
+    expect(amount('balance-upcoming')).toContain('text-warn');
+    expect(amount('balance-to-reconcile')).toContain('text-warn');
+    for (const id of ['balance-bank', 'balance-upcoming', 'balance-to-reconcile']) {
+      expect(amount(id)).not.toMatch(/text-(red|green)/);
+    }
+  });
+
   it("explique l'absence de soldes sans période, sans interroger les stats", () => {
     renderBalances(false);
 

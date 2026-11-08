@@ -5,6 +5,7 @@ import { formatPercent } from "@/shared/lib/format";
 import { useFormatCurrency } from "@/shared/lib/use-format-currency";
 import { useAccountStore } from "@/features/accounts/model/use-account-store";
 import { useBudgetBreakdown } from "../api/use-budget-breakdown";
+import { budgetBarClass } from "../lib/signed-amount";
 import { overrunAmount } from "../model/current-overruns";
 import { BudgetCategoryBreakdown } from "../model/types";
 import { useLocale, useTranslations } from "next-intl";
@@ -100,10 +101,8 @@ function BudgetGroup({ title, items, isExpense }: { title: string, items: Budget
           const percentage = unbudgeted ? 100 : Math.min(Math.abs(item.percentage), 100);
 
           // Expense real is negative and budget positive: compare absolute values.
-          // Red only when the budget is exceeded.
-          const variant = isExpense
-            ? (abs(real) > abs(budget) ? "bg-red-500" : "bg-green-500")
-            : (real >= budget ? "bg-green-500" : "bg-yellow-500");
+          // Orange only when an expense or saving budget is exceeded; otherwise the blue accent.
+          const variant = budgetBarClass(!!isExpense && abs(real) > abs(budget));
 
           return (
             <div key={item.categoryId} className="space-y-2">
@@ -125,7 +124,7 @@ function BudgetGroup({ title, items, isExpense }: { title: string, items: Budget
                 {overrun > BigInt(0) ? (
                   <span
                     data-testid="over-budget"
-                    className={isExpense ? "text-red-600 font-bold" : "text-green-600 font-bold"}
+                    className={isExpense ? "text-warn font-bold" : "text-foreground font-bold"}
                   >
                     {t(isExpense ? 'over_budget_expense' : 'over_budget_income', {
                       amount: formatCurrency(overrun),

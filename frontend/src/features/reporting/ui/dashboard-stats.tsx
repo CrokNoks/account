@@ -1,7 +1,7 @@
 'use client';
 
 import { Card } from "@/components/ui/card";
-import { useFormatCurrency } from "@/shared/lib/use-format-currency";
+import { usePresentAmount } from "../lib/signed-amount";
 import { useAccountStore } from "@/features/accounts/model/use-account-store";
 import { useReportingStats } from "../api/use-reporting-stats";
 import { useLocale, useTranslations } from "next-intl";
@@ -10,14 +10,12 @@ import { formatDateOnly, todayDateOnly } from "@/shared/lib/date-only";
 import { periodProgress } from "../model/period-progress";
 import { cn } from "@/lib/utils";
 
-const signClass = (value: string) => (parseInt(value, 10) < 0 ? "text-red-500" : "text-green-500");
-
 /**
  * Barre des soldes de l'écran Aujourd'hui : le prévu de fin de période (chiffre principal, celui de
  * « stats », jamais recalculé ici), le solde en banque et le solde à venir.
  */
 export function BalanceBar() {
-  const formatCurrency = useFormatCurrency();
+  const present = usePresentAmount();
   const t = useTranslations('Dashboard');
   const { activeAccountId, activePeriodId } = useAccountStore();
   const locale = useLocale();
@@ -40,8 +38,8 @@ export function BalanceBar() {
           <p data-testid="forecast-title-mobile" className="lg:hidden text-xs font-bold uppercase tracking-wider text-muted-foreground">
             {endDate ? t('forecast_on', { date: endDate }) : t('forecast_title')}
           </p>
-          <p data-amount className={cn("text-3xl max-lg:text-3xl font-black tracking-tight", signClass(stats.forecastBalance))}>
-            {formatCurrency(stats.forecastBalance)}
+          <p data-amount className={cn("text-3xl max-lg:text-3xl font-black tracking-tight", present(stats.forecastBalance, 'balance').className)}>
+            {present(stats.forecastBalance, 'balance').text}
           </p>
           {progress && (
             <p data-testid="period-day" className="lg:hidden text-sm text-muted-foreground">
@@ -55,16 +53,16 @@ export function BalanceBar() {
             <p className="text-[10px] max-lg:text-xs font-bold uppercase tracking-wider text-muted-foreground">
               {t('bank_title')}
             </p>
-            <p className={cn("text-lg font-black tracking-tight", signClass(stats.realBankBalance))}>
-              {formatCurrency(stats.realBankBalance)}
+            <p className={cn("text-lg font-black tracking-tight", present(stats.realBankBalance, 'balance').className)}>
+              {present(stats.realBankBalance, 'balance').text}
             </p>
           </div>
           <div data-testid="balance-upcoming">
             <p className="text-[10px] max-lg:text-xs font-bold uppercase tracking-wider text-muted-foreground">
               {t('upcoming_title')}
             </p>
-            <p className={cn("text-lg font-black tracking-tight", signClass(stats.upcomingBalance))}>
-              {formatCurrency(stats.upcomingBalance)}
+            <p className={cn("text-lg font-black tracking-tight", present(stats.upcomingBalance, 'balance').className)}>
+              {present(stats.upcomingBalance, 'balance').text}
             </p>
           </div>
         </div>
