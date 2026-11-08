@@ -26,6 +26,18 @@ export function formatCurrency(amountCents: string | number | bigint): string {
   return EUR.format(decimal);
 }
 
+/**
+ * A percentage (12.5 means 12.5 %) in the language's format, at most 2 decimals ("6,68 %" in fr, "6.68%" in en).
+ * `signed` writes the sign of a change ("+26,17 %"), nothing for zero. Display only: the value is already a ratio, not money.
+ */
+export function formatPercent(value: number, locale: string, options: { signed?: boolean } = {}): string {
+  return new Intl.NumberFormat(locale, {
+    style: 'percent',
+    maximumFractionDigits: 2,
+    signDisplay: options.signed ? 'exceptZero' : 'auto',
+  }).format(value / 100);
+}
+
 const CURRENCY_WORDS = /(?<!\p{L})(?:eur|euros?|usd|gbp|chf|cad|jpy|aud)(?!\p{L})/giu;
 
 /**

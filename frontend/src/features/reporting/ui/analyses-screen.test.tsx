@@ -140,8 +140,8 @@ describe('Répartition', () => {
     renderScreen('breakdown');
     expect(state.comparisonArgs.slice(1)).toEqual(['p2', 'p1']);
     expect(screen.getByTestId('breakdown-total').textContent).toMatch(/140,00/);
-    const gaps = screen.getAllByTestId('comparison-gap').map((g) => g.textContent);
-    expect(gaps).toEqual(['+20%', '-50%', 'Nouveau']) // plus gros montant d'abord;
+    const gaps = screen.getAllByTestId('comparison-gap').map((g) => g.textContent!.replace(/[\u00a0\u202f]/g, ' '));
+    expect(gaps).toEqual(['+20,00 € +20 %', '-15,00 € -50 %', 'Nouveau']) // plus gros montant d'abord;
     expect(screen.queryByTestId('breakdown-first-period')).toBeNull();
   });
 });
@@ -155,9 +155,9 @@ describe('Répartition : épargne', () => {
     };
     renderScreen('breakdown');
     const gaps = screen.getAllByTestId('comparison-gap');
-    const byText = (t: string) => gaps.find((g) => g.textContent === t)!;
-    expect(byText('+100%').className).toContain('text-muted-foreground');
-    expect(byText('+20%').className).toContain('text-destructive');
+    const byText = (t: string) => gaps.find((g) => g.textContent!.replace(/[\u00a0\u202f]/g, ' ') === t)!;
+    expect(byText('+10,00 € +100 %').className).toContain('text-muted-foreground');
+    expect(byText('+20,00 € +20 %').className).toContain('text-destructive');
     expect(screen.getByTestId('chart-legend').textContent).toContain('épargne');
   });
 });

@@ -10,15 +10,16 @@ import {
   SheetHeader, 
   SheetTitle,
 } from "@/components/ui/sheet";
-import { formatCurrency } from '@/shared/lib/format';
+import { formatCurrency, formatPercent } from '@/shared/lib/format';
 import { Progress } from '@/components/ui/progress';
 import { format } from 'date-fns';
 import { Receipt, BarChart3, List } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 
 export function TagDetailDrawer() {
   const t = useTranslations('Tags.detail');
+  const locale = useLocale();
   const { tagDetailId, setTagDetailId } = useUiStore();
   const { activeAccountId } = useAccountStore();
   const { data: periods } = usePeriods(activeAccountId);
@@ -110,7 +111,7 @@ export function TagDetailDrawer() {
                         <div className="flex items-center gap-2">
                           <Progress value={cat.percentage} className="h-1.5" />
                           <span className="text-[10px] max-lg:text-xs text-muted-foreground w-8 text-right font-medium">
-                            {cat.percentage}%
+                            {formatPercent(cat.percentage, locale)}
                           </span>
                         </div>
                       </div>

@@ -19,6 +19,7 @@ const breakdown = {
 vi.mock('next-intl', () => ({
   useTranslations: () => (key: string, values?: Record<string, string>) =>
     values ? `${key}(${values.amount})` : key,
+  useLocale: () => 'fr',
 }));
 vi.mock('@/features/accounts/model/use-account-store', () => ({
   useAccountStore: () => ({ activeAccountId: 'a', activePeriodId: 'p' }),
@@ -36,6 +37,13 @@ describe('BudgetBreakdown overrun', () => {
     expect(over).toHaveLength(2); // Courses and Imprévus on the default tab
     expect(nbsp(over[0].textContent!)).toBe('over_budget_expense(100,00 €)');
     expect(screen.getAllByText(/remaining/)[0].textContent).toContain('70,00');
+  });
+
+  it("écrit le pourcentage consommé au format de la langue (« 120 % », pas « 120% »)", () => {
+    render(<BudgetBreakdown />);
+    const text = nbsp(document.body.textContent!);
+    expect(text).toContain('120 %');
+    expect(text).not.toContain('120%');
   });
 
   it('shows a full red bar for an expense spent without any budget', () => {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formatCurrency, splitAmount, parseAmountToCents, isUnreadableAmount, toAbsCents, toCents, toOptionalCents, centsToInputString } from './format';
+import { formatPercent, formatCurrency, splitAmount, parseAmountToCents, isUnreadableAmount, toAbsCents, toCents, toOptionalCents, centsToInputString } from './format';
 
 // Intl insère des espaces insécables : on les normalise pour comparer.
 const plain = (s: string) => s.replace(/[  ]/g, ' ');
@@ -215,5 +215,20 @@ describe('centsToInputString round trip', () => {
   it('keeps two decimals and the language separator, no float artefact', () => {
     expect(centsToInputString(BigInt('320050'), 'fr')).toBe('3200,50');
     expect(centsToInputString(BigInt('9007199254740993'), 'en')).toBe('90071992547409.93');
+  });
+});
+
+describe('formatPercent', () => {
+  it('writes a percentage in the language format, with at most 2 decimals', () => {
+    expect(plain(formatPercent(120, 'fr'))).toBe('120 %');
+    expect(plain(formatPercent(6.68, 'fr'))).toBe('6,68 %');
+    expect(formatPercent(6.68, 'en')).toBe('6.68%');
+    expect(plain(formatPercent(33.3333, 'fr'))).toBe('33,33 %');
+  });
+
+  it('shows the sign of a change when asked, nothing for zero', () => {
+    expect(plain(formatPercent(26.17, 'fr', { signed: true }))).toBe('+26,17 %');
+    expect(plain(formatPercent(-6.68, 'fr', { signed: true }))).toBe('-6,68 %');
+    expect(plain(formatPercent(0, 'fr', { signed: true }))).toBe('0 %');
   });
 });

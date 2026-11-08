@@ -1,12 +1,12 @@
 'use client';
 
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
-import { formatCurrency } from "@/shared/lib/format";
+import { formatCurrency, formatPercent } from "@/shared/lib/format";
 import { useAccountStore } from "@/features/accounts/model/use-account-store";
 import { useBudgetBreakdown } from "../api/use-budget-breakdown";
 import { overrunAmount } from "../model/current-overruns";
 import { BudgetCategoryBreakdown } from "../model/types";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PieChart } from "lucide-react";
 
@@ -77,6 +77,7 @@ export function BudgetBreakdown() {
 
 function BudgetGroup({ title, items, isExpense }: { title: string, items: BudgetCategoryBreakdown[], isExpense?: boolean }) {
   const t = useTranslations('Reporting');
+  const locale = useLocale();
   if (items.length === 0) return (
     <div className="h-32 flex items-center justify-center text-muted-foreground italic bg-muted/5 rounded-xl border border-dashed text-xs">
       {t('no_data_for', { title: title.toLowerCase() })}
@@ -118,7 +119,7 @@ function BudgetGroup({ title, items, isExpense }: { title: string, items: Budget
                  />
               </div>
               <div className="flex justify-between text-[10px] max-lg:text-xs text-muted-foreground uppercase tracking-wider">
-                <span>{item.percentage}%</span>
+                <span>{formatPercent(item.percentage, locale)}</span>
                 {overrun > BigInt(0) ? (
                   <span
                     data-testid="over-budget"
