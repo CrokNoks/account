@@ -141,16 +141,32 @@ describe('BudgetsScreen', () => {
     expect(text).toContain('700,00 €');
   });
 
-  it('lists fixed and variable categories in one sorted list, overruns first', () => {
+  it('lists fixed and variable categories in one sorted list, overruns first, without the income', () => {
     renderScreen();
-    const rows = screen.getAllByRole('row').slice(1);
+    const rows = within(screen.getByRole('table', { name: 'Dépenses' })).getAllByRole('row').slice(1);
     expect(rows.map((r) => within(r).getAllByRole('cell')[0].textContent)).toEqual([
       'Courses',
       'Livret',
       'Loisirs',
       'Cadeaux',
-      'Salaire',
     ]);
+  });
+
+  it('puts the income categories in their own « Revenus » section, under the expenses', () => {
+    renderScreen();
+    const spending = screen.getByRole('table', { name: 'Dépenses' });
+    const income = screen.getByRole('table', { name: 'Revenus' });
+    expect(screen.getByRole('heading', { name: 'Revenus' })).toBeTruthy();
+    expect(within(spending).queryByText('Salaire')).toBeNull();
+    expect(within(income).getByText('Salaire')).toBeTruthy();
+    // sous les dépenses dans la page
+    expect(spending.compareDocumentPosition(income) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    const row = nbsp(within(income).getAllByRole('row')[1].textContent!);
+    expect(row).toContain('2 600,00 €');
+    expect(row).not.toMatch(/restant|Reste/);
+    expect(within(income).queryByText(/restants/)).toBeNull();
+    // la saisie du revenu prévu reste possible
+    expect(field('Salaire').value).toBe('2500,00');
   });
 
   it('shows the overrun amount of an overspent line, same figure as the Today block', () => {
@@ -158,11 +174,10 @@ describe('BudgetsScreen', () => {
     expect(nbsp(screen.getByTestId('over-budget').textContent!)).toContain('100,00 €');
   });
 
-  it('shows what is left on a line within budget, and 0 for an income above its budget', () => {
+  it('shows what is left on a line within budget', () => {
     renderScreen();
     const row = (name: string) => nbsp(screen.getAllByRole('row').find((r) => r.textContent!.includes(name))!.textContent!);
     expect(row('Loisirs')).toContain('70,00 €');
-    expect(row('Salaire')).toContain('0,00 €');
   });
 
   it('stays exact beyond 2^53 for the overrun and what is left', () => {

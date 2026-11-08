@@ -705,6 +705,8 @@
     "all": "Toutes les périodes"
   },
   "BudgetsScreen": {
+    "expenses_section": "Dépenses",
+    "income_section": "Revenus",
     "closed_warning": "Cette période est fermée : modifier ses budgets change les dépassements passés.",
     "forecast": "Prévu en fin de période",
     "planned_income": "Revenus prévus",

@@ -705,6 +705,8 @@
     "all": "All periods"
   },
   "BudgetsScreen": {
+    "expenses_section": "Expenses",
+    "income_section": "Income",
     "closed_warning": "This period is closed: changing its budgets changes past overruns.",
     "forecast": "End-of-period forecast",
     "planned_income": "Planned income",

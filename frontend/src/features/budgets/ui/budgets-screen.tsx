@@ -28,7 +28,7 @@ import {
   displayValue,
   draftErrors,
 } from '../model/budget-draft';
-import { sortBudgetRows } from '../model/sort-budget-lines';
+import { sortBudgetRows, type BudgetRow } from '../model/sort-budget-lines';
 import { ClosedPeriodWarning } from './closed-period-warning';
 
 const NO_BUDGETS: SavedBudget[] = [];
@@ -211,6 +211,54 @@ export function BudgetsScreen() {
   const plannedExpenses = sim?.plannedExpenses ?? stats?.plannedExpenses;
   const grey = dirty && !hasErrors && (simulation.isStale || !sim);
 
+  const spendingRows = lines.filter((row) => !row.isRevenue);
+  const revenueRows = lines.filter((row) => row.isRevenue);
+
+  // Une ligne de budget : la colonne « Reste » n'existe que pour les dépenses, épargne et virements (pas pour les revenus).
+  const renderRow = ({ line, isIncome }: BudgetRow, withRemaining: boolean) => {
+    const over = isIncome ? BigInt(0) : overrunAmount(line);
+    const id = line.categoryId;
+    const error = errors[id];
+    return (
+      <TableRow key={id}>
+        <TableCell className="font-medium">{line.name}</TableCell>
+        <TableCell className="text-right tabular-nums">{formatCurrency(line.real)}</TableCell>
+        {withRemaining && (
+          <TableCell className="text-right tabular-nums">
+            {over > BigInt(0) ? (
+              <span data-testid="over-budget" className="font-semibold text-destructive">
+                {t('over', { amount: formatCurrency(over) })}
+              </span>
+            ) : (
+              t('left', { amount: formatCurrency(BigInt(line.remaining) > BigInt(0) ? BigInt(line.remaining) : BigInt(0)) })
+            )}
+          </TableCell>
+        )}
+        <TableCell className="min-w-40 text-right">
+          <AmountInput
+            aria-label={t('budget_of', { name: line.name })}
+            aria-invalid={!!error}
+            placeholder={tc('amount_placeholder')}
+            disabled={!ready || isPending}
+            value={displayValue(reference, drafts, id, locale)}
+            onChange={(e) => onEdit(id, e.target.value)}
+            className="h-11 text-right tabular-nums"
+          />
+          {error && (
+            <p role="alert" data-testid="row-error" className="mt-1 text-xs text-destructive">
+              {error === 'negative' ? t('negative_amount') : t('unreadable_amount')}
+            </p>
+          )}
+          {id in rejected && (
+            <p data-testid="rejected-input" className="mt-1 text-xs text-muted-foreground">
+              {t('your_input', { value: rejected[id] === '' ? '0' : rejected[id] })}
+            </p>
+          )}
+        </TableCell>
+      </TableRow>
+    );
+  };
+
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center gap-3">
@@ -263,63 +311,44 @@ export function BudgetsScreen() {
       ) : lines.length === 0 ? (
         <p className="text-muted-foreground">{t('empty')}</p>
       ) : (
-        <Card className="border-2 shadow-sm">
-          <CardContent className="overflow-x-auto p-0">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>{t('category')}</TableHead>
-                  <TableHead className="text-right">{t('real')}</TableHead>
-                  <TableHead className="text-right">{t('remaining')}</TableHead>
-                  <TableHead className="text-right">{t('budget')}</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {lines.map(({ line, isIncome }) => {
-                  const over = isIncome ? BigInt(0) : overrunAmount(line);
-                  const id = line.categoryId;
-                  const error = errors[id];
-                  return (
-                    <TableRow key={id}>
-                      <TableCell className="font-medium">{line.name}</TableCell>
-                      <TableCell className="text-right tabular-nums">{formatCurrency(line.real)}</TableCell>
-                      <TableCell className="text-right tabular-nums">
-                        {over > BigInt(0) ? (
-                          <span data-testid="over-budget" className="font-semibold text-destructive">
-                            {t('over', { amount: formatCurrency(over) })}
-                          </span>
-                        ) : (
-                          t('left', { amount: formatCurrency(BigInt(line.remaining) > BigInt(0) ? BigInt(line.remaining) : BigInt(0)) })
-                        )}
-                      </TableCell>
-                      <TableCell className="min-w-40 text-right">
-                        <AmountInput
-                          aria-label={t('budget_of', { name: line.name })}
-                          aria-invalid={!!error}
-                          placeholder={tc('amount_placeholder')}
-                          disabled={!ready || isPending}
-                          value={displayValue(reference, drafts, id, locale)}
-                          onChange={(e) => onEdit(id, e.target.value)}
-                          className="h-11 text-right tabular-nums"
-                        />
-                        {error && (
-                          <p role="alert" data-testid="row-error" className="mt-1 text-xs text-destructive">
-                            {error === 'negative' ? t('negative_amount') : t('unreadable_amount')}
-                          </p>
-                        )}
-                        {id in rejected && (
-                          <p data-testid="rejected-input" className="mt-1 text-xs text-muted-foreground">
-                            {t('your_input', { value: rejected[id] === '' ? '0' : rejected[id] })}
-                          </p>
-                        )}
-                      </TableCell>
+        <>
+          {spendingRows.length > 0 && (
+            <Card className="border-2 shadow-sm">
+              <CardContent className="overflow-x-auto p-0">
+                <Table aria-label={t('expenses_section')}>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>{t('category')}</TableHead>
+                      <TableHead className="text-right">{t('real')}</TableHead>
+                      <TableHead className="text-right">{t('remaining')}</TableHead>
+                      <TableHead className="text-right">{t('budget')}</TableHead>
                     </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
+                  </TableHeader>
+                  <TableBody>{spendingRows.map((row) => renderRow(row, true))}</TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          )}
+          {revenueRows.length > 0 && (
+            <section className="flex flex-col gap-2">
+              <h3 className="text-sm font-semibold">{t('income_section')}</h3>
+              <Card className="border-2 shadow-sm">
+                <CardContent className="overflow-x-auto p-0">
+                  <Table aria-label={t('income_section')}>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>{t('category')}</TableHead>
+                        <TableHead className="text-right">{t('real')}</TableHead>
+                        <TableHead className="text-right">{t('budget')}</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>{revenueRows.map((row) => renderRow(row, false))}</TableBody>
+                  </Table>
+                </CardContent>
+              </Card>
+            </section>
+          )}
+        </>
       )}
 
       {dirty && (

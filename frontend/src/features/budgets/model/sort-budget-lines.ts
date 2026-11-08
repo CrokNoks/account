@@ -43,13 +43,15 @@ export interface BudgetRow {
   line: BudgetCategoryBreakdown;
   /** Revenu ou virement : un restant négatif y est un surplus, pas un dépassement. */
   isIncome: boolean;
+  /** Catégorie de revenu (affichée dans la section « Revenus ») ; false pour un virement. */
+  isRevenue: boolean;
 }
 
 export function sortBudgetRows(breakdown: BudgetBreakdownResponse): BudgetRow[] {
   const spending = [...breakdown.expenses, ...breakdown.savings].sort(compareConsumption);
-  const incoming = [...[...breakdown.income].sort(byName), ...[...breakdown.transfers].sort(byName)];
   return [
-    ...spending.map((line) => ({ line, isIncome: false })),
-    ...incoming.map((line) => ({ line, isIncome: true })),
+    ...spending.map((line) => ({ line, isIncome: false, isRevenue: false })),
+    ...[...breakdown.income].sort(byName).map((line) => ({ line, isIncome: true, isRevenue: true })),
+    ...[...breakdown.transfers].sort(byName).map((line) => ({ line, isIncome: true, isRevenue: false })),
   ];
 }
