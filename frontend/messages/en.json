@@ -177,7 +177,7 @@
       "new": "New"
     },
     "deadlines": {
-      "title": "Upcoming deadlines (7d)",
+      "title": "Upcoming bills",
       "none": "Nothing planned this week",
       "recurring": "Recurring",
       "planned": "Planned",

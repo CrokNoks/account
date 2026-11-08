@@ -2,6 +2,7 @@ import { render } from '@testing-library/react';
 import { NextIntlClientProvider } from 'next-intl';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import fr from '../../../../messages/fr.json';
+import en from '../../../../messages/en.json';
 import { UpcomingDeadlinesWidget } from './upcoming-deadlines-widget';
 
 const events = vi.hoisted(() => ({
@@ -40,6 +41,14 @@ describe('Bloc Factures (prochaines échéances)', () => {
     events.asked = [];
   });
   afterEach(() => vi.useRealTimers());
+
+  it('est titré « Prochaines factures » en français, « Upcoming bills » en anglais', () => {
+    events.list = [];
+    renderWidget();
+    expect(text()).toContain('Prochainesfactures');
+    expect(text()).not.toContain('(7j)');
+    expect(en.Reporting.deadlines.title).toBe('Upcoming bills');
+  });
 
   it('affiche date, libellé, montant et le total des échéances à 7 jours', () => {
     events.list = [

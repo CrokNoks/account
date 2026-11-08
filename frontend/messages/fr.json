@@ -177,7 +177,7 @@
       "new": "Nouveau"
     },
     "deadlines": {
-      "title": "Prochaines Échéances (7j)",
+      "title": "Prochaines factures",
       "none": "Rien de prévu cette semaine",
       "recurring": "Récurrent",
       "planned": "Prévu",
