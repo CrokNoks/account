@@ -104,6 +104,7 @@ Index unique partiel `periods_one_active_per_account` sur `periods (account_id) 
 Avant `supabase db push` en production : `select account_id from periods where is_active group by 1 having count(*)>1` doit renvoyer 0 ligne, sinon la migration échoue.
 
 ## Zones d'ombre
+- Dates de période affichées (front) : les sélecteurs de période (`PeriodSelect`) et le filtre d'Opérations montrent « {début} → {fin} » en dates courtes selon la langue (`formatShortRange`, ex. « 25 oct. → 24 nov. »), l'année n'apparaissant que si elle diffère de l'année en cours, comparée en UTC (`shared/lib/date-only.ts`). Les champs de saisie des dates et le format `YYYY-MM-DD` du back ne changent pas. Test : `date-only.test.ts`.
 - Les `categoryId` des budgets reçus en body doivent être des UUID : sinon 400 (voir `transactions.md`). Ceux de la route (`:accountId`, `:id`) le sont aussi (voir `transactions.md`).
 - `end_date` peut être NULL dans `periods` (colonne sans NOT NULL). `findLastByAccount` trie sur `end_date` décroissant, ce qui place les NULL en premier par défaut dans PostgreSQL : une période ouverte serait donc la « dernière » pour le brouillon (début suggéré = lendemain de son début). Aucun test ne couvre ce cas ; l'API ne crée pas de période ouverte, mais la base peut en contenir.
 - Pourquoi le montant 0 est filtré au remplacement mais pas à la création : inconnu.
