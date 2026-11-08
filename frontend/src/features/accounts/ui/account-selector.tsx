@@ -11,9 +11,10 @@ import {
 import { useAccounts } from '../api/use-accounts';
 import { useAccountStore } from '../model/use-account-store';
 import { useTranslations } from 'next-intl';
+import { cn } from '@/lib/utils';
 import { confirmLeave } from '@/shared/model/leave-guard';
 
-export function AccountSelector() {
+export function AccountSelector({ className }: { className?: string }) {
   const t = useTranslations('Accounts');
   const { data: accounts, isLoading } = useAccounts();
   const { activeAccountId, setActiveAccountId } = useAccountStore();
@@ -32,7 +33,7 @@ export function AccountSelector() {
       value={activeAccountId || ""} 
       onValueChange={(v) => confirmLeave() && setActiveAccountId(v)}
     >
-      <SelectTrigger className="w-[104px] sm:w-[200px]">
+      <SelectTrigger className={cn("w-[104px] sm:w-[200px]", className)}>
         <SelectValue>
           <span className="truncate block">
             {accounts?.find(a => a.id === activeAccountId)?.name || t('select_account')}

@@ -11,6 +11,9 @@ vi.mock('@/i18n/routing', () => ({
   Link: ({ href, children, ...p }: { href: string; children: React.ReactNode }) => <a href={href} {...p}>{children}</a>,
   useRouter: () => ({ push, refresh: vi.fn() }),
 }));
+vi.mock('@/features/accounts/ui/account-selector', () => ({
+  AccountSelector: () => <div data-testid="account-selector">Compte courant</div>,
+}));
 vi.mock('@/shared/lib/supabase/supabase-browser', () => ({
   createClient: () => ({ auth: { signOut: vi.fn() } }),
 }));
@@ -37,6 +40,18 @@ describe('sidebar : 6 entrées', () => {
     render(<Sidebar />);
     const tour = screen.getAllByRole('link').map((l) => l.getAttribute('data-tour'));
     expect(tour).toEqual([null, null, null, 'nav-budgets', null, 'nav-settings']);
+  });
+});
+
+describe('sidebar : compte en haut', () => {
+  it('affiche « Compte » puis le sélecteur du compte actif, sans le logo « Account V2 »', () => {
+    render(<Sidebar />);
+    const label = screen.getByText('account');
+    const selector = screen.getByTestId('account-selector');
+    expect(label.compareDocumentPosition(selector) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    const firstLink = screen.getAllByRole('link')[0];
+    expect(selector.compareDocumentPosition(firstLink) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(screen.queryByText('Account V2')).toBeNull();
   });
 });
 

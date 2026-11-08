@@ -8,6 +8,7 @@ import { LogOut } from 'lucide-react';
 import { useLogout } from './use-logout';
 import { useRouter } from '@/i18n/routing';
 import {useTranslations} from 'next-intl';
+import { AccountSelector } from '@/features/accounts/ui/account-selector';
 import { NAV_ENTRIES, activeEntryHref } from './nav-config';
 
 const TOUR_TARGETS: Record<string, string> = { budgets: 'nav-budgets', settings: 'nav-settings' };
@@ -47,8 +48,9 @@ export function Sidebar() {
 
   return (
     <div className="flex flex-col w-64 border-r bg-card h-full">
-      <div className="p-6 shrink-0">
-        <h1 className="text-2xl font-bold text-primary">Account V2</h1>
+      <div className="px-4 pt-5 pb-1 shrink-0 space-y-1.5">
+        <p className="px-1 text-sm font-medium text-muted-foreground">{t('account')}</p>
+        <AccountSelector className="w-full" />
       </div>
       
       <nav className="flex-1 px-4 py-4 space-y-2 flex flex-col overflow-y-auto custom-scrollbar">

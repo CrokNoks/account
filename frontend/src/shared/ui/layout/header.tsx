@@ -14,12 +14,15 @@ import {
 } from "@/components/ui/select";
 import { useRouter } from '@/i18n/routing';
 import { headerTitleKey } from './header-title';
+import { Search } from 'lucide-react';
+import { useUiStore } from '@/shared/model/use-ui-store';
 
 export function Header() {
   const pathname = usePathname();
   const locale = useLocale();
   const router = useRouter();
   const t = useTranslations('Navigation');
+  const setCommandMenuOpen = useUiStore((state) => state.setCommandMenuOpen);
 
   const label = t(headerTitleKey(pathname));
 
@@ -35,6 +38,17 @@ export function Header() {
         <h1 className="text-base lg:text-xl font-semibold truncate">{label}</h1>
       </div>
       <div className="flex items-center gap-1 lg:gap-4">
+        {/* Point d'entrée visible de la palette (le raccourci ⌘/Ctrl + K reste). Pas de champ sur mobile. */}
+        <button
+          type="button"
+          data-testid="search-field"
+          onClick={() => setCommandMenuOpen(true)}
+          className="hidden lg:flex h-9 w-64 items-center gap-2 rounded-lg border bg-muted/40 px-3 text-sm text-muted-foreground hover:bg-accent transition-colors cursor-pointer"
+        >
+          <Search className="w-4 h-4 shrink-0" />
+          <span className="flex-1 text-left">{t('search')}</span>
+          <kbd className="rounded border px-1.5 py-0.5 font-mono text-xs">⌘K</kbd>
+        </button>
         <ThemeToggle />
         <Select value={locale} onValueChange={handleLocaleChange}>
           <SelectTrigger className="w-[44px] lg:w-[70px] max-lg:px-1.5 max-lg:justify-center max-lg:[&>svg]:hidden border-none bg-transparent hover:bg-accent transition-colors">
@@ -48,8 +62,10 @@ export function Header() {
             ))}
           </SelectContent>
         </Select>
-        <div className="hidden lg:block h-6 w-px bg-border" />
-        <AccountSelector />
+        {/* Grand écran : le compte est en haut du menu latéral ; mobile (pas de menu) : il reste ici. */}
+        <div className="lg:hidden">
+          <AccountSelector />
+        </div>
       </div>
     </header>
   );

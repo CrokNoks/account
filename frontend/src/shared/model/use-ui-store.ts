@@ -8,6 +8,9 @@ interface UiState {
   setCreateTransactionDrawerOpen: (open: boolean) => void;
   toggleCreateTransactionDrawer: () => void;
   
+  isCommandMenuOpen: boolean;
+  setCommandMenuOpen: (open: boolean) => void;
+
   isCreateAccountDialogOpen: boolean;
   setCreateAccountDialogOpen: (open: boolean) => void;
   toggleCreateAccountDialog: () => void;
@@ -36,6 +39,9 @@ export const useUiStore = create<UiState>()(
       setCreateTransactionDrawerOpen: (open) => set({ isCreateTransactionDrawerOpen: open }),
       toggleCreateTransactionDrawer: () => set((state) => ({ isCreateTransactionDrawerOpen: !state.isCreateTransactionDrawerOpen })),
       
+      isCommandMenuOpen: false,
+      setCommandMenuOpen: (open) => set({ isCommandMenuOpen: open }),
+
       isCreateAccountDialogOpen: false,
       setCreateAccountDialogOpen: (open) => set({ isCreateAccountDialogOpen: open }),
       toggleCreateAccountDialog: () => set((state) => ({ isCreateAccountDialogOpen: !state.isCreateAccountDialogOpen })),

@@ -16,6 +16,8 @@
     "smart_rules": "Règles",
     "more": "Plus",
     "logout": "Déconnexion",
+    "account": "Compte",
+    "search": "Rechercher",
     "toggle_theme": "Changer de thème",
     "command": {
       "placeholder": "Tapez une commande ou recherchez...",
