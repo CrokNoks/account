@@ -6,6 +6,7 @@ import { useLocale, useTranslations } from 'next-intl';
 import { Link } from '@/i18n/routing';
 import { useAccountStore } from '@/features/accounts/model/use-account-store';
 import { cn } from '@/lib/utils';
+import { formatShortDate } from '@/shared/lib/date-only';
 import { useCalendarData } from '../api/use-calendar-data';
 import { usePresentAmount } from '../lib/signed-amount';
 
@@ -13,7 +14,8 @@ import { usePresentAmount } from '../lib/signed-amount';
 export function EcheancesUpcomingList({ currentDate }: { currentDate: Date }) {
   const present = usePresentAmount();
   const t = useTranslations('Reporting.echeances');
-  const dateLocale = useLocale() === 'fr' ? fr : enUS;
+  const locale = useLocale();
+  const dateLocale = locale === 'fr' ? fr : enUS;
   const { activeAccountId } = useAccountStore();
   const { data: events, isLoading, isError } = useCalendarData(activeAccountId, currentDate.getFullYear(), currentDate.getMonth() + 1);
 
@@ -51,7 +53,7 @@ export function EcheancesUpcomingList({ currentDate }: { currentDate: Date }) {
               <span className="flex min-w-0 flex-col">
                 <span className="truncate font-medium">{e.description}</span>
                 <span className="text-sm text-muted-foreground">
-                  {format(parseISO(e.date), 'd MMM', { locale: dateLocale })} · {stateLabel(e)}
+                  {formatShortDate(e.date, locale)} · {stateLabel(e)}
                 </span>
               </span>
               <span className={cn('whitespace-nowrap font-mono tabular-nums', present(e.amount, 'flow').className)}>

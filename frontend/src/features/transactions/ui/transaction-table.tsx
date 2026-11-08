@@ -14,7 +14,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from '@/components/ui/badge';
 import { Button } from "@/components/ui/button";
 import { CheckCircle2, Circle, Pencil, Trash2, Repeat } from 'lucide-react';
-import { format } from 'date-fns';
+import { formatShortDate } from '@/shared/lib/date-only';
 import { usePresentAmount } from '@/features/reporting/lib/signed-amount';
 import { cn } from "@/lib/utils";
 import { AnomalyBadges } from './anomaly-badges';
@@ -24,7 +24,7 @@ import { AnomalyMark } from '../model/anomaly-marks';
 import { Transaction } from '../model/types';
 import { Category } from '@/features/categories/model/types';
 import { Tag } from '@/features/tags/model/types';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 
 interface TransactionTableProps {
   transactions: Transaction[];
@@ -64,6 +64,7 @@ export function TransactionTable({
   t
 }: TransactionTableProps) {
   const present = usePresentAmount();
+  const locale = useLocale();
   return (
     <div className="hidden lg:block border rounded-xl overflow-hidden bg-card shadow-sm">
       <Table>
@@ -126,7 +127,7 @@ export function TransactionTable({
                   </button>
                 </TableCell>
                 <TableCell className="text-muted-foreground font-medium">
-                  {format(new Date(transaction.date), 'dd/MM/yyyy')}
+                  {formatShortDate(transaction.date, locale)}
                 </TableCell>
                 <TableCell className="max-w-[400px]">
                   <div className="truncate max-w-full" title={transaction.description}>

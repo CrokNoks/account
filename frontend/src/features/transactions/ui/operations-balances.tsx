@@ -26,19 +26,19 @@ export function OperationsBalances({ hasPeriod }: { hasPeriod: boolean }) {
   return (
     <Card className="border-2 shadow-sm p-4 max-lg:p-3 flex flex-row flex-wrap gap-x-8 gap-y-3 max-lg:justify-between">
       <div data-testid="balance-bank">
-        <p className="text-[10px] max-lg:text-xs font-bold uppercase tracking-wider text-muted-foreground">{t('bank')}</p>
+        <p className="text-sm font-medium text-muted-foreground">{t('bank')}</p>
         <p className={cn('text-lg max-lg:text-xl font-black tracking-tight', present(stats.realBankBalance, 'balance').className)}>
           {present(stats.realBankBalance, 'balance').text}
         </p>
       </div>
       <div data-testid="balance-upcoming">
-        <p className="text-[10px] max-lg:text-xs font-bold uppercase tracking-wider text-muted-foreground">{t('upcoming')}</p>
+        <p className="text-sm font-medium text-muted-foreground">{t('upcoming')}</p>
         <p className={cn('text-lg max-lg:text-xl font-black tracking-tight', present(stats.upcomingBalance, 'balance').className)}>
           {present(stats.upcomingBalance, 'balance').text}
         </p>
       </div>
       <div data-testid="balance-to-reconcile">
-        <p className="text-[10px] max-lg:text-xs font-bold uppercase tracking-wider text-muted-foreground">{t('to_reconcile')}</p>
+        <p className="text-sm font-medium text-muted-foreground">{t('to_reconcile')}</p>
         <p className={cn('text-lg max-lg:text-xl font-black tracking-tight', present(stats.cardTotal, 'balance').className)}>
           {present(stats.cardTotal, 'balance').text}
         </p>

@@ -29,7 +29,7 @@ export function SpendingPace() {
   return (
     <Card data-testid="spending-pace" className="border-2 shadow-sm h-full overflow-hidden">
       <CardHeader className="bg-muted/10 pb-3">
-        <CardTitle className="text-[10px] max-lg:text-xs font-bold uppercase tracking-wider text-muted-foreground">
+        <CardTitle className="text-base font-semibold">
           {t('pace_title')}
         </CardTitle>
       </CardHeader>

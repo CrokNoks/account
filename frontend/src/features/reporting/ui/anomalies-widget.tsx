@@ -40,7 +40,7 @@ export function AnomaliesWidget({ embedded = false }: { embedded?: boolean }) {
         <div className="p-4 rounded-full bg-emerald-100 text-emerald-600 mb-4 animate-in zoom-in duration-500">
           <CheckCircle2 className="w-8 h-8" />
         </div>
-        <CardTitle className="text-sm font-black uppercase tracking-widest text-emerald-700 dark:text-emerald-400">
+        <CardTitle className="text-base font-semibold text-foreground">
           {t('all_good')}
         </CardTitle>
         <p className="text-xs text-emerald-600/70 mt-2 text-center font-medium">
@@ -133,7 +133,7 @@ export function AnomaliesWidget({ embedded = false }: { embedded?: boolean }) {
     <Card className="border-2 border-orange-500/50 shadow-md h-full overflow-hidden bg-transparent flex flex-col">
       <CardHeader className="pb-3 flex flex-row items-center justify-start gap-2 space-y-0 bg-transparent shrink-0">
         <AlertCircle className="w-5 h-5 text-orange-500" />
-        <CardTitle className="text-[10px] max-lg:text-xs font-bold text-orange-600 dark:text-orange-400 uppercase tracking-wider">
+        <CardTitle className="text-base font-semibold text-warn">
           {t('detected', { count: activeAnomalies.length })}
         </CardTitle>
       </CardHeader>

@@ -41,7 +41,7 @@ export function ToHandle() {
   return (
     <Card className="border-2 shadow-sm h-full overflow-hidden flex flex-col">
       <CardHeader className="bg-muted/10 pb-3 shrink-0">
-        <CardTitle className="flex items-center gap-2 text-[10px] max-lg:text-xs font-bold uppercase tracking-wider text-muted-foreground">
+        <CardTitle className="flex items-center gap-2 text-base font-semibold">
           <ListChecks className="w-4 h-4 text-primary" />
           {t('todo_title')}
         </CardTitle>

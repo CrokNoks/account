@@ -385,7 +385,7 @@ function Figure({
   return (
     <Card className="border-2 shadow-sm">
       <CardContent className="flex flex-col gap-1 py-4">
-        <span className="text-[10px] max-lg:text-xs font-bold uppercase tracking-wider text-muted-foreground">{label}</span>
+        <span className="text-sm font-medium text-muted-foreground">{label}</span>
         <span data-testid={testId} data-stale={grey} className={`text-2xl font-bold tabular-nums ${grey ? 'opacity-50' : ''}`}>
           {value}
         </span>

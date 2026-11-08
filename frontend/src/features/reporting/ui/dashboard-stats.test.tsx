@@ -94,7 +94,7 @@ describe('Barre des soldes', () => {
       vi.useFakeTimers({ toFake: ['Date'] });
       vi.setSystemTime(new Date(2026, 10, 15, 12));
       renderBar();
-      expect(screen.getByTestId('forecast-title-mobile').textContent).toBe('Prévu le 30/11/2026');
+      expect(screen.getByTestId('forecast-title-mobile').textContent).toBe('Prévu le 30 nov.');
       expect(screen.getByTestId('period-day').textContent).toBe('Jour 15 sur 30');
     });
 
@@ -102,7 +102,7 @@ describe('Barre des soldes', () => {
       vi.useFakeTimers({ toFake: ['Date'] });
       vi.setSystemTime(new Date(2026, 10, 15, 12));
       renderBar('en');
-      expect(screen.getByTestId('forecast-title-mobile').textContent).toBe('Forecast on 11/30/2026');
+      expect(screen.getByTestId('forecast-title-mobile').textContent).toBe('Forecast on Nov 30');
       expect(screen.getByTestId('period-day').textContent).toBe('Day 15 of 30');
     });
 

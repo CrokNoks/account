@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import { NextIntlClientProvider } from 'next-intl';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import fr from '../../../../messages/fr.json';
 import en from '../../../../messages/en.json';
 import { ALL_PERIODS, PeriodSelect } from './period-select';
@@ -18,9 +18,21 @@ const renderSelect = (value: string | null, allowAll = false, locale: 'fr' | 'en
   );
 
 describe('PeriodSelect', () => {
-  it('shows the dates of the chosen period', () => {
+  beforeEach(() => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date(2026, 10, 15, 12));
+  });
+  afterEach(() => vi.useRealTimers());
+
+  it('shows the dates of the chosen period as short dates in the language', () => {
     renderSelect('p1');
-    expect(screen.getByRole('combobox').textContent).toContain('01/11/2026 - 30/11/2026');
+    expect(screen.getByRole('combobox').textContent).toContain('1 nov. → 30 nov.');
+  });
+
+  it('shows them in English order and adds the year of another year', () => {
+    vi.setSystemTime(new Date(2027, 0, 15, 12));
+    renderSelect('p1', false, 'en');
+    expect(screen.getByRole('combobox').textContent).toContain('Nov 1, 2026 → Nov 30, 2026');
   });
 
   it('asks to choose a period when none is selected', () => {

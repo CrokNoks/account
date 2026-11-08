@@ -48,6 +48,7 @@ describe('Liste « À venir en {mois} »', () => {
     expect(items).toHaveLength(3);
     expect(items[0]).toContain('Internet');
     expect(items[0]).toContain('Prévue');
+    expect(items[0]).toContain('10 nov.');
     expect(items[0]).toContain('-40,00 €');
     expect(items[1]).toContain('Électricité');
     expect(items[1]).toContain('Facture en attente');

@@ -6,7 +6,7 @@ import { useAccountStore } from "@/features/accounts/model/use-account-store";
 import { useReportingStats } from "../api/use-reporting-stats";
 import { useLocale, useTranslations } from "next-intl";
 import { usePeriods } from "@/features/budgets/api/use-periods";
-import { formatDateOnly, todayDateOnly } from "@/shared/lib/date-only";
+import { formatShortDate, todayDateOnly } from "@/shared/lib/date-only";
 import { periodProgress } from "../model/period-progress";
 import { cn } from "@/lib/utils";
 
@@ -23,7 +23,7 @@ export function BalanceBar() {
   const { data: periods } = usePeriods(activeAccountId);
   const period = periods?.find((p) => p.id === activePeriodId);
   // Mobile : « Prévu le {fin} » et « Jour X sur Y » (masqués sans fin de période ou hors période).
-  const endDate = period?.endDate ? formatDateOnly(period.endDate, locale) : null;
+  const endDate = period?.endDate ? formatShortDate(period.endDate, locale) : null;
   const progress = periodProgress(period?.startDate, period?.endDate, todayDateOnly());
 
   if (isLoading || !stats) return <div data-tour="stats" className="h-32 bg-muted animate-pulse rounded-xl border-2" />;
@@ -32,10 +32,10 @@ export function BalanceBar() {
     <div data-tour="stats">
       <Card className="border-2 shadow-sm overflow-hidden p-4 max-lg:p-3 max-lg:gap-1 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div data-testid="balance-forecast">
-          <p className="max-lg:hidden text-[10px] max-lg:text-xs font-bold uppercase tracking-wider text-muted-foreground">
+          <p className="max-lg:hidden text-sm font-medium text-muted-foreground">
             {t('forecast_title')}
           </p>
-          <p data-testid="forecast-title-mobile" className="lg:hidden text-xs font-bold uppercase tracking-wider text-muted-foreground">
+          <p data-testid="forecast-title-mobile" className="lg:hidden text-sm font-medium text-muted-foreground">
             {endDate ? t('forecast_on', { date: endDate }) : t('forecast_title')}
           </p>
           <p data-amount className={cn("text-3xl max-lg:text-3xl font-black tracking-tight", present(stats.forecastBalance, 'balance').className)}>
@@ -50,7 +50,7 @@ export function BalanceBar() {
         {/* Mobile : En banque est dans la composition du prévu, le solde à venir est en tête d'Opérations. */}
         <div className="max-lg:hidden flex gap-8">
           <div data-testid="balance-bank">
-            <p className="text-[10px] max-lg:text-xs font-bold uppercase tracking-wider text-muted-foreground">
+            <p className="text-sm font-medium text-muted-foreground">
               {t('bank_title')}
             </p>
             <p className={cn("text-lg font-black tracking-tight", present(stats.realBankBalance, 'balance').className)}>
@@ -58,7 +58,7 @@ export function BalanceBar() {
             </p>
           </div>
           <div data-testid="balance-upcoming">
-            <p className="text-[10px] max-lg:text-xs font-bold uppercase tracking-wider text-muted-foreground">
+            <p className="text-sm font-medium text-muted-foreground">
               {t('upcoming_title')}
             </p>
             <p className={cn("text-lg font-black tracking-tight", present(stats.upcomingBalance, 'balance').className)}>

@@ -30,7 +30,8 @@ export function formatDateOnly(value: string, locale: string): string {
 
 /**
  * Short calendar date in the language ("6 nov." in fr, "Nov 6" in en); the year is added only when
- * it differs from the current one ("6 nov. 2025"). `now` is injectable so server and tests agree.
+ * it differs from the current one ("6 nov. 2025"). The current year is read in UTC, not in the local
+ * time zone: server and browser then agree on New Year's night (no hydration mismatch). `now` is injectable.
  */
 export function formatShortDate(value: string, locale: string, now: Date = new Date()): string {
   const match = DATE_ONLY.exec(value);
@@ -39,7 +40,7 @@ export function formatShortDate(value: string, locale: string, now: Date = new D
   return new Intl.DateTimeFormat(locale, {
     day: 'numeric',
     month: 'short',
-    ...(Number(year) !== now.getFullYear() ? { year: 'numeric' as const } : {}),
+    ...(Number(year) !== now.getUTCFullYear() ? { year: 'numeric' as const } : {}),
     timeZone: 'UTC',
   }).format(new Date(Date.UTC(Number(year), Number(month) - 1, Number(day))));
 }

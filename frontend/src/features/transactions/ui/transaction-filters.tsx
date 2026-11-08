@@ -8,9 +8,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Search, Filter, X } from 'lucide-react';
 import { CategorySelector } from '@/features/categories/ui/category-selector';
 import { TagSelector } from '@/features/tags/ui/tag-selector';
-import { format } from 'date-fns';
+import { formatShortRange } from '@/shared/lib/date-only';
 import { Period } from "@/features/periods/model/types";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { cn } from '@/lib/utils';
 import type { StateFilter } from '../model/operation-state';
 
@@ -79,6 +79,7 @@ export function TransactionFilters({
   onReset,
   t
 }: TransactionFiltersProps) {
+  const locale = useLocale();
   return (
     <div className="flex flex-col gap-4 shrink-0">
       <div className="flex items-center gap-2">
@@ -217,7 +218,7 @@ export function TransactionFilters({
                           ? t('all_periods') 
                           : (function() {
                               const p = periods?.find(p => p.id === effectivePeriodId);
-                              return p ? `${format(new Date(p.startDate), 'dd/MM/yy')} - ${format(new Date(p.endDate), 'dd/MM/yy')}` : t('budget_period');
+                              return p ? formatShortRange(p.startDate, p.endDate, locale) : t('budget_period');
                             })()
                         }
                       </SelectValue>
@@ -226,7 +227,7 @@ export function TransactionFilters({
                       <SelectItem value="all">{t('all_periods')}</SelectItem>
                       {periods?.map((p) => (
                         <SelectItem key={p.id} value={p.id}>
-                          {format(new Date(p.startDate), 'dd/MM/yyyy')} - {format(new Date(p.endDate), 'dd/MM/yyyy')} {p.isActive && t('filters.active_suffix')}
+                          {formatShortRange(p.startDate, p.endDate, locale)} {p.isActive && t('filters.active_suffix')}
                         </SelectItem>
                       ))}
                     </SelectContent>

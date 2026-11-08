@@ -31,7 +31,7 @@ export function BudgetBreakdown() {
     <CardHeader className="bg-muted/10 pb-3 shrink-0">
       <div className="flex items-center gap-2">
         <PieChart className="w-4 h-4 text-primary" />
-        <h2 className="text-[10px] max-lg:text-xs font-bold uppercase tracking-wider text-muted-foreground">{t('breakdown')}</h2>
+        <h2 className="text-base font-semibold">{t('breakdown')}</h2>
       </div>
     </CardHeader>
   );

@@ -3,7 +3,7 @@
 import { Badge } from '@/components/ui/badge';
 import { tintedBadgeStyle } from '@/shared/lib/badge-color';
 import { CheckCircle2, Circle } from 'lucide-react';
-import { format } from 'date-fns';
+import { formatShortDate } from '@/shared/lib/date-only';
 import { usePresentAmount } from '@/features/reporting/lib/signed-amount';
 import { cn } from "@/lib/utils";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -14,7 +14,7 @@ import { AnomalyMark } from '../model/anomaly-marks';
 import { Transaction } from '../model/types';
 import { Category } from '@/features/categories/model/types';
 import { Tag } from '@/features/tags/model/types';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 
 interface TransactionMobileListProps {
   transactions: Transaction[];
@@ -48,6 +48,7 @@ export function TransactionMobileList({
   t
 }: TransactionMobileListProps) {
   const present = usePresentAmount();
+  const locale = useLocale();
   return (
     <div className="lg:hidden space-y-3">
       {transactions.length === 0 ? (
@@ -94,7 +95,7 @@ export function TransactionMobileList({
                   <div className="flex flex-col min-w-0">
                     <span className="text-sm font-bold lg:truncate max-lg:line-clamp-2 max-lg:break-words">{transaction.description}</span>
                     <div className="flex items-center gap-2">
-                      <span className="text-[10px] max-lg:text-xs text-muted-foreground">{format(new Date(transaction.date), 'dd MMM')}</span>
+                      <span className="text-[10px] max-lg:text-xs text-muted-foreground">{formatShortDate(transaction.date, locale)}</span>
                       {transaction.categoryId && (
                         <Badge variant="outline" className="h-5 px-1.5 text-[10px] max-lg:text-xs py-0 text-foreground" style={tintedBadgeStyle(categories?.find(c => c.id === transaction.categoryId)?.color)}>
                           {categories?.find(c => c.id === transaction.categoryId)?.name}

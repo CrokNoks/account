@@ -33,7 +33,7 @@ export function BudgetsToWatch() {
   return (
     <Card data-testid="budgets-to-watch" className="border-2 shadow-sm overflow-hidden">
       <CardHeader className="bg-muted/10 pb-3">
-        <CardTitle className="text-xs font-bold uppercase tracking-wider text-muted-foreground">{t('watch_title')}</CardTitle>
+        <CardTitle className="text-base font-semibold">{t('watch_title')}</CardTitle>
       </CardHeader>
       <CardContent className="pt-2 space-y-1">
         {lines.length === 0 && <p className="text-sm text-muted-foreground">{t('watch_empty')}</p>}

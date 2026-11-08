@@ -1,7 +1,7 @@
 'use client';
 
-import { format } from 'date-fns';
-import { useTranslations } from 'next-intl';
+import { formatShortRange } from '@/shared/lib/date-only';
+import { useLocale, useTranslations } from 'next-intl';
 import {
   Select,
   SelectContent,
@@ -22,11 +22,11 @@ interface PeriodSelectProps {
   allowAll?: boolean;
 }
 
-const range = (p: Period) => `${format(new Date(p.startDate), 'dd/MM/yyyy')} - ${format(new Date(p.endDate), 'dd/MM/yyyy')}`;
-
 /** Sélecteur de période partagé par Aujourd'hui et Opérations. */
 export function PeriodSelect({ periods, value, onChange, allowAll = false }: PeriodSelectProps) {
   const t = useTranslations('PeriodSelect');
+  const locale = useLocale();
+  const range = (p: Period) => formatShortRange(p.startDate, p.endDate, locale);
   const current = periods?.find((p) => p.id === value);
   const label = value === ALL_PERIODS && allowAll ? t('all') : current ? range(current) : t('select');
 

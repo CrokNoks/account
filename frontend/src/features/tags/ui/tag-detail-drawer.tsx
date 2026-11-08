@@ -14,7 +14,7 @@ import { formatPercent } from '@/shared/lib/format';
 import { useFormatCurrency } from '@/shared/lib/use-format-currency';
 import { usePresentAmount } from '@/features/reporting/lib/signed-amount';
 import { Progress } from '@/components/ui/progress';
-import { format } from 'date-fns';
+import { formatShortDate } from '@/shared/lib/date-only';
 import { Receipt, BarChart3, List } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useLocale, useTranslations } from 'next-intl';
@@ -141,7 +141,7 @@ export function TagDetailDrawer() {
                         <div className="min-w-0 flex-1">
                           <p className="text-sm font-medium truncate">{tx.description}</p>
                           <p className="text-[10px] max-lg:text-xs text-muted-foreground">
-                            {format(new Date(tx.date), 'dd MMM yyyy')}
+                            {formatShortDate(tx.date, locale)}
                           </p>
                         </div>
                         <div className={cn(

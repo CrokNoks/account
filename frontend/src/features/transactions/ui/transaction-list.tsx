@@ -351,7 +351,7 @@ export function TransactionList({
         {compact && (
           <div className="flex items-center gap-2">
             <Receipt className="w-4 h-4 text-primary" />
-            <h2 className="font-bold tracking-tight text-[10px] max-lg:text-xs uppercase tracking-wider text-muted-foreground">{t('title')}</h2>
+            <h2 className="text-base font-semibold">{t('title')}</h2>
           </div>
         )}
         <div className="flex items-center gap-2 ml-auto">

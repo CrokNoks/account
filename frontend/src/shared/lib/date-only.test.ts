@@ -47,6 +47,16 @@ describe('formatShortDate', () => {
   });
 });
 
+describe('formatShortDate : année de référence stable', () => {
+  it("lit l'année en cours en UTC : serveur et navigateur ne diffèrent pas la nuit du Nouvel An, quel que soit le fuseau", () => {
+    const justBeforeNewYear = new Date(Date.UTC(2026, 11, 31, 23, 30));
+    const justAfterNewYear = new Date(Date.UTC(2027, 0, 1, 0, 30));
+    expect(formatShortDate('2026-12-31', 'fr', justBeforeNewYear)).toBe('31 déc.');
+    expect(formatShortDate('2026-12-31', 'fr', justAfterNewYear)).toBe('31 déc. 2026');
+    expect(formatShortDate('2027-01-01', 'fr', justAfterNewYear)).toBe('1 janv.');
+  });
+});
+
 describe('formatShortRange', () => {
   const now = new Date(2026, 10, 8);
 

@@ -47,7 +47,7 @@ export function UpcomingDeadlinesWidget() {
   return (
     <Card className="h-full border-2 shadow-sm overflow-hidden flex flex-col">
       <CardHeader className="pb-3 bg-muted/10 shrink-0">
-        <CardTitle className="text-[10px] max-lg:text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+        <CardTitle className="text-base font-semibold flex items-center gap-2">
           <Clock className="w-4 h-4 text-primary" />
           {t('title')}
         </CardTitle>
