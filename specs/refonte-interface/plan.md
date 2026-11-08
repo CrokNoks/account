@@ -49,6 +49,7 @@ La refonte est codée, mais aucun écran n'a été vu en réel. Il faut d'abord 
   - Aujourd'hui garde le titre « Tableau de bord » et le texte « Bienvenue sur votre gestionnaire de finances ».
 - Pas encore vu : un vrai téléphone (clavier décimal), l'anglais, et le mobile en sombre.
 - Corrigés le 2026-11-07 et 08, chacun vu à l'écran : police Geist (`49442a1`), libellés mobiles de la composition (`795df75`), titre d'Aujourd'hui (`487aba2`), format et libellés de la saisie mobile (`c4a9953`), format et signe des champs de budget (`7ccf24e`). Correctifs « jamais de flottant pour l'argent », trouvés en route : `74d7b14`, `e9bb8c1`, `a7018be`.
+- Corrigés le 2026-11-08 après comparaison avec la maquette, vus à l'écran en fr et en en (bureau) : un seul titre par écran (`b315655`), bloc « Prochaines factures » (`764edab`), écarts et pourcentages au format de la langue avec l'écart en euros (`38a9875`), revenus en section « Revenus » dans Budgets (`63e0a01`), montants qui suivent la langue (`9e35c9f`). Restent à faire : sous-titres de la maquette (période « jour 13 sur 31 », « Six périodes fermées… ») et vue mobile.
 
 ## Points d'attention
 
