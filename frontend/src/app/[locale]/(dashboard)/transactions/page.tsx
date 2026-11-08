@@ -72,9 +72,6 @@ function TransactionsContent() {
   return (
     <div className="flex flex-col gap-4 lg:gap-8">
       <div className="flex items-center gap-2">
-        <p className="text-muted-foreground max-lg:hidden">
-          {t('description')}
-        </p>
         <HelpButton tour="transactions" className="h-8 w-8" />
         {periods && periods.length > 0 && (
           <PeriodSelect periods={periods} value={listPeriod} onChange={handlePeriodChange} allowAll />

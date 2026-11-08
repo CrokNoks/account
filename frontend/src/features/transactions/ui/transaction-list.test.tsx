@@ -220,6 +220,14 @@ describe('TransactionList period', () => {
     expect(lastOptions().periodId).toBe('p1');
   });
 
+  it("n'ajoute pas de titre à l'écran (celui de l'en-tête suffit), sauf en mode compact", () => {
+    const full = render(<TransactionList period="p1" />);
+    expect(screen.queryByRole('heading', { level: 2 })).toBeNull();
+    full.unmount();
+    render(<TransactionList period="p1" compact />);
+    expect(screen.getByRole('heading', { level: 2 }).textContent).toBe('title');
+  });
+
   it('sends no period for « all periods »', () => {
     render(<TransactionList period="all" />);
     expect(lastOptions().periodId).toBeUndefined();

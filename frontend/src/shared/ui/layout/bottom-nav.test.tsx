@@ -49,20 +49,18 @@ describe('barre du bas (mobile)', () => {
 });
 
 describe('titres de page en mobile', () => {
-  it('each page hides its h2 below lg (the title is in the header)', () => {
+  it("les pages de Réglages n'ont pas de h2 de titre : le titre est celui de l'en-tête", () => {
     const dir = join(__dirname, '../../../app/[locale]/(dashboard)');
-    for (const page of ['budgets', 'categories', 'tags', 'recurring', 'smart-rules', 'accounts', 'settings', 'transactions/import']) {
-      const src = readFileSync(join(dir, page, 'page.tsx'), 'utf8');
-      const h2 = src.match(/<h2[^>]*>/)![0];
-      const wrapperHidden = /className="flex flex-col gap-2 max-lg:hidden">\s*(<div className="flex items-center gap-3">[\s\S]*?<\/div>\s*)?<h2/.test(src);
-      expect(h2.includes('max-lg:hidden') || wrapperHidden, page).toBe(true);
+    for (const page of ['categories', 'tags', 'recurring', 'smart-rules', 'accounts', 'settings', 'transactions/import']) {
+      expect(readFileSync(join(dir, page, 'page.tsx'), 'utf8'), page).not.toContain('<h2');
     }
   });
 
-  it("les écrans Analyses et Échéances (et donc leurs adresses) masquent leur h2 sous lg", () => {
-    for (const screen of ['analyses-screen.tsx', 'echeances-screen.tsx']) {
-      const src = readFileSync(join(__dirname, '../../../features/reporting/ui', screen), 'utf8');
-      expect(/className="flex flex-col gap-2 max-lg:hidden">\s*<h2/.test(src), screen).toBe(true);
+  it("les écrans Analyses, Échéances et Budgets n'ont pas de h2 de titre : le titre est celui de l'en-tête", () => {
+    const reporting = join(__dirname, '../../../features/reporting/ui');
+    const budgets = join(__dirname, '../../../app/[locale]/(dashboard)/budgets/page.tsx');
+    for (const file of [join(reporting, 'analyses-screen.tsx'), join(reporting, 'echeances-screen.tsx'), budgets]) {
+      expect(readFileSync(file, 'utf8'), file).not.toContain('<h2');
     }
   });
 });

@@ -78,7 +78,9 @@ describe("écran Analyses : onglets", () => {
     const tabs = screen.getAllByRole('tab');
     expect(tabs.map((t) => t.textContent)).toEqual(['Répartition', 'Évolution', 'Dépassements']);
     expect(screen.getByRole('tab', { name: 'Répartition' }).getAttribute('aria-selected')).toBe('true');
-    expect(screen.getByRole('heading', { level: 2 }).textContent).toBe('Analyses');
+    // Un seul titre par écran : celui de l'en-tête, la page n'en répète pas.
+    expect(screen.queryByRole('heading', { level: 2, name: 'Analyses' })).toBeNull();
+    expect(screen.queryByText(fr.Reporting.analyses.desc)).toBeNull();
   });
 
   it.each([

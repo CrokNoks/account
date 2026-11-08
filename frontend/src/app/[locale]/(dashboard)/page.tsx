@@ -67,15 +67,9 @@ export default function Home() {
   return (
     <div className="flex flex-col gap-4 lg:gap-8">
       <div className="flex items-center justify-between gap-2">
-        <div className="flex flex-col gap-2">
-          <div className="flex items-center gap-4">
-            <h2 className="hidden lg:block text-3xl font-bold tracking-tight">{t('title')}</h2>
-            <HelpButton tour="dashboard" className="h-8 w-8" />
-            <PeriodSelect periods={periods} value={activePeriodId} onChange={setActivePeriodId} />
-          </div>
-          <p className="hidden lg:block text-muted-foreground">
-            {t('welcome')}
-          </p>
+        <div className="flex items-center gap-4">
+          <HelpButton tour="dashboard" className="h-8 w-8" />
+          <PeriodSelect periods={periods} value={activePeriodId} onChange={setActivePeriodId} />
         </div>
         <Button className="gap-2 max-lg:hidden" onClick={() => setCreateTransactionDrawerOpen(true)} data-tour="add-transaction">
           <Plus className="w-4 h-4" />

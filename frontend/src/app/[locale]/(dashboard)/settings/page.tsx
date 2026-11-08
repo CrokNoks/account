@@ -10,7 +10,6 @@ export default function SettingsPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <h2 className="text-3xl font-bold tracking-tight max-lg:hidden">{t('title')}</h2>
       <ul className="grid gap-3 sm:grid-cols-2">
         {SETTINGS_PAGES.map(({ href, labelKey, descriptionKey, icon: Icon }) => (
           <li key={href}>

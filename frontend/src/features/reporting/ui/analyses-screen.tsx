@@ -21,11 +21,6 @@ export function AnalysesScreen({ initialTab = 'breakdown' }: { initialTab?: Anal
 
   return (
     <div className="flex flex-col gap-4 lg:gap-8">
-      <div className="flex flex-col gap-2 max-lg:hidden">
-        <h2 className="text-3xl font-bold tracking-tight">{t('title')}</h2>
-        <p className="text-muted-foreground">{t('desc')}</p>
-      </div>
-
       <Tabs value={tab} onValueChange={(v) => setTab(v as AnalysesTab)}>
         <TabsList variant="line" aria-label={t('tabs_label')} className="max-lg:w-full max-lg:!h-11 lg:!h-auto">
           {TABS.map((name) => (

@@ -347,11 +347,14 @@ export function TransactionList({
   return (
     <div className={cn("flex flex-col h-full", !compact && "space-y-4")}>
       <div className={cn("flex items-center justify-between shrink-0", compact && "bg-muted/10 px-6 py-3 border-b")}>
-        <div className="flex items-center gap-2">
-          {compact && <Receipt className="w-4 h-4 text-primary" />}
-          <h2 className={cn("font-bold tracking-tight", compact ? "text-[10px] max-lg:text-xs uppercase tracking-wider text-muted-foreground" : "text-3xl max-lg:hidden")}>{t('title')}</h2>
-        </div>
-        <div className="flex items-center gap-2">
+        {/* Hors mode compact, le titre de l'écran est celui de l'en-tête (un seul titre par écran). */}
+        {compact && (
+          <div className="flex items-center gap-2">
+            <Receipt className="w-4 h-4 text-primary" />
+            <h2 className="font-bold tracking-tight text-[10px] max-lg:text-xs uppercase tracking-wider text-muted-foreground">{t('title')}</h2>
+          </div>
+        )}
+        <div className="flex items-center gap-2 ml-auto">
           {extraActions}
           <Button size={compact ? "icon-xs" : "sm"} variant={compact ? "ghost" : "default"} className="gap-2" onClick={() => setCreateTransactionDrawerOpen(true)} data-tour={compact ? 'add-transaction' : undefined}>
             <Plus className="w-4 h-4" />

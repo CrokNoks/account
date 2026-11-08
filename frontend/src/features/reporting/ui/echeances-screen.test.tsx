@@ -33,19 +33,15 @@ describe('Écran Échéances', () => {
     expect(screen.getByLabelText('bloc-calendrier')).toBeTruthy();
     expect(screen.getByLabelText('bloc-liste')).toBeTruthy();
     expect(screen.queryByRole('tab')).toBeNull();
-    expect(screen.getByRole('heading', { name: 'Échéances' })).toBeTruthy();
+    // Un seul titre par écran : celui de l'en-tête, la page n'en répète pas.
+    expect(screen.queryByRole('heading', { name: 'Échéances' })).toBeNull();
+    expect(screen.queryByText(fr.Reporting.echeances.desc)).toBeNull();
   });
 
   it('passe au calendrier le jour du point bas donné par le back', () => {
     account.id = 'a1';
     renderScreen();
     expect(lowPoint.calendarProps.at(-1)).toMatchObject({ lowPointDate: '2026-07-15' });
-  });
-
-  it('est titré « Due dates » en anglais', () => {
-    account.id = 'a1';
-    renderScreen('en');
-    expect(screen.getByRole('heading', { name: 'Due dates' })).toBeTruthy();
   });
 
   it('sans compte, demande d\'en choisir un', () => {

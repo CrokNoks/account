@@ -2,13 +2,11 @@
 
 import { AccountList } from "@/features/accounts/ui/account-list";
 import { CreateAccountDialog } from "@/features/accounts/ui/create-account-dialog";
-import { useTranslations } from 'next-intl';
 import { useUiStore } from "@/shared/model/use-ui-store";
 import { useEffect } from "react";
 import { HelpButton } from "@/shared/ui/tour/HelpButton";
 
 export default function AccountsPage() {
-  const t = useTranslations('Accounts');
   const { startTour, completedTours } = useUiStore();
 
   useEffect(() => {
@@ -23,15 +21,7 @@ export default function AccountsPage() {
   return (
     <div className="flex flex-col gap-4 lg:gap-8">
       <div className="flex items-center justify-between">
-        <div className="flex flex-col gap-2">
-          <div className="flex items-center gap-4">
-            <h2 className="max-lg:hidden text-3xl font-bold tracking-tight">{t('title')}</h2>
-            <HelpButton tour="account" className="h-8 w-8" />
-          </div>
-          <p className="text-muted-foreground max-lg:hidden">
-            {t('description')}
-          </p>
-        </div>
+        <HelpButton tour="account" className="h-8 w-8" />
         <CreateAccountDialog />
       </div>
 
