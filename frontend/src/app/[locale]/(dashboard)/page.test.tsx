@@ -33,10 +33,11 @@ vi.mock('@/shared/model/use-ui-store', () => ({
 vi.mock('@/i18n/routing', () => ({ useRouter: () => ({ push: state.push }) }));
 vi.mock('@/shared/ui/tour/HelpButton', () => ({ HelpButton: () => <span data-testid="help" /> }));
 vi.mock('@/features/reporting/ui/dashboard-stats', () => ({
-  BalanceBar: () => <div data-testid="balance-bar" data-tour="stats" />,
-}));
-vi.mock('@/features/reporting/ui/forecast-composition', () => ({
-  ForecastComposition: () => <div data-testid="composition" />,
+  BalanceBar: () => (
+    <div data-testid="balance-bar" data-tour="stats">
+      <div data-testid="composition" />
+    </div>
+  ),
 }));
 vi.mock('@/features/reporting/ui/spending-pace', () => ({ SpendingPace: () => <div data-testid="pace" /> }));
 vi.mock('@/features/reporting/ui/to-handle', () => ({ ToHandle: () => <div data-testid="to-handle" /> }));
@@ -65,7 +66,7 @@ describe('Écran Aujourd\'hui', () => {
     state.completedTours = {};
   });
 
-  it('affiche la barre des soldes, la composition, le rythme puis À traiter, Budgets et Factures, sans personnalisation', () => {
+  it('affiche le bloc hero (soldes et composition), le rythme, À traiter, Budgets et Factures, sans personnalisation', () => {
     renderHome();
 
     for (const id of ['balance-bar', 'composition', 'pace', 'to-handle', 'budgets', 'bills', 'watch']) {
@@ -85,7 +86,25 @@ describe('Écran Aujourd\'hui', () => {
     const { container } = renderHome();
 
     for (const target of ['stats', 'budget-breakdown', 'budgets-to-watch', 'to-handle', 'add-transaction']) {
-      expect(container.querySelector(`[data-tour="${target}"]`)).not.toBeNull();
+      expect(container.querySelectorAll(`[data-tour="${target}"]`)).toHaveLength(1);
+    }
+  });
+
+  it('bureau : rythme 2/3 + À traiter 1/3, puis Budgets variables 2/3 + Prochaines factures 1/3 ; mobile : À traiter puis Budgets à surveiller', () => {
+    renderHome();
+    const col = (id: string) => screen.getByTestId(id).closest('[class*="lg:col-span"]') as HTMLElement;
+    expect(col('pace').className).toContain('lg:col-span-2');
+    expect(col('to-handle').className).toContain('lg:col-span-1');
+    expect(col('budgets').className).toContain('lg:col-span-2');
+    expect(col('bills').className).toContain('lg:col-span-1');
+    // rythme et À traiter partagent une grille, Budgets et Factures la suivante
+    expect(col('pace').parentElement).toBe(col('to-handle').parentElement);
+    expect(col('budgets').parentElement).toBe(col('bills').parentElement);
+    expect(col('pace').parentElement).not.toBe(col('budgets').parentElement);
+    // ordre mobile dans le document : hero, À traiter, Budgets à surveiller
+    const order = ['balance-bar', 'to-handle', 'watch'].map((id) => screen.getByTestId(id));
+    for (let i = 0; i < order.length - 1; i++) {
+      expect(order[i].compareDocumentPosition(order[i + 1]) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     }
   });
 

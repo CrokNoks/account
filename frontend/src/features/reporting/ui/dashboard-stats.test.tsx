@@ -52,6 +52,17 @@ const renderBar = (locale: 'fr' | 'en' = 'fr') =>
 const text = (el: HTMLElement) => el.textContent!.replace(/\s/g, '');
 
 describe('Barre des soldes', () => {
+  it('un seul bloc : prévu, En banque, À venir et composition du prévu dans la cible « stats »', () => {
+    const { container } = renderBar();
+    const hero = container.querySelector('[data-tour="stats"]')!;
+    for (const id of ['balance-forecast', 'balance-bank', 'balance-upcoming', 'composition']) {
+      expect(hero.contains(screen.getByTestId(id))).toBe(true);
+    }
+    expect(container.querySelectorAll('[data-tour="stats"]')).toHaveLength(1);
+    // la composition n'a plus de carte propre
+    expect(screen.getByTestId('composition').closest('[data-slot="card"]')).toBe(hero.querySelector('[data-slot="card"]'));
+  });
+
   it('met le prévu en chiffre principal, avec le solde en banque et le solde à venir', () => {
     renderBar();
 

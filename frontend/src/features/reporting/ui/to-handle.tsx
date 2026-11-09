@@ -69,7 +69,7 @@ export function ToHandle() {
               <CreditCard className="w-4 h-4 text-primary" />
               {t('todo_card', { count: cardCount })}
             </span>
-            <span className="font-black">{formatCurrency(cardTotal)}</span>
+            <span className="font-black shrink-0 whitespace-nowrap">{formatCurrency(cardTotal)}</span>
           </Link>
         )}
         {overruns.map((overrun) => (

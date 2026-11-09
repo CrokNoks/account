@@ -12,7 +12,6 @@ import { Button } from "@/components/ui/button";
 import { CalendarX, Plus } from "lucide-react";
 import { NoDataState } from "@/shared/ui/no-data-state";
 import { BalanceBar } from "@/features/reporting/ui/dashboard-stats";
-import { ForecastComposition } from "@/features/reporting/ui/forecast-composition";
 import { SpendingPace } from "@/features/reporting/ui/spending-pace";
 import { ToHandle } from "@/features/reporting/ui/to-handle";
 import { BudgetBreakdown } from "@/features/reporting/ui/budget-breakdown";
@@ -79,27 +78,26 @@ export default function Home() {
 
       <BalanceBar />
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-8">
-        <div className="lg:col-span-5">
-          <ForecastComposition />
-        </div>
-        <div className="lg:col-span-7 max-lg:hidden">
+      {/* Rythme (2/3) et À traiter (1/3) ; sur mobile, À traiter seul. */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-8">
+        <div className="lg:col-span-2 max-lg:hidden">
           <SpendingPace />
+        </div>
+        <div data-tour="to-handle" className="lg:col-span-1">
+          <ToHandle />
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-8">
-        <div data-tour="to-handle" className="lg:col-span-12">
-          <ToHandle />
-        </div>
+      {/* Budgets variables (2/3) et Prochaines factures (1/3) ; sur mobile, Budgets à surveiller seul. */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-8">
         {/* Mobile : « Budgets à surveiller » à la place de la répartition (une cible de visite par largeur). */}
         <div data-tour="budgets-to-watch" className="lg:hidden">
           <BudgetsToWatch />
         </div>
-        <div data-tour="budget-breakdown" className="lg:col-span-7 max-lg:hidden">
+        <div data-tour="budget-breakdown" className="lg:col-span-2 max-lg:hidden">
           <BudgetBreakdown />
         </div>
-        <div className="lg:col-span-5 max-lg:hidden">
+        <div className="lg:col-span-1 max-lg:hidden">
           <UpcomingDeadlinesWidget />
         </div>
       </div>

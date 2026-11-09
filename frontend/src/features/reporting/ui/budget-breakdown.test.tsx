@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { BudgetBreakdown } from './budget-breakdown';
 
@@ -12,7 +12,7 @@ const breakdown = {
   income: [
     { categoryId: 'i1', name: 'Salaire', real: '260000', budget: '250000', remaining: '-10000', percentage: 104 },
   ],
-  savings: [],
+  savings: [] as Array<{ categoryId: string; name: string; real: string; budget: string; remaining: string; percentage: number }>,
   transfers: [],
 };
 
@@ -34,7 +34,7 @@ describe('BudgetBreakdown overrun', () => {
   it('shows an expense above its budget as an overrun, not as a remaining amount', () => {
     render(<BudgetBreakdown />);
     const over = screen.getAllByTestId('over-budget');
-    expect(over).toHaveLength(2); // Courses and Imprévus on the default tab
+    expect(over).toHaveLength(2); // Courses and Imprévus
     expect(nbsp(over[0].textContent!)).toBe('over_budget_expense(100,00 €)');
     expect(screen.getAllByText(/remaining/)[0].textContent).toContain('70,00');
   });
@@ -66,13 +66,17 @@ describe('BudgetBreakdown overrun', () => {
     expect(bars[1].className).toContain('bg-primary'); // Loisirs: 30 spent on 100
   });
 
-  it('shows an income above its budget as beyond budget', () => {
+  it('« Budgets variables » : catégories de dépense seules, sans onglets ; revenus, épargne et virements absents', () => {
+    breakdown.savings = [{ categoryId: 's1', name: 'Livret', real: '-5000', budget: '10000', remaining: '5000', percentage: 50 }];
     render(<BudgetBreakdown />);
-    const tab = screen.getByRole('tab', { name: 'income' });
-    fireEvent.mouseDown(tab);
-    fireEvent.click(tab);
-    const over = screen.getAllByTestId('over-budget');
-    expect(nbsp(over[0].textContent!)).toBe('over_budget_income(100,00 €)');
+    expect(screen.getByText('variable_budgets')).toBeTruthy();
+    expect(screen.queryByRole('tab')).toBeNull();
+    expect(screen.queryByRole('tablist')).toBeNull();
+    const text = document.body.textContent!;
+    for (const name of ['Courses', 'Loisirs', 'Imprévus', 'Cadeaux']) expect(text).toContain(name);
+    for (const name of ['Salaire', 'Livret']) expect(text).not.toContain(name);
+    expect(screen.getAllByTestId('budget-bar')).toHaveLength(4);
+    breakdown.savings = [];
   });
 
   it('figé : montants réel / budget en valeur absolue et restant', () => {

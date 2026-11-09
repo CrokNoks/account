@@ -9,7 +9,6 @@ import { budgetBarClass } from "../lib/signed-amount";
 import { overrunAmount } from "../model/current-overruns";
 import { BudgetCategoryBreakdown } from "../model/types";
 import { useLocale, useTranslations } from "next-intl";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PieChart } from "lucide-react";
 
 import { NoDataState } from "@/shared/ui/no-data-state";
@@ -31,7 +30,7 @@ export function BudgetBreakdown() {
     <CardHeader className="bg-muted/10 pb-3 shrink-0">
       <div className="flex items-center gap-2">
         <PieChart className="w-4 h-4 text-primary" />
-        <h2 className="text-base font-semibold">{t('breakdown')}</h2>
+        <h2 className="text-base font-semibold">{t('variable_budgets')}</h2>
       </div>
     </CardHeader>
   );
@@ -50,28 +49,10 @@ export function BudgetBreakdown() {
   return (
     <Card className="border-2 shadow-sm h-full overflow-hidden flex flex-col">
       {header}
-      <CardContent className="pt-2 flex-1 min-h-0 flex flex-col gap-4 pb-0">
-        <Tabs defaultValue="expenses" className="flex-1 min-h-0 flex flex-col w-full">
-      <TabsList className="grid w-full grid-cols-4 mb-4 shrink-0">
-        <TabsTrigger value="expenses">{t('expenses')}</TabsTrigger>
-        <TabsTrigger value="income">{t('income')}</TabsTrigger>
-        <TabsTrigger value="savings">{t('savings')}</TabsTrigger>
-        <TabsTrigger value="transfers">{t('transfers')}</TabsTrigger>
-      </TabsList>
-      
-      <TabsContent value="expenses" className="flex-1 min-h-0 data-[state=active]:flex flex-col  overflow-y-auto">
-        <BudgetGroup title={t('expenses')} items={breakdown.expenses} isExpense />
-      </TabsContent>
-      <TabsContent value="income" className="flex-1 min-h-0 data-[state=active]:flex flex-col overflow-y-auto">
-        <BudgetGroup title={t('income')} items={breakdown.income} />
-      </TabsContent>
-      <TabsContent value="savings" className="flex-1 min-h-0 data-[state=active]:flex flex-col overflow-y-auto">
-        <BudgetGroup title={t('savings')} items={breakdown.savings} isExpense />
-      </TabsContent>
-      <TabsContent value="transfers" className="flex-1 min-h-0 data-[state=active]:flex flex-col overflow-y-auto">
-        <BudgetGroup title={t('transfers')} items={breakdown.transfers} />
-      </TabsContent>
-      </Tabs>
+      <CardContent className="pt-2 flex-1 min-h-0 flex flex-col gap-4 pb-4">
+        <div data-testid="variable-budgets" className="flex-1 min-h-0 flex flex-col overflow-y-auto">
+          <BudgetGroup title={t('expenses')} items={breakdown.expenses} isExpense />
+        </div>
       </CardContent>
     </Card>
   );

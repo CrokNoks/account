@@ -1,6 +1,5 @@
 'use client';
 
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useFormatCurrency } from '@/shared/lib/use-format-currency';
 import { usePresentAmount } from '../lib/signed-amount';
 import { useAccountStore } from '@/features/accounts/model/use-account-store';
@@ -17,7 +16,7 @@ const segmentColor: Record<CompositionSegment['key'], string> = {
 };
 
 /**
- * Composition du prévu : en banque + CB non pointées + factures à venir − budget restant + revenus
+ * Composition du prévu (sans carte propre : elle vit dans le bloc hero de `BalanceBar`) : en banque + CB non pointées + factures à venir − budget restant + revenus
  * attendus = prévu. Barre si tout est une sortie du solde en banque, sinon lignes signées. Les
  * montants viennent de « stats » (le prévu n'est jamais recalculé).
  */
@@ -28,19 +27,15 @@ export function ForecastComposition() {
   const { activeAccountId, activePeriodId } = useAccountStore();
   const { data: stats, isLoading } = useReportingStats(activeAccountId, activePeriodId);
 
-  if (isLoading || !stats) return <div className="h-32 bg-muted animate-pulse rounded-xl border-2" />;
+  if (isLoading || !stats) return <div className="h-24 bg-muted animate-pulse rounded-xl" />;
 
   const view = compositionView(stats);
   const label = (key: CompositionRow['key'] | CompositionSegment['key']) => t(`composition_${key}`);
 
   return (
-    <Card data-testid="composition" className="border-2 shadow-sm h-full overflow-hidden">
-      <CardHeader className="bg-muted/10 pb-3">
-        <CardTitle className="text-base font-semibold">
-          {t('composition_title')}
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="pt-3">
+    <section data-testid="composition" className="border-t pt-4 max-lg:pt-3">
+      <h2 className="mb-3 text-base font-semibold">{t('composition_title')}</h2>
+      <div>
         {view.mode === 'bar' ? (
           <div data-testid="composition-bar" className="space-y-3">
             <div className="flex h-4 w-full overflow-hidden rounded-full bg-secondary">
@@ -84,7 +79,7 @@ export function ForecastComposition() {
             ))}
           </ul>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </section>
   );
 }
