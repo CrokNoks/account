@@ -14,7 +14,9 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from '@/components/ui/badge';
 import { Button } from "@/components/ui/button";
 import { CheckCircle2, Circle, Pencil, Trash2, Repeat } from 'lucide-react';
-import { formatShortDate } from '@/shared/lib/date-only';
+import { groupByDay } from '../model/group-by-day';
+import { DayHeading } from './day-heading';
+import { Fragment } from 'react';
 import { usePresentAmount } from '@/features/reporting/lib/signed-amount';
 import { cn } from "@/lib/utils";
 import { AnomalyBadges } from './anomaly-badges';
@@ -24,7 +26,7 @@ import { AnomalyMark } from '../model/anomaly-marks';
 import { Transaction } from '../model/types';
 import { Category } from '@/features/categories/model/types';
 import { Tag } from '@/features/tags/model/types';
-import { useLocale, useTranslations } from 'next-intl';
+import { useTranslations } from 'next-intl';
 
 interface TransactionTableProps {
   transactions: Transaction[];
@@ -32,7 +34,6 @@ interface TransactionTableProps {
   tags?: Tag[];
   selectedIds: string[];
   onToggleSelect: (id: string) => void;
-  onToggleSelectAll: () => void;
   onEdit: (transaction: Transaction) => void;
   onDelete: (id: string) => void;
   /** Pointer ou dépointer, selon l'état de la ligne. */
@@ -52,7 +53,6 @@ export function TransactionTable({
   tags,
   selectedIds,
   onToggleSelect,
-  onToggleSelectAll,
   onEdit,
   onDelete,
   onTogglePointage,
@@ -64,22 +64,14 @@ export function TransactionTable({
   t
 }: TransactionTableProps) {
   const present = usePresentAmount();
-  const locale = useLocale();
+  const days = groupByDay(transactions);
   return (
     <div className="hidden lg:block border rounded-xl overflow-hidden bg-card shadow-sm">
       <Table>
         <TableHeader>
           <TableRow>
-            {!compact && (
-              <TableHead className="w-[40px]">
-                <Checkbox 
-                  checked={transactions.length > 0 && selectedIds.length === transactions.length}
-                  onCheckedChange={onToggleSelectAll}
-                />
-              </TableHead>
-            )}
+            {!compact && <TableHead className="w-[40px]"></TableHead>}
             <TableHead className="w-[50px]"></TableHead>
-            <TableHead className="w-[120px]">{t('fields.date')}</TableHead>
             <TableHead className="min-w-[200px] max-w-[400px]">{t('fields.description')}</TableHead>
             <TableHead className="w-[180px]">{t('fields.category')}</TableHead>
             <TableHead className="text-right w-[150px]">{t('fields.amount')}</TableHead>
@@ -89,12 +81,19 @@ export function TransactionTable({
         <TableBody>
           {transactions.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={compact ? 6 : 7} className="h-32 text-center text-muted-foreground">
+              <TableCell colSpan={compact ? 5 : 6} className="h-32 text-center text-muted-foreground">
                 {t('empty')}
               </TableCell>
             </TableRow>
           ) : (
-            transactions.map((transaction) => (
+            days.map((day, dayIndex) => (
+              <Fragment key={`${day.date}-${dayIndex}`}>
+              <TableRow data-testid="day-row" className="bg-muted/30 hover:bg-muted/30">
+                <TableCell colSpan={compact ? 5 : 6} className="py-2">
+                  <DayHeading date={day.date} />
+                </TableCell>
+              </TableRow>
+              {day.rows.map((transaction) => (
               <TableRow 
                 key={transaction.id} 
                 className={cn(
@@ -125,9 +124,6 @@ export function TransactionTable({
                       <Circle className="w-5 h-5 text-muted-foreground/30" />
                     )}
                   </button>
-                </TableCell>
-                <TableCell className="text-muted-foreground font-medium">
-                  {formatShortDate(transaction.date, locale)}
                 </TableCell>
                 <TableCell className="max-w-[400px]">
                   <div className="truncate max-w-full" title={transaction.description}>
@@ -193,6 +189,8 @@ export function TransactionTable({
                   </div>
                 </TableCell>
               </TableRow>
+              ))}
+              </Fragment>
             ))
           )}
         </TableBody>

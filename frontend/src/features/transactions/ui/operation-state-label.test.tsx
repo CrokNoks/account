@@ -20,7 +20,7 @@ function Screens({ onPoint }: { onPoint: (id: string) => void }) {
   };
   return (
     <>
-      <div data-testid="table"><TransactionTable {...common} onToggleSelectAll={() => {}} onDelete={() => {}} /></div>
+      <div data-testid="table"><TransactionTable {...common} onDelete={() => {}} /></div>
       <div data-testid="mobile"><TransactionMobileList {...common} /></div>
     </>
   );

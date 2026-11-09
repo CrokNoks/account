@@ -150,6 +150,21 @@ describe('TransactionList selection', () => {
     expect(screen.queryByTestId('bulk-bar')).toBeNull();
   });
 
+  it('"select this page" ticks only the displayed page and the selection is emptied on page change', () => {
+    render(<TransactionList />);
+    fireEvent.click(screen.getByTestId('select-page'));
+    expect(screen.getByTestId('bulk-bar').textContent).toContain('count:2');
+
+    fireEvent.click(screen.getByText('2'));
+    expect(screen.queryByTestId('bulk-bar')).toBeNull();
+    fireEvent.click(screen.getByTestId('select-page'));
+    expect(screen.getByTestId('bulk-bar').textContent).toContain('count:1');
+
+    // un second clic décoche toute la page
+    fireEvent.click(screen.getByTestId('select-page'));
+    expect(screen.queryByTestId('bulk-bar')).toBeNull();
+  });
+
   it('empties the selection when the filters change', () => {
     render(<TransactionList />);
     fireEvent.click(screen.getByText('select a'));

@@ -286,6 +286,7 @@
       "pending": "Pending / Pre-auth"
     },
     "empty": "No transactions found",
+    "select_page": "Select all (this page)",
     "save_another": "Save & Add Another",
     "add_another": "Add and enter another",
     "expense_hint": "Use negative value for expenses (ex: -10)",

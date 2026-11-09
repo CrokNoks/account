@@ -10,6 +10,7 @@ import { useCategories } from '@/features/categories/api/use-categories';
 import { useTags } from '@/features/tags/api/use-tags';
 import { toCents, centsToInputString, isUnreadableAmount, toOptionalCents } from '@/shared/lib/format';
 import { Plus, Receipt } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { useBulkUpdateTransactions, useBulkDeleteTransactions } from '../api/use-bulk-transactions';
@@ -397,6 +398,16 @@ export function TransactionList({
       <div className="flex-1 min-h-0 overflow-y-auto">
         {transactions && (
           <>
+            {!compact && transactions.data.length > 0 && (
+              <label className="flex items-center gap-2 px-1 pb-2 text-sm text-muted-foreground w-fit cursor-pointer">
+                <Checkbox
+                  data-testid="select-page"
+                  checked={selectedIds.length === transactions.data.length}
+                  onCheckedChange={toggleSelectAll}
+                />
+                {t('select_page')}
+              </label>
+            )}
             <TransactionMobileList 
               transactions={transactions.data}
               categories={categories} tags={tags}
@@ -407,7 +418,7 @@ export function TransactionList({
             <TransactionTable 
               transactions={transactions.data}
               categories={categories} tags={tags}
-              selectedIds={selectedIds} onToggleSelect={toggleSelect} onToggleSelectAll={toggleSelectAll}
+              selectedIds={selectedIds} onToggleSelect={toggleSelect}
               onEdit={setEditingTransaction} onDelete={handleDelete} onTogglePointage={togglePointage}
               onMakeRecurring={setTransactionToMakeRecurring} onTagClick={setTagDetailId}
               compact={compact} isUpdating={isUpdating} anomalyMarks={marks} t={t}
