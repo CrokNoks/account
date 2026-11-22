@@ -8,7 +8,7 @@ test('crée une règle, la voit, la supprime', async ({ page }) => {
 
   const pattern = uniqueName('motif').toUpperCase();
   await page.getByRole('button', { name: 'Nouvelle règle' }).click();
-  await page.getByPlaceholder('Ex: NETFLIX, TOTAL, AMZN...').fill(pattern);
+  await page.getByRole('dialog').getByLabel('Si la description contient...', { exact: true }).fill(pattern);
   await page.getByRole('button', { name: 'Créer la règle' }).click();
 
   const row = page.getByRole('row', { name: new RegExp(pattern) });

@@ -20,7 +20,7 @@ test('crée un compte et une transaction, les voit, supprime la transaction', as
   // Compte bancaire
   await gotoOk(page, '/accounts');
   await page.getByRole('button', { name: 'Ajouter un compte' }).click();
-  await page.getByPlaceholder('Compte courant, Épargne...').fill(accountName);
+  await page.getByRole('dialog').getByLabel('Nom', { exact: true }).fill(accountName);
   await page.getByRole('dialog').getByRole('button', { name: 'Ajouter' }).click();
   await expect(page.getByText(accountName).first()).toBeVisible();
 
@@ -28,8 +28,8 @@ test('crée un compte et une transaction, les voit, supprime la transaction', as
   await gotoOk(page, '/transactions');
   await page.getByRole('button', { name: 'Ajouter une opération' }).first().click();
   const drawer = page.getByRole('dialog');
-  await drawer.getByPlaceholder('Loyer, Courses, Salaire...').fill(label);
-  await drawer.getByPlaceholder('0,00').fill('-12,34');
+  await drawer.getByLabel('Description', { exact: true }).fill(label);
+  await drawer.getByLabel('Montant', { exact: true }).fill('-12,34');
   await drawer.locator('button[type="submit"]').first().click();
 
   const row = page.getByRole('row', { name: new RegExp(label) });

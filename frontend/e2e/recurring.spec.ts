@@ -9,8 +9,8 @@ test('crée une récurrence, la voit, la supprime', async ({ page }) => {
   const description = uniqueName('recurrence');
   await page.getByRole('button', { name: 'Nouvelle récurrence' }).click();
   const sheet = page.getByRole('dialog');
-  await sheet.getByPlaceholder('Netflix, Loyer, Salaire...').fill(description);
-  await sheet.getByPlaceholder('0,00').fill('-9,99');
+  await sheet.getByLabel('Description', { exact: true }).fill(description);
+  await sheet.getByLabel('Montant', { exact: true }).fill('-9,99');
   await sheet.getByRole('button', { name: /^Enregistrer ⇧/ }).click();
 
   const row = page.getByRole('row', { name: new RegExp(description) });

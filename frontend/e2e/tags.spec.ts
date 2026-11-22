@@ -8,7 +8,7 @@ test('crée un tag, le voit, le supprime', async ({ page }) => {
 
   const name = uniqueName('tag');
   await page.getByRole('button', { name: 'Nouveau tag' }).click();
-  await page.getByPlaceholder('Voyages, Santé, Cadeaux...').fill(name);
+  await page.getByRole('dialog').getByLabel('Nom', { exact: true }).fill(name);
   await page.getByRole('dialog').getByRole('button', { name: 'Enregistrer' }).click();
   const card = page.locator('div.group', { hasText: name });
   await expect(card).toBeVisible();

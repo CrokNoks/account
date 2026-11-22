@@ -26,7 +26,7 @@ export async function loginWithFreshAccount(page: Page): Promise<string> {
   await page.waitForURL(/\/accounts$/, { timeout: 20_000 }).catch(() => {});
   await gotoOk(page, '/accounts');
   await page.getByRole('button', { name: 'Ajouter un compte' }).click();
-  await page.getByPlaceholder('Compte courant, Épargne...').fill(accountName);
+  await page.getByRole('dialog').getByLabel('Nom', { exact: true }).fill(accountName);
   await page.getByRole('dialog').getByRole('button', { name: 'Ajouter' }).click();
   await expect(page.getByText(accountName).first()).toBeVisible();
   return accountName;
