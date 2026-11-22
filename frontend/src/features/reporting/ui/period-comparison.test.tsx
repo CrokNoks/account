@@ -77,6 +77,24 @@ describe('ComparisonGap', () => {
     expect(cell.className).toContain('text-muted-foreground');
   });
 
+  it("compare le montant consommé d'une dépense : un remboursement sur la période comparée est une baisse, verte", () => {
+    const cell = gap(point('-5000', '2000', -140), true);
+    expect(text(cell)).toBe(`-50,00 € -100 %`);
+    expect(cell.className).toContain('text-primary');
+  });
+
+  it("une dépense qui était remboursée sur la période de base est nouvelle, orange", () => {
+    const cell = gap(point('2000', '-3000', -250), true);
+    expect(cell.textContent).toBe('new');
+    expect(cell.className).toContain('text-warn');
+  });
+
+  it("deux périodes remboursées : rien consommé, écart neutre à zéro", () => {
+    const cell = gap(point('2000', '5000', 150), true);
+    expect(text(cell)).toBe(`0,00 € 0 %`);
+    expect(cell.className).toContain('text-muted-foreground');
+  });
+
   it("écrit l'écart au format de la langue : virgule en français, point en anglais", () => {
     const fr = render(<ComparisonGap item={point('-8560', '-4014', -53.11)} isExpense />);
     expect(text(fr.getByTestId('comparison-gap'))).toContain(`-53,11 %`);

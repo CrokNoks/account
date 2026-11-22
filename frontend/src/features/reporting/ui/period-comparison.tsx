@@ -6,6 +6,7 @@ import { useLocale, useTranslations } from 'next-intl';
 import { cn } from '@/lib/utils';
 import { formatPercent } from '@/shared/lib/format';
 import { useFormatCurrency } from '@/shared/lib/use-format-currency';
+import { isSurplus, spentAmount } from '../lib/budget-surplus';
 
 const abs = (value: string): bigint => {
   const n = BigInt(value);
@@ -19,11 +20,19 @@ export function ComparisonGap({ item, isExpense, isSavings }: { item: Comparison
   const formatCurrency = useFormatCurrency();
   const t = useTranslations('Reporting.comparison');
   const locale = useLocale();
-  const isNew = item.period1Real === '0' && item.period2Real !== '0';
-  const amountGap = abs(item.period2Real) - abs(item.period1Real);
-  const percent = formatPercent(item.percentageDiff, locale, { signed: true });
-  const isUp = isNew || item.percentageDiff > 0;
-  const isNeutral = !isNew && item.percentageDiff === 0;
+  // Une dépense dont le réel est positif (remboursement) ne consomme rien : l'écart porte sur le montant consommé,
+  // comme le montant affiché. Sans remboursement, le réel brut et le pourcentage de l'API s'appliquent tels quels.
+  const surplus = !!isExpense && (isSurplus(BigInt(item.period1Real)) || isSurplus(BigInt(item.period2Real)));
+  const base = surplus ? spentAmount(BigInt(item.period1Real)) : abs(item.period1Real);
+  const compared = surplus ? spentAmount(BigInt(item.period2Real)) : abs(item.period2Real);
+  const isNew = base === BigInt(0) && compared !== BigInt(0);
+  const amountGap = compared - base;
+  const percentageDiff = !surplus ? item.percentageDiff
+    : base === BigInt(0) ? 0
+    : Number((amountGap * BigInt(10000)) / base) / 100;
+  const percent = formatPercent(percentageDiff, locale, { signed: true });
+  const isUp = isNew || percentageDiff > 0;
+  const isNeutral = !isNew && percentageDiff === 0;
   // More spending is bad, more income is good
   const isGood = isExpense ? !isUp : isUp;
 
