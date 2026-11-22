@@ -89,13 +89,15 @@ function BudgetGroup({ title, items, isExpense }: { title: string, items: Budget
           const budget = parseInt(item.budget, 10);
           // Without budget the API returns 0 %: an amount spent or received
           // on a 0 budget fills the whole bar.
-          const unbudgeted = budget === 0 && real !== 0;
-          const percentage = unbudgeted ? 100 : Math.min(Math.abs(item.percentage), 100);
+          // Une dépense (ou épargne) au réel net positif (remboursement) est un excédent : rien de consommé.
+          const isSurplus = !!isExpense && real > 0;
+          const unbudgeted = budget === 0 && real !== 0 && !isSurplus;
+          const percentage = isSurplus ? 0 : unbudgeted ? 100 : Math.min(Math.abs(item.percentage), 100);
 
           // Expense real is negative and budget positive: compare absolute values.
           // Red only when the budget is exceeded.
           const variant = isExpense
-            ? (Math.abs(real) > Math.abs(budget) ? "bg-red-500" : "bg-green-500")
+            ? (!isSurplus && Math.abs(real) > Math.abs(budget) ? "bg-red-500" : "bg-green-500")
             : (real >= budget ? "bg-green-500" : "bg-yellow-500");
 
           return (
@@ -103,7 +105,7 @@ function BudgetGroup({ title, items, isExpense }: { title: string, items: Budget
               <div className="flex justify-between text-sm font-medium">
                 <span className="truncate pr-4">{item.name}</span>
                 <span className="text-muted-foreground whitespace-nowrap">
-                  {formatCurrency(Math.abs(parseInt(item.real, 10)).toString())} / {formatCurrency(Math.abs(parseInt(item.budget, 10)).toString())}
+                  {formatCurrency(isSurplus ? "0" : Math.abs(real).toString())} / {formatCurrency(Math.abs(parseInt(item.budget, 10)).toString())}
                 </span>
               </div>
               <div className="relative h-2 w-full overflow-hidden rounded-full bg-secondary">
@@ -114,8 +116,12 @@ function BudgetGroup({ title, items, isExpense }: { title: string, items: Budget
                  />
               </div>
               <div className="flex justify-between text-[10px] max-lg:text-xs text-muted-foreground uppercase tracking-wider">
-                <span>{item.percentage}%</span>
-                {remaining < 0 ? (
+                <span>{isSurplus ? 0 : item.percentage}%</span>
+                {isSurplus ? (
+                  <span data-testid="surplus" className="text-foreground font-bold">
+                    {t('surplus_expense', { amount: formatCurrency(real.toString()) })}
+                  </span>
+                ) : remaining < 0 ? (
                   <span
                     data-testid="over-budget"
                     className={isExpense ? "text-red-600 font-bold" : "text-green-600 font-bold"}
