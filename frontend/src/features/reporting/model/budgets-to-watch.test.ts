@@ -45,4 +45,13 @@ describe('budgetsToWatch', () => {
     const expenses = [line('Vide', '0', '0'), line('Normal', '-5000', '10000'), line('Hors budget', '-300', '0')];
     expect(budgetsToWatch({ ...empty, expenses }).map((l) => l.name)).toEqual(['Hors budget', 'Normal']);
   });
+
+  it('omet une ligne dont la dépense égale le budget, garde 0 dépensé avec un budget', () => {
+    const expenses = [
+      line('Assurance Crédit Immo.', '-18342', '18342'),
+      line('Pas encore dépensé', '0', '10000'),
+      line('Vide', '0', '0'),
+    ];
+    expect(budgetsToWatch({ ...empty, expenses }).map((l) => l.name)).toEqual(['Pas encore dépensé']);
+  });
 });
