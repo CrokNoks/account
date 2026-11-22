@@ -37,4 +37,15 @@ describe('CreateAccountDialog', () => {
       initialBalance: '0',
     });
   });
+
+  it('links the labels to their fields', () => {
+    render(
+      <NextIntlClientProvider locale="fr" messages={fr}>
+        <CreateAccountDialog />
+      </NextIntlClientProvider>,
+    );
+
+    expect(screen.getByLabelText(fr.Accounts.fields.name)).toHaveAttribute('placeholder', fr.Accounts.fields.name_placeholder);
+    expect(screen.getByLabelText(fr.Accounts.fields.balance)).toHaveValue('0');
+  });
 });

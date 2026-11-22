@@ -1,5 +1,6 @@
 'use client';
 
+import { useId } from 'react';
 import { Input } from "@/components/ui/input";
 import { AmountInput } from '@/components/ui/amount-input';
 import { Button } from "@/components/ui/button";
@@ -80,6 +81,11 @@ export function TransactionFilters({
   t
 }: TransactionFiltersProps) {
   const locale = useLocale();
+  const categoryId = useId();
+  const tagsId = useId();
+  const minAmountId = useId();
+  const startDateId = useId();
+  const periodFieldId = useId();
   return (
     <div className="flex flex-col gap-4 shrink-0">
       <div className="flex items-center gap-2">
@@ -143,8 +149,9 @@ export function TransactionFilters({
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {/* Category */}
             <div className="space-y-1.5">
-              <label className="text-[10px] max-lg:text-xs font-bold uppercase text-muted-foreground px-1">{t('fields.category')}</label>
+              <label htmlFor={categoryId} className="text-[10px] max-lg:text-xs font-bold uppercase text-muted-foreground px-1">{t('fields.category')}</label>
               <CategorySelector 
+                id={categoryId}
                 key={activeAccountId}
                 accountId={activeAccountId}
                 value={selectedCategoryId === 'all' ? '' : selectedCategoryId}
@@ -156,9 +163,10 @@ export function TransactionFilters({
 
             {/* Tags */}
             <div className="space-y-1.5">
-              <label className="text-[10px] max-lg:text-xs font-bold uppercase text-muted-foreground px-1">{t('filters.tags')}</label>
+              <label htmlFor={tagsId} className="text-[10px] max-lg:text-xs font-bold uppercase text-muted-foreground px-1">{t('filters.tags')}</label>
               {activeAccountId && (
                 <TagSelector 
+                  id={tagsId}
                   accountId={activeAccountId} 
                   selectedTagIds={selectedTagIds} 
                   onChange={setSelectedTagIds}
@@ -168,9 +176,10 @@ export function TransactionFilters({
 
             {/* Amount Range */}
             <div className="space-y-1.5">
-              <label className="text-[10px] max-lg:text-xs font-bold uppercase text-muted-foreground px-1">{t('amount_range')}</label>
+              <label htmlFor={minAmountId} className="text-[10px] max-lg:text-xs font-bold uppercase text-muted-foreground px-1">{t('amount_range')}</label>
               <div className="flex items-center gap-2">
                 <AmountInput
+                  id={minAmountId}
                   placeholder={t('filters.min')} 
                   className="h-10 bg-background" 
                   value={minAmount}
@@ -190,9 +199,10 @@ export function TransactionFilters({
             {!periodId && (
               <>
                 <div className="space-y-1.5 sm:col-span-2">
-                  <label className="text-[10px] max-lg:text-xs font-bold uppercase text-muted-foreground px-1">{t('date_range')}</label>
+                  <label htmlFor={startDateId} className="text-[10px] max-lg:text-xs font-bold uppercase text-muted-foreground px-1">{t('date_range')}</label>
                   <div className="flex items-center gap-2">
                     <Input 
+                      id={startDateId}
                       type="date" 
                       className="h-10 bg-background" 
                       value={startDate}
@@ -210,9 +220,9 @@ export function TransactionFilters({
 
                 {!periodControlled && (
                 <div className="space-y-1.5 sm:col-span-2">
-                  <label className="text-[10px] max-lg:text-xs font-bold uppercase text-muted-foreground px-1">{t('budget_period')}</label>
+                  <label htmlFor={periodFieldId} className="text-[10px] max-lg:text-xs font-bold uppercase text-muted-foreground px-1">{t('budget_period')}</label>
                   <Select value={effectivePeriodId} onValueChange={(v) => setSelectedPeriodId(v || 'all')}>
-                    <SelectTrigger className="h-10 bg-background">
+                    <SelectTrigger id={periodFieldId} className="h-10 bg-background">
                       <SelectValue>
                         {effectivePeriodId === 'all' 
                           ? t('all_periods') 

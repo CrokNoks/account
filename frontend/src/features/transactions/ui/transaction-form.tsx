@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useId } from 'react';
 import { todayDateOnly } from '@/shared/lib/date-only';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -56,6 +56,12 @@ export function TransactionForm({
   const { data: accounts } = useAccounts();
   const { mutate: predictCategory } = usePredictCategory();
   const desktop = useIsDesktop();
+  const dateId = useId();
+  const descriptionId = useId();
+  const categoryFieldId = useId();
+  const tagsId = useId();
+  const destinationId = useId();
+  const amountId = useId();
 
   const [date, setDate] = useState(initialValues?.date || todayDateOnly());
   const [description, setDescription] = useState(initialValues?.description || '');
@@ -145,9 +151,10 @@ export function TransactionForm({
 
   const tagsField = (
     <div className="space-y-2 flex flex-col">
-      <label className="text-sm font-medium">{t('filters.tags')}</label>
+      <label htmlFor={tagsId} className="text-sm font-medium">{t('filters.tags')}</label>
       {accountId && (
         <TagSelector
+          id={tagsId}
           accountId={accountId}
           selectedTagIds={tagIds}
           onChange={setTagIds}
@@ -185,8 +192,9 @@ export function TransactionForm({
 
   const dateField = (
     <div className="space-y-2" data-tour="tx-date">
-      <label className="text-sm font-medium">{t('fields.date')}</label>
+      <label htmlFor={dateId} className="text-sm font-medium">{t('fields.date')}</label>
       <Input 
+        id={dateId}
         ref={dateInputRef}
         type="date" 
         value={date}
@@ -199,8 +207,9 @@ export function TransactionForm({
 
   const descriptionField = (
     <div className="space-y-2" data-tour="tx-description">
-      <label className="text-sm font-medium">{t('fields.description')}</label>
+      <label htmlFor={descriptionId} className="text-sm font-medium">{t('fields.description')}</label>
       <Input 
+        id={descriptionId}
         placeholder={mode === 'transfer' ? t('form.description_placeholder_transfer') : t('form.description_placeholder_standard')} 
         value={description}
         onChange={(e) => handleDescriptionChange(e.target.value)}
@@ -212,8 +221,9 @@ export function TransactionForm({
 
   const categoryField = (
     <div className="space-y-2 flex flex-col">
-      <label className="text-sm font-medium">{t('fields.category')}</label>
+      <label htmlFor={categoryFieldId} className="text-sm font-medium">{t('fields.category')}</label>
       <CategorySelector 
+        id={categoryFieldId}
         key={accountId}
         accountId={accountId}
         value={categoryId}
@@ -230,9 +240,9 @@ export function TransactionForm({
 
   const destinationField = (
     <div className="space-y-2">
-      <label className="text-sm font-medium">{t('form.destination_account')}</label>
+      <label htmlFor={destinationId} className="text-sm font-medium">{t('form.destination_account')}</label>
       <Select value={destinationAccountId} onValueChange={(v) => setDestinationAccountId(v || '')}>
-        <SelectTrigger className="h-11">
+        <SelectTrigger id={destinationId} className="h-11">
           <SelectValue placeholder={t('form.select_destination')}>
             {destinationAccountId ? availableDestinations.find(a => a.id === destinationAccountId)?.name : t('form.select_destination')}
           </SelectValue>
@@ -252,9 +262,10 @@ export function TransactionForm({
 
   const amountField = (
     <div className="space-y-2" data-tour="tx-amount">
-      <label className="text-sm font-medium">{t('fields.amount')}</label>
+      <label htmlFor={amountId} className="text-sm font-medium">{t('fields.amount')}</label>
       <div className="relative">
         <AmountInput
+          id={amountId}
           ref={amountInputRef}
           variant={desktop ? 'signed' : 'unsigned'}
           placeholder={tc('amount_placeholder')}

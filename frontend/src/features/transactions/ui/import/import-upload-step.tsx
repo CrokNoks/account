@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useId } from 'react';
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useTranslations } from 'next-intl';
@@ -22,6 +22,7 @@ export function ImportUploadStep({
   isProcessing
 }: ImportUploadStepProps) {
   const t = useTranslations('Import.upload');
+  const delimiterId = useId();
   return (
     <div className="p-12 flex flex-col items-center justify-center text-center space-y-6 h-full min-h-[400px]">
       <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mb-4">
@@ -31,11 +32,11 @@ export function ImportUploadStep({
       
       <div className="flex flex-col items-center gap-6 bg-muted/20 p-8 rounded-xl border max-w-md w-full shadow-sm">
         <div className="space-y-3 w-full text-left">
-          <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+          <label htmlFor={delimiterId} className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
             <Columns className="w-3 h-3" /> {t('delimiter')}
           </label>
           <Select value={delimiter} onValueChange={(v) => setDelimiter(v as ',' | ';')}>
-            <SelectTrigger className="w-full h-11"><SelectValue /></SelectTrigger>
+            <SelectTrigger id={delimiterId} className="w-full h-11"><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value=",">{t('comma')}</SelectItem>
               <SelectItem value=";">{t('semicolon')}</SelectItem>

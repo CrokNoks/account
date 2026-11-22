@@ -29,9 +29,11 @@ interface TagSelectorProps {
   accountId: string;
   selectedTagIds: string[];
   onChange: (tagIds: string[]) => void;
+  /** Id of the trigger button, so a visible <label htmlFor> can point at it. */
+  id?: string;
 }
 
-export function TagSelector({ accountId, selectedTagIds, onChange }: TagSelectorProps) {
+export function TagSelector({ accountId, selectedTagIds, onChange, id }: TagSelectorProps) {
   const t = useTranslations('Tags.selector');
   const tApi = useTranslations('ApiErrors');
   const [open, setOpen] = React.useState(false);
@@ -77,6 +79,7 @@ export function TagSelector({ accountId, selectedTagIds, onChange }: TagSelector
         <PopoverTrigger 
           render={
             <Button
+              id={id}
               variant="outline"
               role="combobox"
               aria-expanded={open}

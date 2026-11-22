@@ -1,12 +1,18 @@
-import { render } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { TransactionForm } from './transaction-form';
 
 vi.mock('next-intl', () => ({ useTranslations: () => (key: string) => key }));
 vi.mock('sonner', () => ({ toast: { error: vi.fn(), success: vi.fn(), info: vi.fn() } }));
-vi.mock('@/features/tags/ui/tag-selector', () => ({ TagSelector: () => null }));
-vi.mock('@/features/categories/ui/category-selector', () => ({ CategorySelector: () => null }));
-vi.mock('@/features/accounts/api/use-accounts', () => ({ useAccounts: () => ({ data: [] }) }));
+// Like the real ones: a button that receives the id.
+vi.mock('@/features/tags/ui/tag-selector', () => ({
+  TagSelector: ({ id }: { id?: string }) => <button type="button" id={id} data-testid="tags" />,
+}));
+vi.mock('@/features/categories/ui/category-selector', () => ({
+  CategorySelector: ({ id }: { id?: string }) => <button type="button" id={id} data-testid="category" />,
+}));
+const accounts = [{ id: 'acc-1', name: 'Courant' }, { id: 'acc-2', name: 'Livret' }];
+vi.mock('@/features/accounts/api/use-accounts', () => ({ useAccounts: () => ({ data: accounts }) }));
 vi.mock('../api/use-predict-category', () => ({ usePredictCategory: () => ({ mutate: vi.fn() }) }));
 
 describe('TransactionForm default date', () => {
@@ -47,5 +53,24 @@ describe('TransactionForm amount field (bureau : signe tapé ; jsdom sans matchM
     await user.click(screen.getByRole('button', { name: /^ok/ }));
     expect(onSubmit).toHaveBeenCalledTimes(1);
     expect(toCents(onSubmit.mock.calls[0][0].amount)).toBe('-1250');
+  });
+});
+
+describe('TransactionForm labels', () => {
+  it('links the visible labels to their fields (standard)', () => {
+    render(<TransactionForm accountId="acc-1" onSubmit={vi.fn()} isPending={false} submitLabel="ok" />);
+
+    expect(screen.getByLabelText('fields.date')).toHaveAttribute('type', 'date');
+    expect(screen.getByLabelText('fields.description')).toHaveAttribute('placeholder', 'form.description_placeholder_standard');
+    expect(screen.getByLabelText('fields.category')).toBe(screen.getByTestId('category'));
+    expect(screen.getByLabelText('filters.tags')).toBe(screen.getByTestId('tags'));
+    expect(screen.getByLabelText('fields.amount')).toHaveAttribute('placeholder', 'amount_placeholder');
+    expect(screen.getByLabelText('fields.pending')).toBeTruthy();
+  });
+
+  it('links the destination account label to its select (transfer)', () => {
+    render(<TransactionForm accountId="acc-1" mode="transfer" onSubmit={vi.fn()} isPending={false} submitLabel="ok" />);
+
+    expect(screen.getByLabelText('form.destination_account')).toHaveTextContent('form.select_destination');
   });
 });

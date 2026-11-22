@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useId } from 'react';
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
@@ -35,6 +35,12 @@ export function ImportMappingStep({
   rawRows
 }: ImportMappingStepProps) {
   const t = useTranslations('Import.mapping');
+  const headerRowId = useId();
+  const dateId = useId();
+  const descriptionId = useId();
+  const amountId = useId();
+  const debitId = useId();
+  const creditId = useId();
   return (
     <div className="p-8 space-y-8">
       <div className="flex flex-col gap-6">
@@ -59,13 +65,13 @@ export function ImportMappingStep({
 
         <div className="grid grid-cols-1 md:grid-cols-5 gap-4 bg-muted/20 p-6 rounded-xl border">
           <div className="space-y-2">
-            <label className="text-[10px] max-lg:text-xs font-bold uppercase tracking-wider text-muted-foreground">{t('header_row')}</label>
-            <Input type="number" min="0" value={headerRowIndex} onChange={(e) => handleHeaderRowChange(parseInt(e.target.value, 10) || 0)} className="h-10" />
+            <label htmlFor={headerRowId} className="text-[10px] max-lg:text-xs font-bold uppercase tracking-wider text-muted-foreground">{t('header_row')}</label>
+            <Input id={headerRowId} type="number" min="0" value={headerRowIndex} onChange={(e) => handleHeaderRowChange(parseInt(e.target.value, 10) || 0)} className="h-10" />
           </div>
           <div className="space-y-2">
-            <label className="text-[10px] max-lg:text-xs font-bold uppercase tracking-wider text-muted-foreground">{t('date_column')}</label>
+            <label htmlFor={dateId} className="text-[10px] max-lg:text-xs font-bold uppercase tracking-wider text-muted-foreground">{t('date_column')}</label>
             <Select value={mapping.date || ''} onValueChange={(v) => setMapping({...mapping, date: v || ''})}>
-              <SelectTrigger className="h-10">
+              <SelectTrigger id={dateId} className="h-10">
                 <SelectValue placeholder={t('date')}>
                   {mapping.date || t('date')}
                 </SelectValue>
@@ -74,9 +80,9 @@ export function ImportMappingStep({
             </Select>
           </div>
           <div className="space-y-2 md:col-span-1">
-            <label className="text-[10px] max-lg:text-xs font-bold uppercase tracking-wider text-muted-foreground">{t('description_column')}</label>
+            <label htmlFor={descriptionId} className="text-[10px] max-lg:text-xs font-bold uppercase tracking-wider text-muted-foreground">{t('description_column')}</label>
             <Select value={mapping.description || ''} onValueChange={(v) => setMapping({...mapping, description: v || ''})}>
-              <SelectTrigger className="h-10">
+              <SelectTrigger id={descriptionId} className="h-10">
                 <SelectValue placeholder={t('description')}>
                   {mapping.description || t('description')}
                 </SelectValue>
@@ -87,9 +93,9 @@ export function ImportMappingStep({
           
           {amountMode === 'single' ? (
             <div className="space-y-2 md:col-span-2 text-primary">
-              <label className="text-[10px] max-lg:text-xs font-bold uppercase tracking-wider">{t('amount_column')}</label>
+              <label htmlFor={amountId} className="text-[10px] max-lg:text-xs font-bold uppercase tracking-wider">{t('amount_column')}</label>
               <Select value={mapping.amount || ''} onValueChange={(v) => setMapping({...mapping, amount: v || ''})}>
-                <SelectTrigger className="h-10 border-primary/30">
+                <SelectTrigger id={amountId} className="h-10 border-primary/30">
                   <SelectValue placeholder={t('amount')}>
                     {mapping.amount || t('amount')}
                   </SelectValue>
@@ -100,9 +106,9 @@ export function ImportMappingStep({
           ) : (
             <>
               <div className="space-y-2 text-red-500">
-                <label className="text-[10px] max-lg:text-xs font-bold uppercase tracking-wider">{t('debit_column')}</label>
+                <label htmlFor={debitId} className="text-[10px] max-lg:text-xs font-bold uppercase tracking-wider">{t('debit_column')}</label>
                 <Select value={mapping.debit || ''} onValueChange={(v) => setMapping({...mapping, debit: v || ''})}>
-                  <SelectTrigger className="h-10 border-red-200">
+                  <SelectTrigger id={debitId} className="h-10 border-red-200">
                     <SelectValue placeholder={t('debit')}>
                       {mapping.debit || t('debit')}
                     </SelectValue>
@@ -111,9 +117,9 @@ export function ImportMappingStep({
                 </Select>
               </div>
               <div className="space-y-2 text-green-500">
-                <label className="text-[10px] max-lg:text-xs font-bold uppercase tracking-wider">{t('credit_column')}</label>
+                <label htmlFor={creditId} className="text-[10px] max-lg:text-xs font-bold uppercase tracking-wider">{t('credit_column')}</label>
                 <Select value={mapping.credit || ''} onValueChange={(v) => setMapping({...mapping, credit: v || ''})}>
-                  <SelectTrigger className="h-10 border-green-200">
+                  <SelectTrigger id={creditId} className="h-10 border-green-200">
                     <SelectValue placeholder={t('credit')}>
                       {mapping.credit || t('credit')}
                     </SelectValue>

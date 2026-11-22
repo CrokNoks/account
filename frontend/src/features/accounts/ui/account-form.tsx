@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useId, useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { AmountInput } from '@/components/ui/amount-input';
@@ -27,6 +27,9 @@ export function AccountForm({
   const t = useTranslations('Accounts');
   const tc = useTranslations('Common');
 
+  const nameId = useId();
+  const balanceId = useId();
+
   const [name, setName] = useState(initialValues?.name || '');
   const [balance, setBalance] = useState(initialValues?.balance || '0');
 
@@ -41,8 +44,9 @@ export function AccountForm({
   return (
     <form onSubmit={handleSubmit} className="space-y-4 py-4">
       <div className="space-y-2" data-tour="account-name">
-        <label className="text-sm font-medium">{t('fields.name')}</label>
+        <label htmlFor={nameId} className="text-sm font-medium">{t('fields.name')}</label>
         <Input 
+          id={nameId}
           placeholder={t('fields.name_placeholder')} 
           value={name}
           onChange={(e) => setName(e.target.value)}
@@ -51,8 +55,9 @@ export function AccountForm({
       </div>
 
       <div className="space-y-2" data-tour="account-balance">
-        <label className="text-sm font-medium">{t('fields.balance')}</label>
+        <label htmlFor={balanceId} className="text-sm font-medium">{t('fields.balance')}</label>
         <AmountInput
+          id={balanceId}
           value={balance}
           onChange={(e) => setBalance(e.target.value)}
           required
