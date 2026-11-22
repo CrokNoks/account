@@ -16,7 +16,9 @@ export default defineConfig({
   fullyParallel: false,
   workers: 1,
   timeout: 60_000,
-  retries: 0, // les 500 à froid de la recette sont retentés par gotoOk et fetchOk
+  // Un seul nouvel essai : la recette répond parfois 500/503 ou coupe une navigation (démarrage à froid), sans lien avec le parcours.
+  // Un test qui ne passe qu'au 2e essai est signalé « flaky » dans le rapport.
+  retries: 1,
   reporter: [['list'], ['html', { outputFolder: 'playwright-report', open: 'never' }]],
   outputDir: 'test-results',
   use: {

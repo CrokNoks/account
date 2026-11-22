@@ -31,12 +31,22 @@ export async function gotoOk(page: Page, path: string) {
 
 export const HOME_URL = /\/(accounts)?$/;
 
-/** Connexion par le formulaire avec le compte de test. */
+/**
+ * Connexion par le formulaire avec le compte de test.
+ * Si le clic part avant l'hydratation, le navigateur soumet le formulaire en natif (URL `/login?`) : on recharge et on réessaie.
+ */
 export async function login(page: Page) {
-  await gotoOk(page, '/login');
-  await page.getByLabel('Email').fill(process.env.E2E_USER_EMAIL!);
-  await page.getByLabel('Mot de passe').fill(process.env.E2E_USER_PASSWORD!);
-  await page.getByRole('button', { name: 'Se connecter' }).click();
-  // Accueil `/` ; un compte sans compte bancaire est ensuite poussé vers /accounts par l'accueil lui-même.
-  await expect(page).toHaveURL(HOME_URL, { timeout: 20_000 });
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    await gotoOk(page, '/login');
+    await page.getByLabel('Email').fill(process.env.E2E_USER_EMAIL!);
+    await page.getByLabel('Mot de passe').fill(process.env.E2E_USER_PASSWORD!);
+    await page.getByRole('button', { name: 'Se connecter' }).click();
+    // Accueil `/` ; un compte sans compte bancaire est ensuite poussé vers /accounts par l'accueil lui-même.
+    try {
+      await expect(page).toHaveURL(HOME_URL, { timeout: 20_000 });
+      return;
+    } catch (error) {
+      if (attempt === 3 || !/\/login\??$/.test(page.url())) throw error;
+    }
+  }
 }
