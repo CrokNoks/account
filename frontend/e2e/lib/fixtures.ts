@@ -17,13 +17,20 @@ export const test = base.extend({
 export { expect };
 
 /**
- * Navigation qui retente sur une erreur serveur : la recette répond parfois 500 à froid (rendu serveur Firebase).
- * networkidle : attend l'hydratation, sinon un clic soumet le formulaire en natif.
+ * Navigation qui retente sur une erreur serveur (500/503 à froid : rendu serveur Firebase à 256 Mo) ou une navigation coupée (net::ERR_ABORTED).
+ * networkidle : attend l'hydratation, sinon un clic soumet le formulaire en natif ; borné à 10 s car une page qui poll ne l'atteint jamais.
  */
 export async function gotoOk(page: Page, path: string) {
   for (let attempt = 0; attempt < 5; attempt++) {
-    const response = await page.goto(path, { waitUntil: 'networkidle' });
-    if (response && response.status() < 500) return;
+    try {
+      const response = await page.goto(path, { waitUntil: 'load' });
+      if (response && response.status() < 500) {
+        await page.waitForLoadState('networkidle', { timeout: 10_000 }).catch(() => {});
+        return;
+      }
+    } catch (error) {
+      if (!/ERR_ABORTED/.test(String(error))) throw error;
+    }
     await page.waitForTimeout(3000);
   }
   throw new Error(`La recette répond 500 sur ${path} après 5 essais : l'application déployée est en cause, pas le parcours.`);
