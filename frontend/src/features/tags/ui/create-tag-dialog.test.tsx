@@ -47,3 +47,17 @@ describe('CreateTagDialog creation error', () => {
     expect(toast.error).toHaveBeenCalledWith(fr.Common.error);
   });
 });
+
+describe('CreateTagDialog labels', () => {
+  it('links the visible labels to their fields', () => {
+    render(
+      <NextIntlClientProvider locale="fr" messages={fr}>
+        <CreateTagDialog />
+      </NextIntlClientProvider>,
+    );
+    fireEvent.click(screen.getByRole('button', { name: fr.Tags.add_tag }));
+
+    expect(screen.getByLabelText(fr.Tags.fields.name)).toHaveAttribute('placeholder', fr.Tags.name_placeholder);
+    expect(screen.getByLabelText(fr.Tags.fields.color)).toHaveAttribute('type', 'color');
+  });
+});

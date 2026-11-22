@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useId } from 'react';
 import { 
   Sheet, 
   SheetContent, 
@@ -44,6 +44,11 @@ export function CreateRecurringDialog({
   const tt = useTranslations('Transactions');
   const { activeAccountId } = useAccountStore();
   const { mutate: createRecurring, isPending } = useCreateRecurringTransaction();
+
+  const descriptionId = useId();
+  const categoryFieldId = useId();
+  const dayOfMonthId = useId();
+  const amountId = useId();
 
   const [internalOpen, setInternalOpen] = useState(false);
   const open = controlledOpen !== undefined ? controlledOpen : internalOpen;
@@ -138,8 +143,9 @@ export function CreateRecurringDialog({
         
         <div className="flex-1 overflow-y-auto p-6 space-y-6">
           <div className="space-y-2">
-            <label className="text-sm font-medium">{t('fields.description')}</label>
+            <label htmlFor={descriptionId} className="text-sm font-medium">{t('fields.description')}</label>
             <Input 
+              id={descriptionId}
               placeholder={t('description_placeholder')} 
               value={description}
               onChange={(e) => setDescription(e.target.value)}
@@ -150,8 +156,9 @@ export function CreateRecurringDialog({
 
           <div className="space-y-4">
             <div className="space-y-2">
-              <label className="text-sm font-medium">{t('fields.category')}</label>
+              <label htmlFor={categoryFieldId} className="text-sm font-medium">{t('fields.category')}</label>
               <CategorySelector 
+                id={categoryFieldId}
                 key={activeAccountId}
                 accountId={activeAccountId}
                 value={categoryId}
@@ -159,8 +166,9 @@ export function CreateRecurringDialog({
               />
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium">{t('fields.day_of_month')}</label>
+              <label htmlFor={dayOfMonthId} className="text-sm font-medium">{t('fields.day_of_month')}</label>
               <Input 
+                id={dayOfMonthId}
                 type="number" 
                 min="1" 
                 max="31"
@@ -173,9 +181,10 @@ export function CreateRecurringDialog({
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-medium">{t('fields.amount')}</label>
+            <label htmlFor={amountId} className="text-sm font-medium">{t('fields.amount')}</label>
             <div className="relative">
               <AmountInput
+                id={amountId}
                 placeholder={tc('amount_placeholder')}
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}

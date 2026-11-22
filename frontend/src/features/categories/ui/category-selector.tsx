@@ -28,6 +28,8 @@ interface CategorySelectorProps {
   /** Restrict the list to these category types (all types when omitted). */
   types?: readonly Category['type'][];
   'aria-label'?: string;
+  /** Id of the trigger button, so a visible <label htmlFor> can point at it. */
+  id?: string;
 }
 
 const NONE = 'none';
@@ -66,6 +68,7 @@ export function CategorySelector({
   disabled,
   types,
   'aria-label': ariaLabel,
+  id,
 }: CategorySelectorProps) {
   const t = useTranslations('Categories');
   const { data: categories, isLoading } = useCategories(accountId);
@@ -99,6 +102,7 @@ export function CategorySelector({
       <PopoverTrigger
         render={
           <Button
+            id={id}
             variant="outline"
             role="combobox"
             aria-expanded={open}

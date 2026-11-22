@@ -58,4 +58,21 @@ describe('RecurringTransactionList edit', () => {
     const values = screen.getAllByRole('textbox').map((i) => (i as HTMLInputElement).value);
     expect(values).toContain('-3200,50');
   });
+
+  it('links the labels of the edit drawer to their fields', () => {
+    render(
+      <NextIntlClientProvider locale="fr" messages={fr}>
+        <QueryClientProvider client={new QueryClient()}>
+          <RecurringTransactionList />
+        </QueryClientProvider>
+      </NextIntlClientProvider>,
+    );
+    const buttons = screen.getAllByRole('button');
+    fireEvent.click(buttons[buttons.length - 2]);
+
+    expect(screen.getByLabelText(fr.Recurring.fields.description)).toHaveValue('Netflix');
+    expect(screen.getByLabelText(fr.Recurring.fields.category).getAttribute('role')).toBe('combobox');
+    expect(screen.getByLabelText(fr.Recurring.fields.day_of_month)).toHaveValue(5);
+    expect(screen.getByLabelText(fr.Recurring.fields.amount)).toHaveValue('-3200,50');
+  });
 });

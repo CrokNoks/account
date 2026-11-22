@@ -18,7 +18,7 @@ import { Badge } from "@/components/ui/badge";
 import { Trash2, Sparkles, ArrowRight, Pencil } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTranslations } from 'next-intl';
-import { useState } from 'react';
+import { useId, useState } from 'react';
 import { 
   Sheet, 
   SheetContent, 
@@ -153,6 +153,9 @@ function EditSmartRuleSheet({ rule, open, onOpenChange }: { rule: SmartRule, ope
   const t = useTranslations('SmartRules');
   const tc = useTranslations('Common');
   const { activeAccountId } = useAccountStore();
+  const patternId = useId();
+  const categoryFieldId = useId();
+  const priorityId = useId();
   const [pattern, setPattern] = useState(rule.pattern);
   const [categoryId, setCategoryId] = useState<string>(rule.categoryId || '');
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>(rule.tagIds || []);
@@ -203,8 +206,9 @@ function EditSmartRuleSheet({ rule, open, onOpenChange }: { rule: SmartRule, ope
         <form onSubmit={handleSubmit} className="flex-1 flex flex-col min-h-0">
           <div className="flex-1 overflow-y-auto p-6 space-y-6">
             <div className="space-y-2">
-              <label className="text-[10px] max-lg:text-xs font-bold uppercase tracking-wider text-muted-foreground">{t('fields.pattern')}</label>
+              <label htmlFor={patternId} className="text-[10px] max-lg:text-xs font-bold uppercase tracking-wider text-muted-foreground">{t('fields.pattern')}</label>
               <Input 
+                id={patternId}
                 placeholder={t('pattern_placeholder')} 
                 value={pattern}
                 onChange={(e) => setPattern(e.target.value)}
@@ -215,8 +219,9 @@ function EditSmartRuleSheet({ rule, open, onOpenChange }: { rule: SmartRule, ope
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <label className="text-[10px] max-lg:text-xs font-bold uppercase tracking-wider text-muted-foreground">{t('fields.category')}</label>
+                <label htmlFor={categoryFieldId} className="text-[10px] max-lg:text-xs font-bold uppercase tracking-wider text-muted-foreground">{t('fields.category')}</label>
                 <CategorySelector 
+                  id={categoryFieldId}
                   key={activeAccountId}
                   accountId={activeAccountId}
                   value={categoryId}
@@ -225,8 +230,9 @@ function EditSmartRuleSheet({ rule, open, onOpenChange }: { rule: SmartRule, ope
               </div>
 
               <div className="space-y-2">
-                <label className="text-[10px] max-lg:text-xs font-bold uppercase tracking-wider text-muted-foreground">{t('fields.priority')}</label>
+                <label htmlFor={priorityId} className="text-[10px] max-lg:text-xs font-bold uppercase tracking-wider text-muted-foreground">{t('fields.priority')}</label>
                 <Input 
+                  id={priorityId}
                   type="number" 
                   value={priority}
                   onChange={(e) => setPriority(e.target.value)}

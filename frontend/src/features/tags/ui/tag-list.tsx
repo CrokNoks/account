@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useId, useState } from 'react';
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { useTags } from '../api/use-tags';
 import { Tag } from '../model/types';
@@ -116,6 +116,8 @@ function EditTagDialog({ tag, open, onOpenChange }: { tag: Tag, open: boolean, o
   const t = useTranslations('Tags');
   const tc = useTranslations('Common');
   const { activeAccountId } = useAccountStore();
+  const nameId = useId();
+  const colorId = useId();
   const [name, setName] = useState(tag.name);
   const [color, setColor] = useState(tag.color || '#94a3b8');
   
@@ -147,13 +149,13 @@ function EditTagDialog({ tag, open, onOpenChange }: { tag: Tag, open: boolean, o
         <form onSubmit={handleSubmit} className="flex-1 flex flex-col min-h-0">
           <div className="flex-1 overflow-y-auto p-6 space-y-4">
             <div className="space-y-2">
-              <label className="text-sm font-medium">{t('fields.name')}</label>
-              <Input value={name} onChange={(e) => setName(e.target.value)} required className="h-11" />
+              <label htmlFor={nameId} className="text-sm font-medium">{t('fields.name')}</label>
+              <Input id={nameId} value={name} onChange={(e) => setName(e.target.value)} required className="h-11" />
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium">{t('fields.color')}</label>
+              <label htmlFor={colorId} className="text-sm font-medium">{t('fields.color')}</label>
               <div className="flex gap-2">
-                <Input type="color" value={color} onChange={(e) => setColor(e.target.value)} className="w-12 p-1 h-11" />
+                <Input id={colorId} type="color" value={color} onChange={(e) => setColor(e.target.value)} className="w-12 p-1 h-11" />
                 <Input value={color} onChange={(e) => setColor(e.target.value)} className="h-11" />
               </div>
             </div>

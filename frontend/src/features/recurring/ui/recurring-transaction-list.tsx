@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useId, useState } from 'react';
 import { tintedBadgeStyle } from '@/shared/lib/badge-color';
 import { useAccountStore } from '@/features/accounts/model/use-account-store';
 import { RecurringTransaction } from '../model/types';
@@ -122,6 +122,11 @@ function EditRecurringDialog({ transaction, open, onOpenChange }: { transaction:
   const locale = useLocale();
   const { activeAccountId } = useAccountStore();
   
+  const descriptionId = useId();
+  const categoryFieldId = useId();
+  const dayOfMonthId = useId();
+  const amountId = useId();
+
   const [description, setDescription] = useState(transaction.description);
   const [categoryId, setCategoryId] = useState(transaction.categoryId || '');
   const [amount, setAmount] = useState(centsToInputString(BigInt(transaction.amount), locale));
@@ -163,13 +168,14 @@ function EditRecurringDialog({ transaction, open, onOpenChange }: { transaction:
         <form onSubmit={handleSubmit} className="flex-1 flex flex-col min-h-0">
           <div className="flex-1 overflow-y-auto p-6 space-y-6">
             <div className="space-y-2">
-              <label className="text-sm font-medium">{t('fields.description')}</label>
-              <Input value={description} onChange={(e) => setDescription(e.target.value)} required className="h-11" />
+              <label htmlFor={descriptionId} className="text-sm font-medium">{t('fields.description')}</label>
+              <Input id={descriptionId} value={description} onChange={(e) => setDescription(e.target.value)} required className="h-11" />
             </div>
             <div className="space-y-4">
               <div className="space-y-2">
-                <label className="text-sm font-medium">{t('fields.category')}</label>
+                <label htmlFor={categoryFieldId} className="text-sm font-medium">{t('fields.category')}</label>
                 <CategorySelector 
+                  id={categoryFieldId}
                   key={activeAccountId}
                   accountId={activeAccountId}
                   value={categoryId}
@@ -177,14 +183,14 @@ function EditRecurringDialog({ transaction, open, onOpenChange }: { transaction:
                 />
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-medium">{t('fields.day_of_month')}</label>
-                <Input type="number" min="1" max="31" value={dayOfMonth} onChange={(e) => setDayOfMonth(e.target.value)} required className="h-11" />
+                <label htmlFor={dayOfMonthId} className="text-sm font-medium">{t('fields.day_of_month')}</label>
+                <Input id={dayOfMonthId} type="number" min="1" max="31" value={dayOfMonth} onChange={(e) => setDayOfMonth(e.target.value)} required className="h-11" />
               </div>
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium">{t('fields.amount')}</label>
+              <label htmlFor={amountId} className="text-sm font-medium">{t('fields.amount')}</label>
               <div className="relative">
-                <AmountInput value={amount} onChange={(e) => setAmount(e.target.value)} required className="h-11" />
+                <AmountInput id={amountId} value={amount} onChange={(e) => setAmount(e.target.value)} required className="h-11" />
                 <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">€</span>
               </div>
             </div>

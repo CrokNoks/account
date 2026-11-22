@@ -45,4 +45,14 @@ describe('CategoryList', () => {
     expect(screen.getByText('Couleur')).toBeTruthy();
     expect(screen.queryByText(/budget/i)).toBeNull();
   });
+
+  it('links the labels of the edit drawer to their fields', () => {
+    renderList();
+
+    fireEvent.click(screen.getByRole('button'));
+
+    expect(screen.getByLabelText(fr.Categories.fields.name)).toHaveValue('Courses');
+    expect(screen.getByLabelText(fr.Categories.fields.type)).toHaveTextContent(fr.Categories.types.expense);
+    expect(screen.getByLabelText(fr.Categories.fields.color)).toHaveAttribute('type', 'color');
+  });
 });

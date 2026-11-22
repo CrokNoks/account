@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useId, useState } from 'react';
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { Category, CategoryType } from '../model/types';
 import { useCategories } from '../api/use-categories';
@@ -120,6 +120,9 @@ function EditCategoryDialog({ category, open, onOpenChange }: { category: Catego
   const t = useTranslations('Categories');
   const tc = useTranslations('Common');
   const { activeAccountId } = useAccountStore();
+  const nameId = useId();
+  const typeId = useId();
+  const colorId = useId();
   const [name, setName] = useState(category.name);
   const [type, setType] = useState(category.type);
   const [color, setColor] = useState(category.color);
@@ -155,14 +158,14 @@ function EditCategoryDialog({ category, open, onOpenChange }: { category: Catego
         <div className="flex-1 overflow-y-auto p-6">
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <label className="text-sm font-medium">{t('fields.name')}</label>
-              <Input value={name} onChange={(e) => setName(e.target.value)} required />
+              <label htmlFor={nameId} className="text-sm font-medium">{t('fields.name')}</label>
+              <Input id={nameId} value={name} onChange={(e) => setName(e.target.value)} required />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <label className="text-sm font-medium">{t('fields.type')}</label>
+                <label htmlFor={typeId} className="text-sm font-medium">{t('fields.type')}</label>
                 <Select value={type} onValueChange={(v) => setType(v as CategoryType || CategoryType.EXPENSE)}>
-                  <SelectTrigger>
+                  <SelectTrigger id={typeId}>
                     <SelectValue>
                       {type === CategoryType.EXPENSE && t('types.expense')}
                       {type === CategoryType.INCOME && t('types.income')}
@@ -179,9 +182,9 @@ function EditCategoryDialog({ category, open, onOpenChange }: { category: Catego
                 </Select>
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-medium">{t('fields.color')}</label>
+                <label htmlFor={colorId} className="text-sm font-medium">{t('fields.color')}</label>
                 <div className="flex gap-2">
-                  <Input type="color" value={color} onChange={(e) => setColor(e.target.value)} className="w-12 p-1 h-10" />
+                  <Input id={colorId} type="color" value={color} onChange={(e) => setColor(e.target.value)} className="w-12 p-1 h-10" />
                   <Input value={color} onChange={(e) => setColor(e.target.value)} />
                 </div>
               </div>

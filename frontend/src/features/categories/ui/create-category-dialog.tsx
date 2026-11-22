@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useId, useState } from 'react';
 import { 
   Sheet, 
   SheetContent, 
@@ -28,6 +28,9 @@ export function CreateCategoryDialog() {
   const t = useTranslations('Categories');
   const tc = useTranslations('Common');
   
+  const nameId = useId();
+  const typeId = useId();
+  const colorId = useId();
   const [open, setOpen] = useState(false);
   const [name, setName] = useState('');
   const [type, setType] = useState<CategoryType>(CategoryType.EXPENSE);
@@ -69,8 +72,9 @@ export function CreateCategoryDialog() {
         <div className="flex-1 overflow-y-auto p-6">
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <label className="text-sm font-medium">{t('fields.name')}</label>
+              <label htmlFor={nameId} className="text-sm font-medium">{t('fields.name')}</label>
               <Input 
+                id={nameId}
                 placeholder={t('fields.name_placeholder')} 
                 value={name}
                 onChange={(e) => setName(e.target.value)}
@@ -78,9 +82,9 @@ export function CreateCategoryDialog() {
               />
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium">{t('fields.type')}</label>
+              <label htmlFor={typeId} className="text-sm font-medium">{t('fields.type')}</label>
               <Select value={type} onValueChange={(v) => setType(v as CategoryType)}>
-                <SelectTrigger>
+                <SelectTrigger id={typeId}>
                   <SelectValue>
                     {type === CategoryType.EXPENSE && t('types.expense')}
                     {type === CategoryType.INCOME && t('types.income')}
@@ -97,9 +101,10 @@ export function CreateCategoryDialog() {
               </Select>
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium">{t('fields.color')}</label>
+              <label htmlFor={colorId} className="text-sm font-medium">{t('fields.color')}</label>
               <div className="flex gap-2">
                 <Input 
+                  id={colorId}
                   type="color" 
                   value={color}
                   onChange={(e) => setColor(e.target.value)}

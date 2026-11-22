@@ -10,7 +10,10 @@ vi.mock('@/features/accounts/model/use-account-store', () => ({ useAccountStore:
 vi.mock('../api/use-create-recurring-transaction', () => ({
   useCreateRecurringTransaction: () => ({ mutate: vi.fn(), isPending: false }),
 }));
-vi.mock('@/features/categories/ui/category-selector', () => ({ CategorySelector: () => <div /> }));
+// Like the real one: a button that receives the id.
+vi.mock('@/features/categories/ui/category-selector', () => ({
+  CategorySelector: ({ id }: { id?: string }) => <button id={id} data-testid="category" />,
+}));
 
 const renderDialog = (locale: 'fr' | 'en') =>
   render(
@@ -27,5 +30,15 @@ describe('échéance : montant vide', () => {
   it('0.00 en en', () => {
     renderDialog('en');
     expect(screen.getByPlaceholderText('0.00')).toBeTruthy();
+  });
+});
+
+describe('échéance : libellés', () => {
+  it('lie chaque libellé visible à son champ', () => {
+    renderDialog('fr');
+    expect(screen.getByLabelText(fr.Recurring.fields.description)).toHaveAttribute('placeholder', fr.Recurring.description_placeholder);
+    expect(screen.getByLabelText(fr.Recurring.fields.category)).toBe(screen.getByTestId("category"));
+    expect(screen.getByLabelText(fr.Recurring.fields.day_of_month)).toHaveAttribute('type', 'number');
+    expect(screen.getByLabelText(fr.Recurring.fields.amount)).toHaveAttribute('placeholder', '0,00');
   });
 });
