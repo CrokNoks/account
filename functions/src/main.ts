@@ -4,6 +4,7 @@ import { INestApplication } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { onRequest } from 'firebase-functions/v2/https';
 import { globalPipes } from './shared/infrastructure/route-id.pipe';
+import { globalFilters } from './shared/infrastructure/validation-log.filter';
 import express from 'express';
 import { ExpressAdapter } from '@nestjs/platform-express';
 
@@ -25,6 +26,7 @@ async function createNestServer(
   });
 
   app.useGlobalPipes(...globalPipes());
+  app.useGlobalFilters(...globalFilters());
 
   const config = new DocumentBuilder()
     .setTitle('Account V2 API')

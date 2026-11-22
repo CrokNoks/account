@@ -299,6 +299,7 @@
     "confirm": "Confirmer l'import",
     "analyze": "Analyser les données",
     "analyzing_categories": "Analyse des catégories en cours...",
+    "prediction_error": "Catégories non proposées : l'analyse a échoué, vous pouvez les choisir à la main",
     "parse_error": "Impossible de lire le fichier CSV",
     "success": "{imported, plural, one {# transaction importée} other {# transactions importées}}",
     "success_with_skipped": "{imported, plural, one {# transaction importée} other {# transactions importées}}, {skipped, plural, one {# ligne ignorée} other {# lignes ignorées}}",

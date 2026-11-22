@@ -306,6 +306,96 @@ describe('Transactions routes (e2e)', () => {
         .expect(400));
   });
 
+  describe('long bank labels (limit 1000 characters)', () => {
+    const acc = '00000000-0000-4000-8000-000000000101';
+    const cat = '00000000-0000-4000-8000-000000000012';
+    // A 334-character label like the multi-line Crédit Agricole ones.
+    const label = (n: number) =>
+      (
+        'Prélèvement ORANGE abonnement mobile ' + 'REF0123456789 '.repeat(80)
+      ).slice(0, n);
+
+    it('bulk accepts a 334-character description', async () => {
+      await http()
+        .post(`/${acc}/transactions/bulk`)
+        .set(auth())
+        .send({
+          transactions: [
+            { date: '2026-03-01', description: label(334), amount: '-100' },
+          ],
+        })
+        .expect(201);
+      expect(mocks.transactions.saveMany).toHaveBeenCalledTimes(1);
+    });
+
+    it('bulk refuses a description above 1000 characters and saves nothing', async () => {
+      await http()
+        .post(`/${acc}/transactions/bulk`)
+        .set(auth())
+        .send({
+          transactions: [
+            { date: '2026-03-01', description: label(1001), amount: '-100' },
+          ],
+        })
+        .expect(400);
+      expect(mocks.transactions.saveMany).not.toHaveBeenCalled();
+    });
+
+    it('create and update accept 1000 characters and refuse 1001', async () => {
+      mocks.transactions.findById.mockResolvedValue(
+        tx('00000000-0000-4000-8000-000000000111'),
+      );
+      const url = `/${acc}/transactions`;
+      const one = (description: string) => ({
+        date: '2026-03-01',
+        description,
+        amount: '-100',
+      });
+      await http()
+        .post(url)
+        .set(auth())
+        .send(one(label(1000)))
+        .expect(201);
+      await http()
+        .post(url)
+        .set(auth())
+        .send(one(label(1001)))
+        .expect(400);
+      const upd = `${url}/00000000-0000-4000-8000-000000000111`;
+      await http()
+        .patch(upd)
+        .set(auth())
+        .send({ description: label(1000) })
+        .expect(200);
+      await http()
+        .patch(upd)
+        .set(auth())
+        .send({ description: label(1001) })
+        .expect(400);
+    });
+
+    it('predict-categories predicts the category of a 334-character label and refuses above 1000', async () => {
+      mocks.smartRules.findAllByAccount.mockResolvedValue([]);
+      mocks.transactions.findAllByAccountUnpaginated.mockResolvedValue([
+        tx('00000000-0000-4000-8000-000000000016', {
+          description: 'Prélèvement ORANGE abonnement mobile',
+          categoryId: cat,
+        }),
+      ]);
+      const predict = (descriptions: string[]) =>
+        http()
+          .post(`/${acc}/transactions/predict-categories`)
+          .set(auth())
+          .send({ descriptions });
+
+      const ok = await predict([label(334)]).expect(200);
+      expect((ok.body as { predictions: unknown }).predictions).toEqual([
+        { categoryId: cat },
+      ]);
+      await predict([label(1001)]).expect(400);
+    });
+  });
+
   describe('PATCH /:accountId/transactions/:id', () => {
     it('updates the transaction and clears pending when reconciling', async () => {
       mocks.transactions.findById.mockResolvedValue(

@@ -14,7 +14,7 @@ import { apiClient } from '@/shared/api/api-client';
 import { useRouter } from '@/i18n/routing';
 import { toCents, parseAmountToCents, centsToDecimalString } from '@/shared/lib/format';
 import { ParsedTransaction, ImportStep, ImportMapping } from '@/features/transactions/model/import-types';
-import { decodeCsv, findHeaderRow, guessMapping } from '@/features/transactions/model/import-csv';
+import { cleanDescription, decodeCsv, findHeaderRow, guessMapping } from '@/features/transactions/model/import-csv';
 import { parseImportDate } from '@/features/transactions/model/parse-import-date';
 import { ImportUploadStep } from '@/features/transactions/ui/import/import-upload-step';
 import { ImportMappingStep } from '@/features/transactions/ui/import/import-mapping-step';
@@ -126,7 +126,7 @@ export default function ImportTransactionsPage() {
     for (let i = 0; i < dataRows.length; i++) {
       const rowArr = dataRows[i];
       const dateVal = rowArr[dateIdx];
-      const descVal = rowArr[descIdx];
+      const descVal = cleanDescription(rowArr[descIdx] ?? '');
       
       if (!dateVal || !descVal) continue;
 
@@ -153,7 +153,7 @@ export default function ImportTransactionsPage() {
       mappedData.push({
         id: `row-${i}`,
         date: isoDate ?? dateVal.toString(),
-        description: descVal.toString(),
+        description: descVal,
         amount: cents === null ? '' : centsToDecimalString(cents),
         invalidReason,
         categoryId: null,
@@ -167,6 +167,7 @@ export default function ImportTransactionsPage() {
     if (activeAccountId && mappedData.some(r => !r.invalidReason)) {
       toast.info(t('analyzing_categories'));
       const updatedData = [...mappedData];
+      let predictionFailed = false;
       // Invalid rows are never predicted; the others go by chunks, one request per chunk.
       const validIndexes = updatedData.flatMap((row, i) => (row.invalidReason ? [] : [i]));
       for (let start = 0; start < validIndexes.length; start += PREDICTION_CHUNK_SIZE) {
@@ -183,10 +184,13 @@ export default function ImportTransactionsPage() {
             }
           });
           setParsedData([...updatedData]);
-        } catch {
-          // Ignore prediction error
+        } catch (error) {
+          // The import stays usable without predicted categories, but the failure is not silent.
+          console.error('Category prediction failed', error);
+          predictionFailed = true;
         }
       }
+      if (predictionFailed) toast.warning(t('prediction_error'));
     }
     setIsProcessing(false);
   };

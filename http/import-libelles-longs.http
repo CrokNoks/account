@@ -1,0 +1,94 @@
+@baseUrl = http://localhost:{{port}}
+# Supabase local (auth) : --var anon=<ANON_KEY de `supabase status`> --var port=<port de l'API (PORT, 8080 par défaut)>
+@authUrl = http://127.0.0.1:54321/auth/v1
+# Libellé type Crédit Agricole : une ligne après nettoyage, 334 caractères (au-delà de l'ancienne limite de 255).
+@label334 = {{ ('Prélèvement ORANGE SA-ORANGE Votre abonnement mobile EPCB000000000000000 FR00ZZZ000000 ABONNEMENT MOBILE ' + 'X'.repeat(400)).slice(0, 334) }}
+
+### Utilisateur jetable
+# @name owner
+POST {{authUrl}}/signup
+apikey: {{anon}}
+Content-Type: application/json
+
+{ "email": "import-long-{{$timestamp}}@example.com", "password": "Password123!" }
+
+?? status == 200
+
+### Compte
+# @name account
+POST {{baseUrl}}/accounts
+Authorization: Bearer {{owner.access_token}}
+Content-Type: application/json
+
+{ "name": "Courant", "initialBalance": "1000" }
+
+?? status == 201
+
+### Catégorie Télécom
+# @name telecom
+POST {{baseUrl}}/{{account.id}}/categories
+Authorization: Bearer {{owner.access_token}}
+Content-Type: application/json
+
+{ "name": "Télécom", "color": "#2255aa", "type": "expense" }
+
+?? status == 201
+
+### Historique catégorisé pour la prédiction
+POST {{baseUrl}}/{{account.id}}/transactions
+Authorization: Bearer {{owner.access_token}}
+Content-Type: application/json
+
+{ "categoryId": "{{telecom.id}}", "date": "2026-10-01", "description": "Prélèvement ORANGE abonnement mobile", "amount": "-2899" }
+
+?? status == 201
+
+### Import en lot : un libellé de 334 caractères est accepté
+# @name bulk
+POST {{baseUrl}}/{{account.id}}/transactions/bulk
+Authorization: Bearer {{owner.access_token}}
+Content-Type: application/json
+
+{ "transactions": [ { "date": "2026-11-18", "description": "{{label334}}", "amount": "-2899", "categoryId": null } ] }
+
+?? status == 201
+?? js response.parsedBody[0].description.length == 334
+
+### Prédiction de catégorie sur ce libellé : acceptée et la catégorie est trouvée
+POST {{baseUrl}}/{{account.id}}/transactions/predict-categories
+Authorization: Bearer {{owner.access_token}}
+Content-Type: application/json
+
+{ "descriptions": ["{{label334}}"] }
+
+?? status == 200
+?? body contains "categoryId":"{{telecom.id}}"
+
+### 1001 caractères : import refusé (400), message de validation, rien d'écrit
+POST {{baseUrl}}/{{account.id}}/transactions/bulk
+Authorization: Bearer {{owner.access_token}}
+Content-Type: application/json
+
+{ "transactions": [ { "date": "2026-11-19", "description": "{{ 'Z'.repeat(1001) }}", "amount": "-100", "categoryId": null } ] }
+
+?? status == 400
+?? body contains must be shorter than or equal to 1000 characters
+
+### 1001 caractères : prédiction refusée (400)
+POST {{baseUrl}}/{{account.id}}/transactions/predict-categories
+Authorization: Bearer {{owner.access_token}}
+Content-Type: application/json
+
+{ "descriptions": ["{{ 'Z'.repeat(1001) }}"] }
+
+?? status == 400
+
+### Rien n'a changé en base : une seule transaction importée (+ l'historique)
+GET {{baseUrl}}/{{account.id}}/transactions
+Authorization: Bearer {{owner.access_token}}
+
+?? status == 200
+?? js response.parsedBody.data.length == 2
+
+# Dans le terminal du serveur, le 400 doit laisser une ligne du logger Validation, sans le libellé :
+#   [Nest] ... WARN [Validation] 400 POST /:accountId/transactions/bulk: transactions.0.description must be shorter than or equal to 1000 characters

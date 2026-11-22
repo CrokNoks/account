@@ -948,13 +948,13 @@ describe('Request body validation (e2e)', () => {
         'transaction description',
         'post',
         `/${acc}/transactions`,
-        { date: '2026-03-01', description: long(256), amount: '-100' },
+        { date: '2026-03-01', description: long(1001), amount: '-100' },
       ],
       [
         'transaction description',
         'patch',
         `/${acc}/transactions/${tx}`,
-        { description: long(256) },
+        { description: long(1001) },
       ],
       [
         'recurring description',
@@ -975,7 +975,7 @@ describe('Request body validation (e2e)', () => {
         {
           destinationAccountId: '00000000-0000-4000-8000-000000000102',
           date: '2026-03-01',
-          description: long(256),
+          description: long(1001),
           amount: '100',
         },
       ],
@@ -1198,11 +1198,11 @@ describe('Request body validation (e2e)', () => {
         },
       );
 
-      it('POST transactions/predict answers 400 for a description above 255 characters', async () => {
+      it('POST transactions/predict answers 400 for a description above 1000 characters', async () => {
         await http()
           .post(`/${acc}/transactions/predict-categories`)
           .set(auth())
-          .send({ descriptions: ['x'.repeat(256)] })
+          .send({ descriptions: ['x'.repeat(1001)] })
           .expect(400);
       });
 

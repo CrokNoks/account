@@ -59,6 +59,11 @@ import { parseCents } from '../../shared/domain/cents';
 import { IsCents } from '../../shared/infrastructure/is-cents.decorator';
 import { IsCalendarDate } from '../../shared/infrastructure/is-calendar-date.decorator';
 
+// Une seule limite pour toute description de transaction (saisie, import, virement, prédiction).
+// Colonne `transactions.description` : text, sans plafond en base ; 1000 couvre les libellés
+// bancaires multi-lignes (jusqu'à ~350 caractères constatés) avec de la marge.
+export const MAX_TRANSACTION_DESCRIPTION = 1000;
+
 export class CreateTransactionDto {
   @IsOptional()
   @IsString()
@@ -81,7 +86,7 @@ export class CreateTransactionDto {
 
   @IsString()
   @ApiProperty({ description: 'Description' })
-  @MaxLength(255)
+  @MaxLength(MAX_TRANSACTION_DESCRIPTION)
   @Matches(/\S/, { message: 'Description is required' })
   description: string;
 
@@ -140,7 +145,7 @@ export class CreateTransferDto {
 
   @IsString()
   @ApiProperty({ description: 'Description' })
-  @MaxLength(255)
+  @MaxLength(MAX_TRANSACTION_DESCRIPTION)
   @Matches(/\S/, { message: 'Description is required' })
   description: string;
 
@@ -256,7 +261,7 @@ export class PredictCategoriesDto {
   @IsArray()
   @ArrayMaxSize(MAX_PREDICTIONS_PER_REQUEST)
   @IsString({ each: true })
-  @MaxLength(255, { each: true })
+  @MaxLength(MAX_TRANSACTION_DESCRIPTION, { each: true })
   descriptions: string[];
 }
 
