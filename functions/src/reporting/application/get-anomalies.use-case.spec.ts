@@ -127,6 +127,55 @@ describe('GetAnomaliesUseCase', () => {
     expect(anomalies[0].transactionIds).toEqual(['tx-1', 'tx-2']);
   });
 
+  it('does not flag as duplicates two identical transactions of different categories', async () => {
+    const make = (id: string, categoryId: string | null) =>
+      Transaction.create({
+        id,
+        accountId,
+        categoryId,
+        date: new Date(2026, 5, 10),
+        description: 'Orange mobile',
+        amount: BigInt(-1999),
+        reconciled: false,
+        pending: false,
+        metadata: {},
+      });
+
+    transactionRepository.findAllByAccountUnpaginated.mockResolvedValue([
+      make('tx-1', 'cat-1'),
+      make('tx-2', 'cat-2'),
+      make('tx-3', null),
+    ]);
+
+    const anomalies = await useCase.execute(accountId);
+
+    expect(anomalies.filter((a) => a.type === 'duplicate')).toHaveLength(0);
+  });
+
+  it('still flags as duplicates two identical transactions both without category', async () => {
+    const make = (id: string) =>
+      Transaction.create({
+        id,
+        accountId,
+        categoryId: null,
+        date: new Date(2026, 5, 10),
+        description: 'Orange mobile',
+        amount: BigInt(-1999),
+        reconciled: false,
+        pending: false,
+        metadata: {},
+      });
+
+    transactionRepository.findAllByAccountUnpaginated.mockResolvedValue([
+      make('tx-1'),
+      make('tx-2'),
+    ]);
+
+    const anomalies = await useCase.execute(accountId);
+
+    expect(anomalies.map((a) => a.transactionIds)).toEqual([['tx-1', 'tx-2']]);
+  });
+
   it('should ignore small amounts (<5€) and incomes for duplicates', async () => {
     const txSmall1 = Transaction.create({
       id: 'tx-1',

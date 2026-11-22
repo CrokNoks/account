@@ -104,7 +104,8 @@ export class GetAnomaliesUseCase {
       const ignoredAnomalies = (metadata?.ignoredAnomalies as string[]) || [];
       if (ignoredAnomalies.includes('duplicate')) continue;
 
-      const key = `${toDateOnly(t.date)}_${t.amount.toString()}`;
+      // Même jour, même montant, même catégorie (« sans catégorie » = une catégorie à part)
+      const key = `${toDateOnly(t.date)}_${t.amount.toString()}_${t.categoryId ?? ''}`;
 
       const existing = groups.get(key) || [];
       existing.push(t);
