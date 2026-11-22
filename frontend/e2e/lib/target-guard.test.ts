@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  assertAllowedBase,
   assertAllowedTarget,
   assertRecetteSupabase,
   findBackendUrls,
@@ -102,5 +103,15 @@ describe('isForbiddenRequest (filet pendant le parcours)', () => {
     'https://fonts.gstatic.com/a.woff2',
   ])('laisse passer %s', (url) => {
     expect(isForbiddenRequest(url)).toBe(false);
+  });
+});
+
+describe('assertAllowedBase', () => {
+  it('refuse la prod sans rien d autre à examiner', () => {
+    expect(() => assertAllowedBase('https://account-c6a3f.web.app')).toThrow(/refus/i);
+  });
+  it('accepte la recette et localhost', () => {
+    expect(() => assertAllowedBase(RECETTE_FRONT)).not.toThrow();
+    expect(() => assertAllowedBase('http://localhost:3000')).not.toThrow();
   });
 });

@@ -30,14 +30,19 @@ function isLocal(u: URL): boolean {
   return (u.protocol === 'http:' || u.protocol === 'https:') && !u.username && !u.password && LOCAL_HOSTS.includes(u.hostname);
 }
 
-/** Refuse tout front qui n'est pas la recette ou localhost, et tout service référencé hors recette. */
-export function assertAllowedTarget(baseUrl: string, referencedUrls: string[]): void {
+/** Refuse tout front qui n'est pas la recette ou localhost. À appeler AVANT toute requête vers la cible. */
+export function assertAllowedBase(baseUrl: string): void {
   const base = parse(baseUrl, 'URL cible');
   const baseIsRecette =
     base.protocol === 'https:' && !base.username && !base.password && base.hostname === RECETTE_FRONT_HOST;
   if (!baseIsRecette && !isLocal(base)) {
     refuse(`la cible ${base.origin} n'est ni la recette ni localhost`);
   }
+}
+
+/** Refuse tout front qui n'est pas la recette ou localhost, et tout service référencé hors recette. */
+export function assertAllowedTarget(baseUrl: string, referencedUrls: string[]): void {
+  assertAllowedBase(baseUrl);
 
   let supabaseSeen = false;
   for (const raw of referencedUrls) {
