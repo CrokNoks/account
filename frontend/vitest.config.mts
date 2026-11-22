@@ -8,7 +8,8 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     setupFiles: ['./vitest.setup.ts'],
-    include: ['src/**/*.test.{ts,tsx}'],
+    // e2e/**/*.test.ts : tests unitaires du garde-fou Playwright ; les parcours (*.spec.ts) restent à Playwright.
+    include: ['src/**/*.test.{ts,tsx}', 'e2e/**/*.test.ts'],
     restoreMocks: true,
   },
 });
