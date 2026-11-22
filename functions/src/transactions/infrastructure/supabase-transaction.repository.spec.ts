@@ -441,3 +441,38 @@ describe('SupabaseTransactionRepository pending filter', () => {
     },
   );
 });
+
+describe('SupabaseTransactionRepository unpaginated list beyond the 1000-row server cap', () => {
+  // Le serveur plafonne chaque réponse à 1000 lignes, quelle que soit la plage demandée.
+  const SERVER_CAP = 1000;
+  const chainOver = (total: number) => {
+    const rows = Array.from({ length: total }, (_, i) => ({
+      ...rowOf(tx(), null),
+      id: `tx-${i}`,
+    }));
+    let from = 0;
+    let to = Number.MAX_SAFE_INTEGER;
+    const chain: Record<string, unknown> = {};
+    for (const name of ['select', 'eq', 'order']) chain[name] = () => chain;
+    chain.range = (f: number, t: number) => {
+      from = f;
+      to = t;
+      return chain;
+    };
+    chain.returns = () =>
+      Promise.resolve({
+        data: rows.slice(from, Math.min(to + 1, from + SERVER_CAP)),
+        error: null,
+      });
+    return new SupabaseTransactionRepository({
+      from: () => chain,
+    } as unknown as SupabaseClient);
+  };
+
+  it('returns every transaction of the account, not only the first 1000', async () => {
+    const result = await chainOver(2500).findAllByAccountUnpaginated('acc-1');
+
+    expect(result).toHaveLength(2500);
+    expect(new Set(result.map((t) => t.id)).size).toBe(2500);
+  });
+});

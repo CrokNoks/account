@@ -118,49 +118,65 @@ export class SupabaseTransactionRepository implements TransactionRepository {
         ? '*, transaction_tags!inner(tag_id)'
         : '*, transaction_tags(tag_id)';
 
-    let query = this.supabase
-      .from('transactions')
-      .select(select)
-      .eq('account_id', accountId);
+    const buildQuery = () => {
+      let query = this.supabase
+        .from('transactions')
+        .select(select)
+        .eq('account_id', accountId);
 
-    if (options?.startDate) {
-      query = query.gte('date', options.startDate.toISOString().split('T')[0]);
-    }
-    if (options?.endDate) {
-      query = query.lte('date', options.endDate.toISOString().split('T')[0]);
-    }
-    if (options?.search) {
-      query = query.or(buildSearchFilter(options.search));
-    }
-    if (options?.categoryId) {
-      query = query.eq('category_id', options.categoryId);
-    }
-    if (options?.tagIds && options.tagIds.length > 0) {
-      query = query.in('transaction_tags.tag_id', options.tagIds);
-    }
-    if (options?.ids && options.ids.length > 0) {
-      query = query.in('id', options.ids);
-    }
-    if (options?.minAmount !== undefined) {
-      query = query.gte('amount', options.minAmount.toString());
-    }
-    if (options?.maxAmount !== undefined) {
-      query = query.lte('amount', options.maxAmount.toString());
-    }
-    if (options?.reconciled !== undefined) {
-      query = query.eq('reconciled', options.reconciled);
-    }
-    if (options?.pending !== undefined) {
-      query = query.eq('pending', options.pending);
+      if (options?.startDate) {
+        query = query.gte(
+          'date',
+          options.startDate.toISOString().split('T')[0],
+        );
+      }
+      if (options?.endDate) {
+        query = query.lte('date', options.endDate.toISOString().split('T')[0]);
+      }
+      if (options?.search) {
+        query = query.or(buildSearchFilter(options.search));
+      }
+      if (options?.categoryId) {
+        query = query.eq('category_id', options.categoryId);
+      }
+      if (options?.tagIds && options.tagIds.length > 0) {
+        query = query.in('transaction_tags.tag_id', options.tagIds);
+      }
+      if (options?.ids && options.ids.length > 0) {
+        query = query.in('id', options.ids);
+      }
+      if (options?.minAmount !== undefined) {
+        query = query.gte('amount', options.minAmount.toString());
+      }
+      if (options?.maxAmount !== undefined) {
+        query = query.lte('amount', options.maxAmount.toString());
+      }
+      if (options?.reconciled !== undefined) {
+        query = query.eq('reconciled', options.reconciled);
+      }
+      if (options?.pending !== undefined) {
+        query = query.eq('pending', options.pending);
+      }
+      return query;
+    };
+
+    // Le serveur plafonne chaque réponse à 1000 lignes : on lit page par page jusqu'à épuisement.
+    // Tri complet (date puis id) pour que les pages ne se chevauchent pas.
+    const PAGE_SIZE = 1000;
+    const rows: TransactionRow[] = [];
+    for (let from = 0; ; from += PAGE_SIZE) {
+      const { data, error } = await buildQuery()
+        .order('date', { ascending: false })
+        .order('id', { ascending: true })
+        .range(from, from + PAGE_SIZE - 1)
+        .returns<TransactionRow[]>();
+
+      if (error) throw new Error(error.message);
+      rows.push(...(data || []));
+      if (!data || data.length < PAGE_SIZE) break;
     }
 
-    const { data, error } = await query
-      .order('date', { ascending: false })
-      .returns<TransactionRow[]>();
-
-    if (error) throw new Error(error.message);
-
-    return (data || []).map((row) => this.mapToDomain(row));
+    return rows.map((row) => this.mapToDomain(row));
   }
 
   async sumAmountByAccountBeforeDate(
