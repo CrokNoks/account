@@ -1,3 +1,4 @@
+import { spentAmount } from '../lib/budget-surplus';
 import { ComparisonPoint, PeriodComparisonResponse } from './types';
 
 const ZERO = BigInt(0);
@@ -30,16 +31,17 @@ export function buildBreakdown(comparison: PeriodComparisonResponse): Breakdown 
     ...comparison.expenses.map((p) => ({ ...p, isSavings: false })),
     ...comparison.savings.map((p) => ({ ...p, isSavings: true })),
   ];
-  const sum = (pick: (p: BreakdownRow) => string) => all.reduce((acc, p) => acc + BigInt(pick(p)), ZERO);
+  // Règle unique `spentAmount` : un réel positif (remboursement) ne consomme rien et ne vient pas en déduction.
+  const sum = (pick: (p: BreakdownRow) => string) => all.reduce((acc, p) => acc + spentAmount(BigInt(pick(p))), ZERO);
   const rows = all
     .filter((p) => BigInt(p.period2Real) !== ZERO || BigInt(p.period1Real) !== ZERO)
     .sort((a, b) => {
-      const diff = abs(BigInt(b.period2Real)) - abs(BigInt(a.period2Real));
+      const diff = spentAmount(BigInt(b.period2Real)) - spentAmount(BigInt(a.period2Real));
       return diff === ZERO ? a.name.localeCompare(b.name) : diff > ZERO ? 1 : -1;
     });
   return {
     rows,
-    total: abs(sum((p) => p.period2Real)).toString(),
-    compareTotal: abs(sum((p) => p.period1Real)).toString(),
+    total: sum((p) => p.period2Real).toString(),
+    compareTotal: sum((p) => p.period1Real).toString(),
   };
 }

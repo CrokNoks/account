@@ -9,7 +9,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { useFormatCurrency } from '@/shared/lib/use-format-currency';
 import { usePeriodComparison } from '../../api/use-period-comparison';
 import { defaultComparison, validCompareWith } from '../../model/analysis-periods';
-import { absCents, buildBreakdown } from '../../model/breakdown';
+import { spentAmount } from '../../lib/budget-surplus';
+import { buildBreakdown } from '../../model/breakdown';
 import { ComparisonGap } from '../period-comparison';
 import { ChartLegend } from './chart-legend';
 import { longPeriodLabel } from './period-label';
@@ -117,7 +118,7 @@ export function BreakdownTab() {
                 {breakdown.rows.map((row) => (
                   <TableRow key={row.categoryId} data-testid="breakdown-row">
                     <TableCell className="py-3 text-sm font-medium">{row.name}</TableCell>
-                    <TableCell className="py-3 text-right text-sm tabular-nums">{formatCurrency(absCents(row.period2Real))}</TableCell>
+                    <TableCell className="py-3 text-right text-sm tabular-nums">{formatCurrency(spentAmount(BigInt(row.period2Real)).toString())}</TableCell>
                     {compared && (
                       <TableCell className="py-3 text-right">
                         <ComparisonGap item={row} isExpense isSavings={row.isSavings} />

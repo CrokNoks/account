@@ -13,6 +13,7 @@ import { usePeriods } from '@/features/budgets/api/use-periods';
 import { useCategoryOverrunsChart } from '../../api/use-overruns';
 import { closedPeriodsChronological } from '../../model/analysis-periods';
 import { absCents } from '../../model/breakdown';
+import { spentAmount } from '../../lib/budget-surplus';
 import { AXIS_TICK, CHART, PX_PER_PERIOD, TOOLTIP_STYLE } from './chart-style';
 import { ChartLegend } from './chart-legend';
 import { shortPeriodLabel } from './period-label';
@@ -77,8 +78,8 @@ export function EvolutionTab() {
 
   const totals = closedEvolution.map((d) => ({
     name: shortPeriodLabel(d.startDate, locale),
-    total: Number(absCents(d.realExpenses)),
-    totalLabel: formatCurrency(absCents(d.realExpenses)),
+    total: Number(spentAmount(BigInt(d.realExpenses))),
+    totalLabel: formatCurrency(spentAmount(BigInt(d.realExpenses)).toString()),
   }));
   const balances = closedEvolution.map((d) => ({
     name: shortPeriodLabel(d.startDate, locale),
@@ -87,8 +88,8 @@ export function EvolutionTab() {
   }));
   const categoryPoints = (categoryChart?.points ?? []).map((p) => ({
     name: shortPeriodLabel(p.startDate, locale),
-    real: Number(absCents(p.real)),
-    realLabel: formatCurrency(absCents(p.real)),
+    real: Number(spentAmount(BigInt(p.real))),
+    realLabel: formatCurrency(spentAmount(BigInt(p.real)).toString()),
     budget: Number(absCents(p.budget)),
     budgetLabel: formatCurrency(absCents(p.budget)),
     overrun: BigInt(p.overrun) > BigInt(0),

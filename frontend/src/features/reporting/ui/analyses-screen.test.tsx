@@ -146,6 +146,20 @@ describe('Répartition', () => {
   });
 });
 
+describe('Répartition : remboursement', () => {
+  it("un réel positif sur une dépense n'est ni une dépense affichée ni retranché du total", () => {
+    state.comparison = {
+      income: [], savings: [], transfers: [],
+      expenses: [pt('courses', '-12000', '-12000', 0), pt('imprevus', '0', '3462', 0)],
+    };
+    renderScreen('breakdown');
+    const cells = screen.getAllByTestId('breakdown-row').map((r) => r.textContent!.replace(/[\u00a0\u202f]/g, ' '));
+    expect(cells[1]).toContain('imprevus');
+    expect(cells[1]).not.toContain('34,62');
+    expect(screen.getByTestId('breakdown-total').textContent).toMatch(/120,00/);
+  });
+});
+
 describe('Répartition : épargne', () => {
   it("l'écart d'une ligne d'épargne est neutre, celui d'une dépense garde sa couleur", () => {
     state.comparison = {
@@ -255,6 +269,21 @@ describe('Évolution', () => {
     expect(screen.getByRole('heading', { name: 'Dépenses par période' })).toBeTruthy();
     expect(screen.getByRole('heading', { name: 'Solde en banque' })).toBeTruthy();
     expect(screen.queryByText(/Revenus vs Dépenses/i)).toBeNull();
+  });
+
+  it("une catégorie choisie dont le réel est positif (remboursement) : 0 € dépensé, pas la valeur absolue", () => {
+    state.evolution = [evo(1), evo(2), evo(3, true)];
+    state.chart = {
+      categoryId: 'courses',
+      points: [
+        { periodId: 'p1', startDate: mk(1).startDate, endDate: mk(1).endDate, budget: '10000', real: '3462', overrun: '0' },
+      ],
+    };
+    renderScreen('evolution');
+    fireEvent.click(screen.getByRole('button', { name: 'Catégorie' }));
+    const row = within(screen.getByTestId('category-evolution-table')).getAllByRole('row')[1];
+    expect(row.textContent).not.toContain('34,62');
+    expect(row.textContent).toMatch(/0,00.*100,00/);
   });
 
   it('une catégorie choisie : réel face au budget et marque « Dépassement » là où il y en a un', () => {
