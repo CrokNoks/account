@@ -69,3 +69,8 @@ export function guessMapping(headers: string[]): {
     amountMode: separate ? 'separate' : 'single',
   };
 }
+
+/** One-line label: bank exports break lines and pad with spaces. Length is limited by the API, not here. */
+export function cleanDescription(label: string): string {
+  return label.replace(/\s+/g, ' ').trim();
+}

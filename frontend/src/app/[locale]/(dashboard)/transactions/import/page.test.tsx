@@ -14,7 +14,7 @@ vi.mock('@/i18n/routing', () => ({
   useRouter: () => ({ push: vi.fn(), back: vi.fn() }),
 }));
 vi.mock('sonner', () => ({
-  toast: { info: vi.fn(), error: vi.fn(), success: vi.fn() },
+  toast: { info: vi.fn(), error: vi.fn(), success: vi.fn(), warning: vi.fn() },
 }));
 vi.mock('@/shared/api/api-client', () => ({ apiClient: { get: vi.fn(), post: vi.fn() } }));
 vi.mock('@/features/categories/api/use-categories', () => ({
@@ -455,5 +455,80 @@ describe('CSV import page i18n', () => {
     fireEvent.click(confirm);
     bulkCreate.mock.calls[0][1].onSuccess();
     expect(toast.success).toHaveBeenCalledWith(expected);
+  });
+});
+
+describe('CSV import page, Crédit Agricole export', () => {
+  // Structure of a real export (anonymised): Windows-1252, preamble, trailing ";",
+  // multi-line quoted labels containing ";", debit/credit columns, blank lines at the end.
+  const longLabel = [
+    'Prélèvement',
+    'ORANGE SA-ORANGE - Votre abonnement mobile',
+    'EPCB000000000000000                ;FR00ZZZ000000',
+    'ABONNEMENT MOBILE ' + 'X'.repeat(200),
+    'FR0000000000000000000000000',
+  ].join('\n');
+  const file = [
+    'Téléchargement du 01/01/2026;',
+    '',
+    '',
+    'M.OU MME DUPONT JEAN',
+    'Compte de Dépôt carte n° 00000000000;',
+    'Solde au 01/01/2026 100,00 €',
+    '',
+    'Liste des opérations du compte entre le 01/12/2025 et le 01/01/2026',
+    '',
+    "Date d'opération;Libellé;Débit euros;Crédit euros;",
+    `18/12/2025;"${longLabel}";28,99;;`,
+    '17/12/2025;"Virement\nSALAIRE EXEMPLE";;34,62;',
+    '',
+    '',
+  ].join('\n');
+
+  beforeEach(() => {
+    bulkCreate.mockReset();
+    vi.mocked(toast.warning).mockReset();
+    useAccountStore.setState({ activeAccountId: 'acc-1' });
+    vi.mocked(apiClient.get).mockReset();
+    vi.mocked(apiClient.post).mockReset();
+    mockPredictions();
+  });
+
+  async function confirmImport() {
+    const { container } = renderPage();
+    fireEvent.change(container.querySelector('input[type="file"]')!, {
+      target: { files: [new File([Uint8Array.from(Buffer.from(file, 'latin1'))], 'CA.csv')] },
+    });
+    fireEvent.click(await screen.findByRole('button', { name: /Analyser les données/ }));
+    const confirm = await screen.findByRole('button', { name: /Confirmer l.import/ });
+    await waitFor(() => expect(screen.queryByRole('button', { name: /Analyser/ })).toBeNull());
+    await new Promise((r) => setTimeout(r, 0));
+    fireEvent.click(confirm);
+  }
+
+  it('sends single-line, whole descriptions (no cut) and cents', async () => {
+    await confirmImport();
+
+    const sent = (bulkCreate.mock.calls[0][0] as { transactions: ImportedLine[] }).transactions;
+    expect(sent.map((l) => l.amount)).toEqual(['-2899', '3462']);
+    for (const line of sent) expect(line.description).not.toMatch(/\n/);
+    expect(sent[0].description.length).toBeGreaterThan(255);
+    expect(sent[0].description).toContain('ABONNEMENT MOBILE ' + 'X'.repeat(200));
+    const predicted = vi.mocked(apiClient.post).mock.calls.flatMap(
+      ([, body]) => (body as { descriptions: string[] }).descriptions,
+    );
+    expect(predicted).toEqual(sent.map((l) => l.description));
+  });
+
+  it('keeps importing but says so when the category prediction fails', async () => {
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+    vi.mocked(apiClient.post).mockReset().mockRejectedValue(new Error('Request failed with status code 400'));
+
+    await confirmImport();
+
+    expect(bulkCreate).toHaveBeenCalledTimes(1);
+    expect(error).toHaveBeenCalledWith('Category prediction failed', expect.any(Error));
+    expect(toast.warning).toHaveBeenCalledWith(fr.Import.prediction_error);
+    error.mockRestore();
   });
 });

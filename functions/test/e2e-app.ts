@@ -13,6 +13,7 @@ import { RecurringTransactionRepository } from '../src/recurring/domain/recurrin
 import { TagRepository } from '../src/tags/domain/tag.repository.interface';
 import { TransactionRepository } from '../src/transactions/domain/transaction.repository.interface';
 import { globalPipes } from '../src/shared/infrastructure/route-id.pipe';
+import { globalFilters } from '../src/shared/infrastructure/validation-log.filter';
 
 // Doit correspondre à test/e2e-env.ts
 const JWT_SECRET = 'e2e-secret';
@@ -84,6 +85,7 @@ export async function createE2EApp(): Promise<{
   });
   // Même configuration que createNestServer (src/main.ts)
   app.useGlobalPipes(...globalPipes());
+  app.useGlobalFilters(...globalFilters());
   await app.init();
   return { app, mocks };
 }

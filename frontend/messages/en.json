@@ -385,6 +385,7 @@
     "confirm": "Confirm import",
     "analyze": "Analyze data",
     "analyzing_categories": "Analyzing categories...",
+    "prediction_error": "Categories not suggested: the analysis failed, you can pick them by hand",
     "parse_error": "Could not read the CSV file",
     "success": "{imported, plural, one {# transaction imported} other {# transactions imported}}",
     "success_with_skipped": "{imported, plural, one {# transaction imported} other {# transactions imported}}, {skipped, plural, one {# line skipped} other {# lines skipped}}",
