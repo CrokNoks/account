@@ -106,6 +106,7 @@
     "remaining": "Remaining",
     "over_budget_expense": "{amount} over budget",
     "over_budget_income": "+{amount} beyond budget",
+    "surplus_expense": "Surplus: {amount}",
     "calendar": {
       "page_title": "Financial Calendar",
       "page_desc": "View your past and forecast cash flows.",

@@ -87,6 +87,33 @@ describe('BudgetBreakdown overrun', () => {
     expect(text).toContain('remaining: 70,00 €');
   });
 
+  it('une dépense remboursée (réel positif) est un excédent : ni barre orange ni dépassement', () => {
+    const saved = breakdown.expenses;
+    breakdown.expenses = [
+      { categoryId: 'r1', name: 'Impôts', real: '3462', budget: '0', remaining: '3462', percentage: 0 },
+    ];
+    render(<BudgetBreakdown />);
+    const bar = screen.getByTestId('budget-bar');
+    expect(bar.className).toContain('bg-primary');
+    expect(bar.style.width).toBe('0%');
+    expect(screen.queryByTestId('over-budget')).toBeNull();
+    expect(nbsp(screen.getByTestId('surplus').textContent!)).toBe('surplus_expense(34,62 €)');
+    expect(nbsp(document.body.textContent!)).not.toContain('34,62 € / 0,00 €');
+    breakdown.expenses = saved;
+  });
+
+  it('excédent avec budget : réel net positif sur un budget de 100 € reste un excédent, barre vide', () => {
+    const saved = breakdown.expenses;
+    breakdown.expenses = [
+      { categoryId: 'r2', name: 'Santé', real: '5000', budget: '10000', remaining: '15000', percentage: -50 },
+    ];
+    render(<BudgetBreakdown />);
+    expect(screen.getByTestId('budget-bar').style.width).toBe('0%');
+    expect(nbsp(screen.getByTestId('surplus').textContent!)).toBe('surplus_expense(50,00 €)');
+    expect(screen.queryByTestId('over-budget')).toBeNull();
+    breakdown.expenses = saved;
+  });
+
   it('reste exact au-delà de 2^53 : montants, dépassement, restant et couleur de barre', () => {
     breakdown.expenses = [
       { categoryId: 'b1', name: 'Gros', real: '-9007199254740995', budget: '9007199254740994', remaining: '-1', percentage: 100 },

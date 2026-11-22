@@ -6,6 +6,7 @@ import { useFormatCurrency } from "@/shared/lib/use-format-currency";
 import { useAccountStore } from "@/features/accounts/model/use-account-store";
 import { useBudgetBreakdown } from "../api/use-budget-breakdown";
 import { budgetBarClass } from "../lib/signed-amount";
+import { isSurplus as isSurplusAmount } from "../lib/budget-surplus";
 import { overrunAmount } from "../model/current-overruns";
 import { BudgetCategoryBreakdown } from "../model/types";
 import { useLocale, useTranslations } from "next-intl";
@@ -78,19 +79,21 @@ function BudgetGroup({ title, items, isExpense }: { title: string, items: Budget
           const budget = BigInt(item.budget);
           // Without budget the API returns 0 %: an amount spent or received
           // on a 0 budget fills the whole bar.
-          const unbudgeted = budget === BigInt(0) && real !== BigInt(0);
-          const percentage = unbudgeted ? 100 : Math.min(Math.abs(item.percentage), 100);
+          // Une dépense au réel positif (remboursement) est un excédent : rien de dépensé, pas de barre.
+          const isSurplus = !!isExpense && isSurplusAmount(real);
+          const unbudgeted = budget === BigInt(0) && real !== BigInt(0) && !isSurplus;
+          const percentage = isSurplus ? 0 : unbudgeted ? 100 : Math.min(Math.abs(item.percentage), 100);
 
           // Expense real is negative and budget positive: compare absolute values.
           // Orange only when an expense or saving budget is exceeded; otherwise the blue accent.
-          const variant = budgetBarClass(!!isExpense && abs(real) > abs(budget));
+          const variant = budgetBarClass(!!isExpense && !isSurplus && abs(real) > abs(budget));
 
           return (
             <div key={item.categoryId} className="space-y-2">
               <div className="flex justify-between text-sm font-medium">
                 <span className="truncate pr-4">{item.name}</span>
                 <span className="text-muted-foreground whitespace-nowrap">
-                  {formatCurrency(abs(real))} / {formatCurrency(abs(budget))}
+                  {isSurplus ? formatCurrency(BigInt(0)) : formatCurrency(abs(real))} / {formatCurrency(abs(budget))}
                 </span>
               </div>
               <div className="relative h-2 w-full overflow-hidden rounded-full bg-secondary">
@@ -101,8 +104,12 @@ function BudgetGroup({ title, items, isExpense }: { title: string, items: Budget
                  />
               </div>
               <div className="flex justify-between text-[10px] max-lg:text-xs text-muted-foreground uppercase tracking-wider">
-                <span>{formatPercent(item.percentage, locale)}</span>
-                {overrun > BigInt(0) ? (
+                <span>{formatPercent(isSurplus ? 0 : item.percentage, locale)}</span>
+                {isSurplus ? (
+                  <span data-testid="surplus" className="text-foreground font-bold">
+                    {t('surplus_expense', { amount: formatCurrency(real) })}
+                  </span>
+                ) : overrun > BigInt(0) ? (
                   <span
                     data-testid="over-budget"
                     className={isExpense ? "text-warn font-bold" : "text-foreground font-bold"}

@@ -1,4 +1,5 @@
 import { BudgetBreakdownResponse, BudgetCategoryBreakdown } from '@/features/reporting/model/types';
+import { spentAmount } from '@/features/reporting/lib/budget-surplus';
 
 const abs = (value: string): bigint => {
   const n = BigInt(value);
@@ -8,8 +9,11 @@ const abs = (value: string): bigint => {
 /** 0 : budget à 0 avec du réel (ratio infini) ; 1 : budget > 0 ; 2 : ni budget ni réel. */
 function group(line: BudgetCategoryBreakdown): number {
   if (abs(line.budget) > BigInt(0)) return 1;
-  return abs(line.real) > BigInt(0) ? 0 : 2;
+  return spent(line) > BigInt(0) ? 0 : 2;
 }
+
+/** Consommé d'une ligne : un réel positif (remboursement) ne consomme rien. */
+const spent = (line: BudgetCategoryBreakdown): bigint => spentAmount(BigInt(line.real));
 
 const byName = (a: BudgetCategoryBreakdown, b: BudgetCategoryBreakdown) => a.name.localeCompare(b.name);
 
@@ -23,12 +27,12 @@ function compareConsumption(a: BudgetCategoryBreakdown, b: BudgetCategoryBreakdo
   const gb = group(b);
   if (ga !== gb) return ga - gb;
   if (ga === 0) {
-    const diff = abs(b.real) - abs(a.real);
+    const diff = spent(b) - spent(a);
     return diff > BigInt(0) ? 1 : diff < BigInt(0) ? -1 : byName(a, b);
   }
   if (ga === 1) {
-    const left = abs(a.real) * abs(b.budget);
-    const right = abs(b.real) * abs(a.budget);
+    const left = spent(a) * abs(b.budget);
+    const right = spent(b) * abs(a.budget);
     if (left !== right) return left > right ? -1 : 1;
   }
   return byName(a, b);

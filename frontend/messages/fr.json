@@ -106,6 +106,7 @@
     "remaining": "Restant",
     "over_budget_expense": "{amount} de dépassement",
     "over_budget_income": "+{amount} au-delà du budget",
+    "surplus_expense": "Excédent : {amount}",
     "calendar": {
       "page_title": "Calendrier Financier",
       "page_desc": "Visualisez vos flux de trésorerie passés et prévus.",

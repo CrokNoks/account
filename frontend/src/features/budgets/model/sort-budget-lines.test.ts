@@ -40,6 +40,14 @@ describe('sortBudgetLines', () => {
     expect(names(result)).toEqual(['B', 'A', 'N1', 'N2']);
   });
 
+  it('un remboursement (réel positif) ne consomme rien : derrière les lignes consommées, jamais en tête', () => {
+    const result = sortBudgetLines({
+      ...empty,
+      expenses: [line('R0', '3462', '0'), line('R1', '5000', '10000'), line('A', '-100', '10000'), line('Z', '-300', '0')],
+    });
+    expect(names(result)).toEqual(['Z', 'A', 'R1', 'R0']);
+  });
+
   it('breaks ties by name', () => {
     const result = sortBudgetLines({
       ...empty,

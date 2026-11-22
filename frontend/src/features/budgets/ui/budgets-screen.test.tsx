@@ -188,6 +188,20 @@ describe('BudgetsScreen', () => {
     expect(row('Loisirs')).toContain('70,00 €');
   });
 
+  it('un remboursement (réel positif) augmente le reste, comme l\'API : budget 100 € et +50 € → 150,00 € restants', () => {
+    const saveExpenses = breakdown.expenses;
+    breakdown.expenses = [
+      { categoryId: 'e1', name: 'Loisirs', real: '5000', budget: '10000', remaining: '15000', percentage: -50 },
+    ];
+    try {
+      renderScreen();
+      const loisirs = screen.getAllByRole('row').find((r) => r.textContent!.includes('Loisirs'))!;
+      expect(nbsp(loisirs.textContent!)).toContain('150,00 € restants');
+    } finally {
+      breakdown.expenses = saveExpenses;
+    }
+  });
+
   it('stays exact beyond 2^53 for the overrun and what is left', () => {
     const saveExpenses = breakdown.expenses;
     breakdown.expenses = [

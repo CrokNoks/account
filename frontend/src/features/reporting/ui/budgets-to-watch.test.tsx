@@ -68,6 +68,20 @@ describe('Budgets à surveiller', () => {
     expect(bar.style.width).toBe('100%');
   });
 
+  it('une dépense remboursée (réel positif) est un excédent : barre vide, jamais orange, 0,00 € consommé', () => {
+    state.breakdown = {
+      income: [], transfers: [], savings: [],
+      expenses: [line('Santé', '5000', '10000'), line('Vide', '3462', '0')],
+    };
+    renderIt();
+    const rows = screen.getAllByTestId('watch-row');
+    expect(rows).toHaveLength(1);
+    const bar = screen.getByTestId('watch-bar');
+    expect(bar.className).toContain('bg-primary');
+    expect(bar.style.width).toBe('0%');
+    expect(rows[0].textContent!.replace(/[\u00a0\u202f]/g, ' ')).toContain('0,00 € / 100,00 €');
+  });
+
   it('figé : montants réel / budget en valeur absolue', () => {
     state.breakdown = { income: [], transfers: [], savings: [], expenses: [line('A', '-15000', '10000')] };
     renderIt();

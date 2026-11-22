@@ -10,6 +10,7 @@ import { useBudgetBreakdown } from '../api/use-budget-breakdown';
 import { budgetsToWatch } from '../model/budgets-to-watch';
 import { periodProgress } from '../model/period-progress';
 import { budgetBarClass } from '../lib/signed-amount';
+import { spentAmount } from '../lib/budget-surplus';
 
 const abs = (value: string): bigint => (BigInt(value) < BigInt(0) ? -BigInt(value) : BigInt(value));
 
@@ -38,7 +39,8 @@ export function BudgetsToWatch() {
       <CardContent className="pt-2 space-y-1">
         {lines.length === 0 && <p className="text-sm text-muted-foreground">{t('watch_empty')}</p>}
         {lines.map((line) => {
-          const real = abs(line.real);
+          // Un réel positif (remboursement) est un excédent : rien de consommé.
+          const real = spentAmount(BigInt(line.real));
           const budget = abs(line.budget);
           // Sans budget, du réel remplit toute la barre ; la part est un pourcentage d'affichage, pas un montant.
           const percent = budget === BigInt(0) ? 100 : Number((real * BigInt(10000)) / budget) / 100;
