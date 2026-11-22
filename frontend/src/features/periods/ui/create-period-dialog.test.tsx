@@ -71,4 +71,10 @@ describe('CreatePeriodDialog', () => {
     expect(create).not.toHaveBeenCalled();
     expect(toast.error).toHaveBeenCalledWith(fr.BudgetsScreen.negative_amount);
   });
+
+  it('links the date labels to their fields', () => {
+    open();
+    expect(screen.getByLabelText(fr.Budgets.fields.start_date)).toHaveValue('2026-12-01');
+    expect(screen.getByLabelText(fr.Budgets.fields.end_date)).toHaveValue('2026-12-31');
+  });
 });

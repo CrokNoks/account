@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useId } from 'react';
 import { 
   Sheet, 
   SheetContent, 
@@ -30,6 +30,8 @@ export function CreatePeriodDialog() {
   const tc = useTranslations('Common');
   const tb = useTranslations('BudgetsScreen');
   const locale = useLocale();
+  const startDateId = useId();
+  const endDateId = useId();
   
   const [open, setOpen] = useState(false);
   
@@ -107,8 +109,9 @@ export function CreatePeriodDialog() {
             <div className="flex-1 overflow-y-auto p-6 space-y-6">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">{t('fields.start_date')}</label>
+                  <label htmlFor={startDateId} className="text-sm font-medium">{t('fields.start_date')}</label>
                   <Input 
+                    id={startDateId}
                     type="date" 
                     value={startDate}
                     onChange={(e) => setStartDate(e.target.value)}
@@ -117,8 +120,9 @@ export function CreatePeriodDialog() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">{t('fields.end_date')}</label>
+                  <label htmlFor={endDateId} className="text-sm font-medium">{t('fields.end_date')}</label>
                   <Input 
+                    id={endDateId}
                     type="date" 
                     value={endDate}
                     onChange={(e) => setEndDate(e.target.value)}

@@ -14,7 +14,8 @@ test('un compte neuf : Aujourd’hui invite à créer une période, la période 
   await page.getByText('Gérer les périodes').click();
   await page.getByRole('button', { name: 'Nouvelle période' }).click();
   const sheet = page.getByRole('dialog');
-  await expect(sheet.locator('input[type="date"]').first()).not.toHaveValue('');
+  await expect(sheet.getByLabel('Date de début')).not.toHaveValue('');
+  await expect(sheet.getByLabel('Date de fin')).not.toHaveValue('');
   await sheet.getByRole('button', { name: 'Ajouter' }).click();
   await expect(sheet).toHaveCount(0);
 

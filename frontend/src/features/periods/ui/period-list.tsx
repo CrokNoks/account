@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useId } from 'react';
 import { useAccountStore } from '@/features/accounts/model/use-account-store';
 import { Period } from '../model/types';
 import { usePeriods } from '@/features/budgets/api/use-periods';
@@ -126,6 +126,8 @@ function EditPeriodDialog({ period, open, onOpenChange }: { period: Period, open
   const [startDate, setStartDate] = useState(period.startDate.split('T')[0]);
   const [endDate, setEndDate] = useState(period.endDate.split('T')[0]);
   const [isActive, setIsActive] = useState(period.isActive);
+  const startDateId = useId();
+  const endDateId = useId();
   
   const { mutate: updatePeriod, isPending } = useUpdatePeriod();
 
@@ -155,12 +157,12 @@ function EditPeriodDialog({ period, open, onOpenChange }: { period: Period, open
           <div className="flex-1 overflow-y-auto p-6 space-y-6">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <label className="text-sm font-medium">{t('fields.start_date')}</label>
-                <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} required className="h-11" />
+                <label htmlFor={startDateId} className="text-sm font-medium">{t('fields.start_date')}</label>
+                <Input id={startDateId} type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} required className="h-11" />
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-medium">{t('fields.end_date')}</label>
-                <Input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} required className="h-11" />
+                <label htmlFor={endDateId} className="text-sm font-medium">{t('fields.end_date')}</label>
+                <Input id={endDateId} type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} required className="h-11" />
               </div>
             </div>
             <div className="flex items-center space-x-2 bg-primary/5 p-4 rounded-xl border border-primary/10">
