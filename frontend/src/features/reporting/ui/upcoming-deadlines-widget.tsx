@@ -5,11 +5,12 @@ import { useAccountStore } from '@/features/accounts/model/use-account-store';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { usePresentAmount } from '../lib/signed-amount';
 import { Clock, CalendarDays } from 'lucide-react';
-import { format, isAfter, startOfDay, addDays, parseISO } from 'date-fns';
+import { format, startOfDay, addDays, parseISO } from 'date-fns';
 import { fr, enUS } from 'date-fns/locale';
 import { useLocale, useTranslations } from 'next-intl';
 import { cn } from '@/lib/utils';
 import { CalendarEvent } from '../model/types';
+import { todayDateOnly } from '@/shared/lib/date-only';
 
 export function UpcomingDeadlinesWidget() {
   const present = usePresentAmount();
@@ -36,8 +37,9 @@ export function UpcomingDeadlinesWidget() {
 
   const inWindow = Array.from(byId.values())
     .filter(e => {
-      const date = parseISO(e.date);
-      return isAfter(date, now) && !isAfter(date, next7Days);
+      // Dates du back = jours calendaires (minuit UTC) : comparées comme dates, jamais comme instants dans le fuseau du navigateur.
+      const day = e.date.slice(0, 10);
+      return day > todayDateOnly(now) && day <= todayDateOnly(next7Days);
     })
     .sort((a, b) => a.date.localeCompare(b.date));
   const upcoming = inWindow.slice(0, 5);

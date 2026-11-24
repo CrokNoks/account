@@ -67,6 +67,22 @@ describe('Bloc Factures (prochaines échéances)', () => {
     expect(text()).not.toContain('autresnoncomprises');
   });
 
+  it('dates ISO du back (minuit UTC) : exclut aujourd\'hui, garde le 7e jour, quel que soit le fuseau', () => {
+    events.list = [
+      { id: 'u1', date: '2026-11-10T00:00:00.000Z', description: 'CB du jour', amount: '-1000', type: 'actual', categoryId: null },
+      { id: 'u2', date: '2026-11-11T00:00:00.000Z', description: 'Demain', amount: '-2000', type: 'actual', categoryId: null },
+      { id: 'u3', date: '2026-11-17T00:00:00.000Z', description: 'Septieme jour', amount: '-3000', type: 'actual', categoryId: null },
+      { id: 'u4', date: '2026-11-18T00:00:00.000Z', description: 'Huitieme jour', amount: '-4000', type: 'actual', categoryId: null },
+    ];
+    renderWidget();
+
+    expect(text()).not.toContain('CBdujour');
+    expect(text()).toContain('Demain');
+    expect(text()).toContain('Septiemejour');
+    expect(text()).not.toContain('Huitiemejour');
+    expect(text()).toContain('Totaldes2échéancesaffichées');
+  });
+
   it('au-delà de 5 échéances dans les 7 jours, dit combien d\'autres ne sont pas comprises dans le total', () => {
     events.list = [11, 12, 13, 14, 15, 16, 17].map((d) => ({
       id: `e${d}`, date: `2026-11-${d}`, description: `Facture ${d}`, amount: '-1000', type: 'actual', categoryId: null,
