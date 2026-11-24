@@ -1,0 +1,112 @@
+# Périodes : on ne déplace pas le début d'une période fermée après la période active du compte (409, code PERIOD_AFTER_ACTIVE).
+# Lancement : npx httpyac send --all http/deplacement-periode-fermee.http --var port=8080 --var supabase=<URL Supabase> --var anon=<ANON_KEY> --var email=<compte e2e> --var password=<mot de passe e2e>
+# (identifiants en ligne de commande, jamais dans le fichier ; connexion par mot de passe, pas de création d'utilisateur ;
+#  le compte bancaire créé est jetable, préfixé e2e-, supprimé à la fin ; config httpYac avec cookieJarEnabled false)
+# P1 octobre (inactive) puis P2 novembre (active). Attendu : P1 ne peut pas commencer en décembre, après P2 (409, rien ne change) ;
+# P1 déplacée sans dépasser P2 passe (200) ; changer seulement la fin passe (200) ; clôturer P2 passe (200).
+@baseUrl = http://localhost:{{port}}
+
+### Connexion du compte e2e
+# @name login
+POST {{supabase}}/auth/v1/token?grant_type=password
+apikey: {{anon}}
+Content-Type: application/json
+
+{ "email": "{{email}}", "password": "{{password}}" }
+
+?? status == 200
+
+### Compte jetable
+# @name account
+POST {{baseUrl}}/accounts
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "name": "e2e-deplacement-periode-fermee-{{$timestamp}}", "initialBalance": "0" }
+
+?? status == 201
+
+### P1 (octobre)
+# @name p1
+POST {{baseUrl}}/{{account.id}}/periods
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "startDate": "2026-10-01", "endDate": "2026-10-31", "budgets": [] }
+
+?? status == 201
+
+### P2 (novembre), active : P1 passe inactive
+# @name p2
+POST {{baseUrl}}/{{account.id}}/periods
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "startDate": "2026-11-01", "endDate": "2026-11-30", "budgets": [] }
+
+?? status == 201
+
+### Déplacer le début de P1 (fermée) en décembre, après P2 : refusé
+PATCH {{baseUrl}}/{{account.id}}/periods/{{p1.id}}
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "startDate": "2026-12-01", "endDate": "2026-12-31" }
+
+?? status == 409
+?? js response.parsedBody.code == PERIOD_AFTER_ACTIVE
+
+### P1 inchangée (octobre, fermée), P2 toujours active
+GET {{baseUrl}}/{{account.id}}/periods
+Authorization: Bearer {{login.access_token}}
+
+?? status == 200
+?? js response.parsedBody.length == 2
+?? js response.parsedBody.find(p => p.id == p1.id).startDate.slice(0, 10) == 2026-10-01
+?? js response.parsedBody.find(p => p.id == p1.id).endDate.slice(0, 10) == 2026-10-31
+?? js response.parsedBody.find(p => p.id == p1.id).isActive == false
+?? js response.parsedBody.find(p => p.id == p2.id).isActive == true
+
+### P1 déplacée sans dépasser l'active : acceptée
+PATCH {{baseUrl}}/{{account.id}}/periods/{{p1.id}}
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "startDate": "2026-10-05", "endDate": "2026-10-31" }
+
+?? status == 200
+
+### Fin seule modifiée : acceptée
+PATCH {{baseUrl}}/{{account.id}}/periods/{{p1.id}}
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "endDate": "2026-10-20" }
+
+?? status == 200
+
+### Clôture de P2 (active) : acceptée
+PATCH {{baseUrl}}/{{account.id}}/periods/{{p2.id}}
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "isActive": false }
+
+?? status == 200
+
+### État final : P1 du 5 au 20 octobre, P2 fermée
+GET {{baseUrl}}/{{account.id}}/periods
+Authorization: Bearer {{login.access_token}}
+
+?? status == 200
+?? js response.parsedBody.find(p => p.id == p1.id).startDate.slice(0, 10) == 2026-10-05
+?? js response.parsedBody.find(p => p.id == p1.id).endDate.slice(0, 10) == 2026-10-20
+?? js response.parsedBody.find(p => p.id == p2.id).isActive == false
+
+### Nettoyage : suppression du compte jetable (cascade)
+DELETE {{supabase}}/rest/v1/accounts?id=eq.{{account.id}}
+apikey: {{anon}}
+Authorization: Bearer {{login.access_token}}
+Prefer: return=representation
+
+?? status == 200

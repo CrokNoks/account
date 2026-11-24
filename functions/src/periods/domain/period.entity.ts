@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import {
   DomainValidationError,
+  PeriodAfterActiveError,
   PeriodBeforeExistingError,
   PeriodNotLatestError,
 } from '../../shared/domain/errors';
@@ -114,21 +115,25 @@ export function ensureCanBeCreated(
 }
 
 /**
- * Une période active ne peut pas voir sa date de début déplacée avant une autre
- * période du compte. Ne bloque que si `start_date` change et que le résultat est
- * actif : clôturer ou modifier la fin d'une active, ou toucher une période fermée,
- * reste permis.
+ * Quand `start_date` change, l'active reste la dernière période du compte :
+ * - une période qui reste active ne commence pas avant une autre (PERIOD_BEFORE_EXISTING) ;
+ * - une période qui reste inactive ne commence pas après l'active (PERIOD_AFTER_ACTIVE).
+ * Clôturer l'active (même en déplaçant son début), modifier seulement la fin ou
+ * renvoyer le même début ne sont pas concernés.
  */
 export function ensureStartCanMove(
   before: Period,
   after: Period,
   accountPeriods: Period[],
 ): void {
-  if (
-    !after.isActive ||
-    after.startDate.getTime() === before.startDate.getTime()
-  )
+  if (after.startDate.getTime() === before.startDate.getTime()) return;
+  if (after.isActive) {
+    if (hasNewerPeriod(after, accountPeriods))
+      throw new PeriodBeforeExistingError();
     return;
-  if (hasNewerPeriod(after, accountPeriods))
-    throw new PeriodBeforeExistingError();
+  }
+  const startsAfterActive = accountPeriods.some(
+    (p) => p.isActive && p.id !== after.id && hasNewerPeriod(p, [after]),
+  );
+  if (startsAfterActive) throw new PeriodAfterActiveError();
 }

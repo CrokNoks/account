@@ -506,6 +506,7 @@
     },
     "reactivate_only_latest": "Seule la dernière période peut être réactivée.",
     "period_before_existing": "Une période ne peut pas commencer avant une période existante du compte.",
+    "period_after_active": "Une période fermée ne peut pas commencer après la période active du compte.",
     "stats_hint": "Min: {min} | Moy: {avg} | Max: {max}",
     "updated": "Période mise à jour",
     "deleted": "Période supprimée",

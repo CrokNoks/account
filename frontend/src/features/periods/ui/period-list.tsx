@@ -154,6 +154,7 @@ function EditPeriodDialog({ period, periods, open, onOpenChange }: { period: Per
         const code = isAxiosError(error) ? error.response?.data?.code : undefined;
         if (code === 'PERIOD_NOT_LATEST') toast.error(t('reactivate_only_latest'));
         if (code === 'PERIOD_BEFORE_EXISTING') toast.error(t('period_before_existing'));
+        if (code === 'PERIOD_AFTER_ACTIVE') toast.error(t('period_after_active'));
       }
     });
   };

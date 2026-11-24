@@ -506,6 +506,7 @@
     },
     "reactivate_only_latest": "Only the most recent period can be reactivated.",
     "period_before_existing": "A period cannot start before an existing period of the account.",
+    "period_after_active": "A closed period cannot start after the active period of the account.",
     "stats_hint": "Min: {min} | Avg: {avg} | Max: {max}",
     "updated": "Period updated",
     "deleted": "Period deleted",

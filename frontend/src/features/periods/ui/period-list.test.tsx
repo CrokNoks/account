@@ -75,4 +75,18 @@ describe('PeriodList', () => {
 
     expect(toast.error).toHaveBeenCalledWith(fr.Budgets.period_before_existing);
   });
+
+  it('shows the API refusal when the closed period would start after the active one', () => {
+    render(
+      <NextIntlClientProvider locale="fr" messages={fr}>
+        <PeriodList />
+      </NextIntlClientProvider>,
+    );
+    fireEvent.click(screen.getByTitle(fr.Budgets.edit_dates));
+    apiError.code = 'PERIOD_AFTER_ACTIVE';
+    fireEvent.click(screen.getByRole('button', { name: fr.Common.save }));
+    apiError.code = undefined;
+
+    expect(toast.error).toHaveBeenCalledWith(fr.Budgets.period_after_active);
+  });
 });

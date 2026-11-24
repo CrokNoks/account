@@ -158,4 +158,58 @@ describe('PATCH /:accountId/periods/:id reactivation (e2e)', () => {
       await patch(OLD, { startDate: '2025-12-01' }).expect(200);
     });
   });
+  describe('moving the start date of a period that stays inactive', () => {
+    const active = period(LAST, '2026-02-01', '2026-02-28', true);
+    const closed = period(OLD, '2026-01-01', '2026-01-31', false);
+
+    beforeEach(() => {
+      mocks.periods.findById.mockResolvedValue(closed);
+      mocks.periods.findAllByAccount.mockResolvedValue([active, closed]);
+    });
+
+    it('refuses 409 PERIOD_AFTER_ACTIVE when the closed period would start after the active one, and writes nothing', async () => {
+      const res = await patch(OLD, {
+        startDate: '2026-03-01',
+        endDate: '2026-03-31',
+      }).expect(409);
+      expect(res.body).toMatchObject({
+        statusCode: 409,
+        code: 'PERIOD_AFTER_ACTIVE',
+      });
+      expect(mocks.periods.save).not.toHaveBeenCalled();
+    });
+
+    it('allows moving a closed period without passing the active one', async () => {
+      await patch(OLD, { startDate: '2025-12-01' }).expect(200);
+    });
+
+    it('allows changing only the end, or resending the same start, even if data is already inconsistent', async () => {
+      const ahead = period(OLD, '2026-03-01', '2026-03-31', false);
+      mocks.periods.findById.mockResolvedValue(ahead);
+      mocks.periods.findAllByAccount.mockResolvedValue([active, ahead]);
+      await patch(OLD, { endDate: '2026-03-30' }).expect(200);
+      await patch(OLD, {
+        startDate: '2026-03-01',
+        endDate: '2026-03-30',
+      }).expect(200);
+    });
+
+    it('allows moving a closed period when the account has no active period', async () => {
+      const inactive = period(LAST, '2026-02-01', '2026-02-28', false);
+      mocks.periods.findAllByAccount.mockResolvedValue([inactive, closed]);
+      await patch(OLD, {
+        startDate: '2026-03-01',
+        endDate: '2026-03-31',
+      }).expect(200);
+    });
+
+    it('allows closing the active period even if the same request moves its start', async () => {
+      mocks.periods.findById.mockResolvedValue(active);
+      await patch(LAST, {
+        isActive: false,
+        startDate: '2026-04-01',
+        endDate: '2026-04-30',
+      }).expect(200);
+    });
+  });
 });

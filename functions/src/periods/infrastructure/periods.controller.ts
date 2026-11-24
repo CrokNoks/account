@@ -233,7 +233,8 @@ export class PeriodsController {
 
     const startMoved =
       updated.startDate.getTime() !== existing.startDate.getTime();
-    if (updated.isActive && (!existing.isActive || startMoved)) {
+    const activating = updated.isActive && !existing.isActive;
+    if (activating || startMoved) {
       const accountPeriods =
         await this.periodRepository.findAllByAccount(accountId);
       ensureCanBeActivated(existing, updated, accountPeriods);

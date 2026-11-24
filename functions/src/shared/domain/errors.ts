@@ -51,3 +51,14 @@ export class PeriodBeforeExistingError extends ConflictError {
     super('A period cannot start before an existing period of the account');
   }
 }
+
+/** Déplacement du début d'une période qui reste inactive après la période active du compte (→ 409, code PERIOD_AFTER_ACTIVE). */
+export class PeriodAfterActiveError extends ConflictError {
+  override readonly code = 'PERIOD_AFTER_ACTIVE';
+
+  constructor() {
+    super(
+      'A closed period cannot start after the active period of the account',
+    );
+  }
+}
