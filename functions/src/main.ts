@@ -43,7 +43,7 @@ async function createNestServer(
 
 // Firebase Function export
 export const api = onRequest(
-  { region: 'europe-west1', memory: '256MiB' },
+  { region: 'europe-west1', memory: '512MiB' },
   async (req, res) => {
     console.log(
       `[CloudFunction] ${req.method} ${req.url} - Auth: ${req.headers.authorization ? 'present' : 'missing'}`,

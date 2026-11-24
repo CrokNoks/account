@@ -13,6 +13,9 @@
   ],
   "hosting": {
     "source": "frontend",
+    "frameworksBackend": {
+      "memory": "512MiB"
+    },
     "ignore": [
       "firebase.json",
       "**/.*",
