@@ -1,6 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { NextIntlClientProvider } from 'next-intl';
 import { describe, expect, it, vi } from 'vitest';
+import { toast } from 'sonner';
 import fr from '../../../../messages/fr.json';
 import { PeriodList } from './period-list';
 
@@ -11,11 +12,18 @@ const withNewer = [
   { id: 'p1', startDate: '2026-12-01T00:00:00.000Z', endDate: '2026-12-31T00:00:00.000Z', isActive: false },
 ];
 const state = { list: periods };
+const apiError = vi.hoisted(() => ({ code: undefined as string | undefined }));
+vi.mock('sonner', () => ({ toast: { error: vi.fn(), success: vi.fn() } }));
 vi.mock('@/features/budgets/api/use-periods', () => ({
   usePeriods: () => ({ data: state.list, isLoading: false }),
 }));
 vi.mock('../api/use-update-period', () => ({
-  useUpdatePeriod: () => ({ mutate: vi.fn(), isPending: false }),
+  useUpdatePeriod: () => ({
+    mutate: (_cmd: unknown, opts?: { onError?: (e: unknown) => void }) => {
+      if (apiError.code) opts?.onError?.({ isAxiosError: true, response: { data: { code: apiError.code } } });
+    },
+    isPending: false,
+  }),
 }));
 vi.mock('../api/use-delete-period', () => ({
   useDeletePeriod: () => ({ mutate: vi.fn(), isPending: false }),
@@ -52,5 +60,19 @@ describe('PeriodList', () => {
     fireEvent.click(editLatest);
     expect(screen.getByRole('checkbox')).not.toHaveAttribute('aria-disabled', 'true');
     state.list = periods;
+  });
+
+  it('shows the API refusal in the edit drawer when the new start date is before another period', () => {
+    render(
+      <NextIntlClientProvider locale="fr" messages={fr}>
+        <PeriodList />
+      </NextIntlClientProvider>,
+    );
+    fireEvent.click(screen.getByTitle(fr.Budgets.edit_dates));
+    apiError.code = 'PERIOD_BEFORE_EXISTING';
+    fireEvent.click(screen.getByRole('button', { name: fr.Common.save }));
+    apiError.code = undefined;
+
+    expect(toast.error).toHaveBeenCalledWith(fr.Budgets.period_before_existing);
   });
 });

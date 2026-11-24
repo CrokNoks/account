@@ -112,3 +112,23 @@ export function ensureCanBeCreated(
   if (period.isActive && hasNewerPeriod(period, accountPeriods))
     throw new PeriodBeforeExistingError();
 }
+
+/**
+ * Une période active ne peut pas voir sa date de début déplacée avant une autre
+ * période du compte. Ne bloque que si `start_date` change et que le résultat est
+ * actif : clôturer ou modifier la fin d'une active, ou toucher une période fermée,
+ * reste permis.
+ */
+export function ensureStartCanMove(
+  before: Period,
+  after: Period,
+  accountPeriods: Period[],
+): void {
+  if (
+    !after.isActive ||
+    after.startDate.getTime() === before.startDate.getTime()
+  )
+    return;
+  if (hasNewerPeriod(after, accountPeriods))
+    throw new PeriodBeforeExistingError();
+}

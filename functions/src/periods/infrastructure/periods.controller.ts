@@ -28,7 +28,11 @@ import { CreatePeriodWithBudgetsUseCase } from '../application/create-period-wit
 import { UpdatePeriodBudgetsUseCase } from '../application/update-period-budgets.use-case';
 import { PeriodRepository } from '../domain/period.repository.interface';
 import { BudgetRepository } from '../../budgets/domain/budget.repository.interface';
-import { Period, ensureCanBeActivated } from '../domain/period.entity';
+import {
+  Period,
+  ensureCanBeActivated,
+  ensureStartCanMove,
+} from '../domain/period.entity';
 import {
   IsString,
   IsArray,
@@ -227,12 +231,13 @@ export class PeriodsController {
       updatedAt: new Date(),
     });
 
-    if (updated.isActive && !existing.isActive) {
-      ensureCanBeActivated(
-        existing,
-        updated,
-        await this.periodRepository.findAllByAccount(accountId),
-      );
+    const startMoved =
+      updated.startDate.getTime() !== existing.startDate.getTime();
+    if (updated.isActive && (!existing.isActive || startMoved)) {
+      const accountPeriods =
+        await this.periodRepository.findAllByAccount(accountId);
+      ensureCanBeActivated(existing, updated, accountPeriods);
+      ensureStartCanMove(existing, updated, accountPeriods);
     }
 
     await this.periodRepository.save(updated);
