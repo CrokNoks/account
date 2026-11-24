@@ -2,7 +2,7 @@
 
 Maquette : `specs/refonte-interface/maquette/` (copie locale) et https://claude.ai/artifact/AxUNUDKA4FD6WU2VkAYJmk
 
-**État : en prod depuis le 2026-11-24 (v4.0.0, commit `82a49b7`).** Migrations `20261106100000` et `20261107100000` appliquées, déploiements `functions` et `hosting` en succès, front et API contrôlés sans session. Reste à voir connecté en prod : Aujourd'hui, enregistrement d'un budget, saisie mobile, liste d'Opérations, refus de réactivation d'une ancienne période, 404 des 5 anciennes adresses. `user_preferences` est supprimée sans export ; ne pas redéployer v3.4.4 (son tableau de bord lit cette table).
+**État : en prod depuis le 2026-11-24 (v4.0.0, commit `82a49b7`).** Migrations `20261106100000` et `20261107100000` appliquées, déploiements `functions` et `hosting` en succès, front et API contrôlés sans session. Vérifications connectées en prod confirmées par Lucas le 2026-11-25 (« Tout est bon »). `user_preferences` est supprimée sans export ; ne pas redéployer v3.4.4 (son tableau de bord lit cette table).
 
 Consigne de Lucas (2026-11-06, levée par la release du 2026-11-24) : tout reste en local. Commits sans push, sans release ni `supabase db push`. Aucune release tant que toute la refonte n'est pas terminée, front et back.
 
