@@ -146,3 +146,85 @@ describe('GetEvolutionUseCase', () => {
     await expect(useCase.execute('acc-1')).rejects.toThrow('Account not found');
   });
 });
+
+describe('GetEvolutionUseCase : fenêtre de période (factures réservées)', () => {
+  const run = async (
+    list: Transaction[],
+    periodsList: Period[],
+    onlyClosed = false,
+  ) =>
+    new GetEvolutionUseCase(
+      {
+        findById: jest.fn().mockResolvedValue(
+          new Account({
+            id: 'acc-1',
+            name: 'Courant',
+            ownerId: 'u-1',
+            initialBalance: BigInt(100000),
+          }),
+        ),
+      } as unknown as AccountRepository,
+      {
+        findAllByAccount: jest.fn().mockResolvedValue(periodsList),
+      } as unknown as PeriodRepository,
+      {
+        findAllByAccountUnpaginated: jest.fn().mockResolvedValue(list),
+      } as unknown as TransactionRepository,
+      {
+        findAllByAccount: jest
+          .fn()
+          .mockResolvedValue([
+            category('salaire', CategoryType.INCOME),
+            category('courses', CategoryType.EXPENSE),
+          ]),
+      } as unknown as CategoryRepository,
+    ).execute('acc-1', onlyClosed);
+
+  const oct = Period.create({
+    id: 'oct',
+    accountId: 'acc-1',
+    startDate: new Date('2026-10-01'),
+    endDate: new Date('2026-10-31'),
+    isActive: false,
+  });
+  const nov = Period.create({
+    id: 'nov',
+    accountId: 'acc-1',
+    startDate: new Date('2026-11-01'),
+    endDate: new Date('2026-11-30'),
+    isActive: true,
+  });
+
+  it('active period: counts the expense dated after the end (forecast and real expenses), not the later income', async () => {
+    const [, novPoint] = await run(
+      [
+        tx('2026-11-10', -30000, 'courses', true),
+        tx('2026-12-05', -12000, 'courses'),
+        tx('2026-12-06', 50000, 'salaire'),
+      ],
+      [nov, oct],
+    );
+
+    expect(novPoint).toMatchObject({
+      realExpenses: '-42000',
+      realIncome: '0',
+      forecastBalance: '58000',
+      realBankBalance: '70000',
+    });
+  });
+
+  it('closed period keeps its end; the start balance of a period does not double count a dated-after expense', async () => {
+    const [octPoint, novPoint] = await run(
+      [
+        tx('2026-10-10', -10000, 'courses', true),
+        tx('2026-11-05', -5000, 'courses'),
+      ],
+      [nov, oct],
+    );
+
+    expect(octPoint.realExpenses).toBe('-10000');
+    expect(octPoint.forecastBalance).toBe('90000');
+    // le départ de novembre = 100000 - 10000 ; -5000 compté une seule fois
+    expect(novPoint.forecastBalance).toBe('85000');
+  });
+});

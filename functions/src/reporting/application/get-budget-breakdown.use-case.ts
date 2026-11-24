@@ -6,6 +6,7 @@ import { PeriodRepository } from '../../periods/domain/period.repository.interfa
 import { CategoryType } from '../../categories/domain/category.entity';
 import { ensureBelongsToAccount } from '../../shared/domain/account-ownership';
 import { roundedPercentage } from '../../shared/domain/percentage';
+import { filterPeriodWindow, periodLoadEndDate } from '../domain/period-window';
 
 export interface BudgetCategoryBreakdown {
   categoryId: string;
@@ -46,12 +47,14 @@ export class GetBudgetBreakdownUseCase {
       await this.categoryRepository.findAllByAccount(accountId);
     const budgets = await this.budgetRepository.findAllByPeriod(periodId);
 
-    // Only fetch transactions for this period
-    const periodTransactions =
+    // Même fenêtre que le prévu (domain/period-window)
+    const periodTransactions = filterPeriodWindow(
       await this.transactionRepository.findAllByAccountUnpaginated(accountId, {
         startDate: period.startDate,
-        endDate: period.endDate || undefined,
-      });
+        endDate: periodLoadEndDate(period),
+      }),
+      period,
+    );
 
     const realByCategory = new Map<string, bigint>();
     for (const t of periodTransactions) {

@@ -215,3 +215,79 @@ describe('GetBudgetBreakdownUseCase', () => {
     );
   });
 });
+
+describe('GetBudgetBreakdownUseCase : fenêtre de période (factures réservées)', () => {
+  const at = (date: string, amount: number, categoryId: string) =>
+    Transaction.create({
+      accountId: 'acc-1',
+      categoryId,
+      date: new Date(date),
+      description: 'tx',
+      amount: BigInt(amount),
+      reconciled: false,
+      pending: true,
+    });
+
+  const build = (p: Period) => {
+    const list = [
+      at('2026-11-10', -30000, 'courses'),
+      at('2026-12-05', -12000, 'courses'),
+      at('2026-12-06', 50000, 'salaire'),
+    ];
+    return new GetBudgetBreakdownUseCase(
+      {
+        findAllByAccount: jest
+          .fn()
+          .mockResolvedValue([
+            category('salaire', CategoryType.INCOME),
+            category('courses', CategoryType.EXPENSE),
+          ]),
+      } as unknown as CategoryRepository,
+      {
+        findAllByAccountUnpaginated: jest.fn(
+          (_: string, o?: { startDate?: Date; endDate?: Date }) =>
+            Promise.resolve(
+              list.filter(
+                (t) =>
+                  (!o?.startDate || t.date >= o.startDate) &&
+                  (!o?.endDate || t.date <= o.endDate),
+              ),
+            ),
+        ),
+      } as unknown as TransactionRepository,
+      {
+        findAllByPeriod: jest
+          .fn()
+          .mockResolvedValue([budget('courses', 40000)]),
+      } as unknown as BudgetRepository,
+      {
+        findById: jest.fn().mockResolvedValue(p),
+      } as unknown as PeriodRepository,
+    );
+  };
+
+  const nov = (isActive: boolean) =>
+    Period.create({
+      id: 'per-1',
+      accountId: 'acc-1',
+      startDate: new Date('2026-11-01'),
+      endDate: new Date('2026-11-30'),
+      isActive,
+    });
+
+  it('active period: counts the expense dated after the end, not the later income', async () => {
+    const r = await build(nov(true)).execute('acc-1', 'per-1');
+
+    expect(r.expenses[0]).toMatchObject({
+      real: '-42000',
+      remaining: '-2000',
+    });
+    expect(r.income[0].real).toBe('0');
+  });
+
+  it('closed period: keeps its end date as upper bound', async () => {
+    const r = await build(nov(false)).execute('acc-1', 'per-1');
+
+    expect(r.expenses[0].real).toBe('-30000');
+  });
+});

@@ -5,6 +5,7 @@ import { TransactionRepository } from '../../transactions/domain/transaction.rep
 import { CategoryRepository } from '../../categories/domain/category.repository.interface';
 import { CategoryType } from '../../categories/domain/category.entity';
 import { NotFoundError } from '../../shared/domain/errors';
+import { filterPeriodWindow } from '../domain/period-window';
 
 export interface EvolutionDataPoint {
   periodId: string;
@@ -63,11 +64,10 @@ export class GetEvolutionUseCase {
       const startBalance = account.initialBalance + sumBeforeStart;
 
       // 2. Period Transactions
-      const periodTransactions = allTransactions.filter(
-        (t) =>
-          t.date >= period.startDate &&
-          (!period.endDate || t.date <= period.endDate),
-      );
+      // Même fenêtre que le prévu (domain/period-window). Le départ ci-dessus
+      // ne prend que les dates avant le début : une dépense n'est comptée
+      // qu'une fois (dans sa fenêtre, ou dans le départ de la suivante).
+      const periodTransactions = filterPeriodWindow(allTransactions, period);
 
       const realByCategory = new Map<string, bigint>();
       for (const t of periodTransactions) {
