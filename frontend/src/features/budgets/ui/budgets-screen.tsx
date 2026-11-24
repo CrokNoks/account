@@ -215,8 +215,8 @@ export function BudgetsScreen() {
   const plannedExpenses = sim?.plannedExpenses ?? stats?.plannedExpenses;
   const grey = dirty && !hasErrors && (simulation.isStale || !sim);
 
-  // « Non réparti » vient des stats enregistrées (pas de la simulation) ; absent si un des deux montants manque.
-  const unallocatedFigure = presentUnallocated(stats?.plannedIncome, stats?.plannedExpenses, locale);
+  // « Non réparti » suit les mêmes montants que les cartes voisines (simulation sinon stats) ; absent si un des deux manque.
+  const unallocatedFigure = presentUnallocated(plannedIncome, plannedExpenses, locale);
 
   const spendingRows = lines.filter((row) => !row.isRevenue);
   const revenueRows = lines.filter((row) => row.isRevenue);
@@ -311,6 +311,7 @@ export function BudgetsScreen() {
               label={t('unallocated')}
               value={unallocatedFigure.text}
               testId="unallocated-figure"
+              grey={grey}
               valueClassName={TONE_CLASS[unallocatedFigure.tone]}
             />
           )}

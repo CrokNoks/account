@@ -175,11 +175,20 @@ describe('BudgetsScreen', () => {
       expect(nbsp(card().textContent!)).toBe('90 071 992 547 409,92 €');
     });
 
-    it('suit les stats enregistrées, pas la simulation en cours de saisie', () => {
+    it('suit la simulation en cours de saisie comme les cartes voisines : 2 500,00 - 934,56 = 1 565,44', () => {
       renderScreen();
       type('Loisirs', '500,00');
       expect(nbsp(screen.getByTestId('forecast-figure').textContent!)).toContain('1 000,00');
-      expect(nbsp(card().textContent!)).toBe('1 800,00 €');
+      expect(nbsp(card().textContent!)).toBe('1 565,44 €');
+    });
+
+    it('se grise pendant le calcul de la simulation, comme les cartes voisines', () => {
+      simState.isStale = true;
+      renderScreen();
+      type('Loisirs', '500,00');
+      expect(screen.getByTestId('calculating')).toBeTruthy();
+      expect(card().getAttribute('data-stale')).toBe('true');
+      expect(card().className).toContain('opacity-50');
     });
 
     it('sans Total budgété : pas de « Non réparti » (jamais un faux 0,00)', () => {

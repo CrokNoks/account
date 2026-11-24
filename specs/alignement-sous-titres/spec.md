@@ -31,7 +31,7 @@ Chacun se vérifie en fr et en, à 1440 px et à 390 px. Une précision de large
    - La carte du haut affiche « Non réparti » = « Revenus prévus » − « Total budgété », tels qu'affichés, en plus des deux cartes existantes.
    - Exemple : 3 200,00 − 2 410,00 donne 790,00.
    - Un résultat négatif s'écrit avec son « - » et en orange. Un résultat positif ou nul s'écrit en encre, sans signe.
-   - Il change de période avec la sélection, et pas avec les saisies non enregistrées : il vient des stats enregistrées, pas de la simulation. Voir Hypothèses.
+   - Il change de période avec la sélection et suit les saisies non enregistrées comme les deux cartes voisines (simulation sinon stats enregistrées), avec le même grisage pendant le calcul. Voir Hypothèses.
 
 5. **Analyses : sous-titre et légende de l'écart.**
    - Le sous-titre est « {n} périodes fermées, de {mois} à {mois} ». Exemple fr : « Six périodes fermées, de mai à octobre ». Il décrit les périodes réellement proposées (6 au plus), de la plus ancienne à la plus récente.
@@ -66,7 +66,7 @@ Aucune retenue.
 Aucune règle de visibilité ou de droit d'accès n'est ajoutée. Les écrans lisent déjà ces données sous la garde de connexion.
 
 ## Hypothèses
-- **« Non réparti » suit les stats enregistrées**, pas la simulation en cours de saisie. Raison : le besoin dit « à partir des montants déjà affichés » et la simulation ne renvoie que `plannedIncome` et `plannedExpenses` simulés, sans calcul côté front. Si Lucas veut qu'il bouge pendant la saisie, ce serait un critère de plus.
+- **« Non réparti » suit les mêmes valeurs que les cartes voisines** (`plannedIncome` / `plannedExpenses` de la simulation sinon des stats), donc il bouge pendant la saisie et se grise pendant le calcul. Raison : l'afficher figé à côté de deux cartes qui bougent donnerait un écart visible entre les trois chiffres (décision du garde-fou, déléguée par Lucas).
 - **Virements comptés dans les revenus**, comme le back (zone d'ombre de `docs/budgets.md` tranchée par `besoin.md` n°1). Le tableau « Dépenses » de l'écran affiche les virements alors que « Total budgété » les exclut : cet écart existant n'est pas traité ici.
 - **Mois du sous-titre d'Analyses** : mois de la date de début de chaque période, la plus ancienne et la plus récente affichées. La maquette ne le précise pas.
 - **Une seule période fermée** : « Une période fermée, {mois} ». Aucune : pas de sous-titre, le message existant suffit. La maquette ne couvre ni l'un ni l'autre.
