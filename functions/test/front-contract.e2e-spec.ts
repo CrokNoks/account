@@ -123,13 +123,14 @@ describe('Front/back contract (e2e)', () => {
         .query({ days: '30' })
         .set(auth())
         .expect(200);
+      const isoDate = expect.stringMatching(/^\d{4}-\d{2}-\d{2}T/) as string;
 
       expect(res.body).toEqual({
         currentBalance: '0',
         events: [],
-        startDate: expect.stringMatching(/^\d{4}-\d{2}-\d{2}T/),
+        startDate: isoDate,
         lowPoint: {
-          date: expect.stringMatching(/^\d{4}-\d{2}-\d{2}T/),
+          date: isoDate,
           balance: '0',
         },
       });
