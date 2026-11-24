@@ -185,9 +185,9 @@ Authorization: Bearer {{login.access_token}}
 ?? body contains "id":"{{t3.id}}"
 ?? body contains "id":"{{t4.id}}"
 ?? body contains "id":"{{t5.id}}"
-?? body !contains "id":"{{t6.id}}"
-?? body !contains "id":"{{t7.id}}"
-?? body !contains "id":"{{t8.id}}"
+?? js response.parsedBody.data.some(t => t.id == t6.id) == false
+?? js response.parsedBody.data.some(t => t.id == t7.id) == false
+?? js response.parsedBody.data.some(t => t.id == t8.id) == false
 # date décroissante : T5 (15/11) en dernier
 ?? body contains "id":"{{t5.id}}"
 ?? js response.parsedBody.data[4].description.endsWith("novembre") == true
