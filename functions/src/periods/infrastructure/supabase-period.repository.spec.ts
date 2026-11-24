@@ -173,3 +173,35 @@ describe('SupabasePeriodRepository.createWithBudgets', () => {
     await expect(result).rejects.toThrow('rls');
   });
 });
+
+describe('SupabasePeriodRepository.findById', () => {
+  it('exposes estimated_end_date of an open period as estimatedEndDate', async () => {
+    const single = jest.fn().mockResolvedValue({
+      data: {
+        id: 'p-1',
+        account_id: 'acc-1',
+        start_date: '2026-11-01',
+        end_date: null,
+        estimated_end_date: '2026-11-30',
+        is_active: true,
+        created_at: '2026-11-01T00:00:00Z',
+        updated_at: '2026-11-01T00:00:00Z',
+      },
+      error: null,
+    });
+    const query = {
+      select: jest.fn().mockReturnThis(),
+      eq: jest.fn().mockReturnThis(),
+      returns: jest.fn().mockReturnThis(),
+      single,
+    };
+    const repository = new SupabasePeriodRepository({
+      from: jest.fn().mockReturnValue(query),
+    } as unknown as SupabaseClient);
+
+    const found = await repository.findById('p-1');
+
+    expect(found?.endDate).toBeNull();
+    expect(found?.estimatedEndDate).toEqual(new Date('2026-11-30'));
+  });
+});

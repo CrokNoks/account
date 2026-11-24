@@ -11,6 +11,7 @@ import { CategorySelector } from '@/features/categories/ui/category-selector';
 import { TagSelector } from '@/features/tags/ui/tag-selector';
 import { formatShortRange } from '@/shared/lib/date-only';
 import { Period } from "@/features/periods/model/types";
+import { periodEnd } from "@/features/periods/model/period-end";
 import { useLocale, useTranslations } from "next-intl";
 import { cn } from '@/lib/utils';
 import type { StateFilter } from '../model/operation-state';
@@ -228,7 +229,7 @@ export function TransactionFilters({
                           ? t('all_periods') 
                           : (function() {
                               const p = periods?.find(p => p.id === effectivePeriodId);
-                              return p ? formatShortRange(p.startDate, p.endDate, locale) : t('budget_period');
+                              return p ? formatShortRange(p.startDate, periodEnd(p), locale) : t('budget_period');
                             })()
                         }
                       </SelectValue>
@@ -237,7 +238,7 @@ export function TransactionFilters({
                       <SelectItem value="all">{t('all_periods')}</SelectItem>
                       {periods?.map((p) => (
                         <SelectItem key={p.id} value={p.id}>
-                          {formatShortRange(p.startDate, p.endDate, locale)} {p.isActive && t('filters.active_suffix')}
+                          {formatShortRange(p.startDate, periodEnd(p), locale)} {p.isActive && t('filters.active_suffix')}
                         </SelectItem>
                       ))}
                     </SelectContent>

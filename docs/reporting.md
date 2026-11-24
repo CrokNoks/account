@@ -102,6 +102,7 @@ Front : un hook par route dans `api/` (clés React Query dédiées) ; écrans `u
 Pas de cycle de vie. Une anomalie ignorée le reste (aucune route pour la rétablir).
 
 ## Zones d'ombre
+- Période sans date de fin : les stats du tableau de bord et « budgets à surveiller » (front) utilisent `periodEnd()` (fin, sinon fin estimée, sinon rien ; voir `periods.md`). Les types `endDate` du reporting côté front restent déclarés non nuls (reste connu, non corrigé).
 - Anomalies ignorées : le test `get-anomalies.use-case.spec.ts` (« should ignore anomalies marked in metadata ») ne couvre que `outlier` ; l'exclusion d'un `duplicate` ignoré (`get-anomalies.use-case.ts:105`) n'a pas de test, alors que la marque « Doublon possible » d'Opérations et le lien de À traiter en dépendent.
 - Les liens de À traiter vers Opérations (et le filtre `ids` du back) n'ont jamais été vus en réel : `functions/http/operations-pointage.http` n'a pas été exécuté (voir `transactions.md`).
 - Les `transactionIds` de l'ignorance d'anomalies doivent être des UUID : sinon 400 (voir `transactions.md`). Les identifiants de route (`:accountId`, `:periodId`, `:tagId`) sont validés en UUID (400, voir `transactions.md`) ; plus aucune exception depuis le retrait de `reporting/net-worth`. Les identifiants de query (`periodId` de `anomalies` et `tags/:tagId`, optionnel ; `compareWith` de `comparison`, obligatoire) sont validés en UUID via `PeriodQueryDto` / `CompareWithQueryDto` : sinon 400.

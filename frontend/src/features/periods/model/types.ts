@@ -1,7 +1,10 @@
 export interface Period {
   id: string;
   startDate: string;
-  endDate: string;
+  /** `null` pour une période ouverte. */
+  endDate: string | null;
+  /** Fin estimée, utilisée quand `endDate` est vide. */
+  estimatedEndDate?: string | null;
   isActive: boolean;
 }
 

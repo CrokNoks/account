@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useId } from 'react';
+import { periodEnd } from '../model/period-end';
 import { useAccountStore } from '@/features/accounts/model/use-account-store';
 import { Period } from '../model/types';
 import { usePeriods } from '@/features/budgets/api/use-periods';
@@ -64,7 +65,8 @@ export function PeriodList() {
           <Card key={period.id} className={period.isActive ? "border-primary/50 group relative" : "group relative"}>
             <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
               <CardTitle className="text-sm font-medium">
-                {format(new Date(period.startDate), 'dd MMMM yyyy')} - {format(new Date(period.endDate), 'dd MMMM yyyy')}
+                {format(new Date(period.startDate), 'dd MMMM yyyy')}
+                {periodEnd(period) && ` - ${format(new Date(periodEnd(period)!), 'dd MMMM yyyy')}`}
               </CardTitle>
               <div className="flex items-center gap-2">
                 {period.isActive && (
@@ -124,7 +126,7 @@ function EditPeriodDialog({ period, open, onOpenChange }: { period: Period, open
   const tc = useTranslations('Common');
   const { activeAccountId } = useAccountStore();
   const [startDate, setStartDate] = useState(period.startDate.split('T')[0]);
-  const [endDate, setEndDate] = useState(period.endDate.split('T')[0]);
+  const [endDate, setEndDate] = useState(period.endDate?.split('T')[0] ?? '');
   const [isActive, setIsActive] = useState(period.isActive);
   const startDateId = useId();
   const endDateId = useId();

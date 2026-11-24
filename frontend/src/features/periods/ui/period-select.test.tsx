@@ -3,6 +3,7 @@ import { NextIntlClientProvider } from 'next-intl';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import fr from '../../../../messages/fr.json';
 import en from '../../../../messages/en.json';
+import type { Period } from '../model/types';
 import { ALL_PERIODS, PeriodSelect } from './period-select';
 
 const periods = [
@@ -10,10 +11,15 @@ const periods = [
   { id: 'p0', startDate: '2026-10-01', endDate: '2026-10-31', isActive: false },
 ];
 
-const renderSelect = (value: string | null, allowAll = false, locale: 'fr' | 'en' = 'fr') =>
+const renderSelect = (
+  value: string | null,
+  allowAll = false,
+  locale: 'fr' | 'en' = 'fr',
+  list: Period[] = periods,
+) =>
   render(
     <NextIntlClientProvider locale={locale} messages={locale === 'fr' ? fr : en}>
-      <PeriodSelect periods={periods} value={value} onChange={vi.fn()} allowAll={allowAll} />
+      <PeriodSelect periods={list} value={value} onChange={vi.fn()} allowAll={allowAll} />
     </NextIntlClientProvider>,
   );
 
@@ -27,6 +33,20 @@ describe('PeriodSelect', () => {
   it('shows the dates of the chosen period as short dates in the language', () => {
     renderSelect('p1');
     expect(screen.getByRole('combobox').textContent).toContain('1 nov. → 30 nov.');
+  });
+
+  it('falls back on the estimated end of an open period, never « null »', () => {
+    const open = [{ id: 'p1', startDate: '2026-11-01', endDate: null, estimatedEndDate: '2026-11-30', isActive: true }];
+    renderSelect('p1', false, 'fr', open);
+    expect(screen.getByRole('combobox').textContent).toContain('1 nov. → 30 nov.');
+  });
+
+  it('shows only the start when the period has no end at all', () => {
+    const open = [{ id: 'p1', startDate: '2026-11-01', endDate: null, estimatedEndDate: null, isActive: true }];
+    renderSelect('p1', false, 'fr', open);
+    const text = screen.getByRole('combobox').textContent;
+    expect(text).toContain('1 nov.');
+    expect(text).not.toMatch(/null|→/);
   });
 
   it('shows them in English order and adds the year of another year', () => {

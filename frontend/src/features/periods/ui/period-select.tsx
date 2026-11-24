@@ -10,6 +10,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Period } from '../model/types';
+import { periodEnd } from '../model/period-end';
 
 export const ALL_PERIODS = 'all';
 
@@ -26,7 +27,7 @@ interface PeriodSelectProps {
 export function PeriodSelect({ periods, value, onChange, allowAll = false }: PeriodSelectProps) {
   const t = useTranslations('PeriodSelect');
   const locale = useLocale();
-  const range = (p: Period) => formatShortRange(p.startDate, p.endDate, locale);
+  const range = (p: Period) => formatShortRange(p.startDate, periodEnd(p), locale);
   const current = periods?.find((p) => p.id === value);
   const label = value === ALL_PERIODS && allowAll ? t('all') : current ? range(current) : t('select');
 

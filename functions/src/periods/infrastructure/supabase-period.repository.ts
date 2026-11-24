@@ -12,7 +12,8 @@ interface PeriodRow {
   id: string;
   account_id: string;
   start_date: string;
-  end_date: string;
+  end_date: string | null;
+  estimated_end_date: string | null;
   is_active: boolean;
   created_at: string;
   updated_at: string;
@@ -143,6 +144,9 @@ export class SupabasePeriodRepository implements PeriodRepository {
       accountId: row.account_id,
       startDate: new Date(row.start_date),
       endDate: row.end_date ? new Date(row.end_date) : null,
+      estimatedEndDate: row.estimated_end_date
+        ? new Date(row.estimated_end_date)
+        : null,
       isActive: row.is_active,
       createdAt: new Date(row.created_at),
       updatedAt: new Date(row.updated_at),

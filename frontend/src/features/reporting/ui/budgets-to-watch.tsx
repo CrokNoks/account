@@ -8,6 +8,7 @@ import { todayDateOnly } from '@/shared/lib/date-only';
 import { useTranslations } from 'next-intl';
 import { useBudgetBreakdown } from '../api/use-budget-breakdown';
 import { budgetsToWatch } from '../model/budgets-to-watch';
+import { periodEnd } from '@/features/periods/model/period-end';
 import { periodProgress } from '../model/period-progress';
 import { budgetBarClass } from '../lib/signed-amount';
 import { spentAmount } from '../lib/budget-surplus';
@@ -25,7 +26,7 @@ export function BudgetsToWatch() {
   const { data: breakdown, isLoading } = useBudgetBreakdown(activeAccountId, activePeriodId);
   const { data: periods } = usePeriods(activeAccountId);
   const period = periods?.find((p) => p.id === activePeriodId);
-  const progress = periodProgress(period?.startDate, period?.endDate, todayDateOnly());
+  const progress = periodProgress(period?.startDate, period ? periodEnd(period) : null, todayDateOnly());
 
   if (isLoading) return <div className="h-40 bg-muted animate-pulse rounded-xl" />;
 

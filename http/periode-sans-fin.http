@@ -1,0 +1,71 @@
+# Périodes : une période sans date de fin (end_date NULL) expose sa fin estimée (estimatedEndDate) dans GET /periods.
+# Lancement : npx httpyac send --all http/periode-sans-fin.http --var port=8080 --var anon=<ANON_KEY> --var supabase=<URL Supabase>
+# (la clé et l'URL viennent de la ligne de commande, jamais du fichier ; l'utilisateur et le compte sont jetables, créés par le fichier ;
+#  l'API ne crée pas de période ouverte : la fin est vidée par PATCH direct sur la base, sous RLS, avec le jeton de l'utilisateur jetable)
+@baseUrl = http://localhost:{{port}}
+
+### Utilisateur jetable
+# @name login
+POST {{supabase}}/auth/v1/signup
+apikey: {{anon}}
+Content-Type: application/json
+
+{ "email": "periode-sans-fin-{{$timestamp}}@example.com", "password": "Password123!" }
+
+?? status == 200
+
+### Compte jetable
+# @name account
+POST {{baseUrl}}/accounts
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "name": "periode-sans-fin-{{$timestamp}}", "initialBalance": "0" }
+
+?? status == 201
+
+### Période créée par l'API (fin renseignée)
+# @name p1
+POST {{baseUrl}}/{{account.id}}/periods
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "startDate": "2026-11-01", "endDate": "2026-11-30", "budgets": [] }
+
+?? status == 201
+
+### On vide la fin et on pose une fin estimée (période ouverte)
+PATCH {{supabase}}/rest/v1/periods?id=eq.{{p1.id}}
+apikey: {{anon}}
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+Prefer: return=representation
+
+{ "end_date": null, "estimated_end_date": "2026-12-15" }
+
+?? status == 200
+?? js response.parsedBody[0].end_date == null
+
+### La liste expose la fin estimée, et endDate reste vide
+GET {{baseUrl}}/{{account.id}}/periods
+Authorization: Bearer {{login.access_token}}
+
+?? status == 200
+?? js response.parsedBody[0].endDate == null
+?? js response.parsedBody[0].estimatedEndDate.startsWith("2026-12-15")
+
+### Un PATCH (clôture) ne perd pas la fin estimée
+PATCH {{baseUrl}}/{{account.id}}/periods/{{p1.id}}
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "isActive": false }
+
+?? status == 200
+
+### Relecture après le PATCH
+GET {{baseUrl}}/{{account.id}}/periods/{{p1.id}}
+Authorization: Bearer {{login.access_token}}
+
+?? status == 200
+?? js response.parsedBody.estimatedEndDate.startsWith("2026-12-15")

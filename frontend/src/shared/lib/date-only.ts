@@ -45,7 +45,8 @@ export function formatShortDate(value: string, locale: string, now: Date = new D
   }).format(new Date(Date.UTC(Number(year), Number(month) - 1, Number(day))));
 }
 
-/** Two short dates joined by an arrow ("25 oct. → 24 nov."). */
-export function formatShortRange(start: string, end: string, locale: string, now: Date = new Date()): string {
+/** Two short dates joined by an arrow ("25 oct. → 24 nov."); without an end, the start alone. */
+export function formatShortRange(start: string, end: string | null | undefined, locale: string, now: Date = new Date()): string {
+  if (!end) return formatShortDate(start, locale, now);
   return `${formatShortDate(start, locale, now)} → ${formatShortDate(end, locale, now)}`;
 }

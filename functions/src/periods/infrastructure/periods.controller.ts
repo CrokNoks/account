@@ -221,6 +221,7 @@ export class PeriodsController {
         ? parseDateOnly(dto.startDate)
         : existing.startDate,
       endDate: dto.endDate ? parseDateOnly(dto.endDate) : existing.endDate,
+      estimatedEndDate: existing.estimatedEndDate,
       isActive: dto.isActive !== undefined ? dto.isActive : existing.isActive,
       createdAt: existing.createdAt,
       updatedAt: new Date(),

@@ -6,6 +6,8 @@ export interface PeriodProps {
   accountId: string;
   startDate: Date;
   endDate: Date | null;
+  /** Fin estimée, lue quand `endDate` est vide (période ouverte). Jamais écrite par l'API. */
+  estimatedEndDate?: Date | null;
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -16,6 +18,7 @@ export class Period {
   public readonly accountId: string;
   public readonly startDate: Date;
   public readonly endDate: Date | null;
+  public readonly estimatedEndDate: Date | null;
   public readonly isActive: boolean;
   public readonly createdAt: Date;
   public readonly updatedAt: Date;
@@ -25,6 +28,7 @@ export class Period {
     this.accountId = props.accountId;
     this.startDate = props.startDate;
     this.endDate = props.endDate;
+    this.estimatedEndDate = props.estimatedEndDate ?? null;
     this.isActive = props.isActive;
     this.createdAt = props.createdAt;
     this.updatedAt = props.updatedAt;

@@ -31,6 +31,7 @@ const periods = vi.hoisted(() => ({
     id: string;
     startDate: string;
     endDate: string | null;
+    estimatedEndDate?: string | null;
     isActive: boolean;
   }>,
 }));
@@ -115,6 +116,15 @@ describe('Barre des soldes', () => {
       renderBar('en');
       expect(screen.getByTestId('forecast-title-mobile').textContent).toBe('Forecast on Nov 30');
       expect(screen.getByTestId('period-day').textContent).toBe('Day 15 of 30');
+    });
+
+    it('utilise la fin estimée d\'une période ouverte', () => {
+      vi.useFakeTimers({ toFake: ['Date'] });
+      vi.setSystemTime(new Date(2026, 10, 15, 12));
+      periods.value = [{ id: 'p1', startDate: '2026-11-01', endDate: null, estimatedEndDate: '2026-11-30', isActive: true }];
+      renderBar();
+      expect(screen.getByTestId('forecast-title-mobile').textContent).toBe('Prévu le 30 nov.');
+      expect(screen.getByTestId('period-day').textContent).toBe('Jour 15 sur 30');
     });
 
     it('masque « Jour X sur Y » si la période est passée ou sans date de fin, et garde le titre simple', () => {

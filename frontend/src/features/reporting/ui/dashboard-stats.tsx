@@ -7,6 +7,7 @@ import { useReportingStats } from "../api/use-reporting-stats";
 import { useLocale, useTranslations } from "next-intl";
 import { usePeriods } from "@/features/budgets/api/use-periods";
 import { formatShortDate, todayDateOnly } from "@/shared/lib/date-only";
+import { periodEnd } from "@/features/periods/model/period-end";
 import { periodProgress } from "../model/period-progress";
 import { cn } from "@/lib/utils";
 import { ForecastComposition } from "./forecast-composition";
@@ -24,8 +25,9 @@ export function BalanceBar() {
   const { data: periods } = usePeriods(activeAccountId);
   const period = periods?.find((p) => p.id === activePeriodId);
   // Mobile : « Prévu le {fin} » et « Jour X sur Y » (masqués sans fin de période ou hors période).
-  const endDate = period?.endDate ? formatShortDate(period.endDate, locale) : null;
-  const progress = periodProgress(period?.startDate, period?.endDate, todayDateOnly());
+  const end = period ? periodEnd(period) : null;
+  const endDate = end ? formatShortDate(end, locale) : null;
+  const progress = periodProgress(period?.startDate, end, todayDateOnly());
 
   if (isLoading || !stats) return <div data-tour="stats" className="h-32 bg-muted animate-pulse rounded-xl border-2" />;
 
