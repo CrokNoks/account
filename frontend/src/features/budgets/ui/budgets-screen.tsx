@@ -229,9 +229,9 @@ export function BudgetsScreen() {
     return (
       <TableRow key={id}>
         <TableCell className="font-medium">{line.name}</TableCell>
-        <TableCell className="text-right tabular-nums">{formatCurrency(line.real)}</TableCell>
+        <TableCell className="text-right text-xs tabular-nums sm:text-sm">{formatCurrency(line.real)}</TableCell>
         {withRemaining && (
-          <TableCell className="text-right tabular-nums">
+          <TableCell className="whitespace-normal text-right text-xs tabular-nums sm:text-sm">
             {over > BigInt(0) ? (
               <span data-testid="over-budget" className="font-semibold text-warn">
                 {t('over', { amount: formatCurrency(over) })}
@@ -241,7 +241,7 @@ export function BudgetsScreen() {
             )}
           </TableCell>
         )}
-        <TableCell className="min-w-40 text-right">
+        <TableCell className="min-w-[5.5rem] text-right sm:min-w-40">
           <AmountInput
             aria-label={t('budget_of', { name: line.name })}
             aria-invalid={!!error}
@@ -333,7 +333,7 @@ export function BudgetsScreen() {
           {spendingRows.length > 0 && (
             <Card className="border-2 shadow-sm">
               <CardContent className="overflow-x-auto p-0">
-                <Table aria-label={t('expenses_section')}>
+                <Table aria-label={t('expenses_section')} className="[&_td]:px-1.5 [&_th]:px-1.5 sm:[&_td]:px-2 sm:[&_th]:px-2">
                   <TableHeader>
                     <TableRow>
                       <TableHead>{t('category')}</TableHead>
@@ -352,7 +352,7 @@ export function BudgetsScreen() {
               <h3 className="text-sm font-semibold">{t('income_section')}</h3>
               <Card className="border-2 shadow-sm">
                 <CardContent className="overflow-x-auto p-0">
-                  <Table aria-label={t('income_section')}>
+                  <Table aria-label={t('income_section')} className="[&_td]:px-1.5 [&_th]:px-1.5 sm:[&_td]:px-2 sm:[&_th]:px-2">
                     <TableHeader>
                       <TableRow>
                         <TableHead>{t('category')}</TableHead>
