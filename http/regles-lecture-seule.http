@@ -102,7 +102,7 @@ Authorization: Bearer {{a.access_token}}
 ?? status == 200
 ?? js response.parsedBody.length == 1
 ?? body contains netflix
-?? js !response.body.includes('pirate')
+?? js response.body.includes('pirate') == false
 
 ### A modifie toujours
 PATCH {{baseUrl}}/{{account.id}}/smart-rules/{{rule.id}}
@@ -141,7 +141,7 @@ Authorization: Bearer {{c.access_token}}
 
 ?? status == 200
 ?? js response.parsedBody.length == 0
-?? js !response.body.includes('amazon')
+?? js response.body.includes('amazon') == false
 
 ### A : la règle supprimée a disparu, l'autre (amazon) reste
 GET {{baseUrl}}/{{account.id}}/smart-rules
@@ -149,4 +149,4 @@ Authorization: Bearer {{a.access_token}}
 
 ?? status == 200
 ?? js response.parsedBody.length == 1
-?? js !response.body.includes('spotify')
+?? js response.body.includes('spotify') == false

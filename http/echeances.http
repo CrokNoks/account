@@ -47,7 +47,7 @@ Authorization: Bearer {{login.access_token}}
 ?? status == 200
 ?? js response.parsedBody.events.length == 0
 ?? js response.parsedBody.lowPoint.balance == 100000
-?? js response.parsedBody.lowPoint.date.startsWith(`{{today}}`)
+?? js response.parsedBody.lowPoint.date.startsWith(today) == true
 
 ### Récurrence due aujourd'hui : Internet -30,00 €
 # @name rec
@@ -74,7 +74,7 @@ GET {{baseUrl}}/{{account.id}}/reporting/calendar?year={{year}}&month={{month}}
 Authorization: Bearer {{login.access_token}}
 
 ?? status == 200
-?? js response.parsedBody.some(e => e.type.startsWith("recurring") && !e.pending)
+?? js response.parsedBody.some(e => e.type.startsWith("recurring") && !e.pending) == true
 
 ### Transaction d'aujourd'hui : prélèvement Internet -30,00 € (déjà payée)
 # @name paid
@@ -92,7 +92,7 @@ Authorization: Bearer {{login.access_token}}
 
 ?? status == 200
 ?? js response.parsedBody.currentBalance == 97000
-?? js response.parsedBody.events.every(e => !(e.description.startsWith("Internet") && e.date.startsWith(`{{today}}`)))
+?? js response.parsedBody.events.every(e => !(e.description.startsWith("Internet") && e.date.startsWith(today))) == true
 ?? js response.parsedBody.lowPoint.balance == 97000
 
 ### Calendrier : même décision, la récurrence d'aujourd'hui n'est plus projetée
@@ -100,8 +100,8 @@ GET {{baseUrl}}/{{account.id}}/reporting/calendar?year={{year}}&month={{month}}
 Authorization: Bearer {{login.access_token}}
 
 ?? status == 200
-?? js response.parsedBody.every(e => !(e.type.startsWith("recurring") && e.description.startsWith("Internet") && e.date.startsWith(`{{today}}`)))
-?? js response.parsedBody.some(e => e.type.startsWith("actual") && !e.pending)
+?? js response.parsedBody.every(e => !(e.type.startsWith("recurring") && e.description.startsWith("Internet") && e.date.startsWith(today))) == true
+?? js response.parsedBody.some(e => e.type.startsWith("actual") && !e.pending) == true
 
 ### Facture en attente d'aujourd'hui (pending) : exposée avec pending vrai
 POST {{baseUrl}}/{{account.id}}/transactions
@@ -117,7 +117,7 @@ GET {{baseUrl}}/{{account.id}}/reporting/calendar?year={{year}}&month={{month}}
 Authorization: Bearer {{login.access_token}}
 
 ?? status == 200
-?? js response.parsedBody.some(e => e.description.startsWith("Facture eau") && e.pending)
+?? js response.parsedBody.some(e => e.description.startsWith("Facture eau") && e.pending) == true
 
 ### Horizons : 60 et 90 jours acceptés, point bas présent
 GET {{baseUrl}}/{{account.id}}/reporting/cashflow?days=90

@@ -52,7 +52,7 @@ Authorization: Bearer {{login.access_token}}
 
 ?? status == 200
 ?? js response.parsedBody[0].endDate == null
-?? js response.parsedBody[0].estimatedEndDate.startsWith("2026-12-15")
+?? js response.parsedBody[0].estimatedEndDate.startsWith("2026-12-15") == true
 
 ### Un PATCH (clôture) ne perd pas la fin estimée
 PATCH {{baseUrl}}/{{account.id}}/periods/{{p1.id}}
@@ -68,4 +68,4 @@ GET {{baseUrl}}/{{account.id}}/periods/{{p1.id}}
 Authorization: Bearer {{login.access_token}}
 
 ?? status == 200
-?? js response.parsedBody.estimatedEndDate.startsWith("2026-12-15")
+?? js response.parsedBody.estimatedEndDate.startsWith("2026-12-15") == true

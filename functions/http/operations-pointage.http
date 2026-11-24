@@ -105,7 +105,7 @@ Authorization: Bearer {{aliceLogin.access_token}}
 ?? status == 200
 ?? js response.parsedBody.meta.total == 1
 ?? body contains "{{tag}} cb"
-?? js !response.body.includes(`{{tag}} facture`)
+?? js response.body.includes(tag + ' facture') == false
 
 ### Filtre « Factures à venir » : la facture, pas la pending rapprochée
 GET {{api}}/{{courantAcc.id}}/transactions?search={{tag}}&reconciled=false&pending=true
@@ -114,7 +114,7 @@ Authorization: Bearer {{aliceLogin.access_token}}
 ?? status == 200
 ?? js response.parsedBody.meta.total == 1
 ?? body contains "{{tag}} facture"
-?? js !response.body.includes(`pendingrapprochee`)
+?? js response.body.includes('pendingrapprochee') == false
 
 ### Filtre « Pointées » (pending non envoyé) : les deux pointées, dont la pending rapprochée
 GET {{api}}/{{courantAcc.id}}/transactions?search={{tag}}&reconciled=true
@@ -178,7 +178,7 @@ Authorization: Bearer {{bobLogin.access_token}}
 
 ?? status == 200
 ?? js response.parsedBody.meta.total == 0
-?? js !response.body.includes(`{{cb.id}}`)
+?? js response.body.includes(cb.id) == false
 
 ### Second compte d'Alice
 # @name autreAcc
