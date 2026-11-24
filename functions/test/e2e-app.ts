@@ -86,6 +86,9 @@ export async function createE2EApp(): Promise<{
   // Même configuration que createNestServer (src/main.ts)
   app.useGlobalPipes(...globalPipes());
   app.useGlobalFilters(...globalFilters());
-  await app.init();
+  // Écoute une seule fois sur un port éphémère : sans cela, supertest ouvre puis
+  // ferme un serveur par requête (app.listen(0) / server.close()) et une requête
+  // sur quelques milliers échoue en « socket hang up » sous charge.
+  await app.listen(0, '127.0.0.1');
   return { app, mocks };
 }
