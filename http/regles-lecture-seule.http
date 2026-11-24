@@ -133,7 +133,7 @@ Authorization: Bearer {{c.access_token}}
 DELETE {{baseUrl}}/{{account.id}}/smart-rules/{{rule.id}}
 Authorization: Bearer {{a.access_token}}
 
-?? status == 200
+?? status == 204
 
 ### C (sans partage) ne voit rien
 GET {{baseUrl}}/{{account.id}}/smart-rules
