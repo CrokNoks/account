@@ -68,7 +68,7 @@ describe('Barre des soldes', () => {
     renderBar();
 
     expect(text(screen.getByTestId('balance-forecast'))).toContain('3300,00€');
-    expect(screen.getByText('Prévu en fin de période')).toBeTruthy();
+    expect(screen.getByTestId('forecast-title').textContent).toBe('Prévu le 30 nov.');
     expect(text(screen.getByTestId('balance-bank'))).toContain('3400,00€');
     expect(text(screen.getByTestId('balance-upcoming'))).toContain('3450,00€');
   });
@@ -93,6 +93,56 @@ describe('Barre des soldes', () => {
     const { container } = renderBar();
     expect(container.querySelector('[data-tour="stats"]')).not.toBeNull();
     expect(screen.getByTestId('balance-forecast').querySelector('[data-amount]')!.className).toMatch(/max-lg:text-/);
+  });
+
+  describe('bureau : période et prévu datés', () => {
+    const initialPeriods = periods.value;
+    afterEach(() => {
+      vi.useRealTimers();
+      periods.value = initialPeriods;
+    });
+    const at = (y: number, m: number, d: number) => {
+      vi.useFakeTimers({ toFake: ['Date'] });
+      vi.setSystemTime(new Date(y, m, d, 12));
+    };
+
+    it('« 1 nov. → 30 nov. · jour 24 sur 30 » et « Prévu le 30 nov. »', () => {
+      at(2026, 10, 24);
+      renderBar();
+      expect(screen.getByTestId('period-subtitle-desktop').textContent).toBe('1 nov. → 30 nov. · jour 24 sur 30');
+      expect(screen.getByTestId('forecast-title').textContent).toBe('Prévu le 30 nov.');
+      expect(screen.getByTestId('period-subtitle-desktop').className).toContain('max-lg:hidden');
+      // mobile inchangé, sans doublon
+      expect(screen.getByTestId('period-day').textContent).toBe('Jour 24 sur 30');
+    });
+
+    it('en anglais', () => {
+      at(2026, 10, 24);
+      renderBar('en');
+      expect(screen.getByTestId('period-subtitle-desktop').textContent).toBe('Nov 1 → Nov 30 · day 24 of 30');
+      expect(screen.getByTestId('forecast-title').textContent).toBe('Forecast on Nov 30');
+    });
+
+    it('période passée : dates seules, sans « jour X sur Y »', () => {
+      at(2026, 11, 2);
+      renderBar();
+      expect(screen.getByTestId('period-subtitle-desktop').textContent).toBe('1 nov. → 30 nov.');
+    });
+
+    it('sans fin : le début seul et « Prévu en fin de période »', () => {
+      at(2026, 10, 24);
+      periods.value = [{ id: 'p1', startDate: '2026-11-01', endDate: null, isActive: true }];
+      renderBar();
+      expect(screen.getByTestId('period-subtitle-desktop').textContent).toBe('1 nov.');
+      expect(screen.getByTestId('forecast-title').textContent).toBe('Prévu en fin de période');
+    });
+
+    it('fin estimée : utilisée comme fin', () => {
+      at(2026, 10, 24);
+      periods.value = [{ id: 'p1', startDate: '2026-11-01', endDate: null, estimatedEndDate: '2026-11-30', isActive: true }];
+      renderBar();
+      expect(screen.getByTestId('period-subtitle-desktop').textContent).toBe('1 nov. → 30 nov. · jour 24 sur 30');
+    });
   });
 
   describe('accueil mobile', () => {
@@ -149,6 +199,6 @@ describe('Barre des soldes', () => {
 
   it('est traduit en anglais', () => {
     renderBar('en');
-    expect(screen.getByText('Forecast at end of period')).toBeTruthy();
+    expect(screen.getByTestId('forecast-title').textContent).toMatch(/^Forecast on /);
   });
 });

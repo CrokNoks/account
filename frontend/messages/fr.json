@@ -84,6 +84,7 @@
     "pace_same": "Identique à la même date",
     "pace_current": "Cette période",
     "pace_previous": "Période précédente",
+    "pace_budget": "Budget",
     "pace_day": "Jour {day}",
     "pace_empty": "Aucune donnée à afficher pour l'instant"
   },

@@ -4,12 +4,15 @@ import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import fr from '../../../../messages/fr.json';
 import en from '../../../../messages/en.json';
 import { SpendingPace } from './spending-pace';
-import { paceChartData, paceTooltipAmount } from '../model/pace-chart';
+import { paceChartData, paceTicks, paceTooltipAmount, paceYMax } from '../model/pace-chart';
 
-const state = vi.hoisted(() => ({ pace: undefined as unknown }));
+const state = vi.hoisted(() => ({ pace: undefined as unknown, planned: '241000' as string | undefined }));
 
 vi.mock('@/features/accounts/model/use-account-store', () => ({
   useAccountStore: () => ({ activeAccountId: 'a1', activePeriodId: 'p1' }),
+}));
+vi.mock('../api/use-reporting-stats', () => ({
+  useReportingStats: () => ({ isLoading: false, data: state.planned === undefined ? undefined : { plannedExpenses: state.planned } }),
 }));
 vi.mock('../api/use-spending-pace', () => ({
   useSpendingPace: () => ({ isLoading: false, data: state.pace }),
@@ -36,6 +39,7 @@ const text = (el: HTMLElement) => el.textContent!.replace(/\s/g, '');
 describe('Rythme de dépense', () => {
   beforeEach(() => {
     state.pace = undefined;
+    state.planned = '241000';
   });
 
   it('dit « de plus » quand la période dépense plus qu\'à la même date', () => {
@@ -71,6 +75,49 @@ describe('Rythme de dépense', () => {
     expect(text(screen.getByTestId('pace-gap'))).toContain('morethanonthesamedate');
   });
 
+  describe('ligne Budget, légende, axe', () => {
+    const twoPeriods = () => ({ points: [point(1, '1500', '1000'), point(2, '2000', '1800')], previousPeriodId: 'p0', gap: '200' });
+
+    it('affiche « Budget {Total budgété} » quand il y a un budget', () => {
+      state.pace = twoPeriods();
+      show();
+      expect(text(screen.getByTestId('pace-budget'))).toBe('Budget2410,00€');
+    });
+
+    it('sans budget (0) ou sans stats : pas de ligne Budget', () => {
+      state.pace = twoPeriods();
+      state.planned = '0';
+      show();
+      expect(screen.queryByTestId('pace-budget')).toBeNull();
+      cleanup();
+      state.planned = undefined;
+      show();
+      expect(screen.queryByTestId('pace-budget')).toBeNull();
+    });
+
+    it('légende : Cette période et Période précédente, visibles hors infobulle', () => {
+      state.pace = twoPeriods();
+      show();
+      const legend = screen.getByTestId('pace-legend');
+      expect(legend.textContent).toContain('Cette période');
+      expect(legend.textContent).toContain('Période précédente');
+    });
+
+    it('sans période précédente : pas de « Période précédente »', () => {
+      state.pace = { points: [point(1, '800', null)], previousPeriodId: null, gap: null };
+      show();
+      expect(screen.getByTestId('pace-legend').textContent).toContain('Cette période');
+      expect(screen.getByTestId('pace-legend').textContent).not.toContain('Période précédente');
+    });
+
+    it('en anglais', () => {
+      state.pace = twoPeriods();
+      show('en');
+      expect(screen.getByTestId('pace-legend').textContent).toContain('Previous period');
+      expect(text(screen.getByTestId('pace-budget'))).toBe('Budget€2,410.00');
+    });
+  });
+
   it('affiche un écart exact au-delà de 2^53 (plus et moins)', () => {
     state.pace = { points: [point(1, '1500', '1000')], previousPeriodId: 'p0', gap: '9007199254740993' };
     show();
@@ -90,5 +137,29 @@ describe('Infobulle du rythme de dépense', () => {
     expect(data[1].previous).toBeNull();
     expect(data[0].day).toBe(1);
     expect(data[1].current).toBe(800);
+  });
+});
+
+describe('Axes du rythme de dépense', () => {
+  const days = (n: number) => Array.from({ length: n }, (_, i) => point(i + 1, String(i * 100), null));
+
+  it('environ 5 repères du premier au dernier jour tracé', () => {
+    const ticks = paceTicks(paceChartData(days(24)), 5);
+    expect(ticks).toHaveLength(5);
+    expect(ticks[0]).toBe(1);
+    expect(ticks[ticks.length - 1]).toBe(24);
+  });
+
+  it('peu de points : un repère par point, sans doublon', () => {
+    expect(paceTicks(paceChartData(days(1)), 5)).toEqual([1]);
+    expect(paceTicks(paceChartData(days(3)), 5)).toEqual([1, 2, 3]);
+    expect(paceTicks([], 5)).toEqual([]);
+  });
+
+  it('l\'échelle verticale inclut le budget quand il dépasse le cumul tracé', () => {
+    const data = paceChartData([point(1, '1500', '1000'), point(2, '2000', '1800')]);
+    expect(paceYMax(data, '241000')).toBe(241000);
+    expect(paceYMax(data, null)).toBe(2000);
+    expect(paceYMax(data, '100')).toBe(2000);
   });
 });

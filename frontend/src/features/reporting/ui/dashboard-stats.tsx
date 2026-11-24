@@ -11,6 +11,7 @@ import { periodEnd } from "@/features/periods/model/period-end";
 import { periodProgress } from "../model/period-progress";
 import { cn } from "@/lib/utils";
 import { ForecastComposition } from "./forecast-composition";
+import { PeriodSubtitle } from "./period-subtitle";
 
 /**
  * Bloc hero de l'écran Aujourd'hui : le prévu de fin de période (chiffre principal, celui de
@@ -34,10 +35,11 @@ export function BalanceBar() {
   return (
     <div data-tour="stats">
       <Card className="border-2 shadow-sm overflow-hidden p-4 max-lg:p-3 max-lg:gap-3 flex flex-col gap-4">
+        <PeriodSubtitle period={period} testId="period-subtitle-desktop" className="max-lg:hidden -mb-2 text-sm text-muted-foreground" />
         <div className="flex flex-col gap-4 max-lg:gap-1 lg:flex-row lg:items-end lg:justify-between">
         <div data-testid="balance-forecast">
-          <p className="max-lg:hidden text-sm font-medium text-muted-foreground">
-            {t('forecast_title')}
+          <p data-testid="forecast-title" className="max-lg:hidden text-sm font-medium text-muted-foreground">
+            {endDate ? t('forecast_on', { date: endDate }) : t('forecast_title')}
           </p>
           <p data-testid="forecast-title-mobile" className="lg:hidden text-sm font-medium text-muted-foreground">
             {endDate ? t('forecast_on', { date: endDate }) : t('forecast_title')}
