@@ -130,3 +130,18 @@ describe('touche Entrée', () => {
     expect(screen.getByText('expense_hint')).toBeTruthy();
   });
 });
+
+describe('saisie mobile : intitulé du champ libellé', () => {
+  it('mobile : le champ s\'appelle « libellé » (clé fields.label)', () => {
+    renderForm();
+    expect(screen.getByLabelText('fields.label')).toHaveAttribute('placeholder', 'form.description_placeholder_standard');
+    expect(screen.queryByLabelText('fields.description')).toBeNull();
+  });
+
+  it('bureau : le champ garde « description »', () => {
+    desktop = true;
+    renderForm();
+    expect(screen.getByLabelText('fields.description')).toHaveAttribute('placeholder', 'form.description_placeholder_standard');
+    expect(screen.queryByLabelText('fields.label')).toBeNull();
+  });
+});

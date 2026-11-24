@@ -288,6 +288,7 @@
     "fields": {
       "date": "Date",
       "description": "Description",
+      "label": "Description",
       "category": "Category",
       "amount": "Amount",
       "reconciled": "Reconciled",

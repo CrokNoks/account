@@ -207,7 +207,7 @@ export function TransactionForm({
 
   const descriptionField = (
     <div className="space-y-2" data-tour="tx-description">
-      <label htmlFor={descriptionId} className="text-sm font-medium">{t('fields.description')}</label>
+      <label htmlFor={descriptionId} className="text-sm font-medium">{t(desktop ? 'fields.description' : 'fields.label')}</label>
       <Input 
         id={descriptionId}
         placeholder={mode === 'transfer' ? t('form.description_placeholder_transfer') : t('form.description_placeholder_standard')} 

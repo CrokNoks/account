@@ -288,6 +288,7 @@
     "fields": {
       "date": "Date",
       "description": "Description",
+      "label": "Libellé",
       "category": "Catégorie",
       "amount": "Montant",
       "reconciled": "Pointé",
