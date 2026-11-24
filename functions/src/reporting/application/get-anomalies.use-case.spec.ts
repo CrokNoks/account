@@ -355,3 +355,152 @@ describe('GetAnomaliesUseCase', () => {
     expect(anomalies).toHaveLength(0);
   });
 });
+
+describe('GetAnomaliesUseCase : fenêtre de période (factures réservées)', () => {
+  const accountId = 'acc-1';
+  const mk = (
+    id: string,
+    date: string,
+    amount: number,
+    cat = 'cat-1',
+    pending = false,
+  ) =>
+    Transaction.create({
+      id,
+      accountId,
+      categoryId: cat,
+      date: new Date(date),
+      description: id,
+      amount: BigInt(amount),
+      reconciled: false,
+      pending,
+    });
+
+  const build = (
+    period: { endDate: Date | null; isActive: boolean },
+    list: Transaction[],
+  ) => {
+    const repo = {
+      findAllByAccountUnpaginated: jest.fn(
+        (_: string, o?: { startDate?: Date; endDate?: Date }) =>
+          Promise.resolve(
+            list.filter(
+              (t) =>
+                (!o?.startDate || t.date >= o.startDate) &&
+                (!o?.endDate || t.date <= o.endDate),
+            ),
+          ),
+      ),
+    };
+    const useCase = new GetAnomaliesUseCase(
+      repo as unknown as TransactionRepository,
+      {
+        findById: jest.fn().mockResolvedValue({
+          id: 'per-1',
+          accountId,
+          startDate: new Date('2026-06-01'),
+          ...period,
+        }),
+      } as unknown as PeriodRepository,
+    );
+    return { useCase, repo };
+  };
+
+  beforeEach(() => {
+    jest.useFakeTimers().setSystemTime(new Date(2026, 5, 15));
+  });
+  afterEach(() => jest.useRealTimers());
+
+  const dup = (date: string) => [mk('d1', date, -2500), mk('d2', date, -2500)];
+
+  it('detects a duplicate dated after the end of an active period', async () => {
+    const { useCase } = build(
+      { endDate: new Date('2026-06-30'), isActive: true },
+      dup('2026-07-05'),
+    );
+
+    const a = await useCase.execute(accountId, 'per-1');
+
+    expect(a.map((x) => x.id)).toEqual(['dup-d1']);
+  });
+
+  it('detects a future duplicate of an active period without end (no stop at today)', async () => {
+    const { useCase } = build(
+      { endDate: null, isActive: true },
+      dup('2026-09-10'),
+    );
+
+    const a = await useCase.execute(accountId, 'per-1');
+
+    expect(a.map((x) => x.id)).toEqual(['dup-d1']);
+  });
+
+  it('closed period: a duplicate dated after the end is not analysed', async () => {
+    const { useCase } = build(
+      { endDate: new Date('2026-06-30'), isActive: false },
+      dup('2026-07-05'),
+    );
+
+    expect(await useCase.execute(accountId, 'per-1')).toEqual([]);
+  });
+
+  it('a future operation does not enter the comparison history', async () => {
+    // 3 dépenses passées de -1000, une cible de -5000, et une dépense future énorme
+    // de la même catégorie : sans elle la cible est inhabituelle (moyenne -1000).
+    const list = [
+      mk('h1', '2026-05-01', -1000),
+      mk('h2', '2026-04-01', -1000),
+      mk('h3', '2026-03-20', -1000),
+      mk('t1', '2026-06-10', -5000),
+      mk('future', '2026-09-01', -900000),
+    ];
+    const { useCase } = build({ endDate: null, isActive: true }, list);
+
+    const a = await useCase.execute(accountId, 'per-1');
+
+    const outliers = a.filter((x) => x.type === 'outlier');
+    expect(outliers.map((x) => x.transactionIds[0])).toContain('t1');
+    expect(outliers[0].description).toContain('10,00');
+  });
+
+  describe('outlier pending dated after the end of the period', () => {
+    const history = () => [
+      mk('h1', '2026-05-01', -1000),
+      mk('h2', '2026-04-01', -1000),
+      mk('h3', '2026-03-20', -1000),
+    ];
+    const outlierIds = (a: { type: string; transactionIds: string[] }[]) =>
+      a.filter((x) => x.type === 'outlier').map((x) => x.transactionIds[0]);
+
+    it('flags it on an active period with an end date', async () => {
+      const list = [...history(), mk('p1', '2026-07-05', -5000, 'cat-1', true)];
+      const { useCase } = build(
+        { endDate: new Date('2026-06-30'), isActive: true },
+        list,
+      );
+
+      expect(outlierIds(await useCase.execute(accountId, 'per-1'))).toEqual([
+        'p1',
+      ]);
+    });
+
+    it('flags it on an active period without end date', async () => {
+      const list = [...history(), mk('p1', '2026-09-10', -5000, 'cat-1', true)];
+      const { useCase } = build({ endDate: null, isActive: true }, list);
+
+      expect(outlierIds(await useCase.execute(accountId, 'per-1'))).toEqual([
+        'p1',
+      ]);
+    });
+
+    it('does not flag it on a closed period', async () => {
+      const list = [...history(), mk('p1', '2026-07-05', -5000, 'cat-1', true)];
+      const { useCase } = build(
+        { endDate: new Date('2026-06-30'), isActive: false },
+        list,
+      );
+
+      expect(outlierIds(await useCase.execute(accountId, 'per-1'))).toEqual([]);
+    });
+  });
+});

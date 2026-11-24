@@ -10,6 +10,11 @@ import {
   todayDateOnly,
 } from '../../shared/domain/date-only';
 import { ensureBelongsToAccount } from '../../shared/domain/account-ownership';
+import {
+  isInPeriodWindow,
+  periodLoadEndDate,
+  WindowPeriod,
+} from '../domain/period-window';
 
 export interface Anomaly {
   id: string;
@@ -29,7 +34,9 @@ export class GetAnomaliesUseCase {
 
   async execute(accountId: string, periodId?: string): Promise<Anomaly[]> {
     let targetStartDate: Date;
-    let targetEndDate: Date;
+    // Fenêtre d'analyse : celle du prévu pour les dépenses ; les revenus
+    // restent bornés à la fin, ou à aujourd'hui sans fin.
+    let window: WindowPeriod;
 
     if (periodId) {
       const period = ensureBelongsToAccount(
@@ -38,11 +45,15 @@ export class GetAnomaliesUseCase {
         'Period',
       );
       targetStartDate = period.startDate;
-      targetEndDate = period.endDate || todayDateOnly();
+      window = {
+        startDate: period.startDate,
+        endDate: period.endDate || todayDateOnly(),
+        isActive: period.isActive,
+      };
     } else {
       const today = todayDateOnly();
       targetStartDate = startOfMonthDateOnly(today);
-      targetEndDate = today;
+      window = { startDate: targetStartDate, endDate: today, isActive: false };
     }
 
     const historyStartDate = addMonthsDateOnly(targetStartDate, -6);
@@ -50,16 +61,19 @@ export class GetAnomaliesUseCase {
     const allTransactions =
       await this.transactionRepository.findAllByAccountUnpaginated(accountId, {
         startDate: historyStartDate,
-        endDate: targetEndDate,
+        endDate: periodLoadEndDate(window),
       });
 
     console.log(
       `[GetAnomalies] Analyzing ${allTransactions.length} transactions for account ${accountId}`,
     );
 
-    const targetTransactions = allTransactions.filter(
-      (t) => t.date >= targetStartDate && t.date <= targetEndDate,
+    const targetTransactions = allTransactions.filter((t) =>
+      isInPeriodWindow(t, window),
     );
+    // Historique de comparaison : avant la période seulement (jamais une
+    // opération future).
+    const history = allTransactions.filter((t) => t.date < targetStartDate);
 
     console.log(
       `[GetAnomalies] Target transactions count: ${targetTransactions.length}`,
@@ -79,7 +93,7 @@ export class GetAnomaliesUseCase {
       });
     }
 
-    const outliers = this.findOutliers(targetTransactions, allTransactions);
+    const outliers = this.findOutliers(targetTransactions, history);
     for (const outlier of outliers) {
       anomalies.push({
         id: `out-${outlier.transaction.id}`,
