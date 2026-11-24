@@ -65,7 +65,7 @@ export function PeriodList() {
       <div className="space-y-4">
         {periods?.map((period) => (
           <Card key={period.id} className={period.isActive ? "border-primary/50 group relative" : "group relative"}>
-            <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+            <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-2 pb-2 space-y-0">
               <CardTitle className="text-sm font-medium">
                 {format(new Date(period.startDate), 'dd MMMM yyyy')}
                 {periodEnd(period) && ` - ${format(new Date(periodEnd(period)!), 'dd MMMM yyyy')}`}
