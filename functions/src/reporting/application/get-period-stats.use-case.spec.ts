@@ -123,7 +123,18 @@ describe('GetPeriodStatsUseCase', () => {
     expect(stats.startBalance).toBe('120000');
   });
 
-  it('only loads the transactions of the period', async () => {
+  it('loads from the start of the period without upper bound when active (reserved expenses after the end)', async () => {
+    await useCase.execute('acc-1', 'per-1');
+
+    expect(transactions.findAllByAccountUnpaginated).toHaveBeenCalledWith(
+      'acc-1',
+      { startDate: period.startDate, endDate: undefined },
+    );
+  });
+
+  it('keeps the end date as upper bound for a closed period', async () => {
+    periods.findById.mockResolvedValue(period.deactivate());
+
     await useCase.execute('acc-1', 'per-1');
 
     expect(transactions.findAllByAccountUnpaginated).toHaveBeenCalledWith(

@@ -1,0 +1,206 @@
+# Factures réservées : une dépense datée après la fin de la période active reste dans le prévu (critères 1 à 8).
+# Lancement : npx httpyac send --all http/factures-reservees.http --var port=8080 --var supabase=<URL Supabase> --var anon=<ANON_KEY> --var email=<compte e2e> --var password=<mot de passe e2e>
+# (identifiants en ligne de commande, jamais dans le fichier ; connexion par mot de passe, pas de création d'utilisateur ;
+#  le compte bancaire et les catégories créés sont jetables, préfixés e2e-, supprimés à la fin ; config httpYac avec cookieJarEnabled false)
+# Période active du 2026-11-01 au 2026-11-30, solde initial 100000.
+# Opérations : Courses -30000 rapprochée (10/11), CB Courses -5000 (20/11), 2 x Courses -2500 pending (07/12, doublon),
+#              facture Loyer -12000 pending (05/12), revenu +50000 (06/12, ne doit pas compter).
+# Attendu : prévu 48000, en banque 70000, à venir 65000, CB -5000 (1), factures -17000, budget restant 0, revenus attendus 0.
+@baseUrl = http://localhost:{{port}}
+
+### Connexion du compte e2e
+# @name login
+POST {{supabase}}/auth/v1/token?grant_type=password
+apikey: {{anon}}
+Content-Type: application/json
+
+{ "email": "{{email}}", "password": "{{password}}" }
+
+?? status == 200
+
+### Compte jetable
+# @name account
+POST {{baseUrl}}/accounts
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "name": "e2e-factures-reservees-{{$timestamp}}", "initialBalance": "100000" }
+
+?? status == 201
+
+### Catégorie Courses
+# @name courses
+POST {{baseUrl}}/{{account.id}}/categories
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "name": "e2e-Courses", "color": "#112233", "type": "expense" }
+
+?? status == 201
+
+### Catégorie Loyer (sans budget)
+# @name loyer
+POST {{baseUrl}}/{{account.id}}/categories
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "name": "e2e-Loyer", "color": "#223344", "type": "expense" }
+
+?? status == 201
+
+### Catégorie Salaire
+# @name salaire
+POST {{baseUrl}}/{{account.id}}/categories
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "name": "e2e-Salaire", "color": "#334455", "type": "income" }
+
+?? status == 201
+
+### Période active 2026-11-01 au 2026-11-30, budget Courses 40000
+# @name period
+POST {{baseUrl}}/{{account.id}}/periods
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "startDate": "2026-11-01", "endDate": "2026-11-30", "budgets": [ { "categoryId": "{{courses.id}}", "amountAllocated": "40000" } ] }
+
+?? status == 201
+
+### Courses rapprochée 10/11
+POST {{baseUrl}}/{{account.id}}/transactions
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "categoryId": "{{courses.id}}", "date": "2026-11-10", "description": "e2e courses", "amount": "-30000", "reconciled": true, "pending": false }
+
+?? status == 201
+
+### CB Courses non rapprochée 20/11
+POST {{baseUrl}}/{{account.id}}/transactions
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "categoryId": "{{courses.id}}", "date": "2026-11-20", "description": "e2e cb", "amount": "-5000", "reconciled": false, "pending": false }
+
+?? status == 201
+
+### Facture Loyer pending datée après la fin (05/12)
+POST {{baseUrl}}/{{account.id}}/transactions
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "categoryId": "{{loyer.id}}", "date": "2026-12-05", "description": "e2e loyer", "amount": "-12000", "reconciled": false, "pending": true }
+
+?? status == 201
+
+### Doublon 1 Courses pending 07/12
+POST {{baseUrl}}/{{account.id}}/transactions
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "categoryId": "{{courses.id}}", "date": "2026-12-07", "description": "e2e dup", "amount": "-2500", "reconciled": false, "pending": true }
+
+?? status == 201
+
+### Doublon 2 Courses pending 07/12
+POST {{baseUrl}}/{{account.id}}/transactions
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "categoryId": "{{courses.id}}", "date": "2026-12-07", "description": "e2e dup", "amount": "-2500", "reconciled": false, "pending": true }
+
+?? status == 201
+
+### Revenu daté après la fin (06/12) : ne doit compter nulle part
+POST {{baseUrl}}/{{account.id}}/transactions
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "categoryId": "{{salaire.id}}", "date": "2026-12-06", "description": "e2e revenu", "amount": "50000", "reconciled": false, "pending": false }
+
+?? status == 201
+
+### Stats : prévu, banque, à venir, composition (critères 1, 2, 3, 7b)
+# @name stats
+GET {{baseUrl}}/{{account.id}}/periods/{{period.id}}/reporting/stats
+Authorization: Bearer {{login.access_token}}
+
+?? status == 200
+?? js response.parsedBody.forecastBalance == 48000
+?? js response.parsedBody.realBankBalance == 70000
+?? js response.parsedBody.upcomingBalance == 65000
+?? js response.parsedBody.realExpenses == -52000
+?? js response.parsedBody.realIncome == 0
+?? js response.parsedBody.cardTotal == -5000
+?? js response.parsedBody.cardCount == 1
+?? js response.parsedBody.billsTotal == -17000
+?? js response.parsedBody.budgetRemaining == 0
+?? js response.parsedBody.expectedIncome == 0
+
+### Simulation avec les budgets enregistrés = stats (critère 4)
+POST {{baseUrl}}/{{account.id}}/periods/{{period.id}}/reporting/forecast-simulation
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "budgets": [ { "categoryId": "{{courses.id}}", "amountAllocated": "40000" } ] }
+
+?? status == 200
+?? js response.parsedBody.forecastBalance == 48000
+?? js response.parsedBody.realExpenses == -52000
+?? js response.parsedBody.realIncome == 0
+?? js response.parsedBody.delta == 0
+
+### Répartition du budget (critère 5)
+GET {{baseUrl}}/{{account.id}}/periods/{{period.id}}/reporting/budget-breakdown
+Authorization: Bearer {{login.access_token}}
+
+?? status == 200
+?? js response.parsedBody.expenses.find(c => c.name == "e2e-Courses").real == -40000
+?? js response.parsedBody.expenses.find(c => c.name == "e2e-Courses").remaining == 0
+?? js response.parsedBody.expenses.find(c => c.name == "e2e-Loyer").real == -12000
+?? js response.parsedBody.income.find(c => c.name == "e2e-Salaire").real == 0
+
+### Évolution (critère 5)
+GET {{baseUrl}}/{{account.id}}/reporting/evolution
+Authorization: Bearer {{login.access_token}}
+
+?? status == 200
+?? js response.parsedBody.find(p => p.periodId == period.id).realExpenses == -52000
+?? js response.parsedBody.find(p => p.periodId == period.id).realIncome == 0
+?? js response.parsedBody.find(p => p.periodId == period.id).forecastBalance == 48000
+?? js response.parsedBody.find(p => p.periodId == period.id).realBankBalance == 70000
+
+### Anomalies : doublon daté après la fin (critère 6)
+GET {{baseUrl}}/{{account.id}}/reporting/anomalies?periodId={{period.id}}
+Authorization: Bearer {{login.access_token}}
+
+?? status == 200
+?? js response.parsedBody.filter(a => a.type == "duplicate").length == 1
+
+### Période fermée : même dépense hors fenêtre (critère 7a)
+PATCH {{baseUrl}}/{{account.id}}/periods/{{period.id}}
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "isActive": false }
+
+?? status == 200
+
+### Stats de la période fermée : retour aux bornes de la fin
+GET {{baseUrl}}/{{account.id}}/periods/{{period.id}}/reporting/stats
+Authorization: Bearer {{login.access_token}}
+
+?? status == 200
+?? js response.parsedBody.forecastBalance == 60000
+?? js response.parsedBody.realExpenses == -35000
+?? js response.parsedBody.billsTotal == 0
+
+### Nettoyage : suppression du compte jetable (cascade)
+DELETE {{supabase}}/rest/v1/accounts?id=eq.{{account.id}}
+apikey: {{anon}}
+Authorization: Bearer {{login.access_token}}
+Prefer: return=representation
+
+?? status == 200

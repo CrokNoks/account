@@ -323,3 +323,98 @@ describe('SimulatePeriodForecastUseCase', () => {
     );
   });
 });
+
+describe('SimulatePeriodForecastUseCase : fenêtre de période (factures réservées)', () => {
+  it('same forecast, real expenses and real income as the stats with an expense dated after the end', async () => {
+    const mk = (date: string, amount: number, categoryId: string) =>
+      Transaction.create({
+        accountId: 'acc-1',
+        categoryId,
+        date: new Date(date),
+        description: 'tx',
+        amount: BigInt(amount),
+        reconciled: false,
+        pending: true,
+      });
+    const list = [
+      mk('2026-03-10', -50000, 'A'),
+      mk('2026-04-05', -12000, 'A'),
+      mk('2026-04-06', 90000, 'I'),
+    ];
+    const accounts = {
+      findById: jest.fn().mockResolvedValue(
+        new Account({
+          id: 'acc-1',
+          name: 'Courant',
+          ownerId: 'u-1',
+          initialBalance: BigInt(100000),
+        }),
+      ),
+    };
+    const periods = {
+      findById: jest.fn().mockResolvedValue(
+        Period.create({
+          id: 'per-1',
+          accountId: 'acc-1',
+          startDate: new Date('2026-03-01'),
+          endDate: new Date('2026-03-31'),
+        }),
+      ),
+    };
+    const transactions = {
+      sumAmountByAccountBeforeDate: jest.fn().mockResolvedValue(BigInt(0)),
+      findAllByAccountUnpaginated: jest.fn(
+        (_: string, o?: { startDate?: Date; endDate?: Date }) =>
+          Promise.resolve(
+            list.filter(
+              (t) =>
+                (!o?.startDate || t.date >= o.startDate) &&
+                (!o?.endDate || t.date <= o.endDate),
+            ),
+          ),
+      ),
+    };
+    const saved1 = [saved('A', 80000)];
+    const budgets = {
+      findAllByPeriod: jest.fn().mockResolvedValue(saved1),
+    };
+    const categories = {
+      findAllByAccount: jest
+        .fn()
+        .mockResolvedValue([
+          category('A', CategoryType.EXPENSE),
+          category('I', CategoryType.INCOME),
+        ]),
+    };
+    const sim = new SimulatePeriodForecastUseCase(
+      accounts as unknown as AccountRepository,
+      periods as unknown as PeriodRepository,
+      transactions as unknown as TransactionRepository,
+      budgets as unknown as BudgetRepository,
+      categories as unknown as CategoryRepository,
+      {
+        ensureCategories: jest.fn().mockResolvedValue(undefined),
+      } as unknown as AccountReferencesService,
+    );
+    const st = new GetPeriodStatsUseCase(
+      accounts as unknown as AccountRepository,
+      periods as unknown as PeriodRepository,
+      transactions as unknown as TransactionRepository,
+      budgets as unknown as BudgetRepository,
+      categories as unknown as CategoryRepository,
+    );
+
+    const s = await st.execute('acc-1', 'per-1');
+    const r = await sim.execute({
+      accountId: 'acc-1',
+      periodId: 'per-1',
+      budgets: [body('A', 80000)],
+    });
+
+    expect(s.realExpenses).toBe('-62000');
+    expect(s.realIncome).toBe('0');
+    expect(r.forecastBalance).toBe(s.forecastBalance);
+    expect(r.realExpenses).toBe(s.realExpenses);
+    expect(r.realIncome).toBe(s.realIncome);
+  });
+});

@@ -5,6 +5,7 @@ import { CategoryRepository } from '../../categories/domain/category.repository.
 import { Category } from '../../categories/domain/category.entity';
 import { Transaction } from '../../transactions/domain/transaction.entity';
 import { NotFoundError } from '../../shared/domain/errors';
+import { filterPeriodWindow, periodLoadEndDate } from '../domain/period-window';
 
 export interface PeriodForecastSources {
   accountRepository: AccountRepository;
@@ -49,11 +50,15 @@ export async function loadPeriodForecastInput(
     );
   const startBalance = account.initialBalance + sumBeforeStart;
 
-  const periodTransactions =
+  // Fenêtre unique (domain/period-window) : période active = pas de borne haute
+  // au chargement, le revenu tardif est écarté par le filtre.
+  const periodTransactions = filterPeriodWindow(
     await sources.transactionRepository.findAllByAccountUnpaginated(accountId, {
       startDate: period.startDate,
-      endDate: period.endDate || undefined,
-    });
+      endDate: periodLoadEndDate(period),
+    }),
+    period,
+  );
 
   const realByCategory = new Map<string, bigint>();
   let uncategorized = BigInt(0);
