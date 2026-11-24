@@ -60,7 +60,7 @@ export function SpendingPace() {
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={data} margin={{ top: 16, right: 8, bottom: 0, left: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                <XAxis dataKey="day" ticks={paceTicks(data, 5)} tickFormatter={dateOf} tick={{ fontSize: 10 }} />
+                <XAxis dataKey="day" ticks={paceTicks(data, 5)} interval={0} padding={{ left: 20, right: 20 }} tickFormatter={dateOf} tick={{ fontSize: 10 }} />
                 <YAxis hide domain={[0, paceYMax(data, budget)]} />
                 <Tooltip
                   formatter={(_value, name, item) => [
@@ -74,7 +74,6 @@ export function SpendingPace() {
                     y={Number(budget)}
                     stroke="var(--color-warn, #f59e0b)"
                     strokeDasharray="2 4"
-                    label={{ value: budgetLabel ?? '', position: 'insideTopRight', fontSize: 10, fill: 'currentColor' }}
                   />
                 )}
                 <Line type="monotone" dataKey="current" stroke="var(--color-primary, #6366f1)" strokeWidth={2} dot={false} isAnimationActive={false} />

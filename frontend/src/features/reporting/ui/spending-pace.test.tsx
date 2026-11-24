@@ -84,6 +84,13 @@ describe('Rythme de dépense', () => {
       expect(text(screen.getByTestId('pace-budget'))).toBe('Budget2410,00€');
     });
 
+    it('le montant du budget n\'est écrit qu\'une fois (légende), pas sur la courbe', () => {
+      state.pace = twoPeriods();
+      show();
+      const card = screen.getByTestId('spending-pace');
+      expect(text(card).split('2410,00€').length - 1).toBe(1);
+    });
+
     it('sans budget (0) ou sans stats : pas de ligne Budget', () => {
       state.pace = twoPeriods();
       state.planned = '0';
