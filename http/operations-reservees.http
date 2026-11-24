@@ -8,6 +8,7 @@
 #   T4 "e2e sanscat" 05/12 sans catégorie, T5 "e2e novembre" 15/11, T6 "e2e cb octobre" 31/10,
 #   T7 revenu +12000 "e2e cb revenu (déc.)" 05/12, T8 remboursement +12000 sur catégorie de dépense 05/12.
 # Attendu P2 : T1 à T5 (5 lignes), pas T6 T7 T8. P1 (fermée) : T6 seule. Sans période : les 8.
+# Dates saisies avec une période : elles restreignent la fenêtre (intersection), jamais ne l'élargissent ; début > fin : liste vide.
 # Le compte B est un second compte bancaire du MÊME utilisateur (pas un autre utilisateur) : il vérifie que
 # la liste ne sort jamais du compte de l'URL ; l'isolation entre utilisateurs relève de la RLS, non testée ici.
 @baseUrl = http://localhost:{{port}}
@@ -297,6 +298,117 @@ Authorization: Bearer {{login.access_token}}
 ?? status == 200
 ?? js response.parsedBody.meta.total == 1
 ?? body contains "id":"{{t2.id}}"
+
+### Dates saisies, période active : endDate 30/11 retire les réservées (T1 à T4), T5 reste
+GET {{baseUrl}}/{{account.id}}/transactions?periodId={{p2.id}}&endDate=2026-11-30&limit=100
+Authorization: Bearer {{login.access_token}}
+
+?? status == 200
+?? js response.parsedBody.meta.total == 1
+?? js response.parsedBody.data.length == 1
+?? body contains "id":"{{t5.id}}"
+?? js response.parsedBody.data.some(t => t.id == t1.id) == false
+?? js response.parsedBody.data.some(t => t.id == t2.id) == false
+?? js response.parsedBody.data.some(t => t.id == t3.id) == false
+?? js response.parsedBody.data.some(t => t.id == t4.id) == false
+?? js response.parsedBody.data.some(t => t.id == t6.id) == false
+
+### Dates saisies, période active : startDate 20/11 retire T5 (15/11), garde les réservées T1 à T4
+GET {{baseUrl}}/{{account.id}}/transactions?periodId={{p2.id}}&startDate=2026-11-20&limit=100
+Authorization: Bearer {{login.access_token}}
+
+?? status == 200
+?? js response.parsedBody.meta.total == 4
+?? body contains "id":"{{t1.id}}"
+?? body contains "id":"{{t2.id}}"
+?? body contains "id":"{{t3.id}}"
+?? body contains "id":"{{t4.id}}"
+?? js response.parsedBody.data.some(t => t.id == t5.id) == false
+?? js response.parsedBody.data.some(t => t.id == t6.id) == false
+
+### Dates saisies, période active : 10/11 au 20/11 = T5 seule
+GET {{baseUrl}}/{{account.id}}/transactions?periodId={{p2.id}}&startDate=2026-11-10&endDate=2026-11-20
+Authorization: Bearer {{login.access_token}}
+
+?? status == 200
+?? js response.parsedBody.meta.total == 1
+?? body contains "id":"{{t5.id}}"
+
+### Dates saisies, période active : le 05/12 seulement = les réservées T1 à T4 (les dates choisies les gardent)
+GET {{baseUrl}}/{{account.id}}/transactions?periodId={{p2.id}}&startDate=2026-12-05&endDate=2026-12-05&limit=100
+Authorization: Bearer {{login.access_token}}
+
+?? status == 200
+?? js response.parsedBody.meta.total == 4
+?? js response.parsedBody.data.some(t => t.id == t5.id) == false
+
+### Jamais d'élargissement : startDate 01/10 (avant le début de P2), T6 (31/10) reste exclu
+GET {{baseUrl}}/{{account.id}}/transactions?periodId={{p2.id}}&startDate=2026-10-01&limit=100
+Authorization: Bearer {{login.access_token}}
+
+?? status == 200
+?? js response.parsedBody.meta.total == 5
+?? js response.parsedBody.data.some(t => t.id == t6.id) == false
+
+### Jamais d'élargissement : endDate 31/01/2027, rien de plus, les réservées restent
+GET {{baseUrl}}/{{account.id}}/transactions?periodId={{p2.id}}&endDate=2027-01-31&limit=100
+Authorization: Bearer {{login.access_token}}
+
+?? status == 200
+?? js response.parsedBody.meta.total == 5
+
+### Début > fin : liste vide, pas d'erreur serveur
+GET {{baseUrl}}/{{account.id}}/transactions?periodId={{p2.id}}&startDate=2026-11-20&endDate=2026-11-10
+Authorization: Bearer {{login.access_token}}
+
+?? status == 200
+?? js response.parsedBody.meta.total == 0
+?? js response.parsedBody.data.length == 0
+?? js response.parsedBody.meta.totalPages == 0
+
+### Sans date saisie : rien ne change, À pointer (liste) == cardCount
+GET {{baseUrl}}/{{account.id}}/transactions?periodId={{p2.id}}&reconciled=false&pending=false
+Authorization: Bearer {{login.access_token}}
+
+?? status == 200
+?? js response.parsedBody.meta.total == {{stats.cardCount}}
+
+### Dates saisies + À pointer : 10/11 au 20/11 ne garde que T5 (non pointée, 15/11)
+GET {{baseUrl}}/{{account.id}}/transactions?periodId={{p2.id}}&reconciled=false&pending=false&startDate=2026-11-10&endDate=2026-11-20
+Authorization: Bearer {{login.access_token}}
+
+?? status == 200
+?? js response.parsedBody.meta.total == 1
+?? body contains "id":"{{t5.id}}"
+
+### Dates saisies + recherche : ET, T1 "(déc.)" retiré par endDate 30/11
+GET {{baseUrl}}/{{account.id}}/transactions?periodId={{p2.id}}&search=%28d%C3%A9c.%29&endDate=2026-11-30
+Authorization: Bearer {{login.access_token}}
+
+?? status == 200
+?? js response.parsedBody.meta.total == 0
+
+### Dates saisies, période fermée P1 : 15/10 au 31/10 = T6
+GET {{baseUrl}}/{{account.id}}/transactions?periodId={{p1.id}}&startDate=2026-10-15&endDate=2026-10-31
+Authorization: Bearer {{login.access_token}}
+
+?? status == 200
+?? js response.parsedBody.meta.total == 1
+?? body contains "id":"{{t6.id}}"
+
+### Dates saisies, période fermée P1 : endDate 15/10 = rien
+GET {{baseUrl}}/{{account.id}}/transactions?periodId={{p1.id}}&endDate=2026-10-15
+Authorization: Bearer {{login.access_token}}
+
+?? status == 200
+?? js response.parsedBody.meta.total == 0
+
+### Les compteurs ne bougent pas après ces filtres : cardCount inchangé
+GET {{baseUrl}}/{{account.id}}/periods/{{p2.id}}/reporting/stats
+Authorization: Bearer {{login.access_token}}
+
+?? status == 200
+?? js response.parsedBody.cardCount == {{stats.cardCount}}
 
 ### Nettoyage : suppression du compte jetable A (cascade)
 DELETE {{supabase}}/rest/v1/accounts?id=eq.{{account.id}}

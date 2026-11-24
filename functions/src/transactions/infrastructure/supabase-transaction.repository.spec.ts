@@ -694,6 +694,62 @@ describe('SupabaseTransactionRepository period window (paginated list)', () => {
     expect(result.data.map((t) => t.id).sort()).toEqual(['a', 'e']);
   });
 
+  it('narrows the window with startDate and endDate, never widens it', async () => {
+    const rows = [
+      row('a', '2026-12-05', -12000), // réservée, après la fin de la période
+      row('b', '2026-11-20', -12000),
+      row('c', '2026-11-05', -12000),
+      row('d', '2026-10-31', -12000), // hors fenêtre de la période
+      row('e', '2026-11-30', -12000),
+    ];
+    const ids = async (o: object) =>
+      (
+        await fakeDb(rows).findAllByAccount('acc-1', {
+          periodWindow: active,
+          ...o,
+        })
+      ).data
+        .map((t) => t.id)
+        .sort();
+
+    // sans date saisie : toute la fenêtre
+    expect(await ids({})).toEqual(['a', 'b', 'c', 'e']);
+    // cas 13 : endDate 30/11 retire la dépense réservée du 05/12
+    expect(await ids({ endDate: new Date('2026-11-30') })).toEqual([
+      'b',
+      'c',
+      'e',
+    ]);
+    // cas 14 : startDate 10/11 retire le 05/11 ; le 31/10 reste exclu
+    expect(await ids({ startDate: new Date('2026-11-10') })).toEqual([
+      'a',
+      'b',
+      'e',
+    ]);
+    // startDate avant le début de la période : n'élargit pas (31/10 exclu)
+    expect(await ids({ startDate: new Date('2026-10-01') })).toEqual([
+      'a',
+      'b',
+      'c',
+      'e',
+    ]);
+    // endDate après la fin : n'ajoute rien, la réservée reste
+    expect(await ids({ endDate: new Date('2027-01-31') })).toEqual([
+      'a',
+      'b',
+      'c',
+      'e',
+    ]);
+    // début après la fin : liste vide, pas d'erreur
+    const empty = await fakeDb(rows).findAllByAccount('acc-1', {
+      periodWindow: active,
+      startDate: new Date('2026-11-20'),
+      endDate: new Date('2026-11-10'),
+    });
+    expect(empty.data).toEqual([]);
+    expect(empty.meta.total).toBe(0);
+  });
+
   it('ignores an id of another account and keeps the window', async () => {
     const rows = [
       row('a', '2026-12-05', -12000),

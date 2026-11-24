@@ -268,7 +268,7 @@ describe('Transactions routes (e2e)', () => {
       expect(mocks.transactions.findAllByAccount).not.toHaveBeenCalled();
     });
 
-    it('passes the window of the period, which replaces startDate and endDate', async () => {
+    it('passes the window of the period together with startDate and endDate, which narrow it', async () => {
       mocks.transactions.findAllByAccount.mockResolvedValue({
         data: [],
         meta: { total: 0, page: 1, limit: 1000, totalPages: 0 },
@@ -294,8 +294,8 @@ describe('Transactions routes (e2e)', () => {
       expect(mocks.transactions.findAllByAccount).toHaveBeenCalledWith(
         '00000000-0000-4000-8000-000000000101',
         expect.objectContaining({
-          startDate: undefined,
-          endDate: undefined,
+          startDate: new Date('2026-11-10'),
+          endDate: new Date('2026-11-20'),
           periodWindow: {
             startDate: new Date('2026-11-01'),
             endDate: new Date('2026-11-30'),

@@ -6,13 +6,13 @@ Mode complet. Sources : `besoin.md` (accord de Lucas du 2026-11-24 : « point ou
 Aujourd'hui, la liste d'Opérations d'une période coupe tout ce qui est daté après la fin (`transactions.controller.ts:447-448` pose `endDate` = fin de la période, `repository:58-60` fait `date <= fin`). Une CB non pointée datée après la fin de la période active est comptée dans « À pointer · n » (`cardCount`, `forecast-composition.ts:44-51`) et dans « CB à pointer » de À traiter, mais le lien (`to-handle.tsx:67` → `/transactions?state=a_pointer`) ne la montre pas. La liste d'une période doit contenir exactement ce que compte le prévu.
 
 ## Ce que ça change dans l'existant
-- **Ne change pas la règle « Liste avec `periodId` : les dates de la période remplacent `startDate`/`endDate` »** de `docs/transactions.md` (l.50) : avec `periodId`, la période l'emporte comme aujourd'hui (`controller:447-448`). Seule la fenêtre des dépenses réservées s'ajoute.
+- Les dates saisies avec `periodId` ne sont plus ignorées : elles restreignent la fenêtre (correctif ultérieur, `docs/transactions.md` l.50). Seule la fenêtre des dépenses réservées s'ajoutait dans ce cycle.
 - Applique à la liste `isInPeriodWindow` (`docs/reporting.md` l.11) : pour une période **active**, les dépenses (montant < 0) datées après sa fin y figurent. Ne change aucune règle de `docs/reporting.md` ni aucun chiffre.
 - Ne change pas : détail d'un tag (hors périmètre, `besoin.md`), soldes de tête, « À pointer · n », prévu, budgets, calendrier.
 
 ## Règle de fenêtre appliquée à la liste
 Quand `periodId` est donné, la liste contient les transactions du compte telles que : date ≥ début de la période, et (période sans fin, ou date ≤ fin, ou **période active et montant < 0**). C'est `isInPeriodWindow` mot pour mot.
-Avec `periodId`, la période l'emporte : `startDate` / `endDate` saisis sont ignorés, comme aujourd'hui. Les autres filtres (recherche, catégorie, tags, montants, état, `ids`) restreignent la fenêtre.
+Avec `periodId`, `startDate` / `endDate` saisis restreignent la fenêtre de la période (ET, jamais un élargissement ; sans date saisie, rien ne change ; début > fin : liste vide) — décision postérieure : ils étaient ignorés à la première version. Les autres filtres (recherche, catégorie, tags, montants, état, `ids`) restreignent la fenêtre.
 Sans `periodId` (« toutes les périodes ») : aucune fenêtre, seuls les filtres de l'utilisateur s'appliquent, comme aujourd'hui.
 
 ## Critères d'acceptation
@@ -44,8 +44,8 @@ Base de la table : période du 2026-11-01 au 2026-11-30, aujourd'hui 2026-11-24,
 | 10 | active, sans fin | toute opération datée ≥ début, revenus compris | oui |
 | 11 | fermée, fin 30/11 | dépense datée 05/12 | non |
 | 12 | fermée | dépense datée ≤ 30/11 | oui (déjà) |
-| 13 | active + `endDate` explicite 30/11 | dépense datée 05/12 | oui (la période l'emporte, `endDate` ignoré comme aujourd'hui) |
-| 14 | active + `startDate` explicite 10/11 | dépense datée 05/11 | oui (`startDate` ignoré) ; dépense 31/10 : non |
+| 13 | active + `endDate` explicite 30/11 | dépense datée 05/12 | non (la date saisie restreint la fenêtre) ; dépense 30/11 : oui |
+| 14 | active + `startDate` explicite 10/11 | dépense datée 05/11 | non (restreint) ; dépense 15/11 : oui ; dépense 31/10 : non |
 | 15 | active + recherche « loyer » | dépense 05/12 « Loyer » / dépense 05/12 « Cinéma » | oui / non |
 | 16 | active + `ids` contenant une dépense du compte 05/12 et un id d'un autre compte | | la première seulement |
 | 17 | aucune période (« toutes ») | dépense 05/12, revenu 05/12 | oui, oui |
@@ -103,7 +103,7 @@ Aucune décision métier à remonter : le besoin est tranché (accord du 2026-11
 
 ## Hors périmètre
 Détail d'un tag, export, rythme de dépense, changement des soldes, des libellés ou de la définition de `pending`/En banque/À venir ; ajout d'un filtre de période côté UI.
-Défaut existant, non corrigé ici : avec une période choisie, `startDate`/`endDate` du panneau de filtres sont ignorés en silence (`controller:447-448`, `docs/transactions.md` l.50).
+Défaut existant (dates du panneau de filtres ignorées en silence avec une période choisie) : corrigé après ce cycle, les dates restreignent la fenêtre.
 
 ## Fichiers concernés
 Chemins vérifiés par Glob/Grep. Schéma non touché : pas de migration.

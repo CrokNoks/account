@@ -434,10 +434,10 @@ export class TransactionsController {
     @Param('accountId') accountId: string,
     @Query() query: FindTransactionsQueryDto,
   ): Promise<PaginatedTransactionsResponseDto> {
-    let startDate = query.startDate
+    const startDate = query.startDate
       ? parseDateOnly(query.startDate)
       : undefined;
-    let endDate = query.endDate ? parseDateOnly(query.endDate) : undefined;
+    const endDate = query.endDate ? parseDateOnly(query.endDate) : undefined;
     let periodWindow: WindowPeriod | undefined;
 
     if (query.periodId) {
@@ -446,10 +446,9 @@ export class TransactionsController {
         accountId,
         'Period',
       );
-      // La période l'emporte sur startDate/endDate ; sa fenêtre (dépenses
-      // réservées comprises) est appliquée par le dépôt, pas une borne de fin.
-      startDate = undefined;
-      endDate = undefined;
+      // startDate/endDate saisis restreignent la fenêtre de la période (ET,
+      // jamais un élargissement) ; sa fenêtre (dépenses réservées comprises)
+      // est appliquée par le dépôt, pas une borne de fin.
       periodWindow = {
         startDate: period.startDate,
         endDate: period.endDate,
