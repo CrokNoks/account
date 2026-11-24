@@ -141,6 +141,89 @@ describe('BudgetsScreen', () => {
     expect(text).toContain('700,00 €');
   });
 
+  describe('Non réparti', () => {
+    const initial = { ...stats };
+    afterEach(() => {
+      Object.assign(stats, initial);
+    });
+    const card = () => screen.getByTestId('unallocated-figure');
+
+    it('affiche Revenus prévus - Total budgété : 2 500,00 - 700,00 = 1 800,00, en encre et sans signe', () => {
+      renderScreen();
+      expect(nbsp(card().textContent!)).toBe('1 800,00 €');
+      expect(card().className).toContain('text-foreground');
+      expect(screen.getByText('Non réparti')).toBeTruthy();
+    });
+
+    it('un résultat négatif s\'écrit avec son « - » et en orange', () => {
+      Object.assign(stats, { plannedIncome: '200000', plannedExpenses: '241000' });
+      renderScreen();
+      expect(nbsp(card().textContent!)).toBe('-410,00 €');
+      expect(card().className).toContain('text-warn');
+    });
+
+    it('zéro : 0,00 en encre', () => {
+      Object.assign(stats, { plannedIncome: '241000', plannedExpenses: '241000' });
+      renderScreen();
+      expect(nbsp(card().textContent!)).toBe('0,00 €');
+      expect(card().className).toContain('text-foreground');
+    });
+
+    it('exact au-delà de 2^53', () => {
+      Object.assign(stats, { plannedIncome: '9007199254740993', plannedExpenses: '1' });
+      renderScreen();
+      expect(nbsp(card().textContent!)).toBe('90 071 992 547 409,92 €');
+    });
+
+    it('suit les stats enregistrées, pas la simulation en cours de saisie', () => {
+      renderScreen();
+      type('Loisirs', '500,00');
+      expect(nbsp(screen.getByTestId('forecast-figure').textContent!)).toContain('1 000,00');
+      expect(nbsp(card().textContent!)).toBe('1 800,00 €');
+    });
+
+    it('sans Total budgété : pas de « Non réparti » (jamais un faux 0,00)', () => {
+      Object.assign(stats, { plannedExpenses: undefined });
+      renderScreen();
+      expect(screen.queryByTestId('unallocated-figure')).toBeNull();
+    });
+
+    it('en anglais : « Unallocated » et le montant au format anglais', () => {
+      renderScreen('en');
+      expect(screen.getByText('Unallocated')).toBeTruthy();
+      expect(card().textContent).toBe('€1,800.00');
+    });
+  });
+
+  describe('sous-titre de période et phrase d\'aide', () => {
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it('période en cours : « 1 oct. → 31 oct. · jour 15 sur 31 » et la phrase d\'aide', () => {
+      vi.useFakeTimers({ toFake: ['Date'] });
+      vi.setSystemTime(new Date(2026, 9, 15, 12));
+      renderScreen();
+      expect(nbsp(screen.getByTestId('period-subtitle').textContent!)).toBe('1 oct. → 31 oct. · jour 15 sur 31');
+      expect(screen.getByText("Modifiez un montant pour voir l'effet sur le prévu")).toBeTruthy();
+    });
+
+    it('période passée : les dates seules, sans jour', () => {
+      vi.useFakeTimers({ toFake: ['Date'] });
+      vi.setSystemTime(new Date(2026, 10, 24, 12));
+      renderScreen();
+      expect(nbsp(screen.getByTestId('period-subtitle').textContent!)).toBe('1 oct. → 31 oct.');
+    });
+
+    it('en anglais', () => {
+      vi.useFakeTimers({ toFake: ['Date'] });
+      vi.setSystemTime(new Date(2026, 9, 15, 12));
+      renderScreen('en');
+      expect(screen.getByTestId('period-subtitle').textContent).toBe('Oct 1 → Oct 31 · day 15 of 31');
+      expect(screen.getByText('Change an amount to see the effect on the forecast')).toBeTruthy();
+    });
+  });
+
   it("écrit les montants au format de la langue : « €1,234.56 » en anglais, « 1 234,56 € » en français", () => {
     renderScreen('en');
     const text = document.body.textContent!;

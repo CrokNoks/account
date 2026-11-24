@@ -17,6 +17,7 @@ import { Button } from '@/components/ui/button';
 import { AmountInput } from '@/components/ui/amount-input';
 import { Card, CardContent } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { TONE_CLASS } from '@/features/reporting/lib/signed-amount';
 import { useFormatCurrency } from '@/shared/lib/use-format-currency';
 import { confirmLeave, registerLeaveGuard } from '@/shared/model/leave-guard';
 import { useForecastSimulation } from '../api/use-forecast-simulation';
@@ -30,6 +31,8 @@ import {
 } from '../model/budget-draft';
 import { sortBudgetRows, type BudgetRow } from '../model/sort-budget-lines';
 import { ClosedPeriodWarning } from './closed-period-warning';
+import { PeriodSubtitle } from '@/features/reporting/ui/period-subtitle';
+import { presentUnallocated } from '../model/unallocated';
 
 const NO_BUDGETS: SavedBudget[] = [];
 
@@ -212,6 +215,9 @@ export function BudgetsScreen() {
   const plannedExpenses = sim?.plannedExpenses ?? stats?.plannedExpenses;
   const grey = dirty && !hasErrors && (simulation.isStale || !sim);
 
+  // « Non réparti » vient des stats enregistrées (pas de la simulation) ; absent si un des deux montants manque.
+  const unallocatedFigure = presentUnallocated(stats?.plannedIncome, stats?.plannedExpenses, locale);
+
   const spendingRows = lines.filter((row) => !row.isRevenue);
   const revenueRows = lines.filter((row) => row.isRevenue);
 
@@ -264,12 +270,14 @@ export function BudgetsScreen() {
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center gap-3">
         <PeriodSelect periods={periods} value={activePeriodId} onChange={onPeriodChange} />
+        <PeriodSubtitle period={period} className="text-sm text-muted-foreground" />
+        <span className="text-sm text-muted-foreground">{t('budgets_help')}</span>
       </div>
 
       <ClosedPeriodWarning period={period} />
 
       {stats && forecast !== undefined && plannedIncome !== undefined && plannedExpenses !== undefined && (
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <Figure
             label={t('forecast')}
             value={formatCurrency(forecast)}
@@ -298,6 +306,14 @@ export function BudgetsScreen() {
           />
           <Figure label={t('planned_income')} value={formatCurrency(plannedIncome)} grey={grey} />
           <Figure label={t('total_budgeted')} value={formatCurrency(plannedExpenses)} grey={grey} />
+          {unallocatedFigure && (
+            <Figure
+              label={t('unallocated')}
+              value={unallocatedFigure.text}
+              testId="unallocated-figure"
+              valueClassName={TONE_CLASS[unallocatedFigure.tone]}
+            />
+          )}
         </div>
       )}
 
@@ -375,18 +391,20 @@ function Figure({
   grey = false,
   note,
   testId,
+  valueClassName = '',
 }: {
   label: string;
   value: string;
   grey?: boolean;
   note?: React.ReactNode;
   testId?: string;
+  valueClassName?: string;
 }) {
   return (
     <Card className="border-2 shadow-sm">
       <CardContent className="flex flex-col gap-1 py-4">
         <span className="text-sm font-medium text-muted-foreground">{label}</span>
-        <span data-testid={testId} data-stale={grey} className={`text-2xl font-bold tabular-nums ${grey ? 'opacity-50' : ''}`}>
+        <span data-testid={testId} data-stale={grey} className={`text-2xl font-bold tabular-nums ${valueClassName} ${grey ? 'opacity-50' : ''}`}>
           {value}
         </span>
         {note && <span className="flex flex-col text-xs text-muted-foreground">{note}</span>}
