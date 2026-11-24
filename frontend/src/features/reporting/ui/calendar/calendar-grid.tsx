@@ -67,7 +67,7 @@ export function CalendarGrid({
                 dayEvents.length > 0 ? 'bg-muted' : 'bg-transparent',
                 hasPlanned ? 'border-dashed' : 'border-solid',
                 dayIsToday ? 'border-primary' : dayEvents.length > 0 ? 'border-foreground/40' : 'border-transparent',
-                view === 'month' && !isCurrentMonth && 'opacity-40',
+                view === 'month' && !isCurrentMonth && 'opacity-80',
                 isSelected && 'ring-2 ring-primary/40',
               )}
             >
