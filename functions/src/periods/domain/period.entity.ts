@@ -1,5 +1,8 @@
 import { randomUUID } from 'node:crypto';
-import { DomainValidationError } from '../../shared/domain/errors';
+import {
+  DomainValidationError,
+  PeriodNotLatestError,
+} from '../../shared/domain/errors';
 
 export interface PeriodProps {
   id: string;
@@ -73,4 +76,24 @@ export class Period {
       updatedAt: props.updatedAt || now,
     });
   }
+}
+
+/**
+ * Règle unique : une période inactive ne peut être (ré)activée que si aucune
+ * autre période du compte ne commence après elle (dates résultantes, dates
+ * égales tolérées). Sans effet si la période est déjà active ou le reste.
+ */
+export function ensureCanBeActivated(
+  before: Period,
+  after: Period,
+  accountPeriods: Period[],
+): void {
+  if (before.isActive || !after.isActive) return;
+  const newerExists = accountPeriods.some(
+    (p) =>
+      p.id !== after.id &&
+      p.accountId === after.accountId &&
+      p.startDate > after.startDate,
+  );
+  if (newerExists) throw new PeriodNotLatestError();
 }

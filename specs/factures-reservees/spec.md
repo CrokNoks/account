@@ -98,7 +98,7 @@ Pas de règle de droit d'accès ajoutée (toutes les routes sont sous `SupabaseA
 
 ## Points ouverts (décisions de Lucas)
 1. **Opérations et détail d'un tag restent bornés à la fin de la période (décision : cycle à part).** Conséquence : la dépense datée après la fin compte dans le prévu et, si c'est une CB non rapprochée, dans « CB à pointer » de À traiter ; mais le lien « CB à pointer » ouvre Opérations sur la période (`/transactions?state=a_pointer`) et ne la montre pas. Le cycle à part ne traitera que la liste d'Opérations, pas le détail d'un tag.
-2. **Période active qui n'est pas la plus récente : écarté par Lucas.** Règle produit : seule la dernière période peut être réactivée. Décision produit NON imposée par l'API (`PATCH`), le formulaire ni la base : si une période qui n'est pas la dernière est réactivée, ses dépenses datées après sa fin peuvent compter deux fois. Aucune borne ajoutée dans ce cycle.
+2. **Période active qui n'est pas la plus récente : écarté par Lucas.** Règle produit : seule la dernière période peut être réactivée. Imposée ensuite par le correctif `fix(periods)` : l'API (`PATCH`, 409 `PERIOD_NOT_LATEST`) et le formulaire refusent de réactiver une période qui n'est pas la dernière (sinon ses dépenses datées après sa fin pourraient compter deux fois). Aucune borne ajoutée dans ce cycle. Limite : contrôle par lecture puis écriture, sans verrou ni trigger en base ; la création d'une période antérieure fera l'objet d'un correctif suivant.
 
 ## Hors périmètre
 - Rythme de dépense, revenus futurs, dépassements des périodes fermées, trésorerie et calendrier (voir tableau).

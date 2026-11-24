@@ -33,3 +33,12 @@ export class BudgetsChangedError extends ConflictError {
     super('Budgets of this period changed since they were loaded');
   }
 }
+
+/** Réactivation d'une période qui n'est pas la dernière du compte (→ 409, code PERIOD_NOT_LATEST). */
+export class PeriodNotLatestError extends ConflictError {
+  override readonly code = 'PERIOD_NOT_LATEST';
+
+  constructor() {
+    super('Only the most recent period of the account can be reactivated');
+  }
+}

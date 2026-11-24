@@ -2,6 +2,7 @@
 
 import { useState, useId } from 'react';
 import { periodEnd } from '../model/period-end';
+import { canReactivate } from '../model/can-reactivate';
 import { useAccountStore } from '@/features/accounts/model/use-account-store';
 import { Period } from '../model/types';
 import { usePeriods } from '@/features/budgets/api/use-periods';
@@ -22,6 +23,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from 'sonner';
+import { isAxiosError } from 'axios';
 import { useTranslations } from 'next-intl';
 
 export function PeriodList() {
@@ -113,6 +115,7 @@ export function PeriodList() {
       {editingPeriod && (
         <EditPeriodDialog 
           period={editingPeriod} 
+          periods={periods ?? []}
           open={!!editingPeriod} 
           onOpenChange={(o) => !o && setEditingPeriod(null)} 
         />
@@ -121,7 +124,7 @@ export function PeriodList() {
   );
 }
 
-function EditPeriodDialog({ period, open, onOpenChange }: { period: Period, open: boolean, onOpenChange: (o: boolean) => void }) {
+function EditPeriodDialog({ period, periods, open, onOpenChange }: { period: Period, periods: Period[], open: boolean, onOpenChange: (o: boolean) => void }) {
   const t = useTranslations('Budgets');
   const tc = useTranslations('Common');
   const { activeAccountId } = useAccountStore();
@@ -129,6 +132,7 @@ function EditPeriodDialog({ period, open, onOpenChange }: { period: Period, open
   const [endDate, setEndDate] = useState(period.endDate?.split('T')[0] ?? '');
   const [isActive, setIsActive] = useState(period.isActive);
   const startDateId = useId();
+  const reactivationBlocked = !period.isActive && !canReactivate({ id: period.id, startDate }, periods);
   const endDateId = useId();
   
   const { mutate: updatePeriod, isPending } = useUpdatePeriod();
@@ -140,11 +144,16 @@ function EditPeriodDialog({ period, open, onOpenChange }: { period: Period, open
     updatePeriod({
       accountId: activeAccountId,
       id: period.id,
-      data: { startDate, endDate, isActive }
+      data: { startDate, endDate, isActive: reactivationBlocked ? false : isActive }
     }, {
       onSuccess: () => {
         toast.success(t('updated'));
         onOpenChange(false);
+      },
+      onError: (error) => {
+        if (isAxiosError(error) && error.response?.data?.code === 'PERIOD_NOT_LATEST') {
+          toast.error(t('reactivate_only_latest'));
+        }
       }
     });
   };
@@ -168,8 +177,9 @@ function EditPeriodDialog({ period, open, onOpenChange }: { period: Period, open
               </div>
             </div>
             <div className="flex items-center space-x-2 bg-primary/5 p-4 rounded-xl border border-primary/10">
-              <Checkbox id="active" checked={isActive} onCheckedChange={(checked) => setIsActive(!!checked)} />
+              <Checkbox id="active" checked={isActive && !reactivationBlocked} disabled={reactivationBlocked} onCheckedChange={(checked) => setIsActive(!!checked)} />
               <label htmlFor="active" className="text-sm font-medium cursor-pointer">{t('fields.is_active')}</label>
+              {reactivationBlocked && <span className="text-xs text-muted-foreground">{t('reactivate_only_latest')}</span>}
             </div>
           </div>
           <SheetFooter className="p-6 border-t bg-muted/20">

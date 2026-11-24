@@ -6,8 +6,13 @@ import { PeriodList } from './period-list';
 
 // Stable reference, like react-query.
 const periods = [{ id: 'p1', startDate: '2026-12-01T00:00:00.000Z', endDate: '2026-12-31T00:00:00.000Z', isActive: true }];
+const withNewer = [
+  { id: 'p2', startDate: '2027-01-01T00:00:00.000Z', endDate: '2027-01-31T00:00:00.000Z', isActive: false },
+  { id: 'p1', startDate: '2026-12-01T00:00:00.000Z', endDate: '2026-12-31T00:00:00.000Z', isActive: false },
+];
+const state = { list: periods };
 vi.mock('@/features/budgets/api/use-periods', () => ({
-  usePeriods: () => ({ data: periods, isLoading: false }),
+  usePeriods: () => ({ data: state.list, isLoading: false }),
 }));
 vi.mock('../api/use-update-period', () => ({
   useUpdatePeriod: () => ({ mutate: vi.fn(), isPending: false }),
@@ -30,5 +35,22 @@ describe('PeriodList', () => {
 
     expect(screen.getByLabelText(fr.Budgets.fields.start_date)).toHaveValue('2026-12-01');
     expect(screen.getByLabelText(fr.Budgets.fields.end_date)).toHaveValue('2026-12-31');
+  });
+
+  it('disables the active checkbox of a period that is not the latest, enables it for the latest', () => {
+    state.list = withNewer;
+    render(
+      <NextIntlClientProvider locale="fr" messages={fr}>
+        <PeriodList />
+      </NextIntlClientProvider>,
+    );
+    const [editLatest, editOld] = screen.getAllByTitle(fr.Budgets.edit_dates);
+    fireEvent.click(editOld);
+    expect(screen.getByRole('checkbox')).toHaveAttribute('aria-disabled', 'true');
+    expect(screen.getByText(fr.Budgets.reactivate_only_latest)).toBeInTheDocument();
+    fireEvent.keyDown(document.body, { key: 'Escape' });
+    fireEvent.click(editLatest);
+    expect(screen.getByRole('checkbox')).not.toHaveAttribute('aria-disabled', 'true');
+    state.list = periods;
   });
 });

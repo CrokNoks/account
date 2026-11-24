@@ -28,7 +28,7 @@ import { CreatePeriodWithBudgetsUseCase } from '../application/create-period-wit
 import { UpdatePeriodBudgetsUseCase } from '../application/update-period-budgets.use-case';
 import { PeriodRepository } from '../domain/period.repository.interface';
 import { BudgetRepository } from '../../budgets/domain/budget.repository.interface';
-import { Period } from '../domain/period.entity';
+import { Period, ensureCanBeActivated } from '../domain/period.entity';
 import {
   IsString,
   IsArray,
@@ -226,6 +226,14 @@ export class PeriodsController {
       createdAt: existing.createdAt,
       updatedAt: new Date(),
     });
+
+    if (updated.isActive && !existing.isActive) {
+      ensureCanBeActivated(
+        existing,
+        updated,
+        await this.periodRepository.findAllByAccount(accountId),
+      );
+    }
 
     await this.periodRepository.save(updated);
     return {

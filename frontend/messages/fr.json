@@ -504,6 +504,7 @@
       "budget_init": "Initialisation du budget",
       "is_active": "Période active"
     },
+    "reactivate_only_latest": "Seule la dernière période peut être réactivée.",
     "stats_hint": "Min: {min} | Moy: {avg} | Max: {max}",
     "updated": "Période mise à jour",
     "deleted": "Période supprimée",

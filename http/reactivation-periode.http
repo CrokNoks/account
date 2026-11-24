@@ -1,0 +1,112 @@
+# Périodes : seule la dernière période d'un compte peut être réactivée (409, code PERIOD_NOT_LATEST sinon).
+# Lancement : npx httpyac send --all http/reactivation-periode.http --var port=8080 --var supabase=<URL Supabase> --var anon=<ANON_KEY> --var email=<compte e2e> --var password=<mot de passe e2e>
+# (identifiants en ligne de commande, jamais dans le fichier ; connexion par mot de passe, pas de création d'utilisateur ;
+#  le compte bancaire créé est jetable, préfixé e2e-, supprimé à la fin ; config httpYac avec cookieJarEnabled false)
+# P1 octobre puis P2 novembre (la création désactive P1). Attendu : P1 non réactivable, P2 réactivable, clôture toujours permise.
+@baseUrl = http://localhost:{{port}}
+
+### Connexion du compte e2e
+# @name login
+POST {{supabase}}/auth/v1/token?grant_type=password
+apikey: {{anon}}
+Content-Type: application/json
+
+{ "email": "{{email}}", "password": "{{password}}" }
+
+?? status == 200
+
+### Compte jetable
+# @name account
+POST {{baseUrl}}/accounts
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "name": "e2e-reactivation-periode-{{$timestamp}}", "initialBalance": "0" }
+
+?? status == 201
+
+### P1 (octobre)
+# @name p1
+POST {{baseUrl}}/{{account.id}}/periods
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "startDate": "2026-10-01", "endDate": "2026-10-31", "budgets": [] }
+
+?? status == 201
+
+### P2 (novembre) : P1 passe inactive
+# @name p2
+POST {{baseUrl}}/{{account.id}}/periods
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "startDate": "2026-11-01", "endDate": "2026-11-30", "budgets": [] }
+
+?? status == 201
+
+### Clôture de P2 (permise)
+PATCH {{baseUrl}}/{{account.id}}/periods/{{p2.id}}
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "isActive": false }
+
+?? status == 200
+?? js response.parsedBody.isActive == false
+
+### Réactiver P1 (ancienne) : refusé, aucune période active pourtant
+PATCH {{baseUrl}}/{{account.id}}/periods/{{p1.id}}
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "isActive": true }
+
+?? status == 409
+?? js response.parsedBody.code == PERIOD_NOT_LATEST
+
+### P1 est restée inactive (rien n'a changé)
+GET {{baseUrl}}/{{account.id}}/periods
+Authorization: Bearer {{login.access_token}}
+
+?? status == 200
+?? js response.parsedBody.find(p => p.id == p1.id).isActive == false
+?? js response.parsedBody.find(p => p.id == p2.id).isActive == false
+
+### Modifier les dates de P1 sans la réactiver : permis
+PATCH {{baseUrl}}/{{account.id}}/periods/{{p1.id}}
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "endDate": "2026-10-30" }
+
+?? status == 200
+?? js response.parsedBody.isActive == false
+
+### Réactiver P2 (dernière) : accepté
+PATCH {{baseUrl}}/{{account.id}}/periods/{{p2.id}}
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "isActive": true }
+
+?? status == 200
+?? js response.parsedBody.isActive == true
+
+### Clôture de P2 (permise)
+PATCH {{baseUrl}}/{{account.id}}/periods/{{p2.id}}
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "isActive": false }
+
+?? status == 200
+?? js response.parsedBody.isActive == false
+
+### Nettoyage : suppression du compte jetable (cascade)
+DELETE {{supabase}}/rest/v1/accounts?id=eq.{{account.id}}
+apikey: {{anon}}
+Authorization: Bearer {{login.access_token}}
+Prefer: return=representation
+
+?? status == 200
