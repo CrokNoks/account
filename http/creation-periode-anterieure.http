@@ -1,0 +1,81 @@
+# Périodes : on ne crée pas une période qui commence avant une période existante du compte (409, code PERIOD_BEFORE_EXISTING).
+# Lancement : npx httpyac send --all http/creation-periode-anterieure.http --var port=8080 --var supabase=<URL Supabase> --var anon=<ANON_KEY> --var email=<compte e2e> --var password=<mot de passe e2e>
+# (identifiants en ligne de commande, jamais dans le fichier ; connexion par mot de passe, pas de création d'utilisateur ;
+#  le compte bancaire créé est jetable, préfixé e2e-, supprimé à la fin ; config httpYac avec cookieJarEnabled false)
+# P1 novembre active. Attendu : une période d'octobre est refusée sans rien changer, une période de décembre est acceptée.
+@baseUrl = http://localhost:{{port}}
+
+### Connexion du compte e2e
+# @name login
+POST {{supabase}}/auth/v1/token?grant_type=password
+apikey: {{anon}}
+Content-Type: application/json
+
+{ "email": "{{email}}", "password": "{{password}}" }
+
+?? status == 200
+
+### Compte jetable
+# @name account
+POST {{baseUrl}}/accounts
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "name": "e2e-creation-periode-anterieure-{{$timestamp}}", "initialBalance": "0" }
+
+?? status == 201
+
+### P1 (novembre), active
+# @name p1
+POST {{baseUrl}}/{{account.id}}/periods
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "startDate": "2026-11-01", "endDate": "2026-11-30", "budgets": [] }
+
+?? status == 201
+
+### Période d'octobre (antérieure) : refusée
+POST {{baseUrl}}/{{account.id}}/periods
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "startDate": "2026-10-01", "endDate": "2026-10-31", "budgets": [] }
+
+?? status == 409
+?? js response.parsedBody.code == PERIOD_BEFORE_EXISTING
+
+### Rien n'a changé : une seule période, P1 toujours active
+GET {{baseUrl}}/{{account.id}}/periods
+Authorization: Bearer {{login.access_token}}
+
+?? status == 200
+?? js response.parsedBody.length == 1
+?? js response.parsedBody.find(p => p.id == p1.id).isActive == true
+
+### Période de décembre (postérieure) : acceptée, P1 passe inactive
+# @name p2
+POST {{baseUrl}}/{{account.id}}/periods
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "startDate": "2026-12-01", "endDate": "2026-12-31", "budgets": [] }
+
+?? status == 201
+
+### P2 active, P1 inactive
+GET {{baseUrl}}/{{account.id}}/periods
+Authorization: Bearer {{login.access_token}}
+
+?? status == 200
+?? js response.parsedBody.length == 2
+?? js response.parsedBody.find(p => p.id == p2.id).isActive == true
+?? js response.parsedBody.find(p => p.id == p1.id).isActive == false
+
+### Nettoyage : suppression du compte jetable (cascade)
+DELETE {{supabase}}/rest/v1/accounts?id=eq.{{account.id}}
+apikey: {{anon}}
+Authorization: Bearer {{login.access_token}}
+Prefer: return=representation
+
+?? status == 200

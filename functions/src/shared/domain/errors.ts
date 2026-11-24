@@ -42,3 +42,12 @@ export class PeriodNotLatestError extends ConflictError {
     super('Only the most recent period of the account can be reactivated');
   }
 }
+
+/** Création d'une période qui commence avant une période existante du compte (→ 409, code PERIOD_BEFORE_EXISTING). */
+export class PeriodBeforeExistingError extends ConflictError {
+  override readonly code = 'PERIOD_BEFORE_EXISTING';
+
+  constructor() {
+    super('A period cannot start before an existing period of the account');
+  }
+}

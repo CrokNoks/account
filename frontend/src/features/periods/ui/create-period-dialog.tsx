@@ -22,6 +22,7 @@ import { useFormatCurrency } from '@/shared/lib/use-format-currency';
 import { buildBudgets, displayValue, draftErrors, type Drafts, type SavedBudget } from '@/features/budgets/model/budget-draft';
 import { useLocale, useTranslations } from 'next-intl';
 import { toast } from 'sonner';
+import { isAxiosError } from 'axios';
 
 export function CreatePeriodDialog() {
   const formatCurrency = useFormatCurrency();
@@ -82,7 +83,12 @@ export function CreatePeriodDialog() {
       budgets: buildBudgets(reference, drafts),
       injectRecurring,
     }, {
-      onSuccess: () => setOpen(false)
+      onSuccess: () => setOpen(false),
+      onError: (error) => {
+        if (isAxiosError(error) && error.response?.data?.code === 'PERIOD_BEFORE_EXISTING') {
+          toast.error(t('period_before_existing'));
+        }
+      },
     });
   };
 

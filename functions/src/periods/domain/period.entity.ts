@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import {
   DomainValidationError,
+  PeriodBeforeExistingError,
   PeriodNotLatestError,
 } from '../../shared/domain/errors';
 
@@ -79,21 +80,35 @@ export class Period {
 }
 
 /**
- * Règle unique : une période inactive ne peut être (ré)activée que si aucune
- * autre période du compte ne commence après elle (dates résultantes, dates
- * égales tolérées). Sans effet si la période est déjà active ou le reste.
+ * Règle unique « dernière période » : une autre période du compte commence
+ * strictement après celle-ci (dates égales tolérées ici, le chevauchement est
+ * refusé par la base). Une période active compte ses dépenses sans borne de fin :
+ * elle ne doit donc jamais précéder une autre période.
  */
+function hasNewerPeriod(period: Period, accountPeriods: Period[]): boolean {
+  return accountPeriods.some(
+    (p) =>
+      p.id !== period.id &&
+      p.accountId === period.accountId &&
+      p.startDate > period.startDate,
+  );
+}
+
+/** Une période inactive ne peut être (ré)activée que si c'est la dernière du compte. */
 export function ensureCanBeActivated(
   before: Period,
   after: Period,
   accountPeriods: Period[],
 ): void {
   if (before.isActive || !after.isActive) return;
-  const newerExists = accountPeriods.some(
-    (p) =>
-      p.id !== after.id &&
-      p.accountId === after.accountId &&
-      p.startDate > after.startDate,
-  );
-  if (newerExists) throw new PeriodNotLatestError();
+  if (hasNewerPeriod(after, accountPeriods)) throw new PeriodNotLatestError();
+}
+
+/** Une nouvelle période (active) ne peut pas commencer avant une période existante du compte. */
+export function ensureCanBeCreated(
+  period: Period,
+  accountPeriods: Period[],
+): void {
+  if (period.isActive && hasNewerPeriod(period, accountPeriods))
+    throw new PeriodBeforeExistingError();
 }

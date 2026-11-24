@@ -3,7 +3,11 @@ import { PeriodRepository } from '../domain/period.repository.interface';
 import { RecurringTransactionRepository } from '../../recurring/domain/recurring-transaction.repository.interface';
 import { RecurringTransaction } from '../../recurring/domain/recurring-transaction.entity';
 import { AccountReferencesService } from '../../shared/application/account-references.service';
-import { DomainValidationError } from '../../shared/domain/errors';
+import { Period } from '../domain/period.entity';
+import {
+  DomainValidationError,
+  PeriodBeforeExistingError,
+} from '../../shared/domain/errors';
 
 describe('CreatePeriodWithBudgetsUseCase', () => {
   let useCase: CreatePeriodWithBudgetsUseCase;
@@ -30,7 +34,7 @@ describe('CreatePeriodWithBudgetsUseCase', () => {
     periodRepo = {
       createWithBudgets: jest.fn().mockResolvedValue(undefined),
       save: jest.fn(),
-      findAllByAccount: jest.fn(),
+      findAllByAccount: jest.fn().mockResolvedValue([]),
     };
     recurringRepo = { findAllByAccount: jest.fn().mockResolvedValue([]) };
     useCase = new CreatePeriodWithBudgetsUseCase(
@@ -38,6 +42,36 @@ describe('CreatePeriodWithBudgetsUseCase', () => {
       recurringRepo as unknown as RecurringTransactionRepository,
       refs as unknown as AccountReferencesService,
     );
+  });
+
+  const existing = (start: string, end: string, accountId = 'acc-1') =>
+    Period.create({
+      accountId,
+      startDate: new Date(start),
+      endDate: new Date(end),
+      isActive: false,
+    });
+
+  it('refuses a period that starts before an existing period of the account, and writes nothing', async () => {
+    periodRepo.findAllByAccount.mockResolvedValue([
+      existing('2026-04-01', '2026-04-30'),
+    ]);
+
+    await expect(useCase.execute(command)).rejects.toBeInstanceOf(
+      PeriodBeforeExistingError,
+    );
+    expect(periodRepo.createWithBudgets).not.toHaveBeenCalled();
+  });
+
+  it('accepts a period after the existing ones, the first period of an account, and ignores other accounts', async () => {
+    await expect(useCase.execute(command)).resolves.toBeDefined();
+
+    periodRepo.findAllByAccount.mockResolvedValue([
+      existing('2026-02-01', '2026-02-28'),
+      existing('2026-06-01', '2026-06-30', 'acc-2'),
+    ]);
+    await expect(useCase.execute(command)).resolves.toBeDefined();
+    expect(periodRepo.createWithBudgets).toHaveBeenCalledTimes(2);
   });
 
   it('writes the period and its budgets in one atomic call', async () => {

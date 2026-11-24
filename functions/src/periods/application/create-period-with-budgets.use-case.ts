@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PeriodRepository } from '../domain/period.repository.interface';
-import { Period } from '../domain/period.entity';
+import { Period, ensureCanBeCreated } from '../domain/period.entity';
 import { BudgetInstance } from '../../budgets/domain/budget-instance.entity';
 import { RecurringTransactionRepository } from '../../recurring/domain/recurring-transaction.repository.interface';
 import { Transaction } from '../../transactions/domain/transaction.entity';
@@ -41,6 +41,12 @@ export class CreatePeriodWithBudgetsUseCase {
       startDate: command.startDate,
       endDate: command.endDate,
     });
+
+    // Règle partagée avec la réactivation : jamais avant une période existante
+    ensureCanBeCreated(
+      period,
+      await this.periodRepository.findAllByAccount(command.accountId),
+    );
 
     // 2. Create Budget Instances
     const budgetInstances = command.budgets.map((b) =>

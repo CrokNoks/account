@@ -6,6 +6,7 @@ import fr from '../../../../messages/fr.json';
 import { CreatePeriodDialog } from './create-period-dialog';
 
 const create = vi.hoisted(() => vi.fn());
+const apiError = vi.hoisted(() => ({ code: undefined as string | undefined }));
 vi.mock('sonner', () => ({ toast: { error: vi.fn(), success: vi.fn() } }));
 
 // Stable reference, like react-query.
@@ -21,7 +22,13 @@ vi.mock('../api/use-period-draft', () => ({
   usePeriodDraft: () => ({ data: draft, isLoading: false, refetch: vi.fn() }),
 }));
 vi.mock('../api/use-create-period', () => ({
-  useCreatePeriod: () => ({ mutate: create, isPending: false }),
+  useCreatePeriod: () => ({
+    mutate: (cmd: unknown, opts?: { onError?: (e: unknown) => void }) => {
+      create(cmd, opts);
+      if (apiError.code) opts?.onError?.({ isAxiosError: true, response: { data: { code: apiError.code } } });
+    },
+    isPending: false,
+  }),
 }));
 vi.mock('@/features/accounts/model/use-account-store', () => ({
   useAccountStore: () => ({ activeAccountId: 'a1' }),
@@ -76,5 +83,14 @@ describe('CreatePeriodDialog', () => {
     open();
     expect(screen.getByLabelText(fr.Budgets.fields.start_date)).toHaveValue('2026-12-01');
     expect(screen.getByLabelText(fr.Budgets.fields.end_date)).toHaveValue('2026-12-31');
+  });
+
+  it('shows the API refusal when the period starts before an existing one, and keeps the sheet open', () => {
+    apiError.code = 'PERIOD_BEFORE_EXISTING';
+    open();
+    fireEvent.click(screen.getByRole('button', { name: fr.Common.add }));
+    apiError.code = undefined;
+
+    expect(toast.error).toHaveBeenCalledWith(fr.Budgets.period_before_existing);
   });
 });
