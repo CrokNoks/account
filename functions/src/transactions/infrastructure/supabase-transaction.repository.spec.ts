@@ -2,6 +2,11 @@ import { SupabaseClient } from '@supabase/supabase-js';
 import { ForbiddenError, NotFoundError } from '../../shared/domain/errors';
 import { Transaction } from '../domain/transaction.entity';
 import { SupabaseTransactionRepository } from './supabase-transaction.repository';
+import {
+  isInPeriodWindow,
+  WindowPeriod,
+} from '../../reporting/domain/period-window';
+import { buildSearchFilter } from './search-filter';
 
 const tx = (
   overrides: Partial<Parameters<typeof Transaction.create>[0]> = {},
@@ -474,5 +479,252 @@ describe('SupabaseTransactionRepository unpaginated list beyond the 1000-row ser
 
     expect(result).toHaveLength(2500);
     expect(new Set(result.map((t) => t.id)).size).toBe(2500);
+  });
+});
+
+// Base de données simulée : applique réellement les filtres posés par le dépôt
+// (eq, gte, lte, in, or) à un jeu de lignes, puis le tri et la page. Les `.or()`
+// sont lus comme PostgREST : chaque appel est un paramètre `or=` ; ils se combinent en ET.
+describe('SupabaseTransactionRepository period window (paginated list)', () => {
+  type Row = {
+    id: string;
+    account_id: string;
+    date: string;
+    amount: string;
+    description: string;
+    notes: string | null;
+    reconciled: boolean;
+    pending: boolean;
+  };
+
+  const row = (
+    id: string,
+    date: string,
+    amount: number,
+    extra: Partial<Row> = {},
+  ): Row => ({
+    id,
+    account_id: 'acc-1',
+    date,
+    amount: String(amount),
+    description: 'Opération',
+    notes: null,
+    reconciled: false,
+    pending: false,
+    ...extra,
+  });
+
+  const atom = (r: Row, cond: string): boolean => {
+    const [col, op, ...rest] = cond.split('.');
+    const raw = rest.join('.');
+    if (col === 'description' || col === 'notes') {
+      const v = raw.replace(/^"|"$/g, '').replace(/\\(.)/g, '$1');
+      const target = (col === 'description' ? r.description : r.notes) ?? '';
+      return op === 'imatch' && new RegExp(v, 'i').test(target);
+    }
+    const a = col === 'amount' ? Number(r.amount) : r.date;
+    const b = col === 'amount' ? Number(raw) : raw;
+    if (op === 'lt') return a < b;
+    if (op === 'lte') return a <= b;
+    if (op === 'gte') return a >= b;
+    throw new Error(`op ${op}`);
+  };
+
+  const fakeDb = (rows: Row[]) => {
+    const preds: Array<(r: Row) => boolean> = [];
+    let ordering: Array<[keyof Row, boolean]> = [];
+    let from = 0;
+    let to = Infinity;
+    const chain: Record<string, unknown> = {};
+    const add = (name: string, make: (...a: any[]) => (r: Row) => boolean) => {
+      chain[name] = (...args: unknown[]) => {
+        preds.push(make(...args));
+        return chain;
+      };
+    };
+    chain.select = () => chain;
+    add('eq', (c: keyof Row, v) => (r) => r[c] === v);
+    add(
+      'gte',
+      (c: keyof Row, v) => (r) =>
+        c === 'amount' ? Number(r.amount) >= Number(v) : r[c]! >= v,
+    );
+    add(
+      'lte',
+      (c: keyof Row, v) => (r) =>
+        c === 'amount' ? Number(r.amount) <= Number(v) : r[c]! <= v,
+    );
+    add('in', (c: keyof Row, vs: unknown[]) => (r) => vs.includes(r[c]));
+    add(
+      'or',
+      (f: string) => (r) => splitTopLevel(f).some((cond) => atom(r, cond)),
+    );
+    chain.order = (c: keyof Row, o: { ascending: boolean }) => {
+      ordering.push([c, o.ascending]);
+      return chain;
+    };
+    chain.range = (f: number, t: number) => {
+      from = f;
+      to = t;
+      return chain;
+    };
+    chain.returns = () => {
+      const kept = rows.filter((r) => preds.every((p) => p(r)));
+      const sorted = [...kept].sort((x, y) => {
+        for (const [c, asc] of ordering) {
+          if (x[c]! === y[c]!) continue;
+          return (x[c]! < y[c]! ? -1 : 1) * (asc ? 1 : -1);
+        }
+        return 0;
+      });
+      return Promise.resolve({
+        data: sorted.slice(from, to + 1),
+        count: kept.length,
+        error: null,
+      });
+    };
+    ordering = [];
+    return new SupabaseTransactionRepository({
+      from: () => chain,
+    } as unknown as SupabaseClient);
+  };
+
+  // Découpe "a,b" en conditions, en respectant les guillemets (la recherche en contient).
+  function splitTopLevel(f: string): string[] {
+    const out: string[] = [];
+    let cur = '';
+    let inQ = false;
+    for (let i = 0; i < f.length; i++) {
+      const ch = f[i];
+      if (ch === '\\' && inQ) {
+        cur += ch + f[++i];
+        continue;
+      }
+      if (ch === '"') inQ = !inQ;
+      if (ch === ',' && !inQ) {
+        out.push(cur);
+        cur = '';
+      } else cur += ch;
+    }
+    out.push(cur);
+    return out;
+  }
+
+  const active: WindowPeriod = {
+    startDate: new Date('2026-11-01'),
+    endDate: new Date('2026-11-30'),
+    isActive: true,
+  };
+  const closed: WindowPeriod = { ...active, isActive: false };
+  const open: WindowPeriod = { ...active, endDate: null };
+
+  const dataset = [
+    row('01', '2026-12-05', -12000, { pending: true }),
+    row('02', '2026-12-05', -12000),
+    row('03', '2026-12-05', -12000, { reconciled: true }),
+    row('04', '2026-11-30', -12000),
+    row('05', '2026-11-15', -12000),
+    row('06', '2026-10-31', -12000),
+    row('07', '2026-12-05', 12000),
+    row('08', '2026-12-05', 12000, { description: 'Remboursement' }),
+    row('09', '2026-12-05', 0),
+    row('10', '2026-11-01', 5000),
+  ];
+  const asWindowTx = (r: Row) => ({
+    date: new Date(r.date),
+    amount: BigInt(r.amount),
+  });
+
+  it.each([
+    ['active', active],
+    ['closed', closed],
+    ['without end', open],
+  ])(
+    'lists exactly what isInPeriodWindow keeps (%s period)',
+    async (_name, period) => {
+      const repository = fakeDb(dataset);
+      const expected = dataset
+        .filter((r) => isInPeriodWindow(asWindowTx(r), period))
+        .map((r) => r.id)
+        .sort();
+
+      const result = await repository.findAllByAccount('acc-1', {
+        periodWindow: period,
+        limit: 100,
+      });
+
+      expect(result.data.map((t) => t.id).sort()).toEqual(expected);
+      expect(result.meta.total).toBe(expected.length);
+    },
+  );
+
+  it('counts the same cards as the forecast for the "À pointer" list', async () => {
+    const repository = fakeDb(dataset);
+    const expected = dataset.filter(
+      (r) =>
+        isInPeriodWindow(asWindowTx(r), active) && !r.reconciled && !r.pending,
+    ).length;
+
+    const result = await repository.findAllByAccount('acc-1', {
+      periodWindow: active,
+      reconciled: false,
+      pending: false,
+    });
+
+    expect(result.meta.total).toBe(expected);
+    expect(expected).toBeGreaterThan(0);
+  });
+
+  it('keeps the window when searching, in both directions, special characters included', async () => {
+    const rows = [
+      row('a', '2026-12-05', -12000, { description: 'Loyer (déc.)' }),
+      row('b', '2026-12-05', -12000, { description: 'Cinéma' }),
+      row('c', '2026-12-05', 12000, { description: 'Loyer (déc.)' }),
+      row('d', '2026-10-01', -12000, { description: 'Loyer (déc.)' }),
+      row('e', '2026-11-10', -500, { description: 'Loyer (déc.)' }),
+    ];
+    const repository = fakeDb(rows);
+    expect(buildSearchFilter('Loyer (déc.)')).toContain('imatch');
+
+    const result = await repository.findAllByAccount('acc-1', {
+      periodWindow: active,
+      search: 'Loyer (déc.)',
+    });
+
+    expect(result.data.map((t) => t.id).sort()).toEqual(['a', 'e']);
+  });
+
+  it('ignores an id of another account and keeps the window', async () => {
+    const rows = [
+      row('a', '2026-12-05', -12000),
+      row('x', '2026-12-05', -12000, { account_id: 'acc-2' }),
+      row('c', '2026-12-05', 12000),
+    ];
+    const result = await fakeDb(rows).findAllByAccount('acc-1', {
+      periodWindow: active,
+      ids: ['a', 'x', 'c'],
+    });
+
+    expect(result.data.map((t) => t.id)).toEqual(['a']);
+  });
+
+  it('pages without repeats or gaps when many rows share the same date', async () => {
+    // Insérées dans le désordre : seul .order('id') donne un ordre stable.
+    const rows = [3, 0, 6, 2, 5, 1, 4].map((i) =>
+      row(`id-${i}`, '2026-12-05', -100),
+    );
+    const repository = fakeDb(rows);
+    const seen: string[] = [];
+    for (const page of [1, 2, 3, 4]) {
+      const r = await repository.findAllByAccount('acc-1', {
+        periodWindow: active,
+        page,
+        limit: 2,
+      });
+      expect(r.meta.totalPages).toBe(4);
+      seen.push(...r.data.map((t) => t.id));
+    }
+
+    expect(seen).toEqual(rows.map((r) => r.id).sort());
   });
 });

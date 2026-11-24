@@ -7,11 +7,18 @@ import {
   FindAllTransactionsOptions,
   PaginatedResult,
 } from '../domain/transaction.repository.interface';
+import { WindowPeriod } from '../../reporting/domain/period-window';
 import { buildSearchFilter } from './search-filter';
 import { toDomainError } from '../../shared/infrastructure/supabase-error';
 
 interface TransactionTagRow {
   tag_id: string;
+}
+
+interface DateFilterable<Q> {
+  gte(column: string, value: string): Q;
+  lte(column: string, value: string): Q;
+  or(filters: string): Q;
 }
 
 interface TransactionRow {
@@ -58,6 +65,9 @@ export class SupabaseTransactionRepository implements TransactionRepository {
     if (options?.endDate) {
       query = query.lte('date', options.endDate.toISOString().split('T')[0]);
     }
+    if (options?.periodWindow) {
+      query = this.applyPeriodWindow(query, options.periodWindow);
+    }
     if (options?.search) {
       query = query.or(buildSearchFilter(options.search));
     }
@@ -90,6 +100,7 @@ export class SupabaseTransactionRepository implements TransactionRepository {
 
     const { data, count, error } = await query
       .order('date', { ascending: false })
+      .order('id', { ascending: true })
       .range(from, to)
       .returns<TransactionRow[]>();
 
@@ -107,6 +118,27 @@ export class SupabaseTransactionRepository implements TransactionRepository {
         totalPages,
       },
     };
+  }
+
+  /**
+   * Fenêtre d'une période, équivalent SQL de `isInPeriodWindow` : date >= début,
+   * puis, selon la période, aucune borne (sans fin), date <= fin (fermée), ou
+   * « date <= fin OU montant < 0 » (active). Ce `.or()` est un paramètre `or=`
+   * distinct de celui de la recherche : PostgREST les combine en ET.
+   */
+  private applyPeriodWindow<Q extends DateFilterable<Q>>(
+    query: Q,
+    window: WindowPeriod,
+  ): Q {
+    const day = (d: Date) => d.toISOString().split('T')[0];
+    let q = query.gte('date', day(window.startDate));
+    if (!window.endDate) return q;
+    if (window.isActive) {
+      q = q.or(`date.lte.${day(window.endDate)},amount.lt.0`);
+    } else {
+      q = q.lte('date', day(window.endDate));
+    }
+    return q;
   }
 
   async findAllByAccountUnpaginated(

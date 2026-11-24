@@ -268,6 +268,43 @@ describe('Transactions routes (e2e)', () => {
       expect(mocks.transactions.findAllByAccount).not.toHaveBeenCalled();
     });
 
+    it('passes the window of the period, which replaces startDate and endDate', async () => {
+      mocks.transactions.findAllByAccount.mockResolvedValue({
+        data: [],
+        meta: { total: 0, page: 1, limit: 1000, totalPages: 0 },
+      });
+      mocks.periods.findById.mockResolvedValue({
+        id: '00000000-0000-4000-8000-000000000021',
+        accountId: '00000000-0000-4000-8000-000000000101',
+        startDate: new Date('2026-11-01'),
+        endDate: new Date('2026-11-30'),
+        isActive: true,
+      });
+
+      await http()
+        .get('/00000000-0000-4000-8000-000000000101/transactions')
+        .query({
+          periodId: '00000000-0000-4000-8000-000000000021',
+          startDate: '2026-11-10',
+          endDate: '2026-11-20',
+        })
+        .set(auth())
+        .expect(200);
+
+      expect(mocks.transactions.findAllByAccount).toHaveBeenCalledWith(
+        '00000000-0000-4000-8000-000000000101',
+        expect.objectContaining({
+          startDate: undefined,
+          endDate: undefined,
+          periodWindow: {
+            startDate: new Date('2026-11-01'),
+            endDate: new Date('2026-11-30'),
+            isActive: true,
+          },
+        }),
+      );
+    });
+
     it('answers 404 for an unknown period', async () => {
       mocks.periods.findById.mockResolvedValue(null);
 

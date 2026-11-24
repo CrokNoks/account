@@ -55,6 +55,7 @@ import { rejectNullFields } from '../../shared/infrastructure/reject-null-fields
 import { Type, Transform } from 'class-transformer';
 import { PeriodRepository } from '../../periods/domain/period.repository.interface';
 import { Inject } from '@nestjs/common';
+import { WindowPeriod } from '../../reporting/domain/period-window';
 import { parseCents } from '../../shared/domain/cents';
 import { IsCents } from '../../shared/infrastructure/is-cents.decorator';
 import { IsCalendarDate } from '../../shared/infrastructure/is-calendar-date.decorator';
@@ -437,6 +438,7 @@ export class TransactionsController {
       ? parseDateOnly(query.startDate)
       : undefined;
     let endDate = query.endDate ? parseDateOnly(query.endDate) : undefined;
+    let periodWindow: WindowPeriod | undefined;
 
     if (query.periodId) {
       const period = ensureBelongsToAccount(
@@ -444,8 +446,15 @@ export class TransactionsController {
         accountId,
         'Period',
       );
-      startDate = period.startDate;
-      endDate = period.endDate || undefined;
+      // La période l'emporte sur startDate/endDate ; sa fenêtre (dépenses
+      // réservées comprises) est appliquée par le dépôt, pas une borne de fin.
+      startDate = undefined;
+      endDate = undefined;
+      periodWindow = {
+        startDate: period.startDate,
+        endDate: period.endDate,
+        isActive: period.isActive,
+      };
     }
 
     const result = await this.getTransactionsByAccountUseCase.execute(
@@ -453,6 +462,7 @@ export class TransactionsController {
       {
         startDate,
         endDate,
+        periodWindow,
         search: query.search,
         categoryId: query.categoryId,
         tagIds: query.tagIds,

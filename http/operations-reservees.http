@@ -1,0 +1,315 @@
+# Opérations réservées : la liste d'une période contient exactement ce que compte le prévu (critères 1 à 6, 8).
+# Lancement : npx httpyac send --all http/operations-reservees.http --var port=8080 --var supabase=<URL Supabase> --var anon=<ANON_KEY> --var email=<compte e2e> --var password=<mot de passe e2e>
+# (identifiants en ligne de commande, jamais dans le fichier ; connexion par mot de passe, pas de création d'utilisateur ;
+#  les comptes bancaires et catégories créés sont jetables, préfixés e2e-, supprimés à la fin ; config httpYac avec cookieJarEnabled false)
+# P1 octobre (fermée par la création de P2), P2 novembre 2026 active (01/11 au 30/11).
+# Opérations du compte A (toutes -12000 sauf mention) :
+#   T1 "e2e loyer (déc.)" 05/12 pending, T2 "e2e cb" 05/12 CB non pointée, T3 "e2e rapproche" 05/12 rapprochée,
+#   T4 "e2e sanscat" 05/12 sans catégorie, T5 "e2e novembre" 15/11, T6 "e2e cb octobre" 31/10,
+#   T7 revenu +12000 "e2e cb revenu (déc.)" 05/12, T8 remboursement +12000 sur catégorie de dépense 05/12.
+# Attendu P2 : T1 à T5 (5 lignes), pas T6 T7 T8. P1 (fermée) : T6 seule. Sans période : les 8.
+# Le compte B est un second compte bancaire du MÊME utilisateur (pas un autre utilisateur) : il vérifie que
+# la liste ne sort jamais du compte de l'URL ; l'isolation entre utilisateurs relève de la RLS, non testée ici.
+@baseUrl = http://localhost:{{port}}
+
+### Connexion du compte e2e
+# @name login
+POST {{supabase}}/auth/v1/token?grant_type=password
+apikey: {{anon}}
+Content-Type: application/json
+
+{ "email": "{{email}}", "password": "{{password}}" }
+
+?? status == 200
+
+### Compte jetable A
+# @name account
+POST {{baseUrl}}/accounts
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "name": "e2e-operations-reservees-{{$timestamp}}", "initialBalance": "100000" }
+
+?? status == 201
+
+### Compte jetable B (même utilisateur)
+# @name other
+POST {{baseUrl}}/accounts
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "name": "e2e-operations-reservees-b-{{$timestamp}}", "initialBalance": "0" }
+
+?? status == 201
+
+### Catégorie de dépense
+# @name courses
+POST {{baseUrl}}/{{account.id}}/categories
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "name": "e2e-Courses", "color": "#112233", "type": "expense" }
+
+?? status == 201
+
+### Catégorie de revenu
+# @name salaire
+POST {{baseUrl}}/{{account.id}}/categories
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "name": "e2e-Salaire", "color": "#334455", "type": "income" }
+
+?? status == 201
+
+### P1 octobre (active pour l'instant)
+# @name p1
+POST {{baseUrl}}/{{account.id}}/periods
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "startDate": "2026-10-01", "endDate": "2026-10-31", "budgets": [] }
+
+?? status == 201
+
+### P2 novembre : devient la période active, P1 se ferme
+# @name p2
+POST {{baseUrl}}/{{account.id}}/periods
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "startDate": "2026-11-01", "endDate": "2026-11-30", "budgets": [] }
+
+?? status == 201
+
+### T1 facture pending 05/12
+# @name t1
+POST {{baseUrl}}/{{account.id}}/transactions
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "categoryId": "{{courses.id}}", "date": "2026-12-05", "description": "e2e loyer (déc.)", "amount": "-12000", "reconciled": false, "pending": true }
+
+?? status == 201
+
+### T2 CB non pointée 05/12
+# @name t2
+POST {{baseUrl}}/{{account.id}}/transactions
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "categoryId": "{{courses.id}}", "date": "2026-12-05", "description": "e2e cb", "amount": "-12000", "reconciled": false, "pending": false }
+
+?? status == 201
+
+### T3 dépense rapprochée 05/12
+# @name t3
+POST {{baseUrl}}/{{account.id}}/transactions
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "categoryId": "{{courses.id}}", "date": "2026-12-05", "description": "e2e rapproche", "amount": "-12000", "reconciled": true, "pending": false }
+
+?? status == 201
+
+### T4 dépense sans catégorie 05/12
+# @name t4
+POST {{baseUrl}}/{{account.id}}/transactions
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "categoryId": null, "date": "2026-12-05", "description": "e2e sanscat", "amount": "-12000", "reconciled": false, "pending": false }
+
+?? status == 201
+
+### T5 dépense dans la période 15/11
+# @name t5
+POST {{baseUrl}}/{{account.id}}/transactions
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "categoryId": "{{courses.id}}", "date": "2026-11-15", "description": "e2e novembre", "amount": "-12000", "reconciled": false, "pending": false }
+
+?? status == 201
+
+### T6 dépense avant le début 31/10
+# @name t6
+POST {{baseUrl}}/{{account.id}}/transactions
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "categoryId": "{{courses.id}}", "date": "2026-10-31", "description": "e2e cb octobre", "amount": "-12000", "reconciled": false, "pending": false }
+
+?? status == 201
+
+### T7 revenu daté après la fin 05/12
+# @name t7
+POST {{baseUrl}}/{{account.id}}/transactions
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "categoryId": "{{salaire.id}}", "date": "2026-12-05", "description": "e2e cb revenu (déc.)", "amount": "12000", "reconciled": false, "pending": false }
+
+?? status == 201
+
+### T8 remboursement sur catégorie de dépense 05/12
+# @name t8
+POST {{baseUrl}}/{{account.id}}/transactions
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "categoryId": "{{courses.id}}", "date": "2026-12-05", "description": "e2e remboursement", "amount": "12000", "reconciled": false, "pending": false }
+
+?? status == 201
+
+### Opération du compte B datée 05/12
+# @name tb
+POST {{baseUrl}}/{{other.id}}/transactions
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "categoryId": null, "date": "2026-12-05", "description": "e2e autre compte", "amount": "-12000", "reconciled": false, "pending": false }
+
+?? status == 201
+
+### Critères 1, 3 : liste de la période active = T1 à T5, ni T6, ni revenu, ni remboursement
+# @name list
+GET {{baseUrl}}/{{account.id}}/transactions?periodId={{p2.id}}&limit=100
+Authorization: Bearer {{login.access_token}}
+
+?? status == 200
+?? js response.parsedBody.meta.total == 5
+?? js response.parsedBody.data.length == 5
+?? body contains "id":"{{t1.id}}"
+?? body contains "id":"{{t2.id}}"
+?? body contains "id":"{{t3.id}}"
+?? body contains "id":"{{t4.id}}"
+?? body contains "id":"{{t5.id}}"
+?? body !contains "id":"{{t6.id}}"
+?? body !contains "id":"{{t7.id}}"
+?? body !contains "id":"{{t8.id}}"
+# date décroissante : T5 (15/11) en dernier
+?? body contains "id":"{{t5.id}}"
+?? js response.parsedBody.data[4].description.endsWith("novembre") == true
+
+### Critère 2 : À pointer · n (stats) = total de la liste « À pointer »
+# @name stats
+GET {{baseUrl}}/{{account.id}}/periods/{{p2.id}}/reporting/stats
+Authorization: Bearer {{login.access_token}}
+
+?? status == 200
+?? js response.parsedBody.cardCount == 3
+
+### Critère 2 : liste À pointer (reconciled=false&pending=false) : total == cardCount
+GET {{baseUrl}}/{{account.id}}/transactions?periodId={{p2.id}}&reconciled=false&pending=false
+Authorization: Bearer {{login.access_token}}
+
+?? status == 200
+?? js response.parsedBody.meta.total == {{stats.cardCount}}
+?? body contains "id":"{{t2.id}}"
+?? body contains "id":"{{t4.id}}"
+
+### Critère 5 : recherche + fenêtre, la dépense réservée qui correspond (caractères spéciaux)
+GET {{baseUrl}}/{{account.id}}/transactions?periodId={{p2.id}}&search=%28d%C3%A9c.%29
+Authorization: Bearer {{login.access_token}}
+
+?? status == 200
+# T1 seulement : T7 correspond mais est un revenu hors fenêtre
+?? js response.parsedBody.meta.total == 1
+?? body contains "id":"{{t1.id}}"
+
+### Critère 5 : recherche + fenêtre, l'autre sens (T6 correspond mais hors fenêtre, T2 réservée correspond)
+GET {{baseUrl}}/{{account.id}}/transactions?periodId={{p2.id}}&search=e2e%20cb
+Authorization: Bearer {{login.access_token}}
+
+?? status == 200
+?? js response.parsedBody.meta.total == 1
+?? body contains "id":"{{t2.id}}"
+
+### Critère 5 : recherche sans correspondance : la dépense réservée n'est pas listée
+GET {{baseUrl}}/{{account.id}}/transactions?periodId={{p2.id}}&search=introuvable
+Authorization: Bearer {{login.access_token}}
+
+?? status == 200
+?? js response.parsedBody.meta.total == 0
+
+### Critère 4 : pagination (ex æquo au 05/12), page 1
+# @name pg1
+GET {{baseUrl}}/{{account.id}}/transactions?periodId={{p2.id}}&limit=2&page=1
+Authorization: Bearer {{login.access_token}}
+
+?? status == 200
+?? js response.parsedBody.meta.total == 5
+?? js response.parsedBody.meta.totalPages == 3
+?? js response.parsedBody.data.length == 2
+
+### Critère 4 : page 2
+# @name pg2
+GET {{baseUrl}}/{{account.id}}/transactions?periodId={{p2.id}}&limit=2&page=2
+Authorization: Bearer {{login.access_token}}
+
+?? status == 200
+?? js response.parsedBody.data.length == 2
+
+### Critère 4 : page 3 ; l'union des trois pages = les 5 lignes, sans doublon
+# @name pg3
+GET {{baseUrl}}/{{account.id}}/transactions?periodId={{p2.id}}&limit=2&page=3
+Authorization: Bearer {{login.access_token}}
+
+?? status == 200
+?? js response.parsedBody.data.length == 1
+?? js new Set([...pg1.data, ...pg2.data, ...response.parsedBody.data].map(t => t.id)).size == 5
+
+### Critère 3 : période fermée P1 (octobre) : T6 seule, aucune dépense datée après sa fin
+GET {{baseUrl}}/{{account.id}}/transactions?periodId={{p1.id}}
+Authorization: Bearer {{login.access_token}}
+
+?? status == 200
+?? js response.parsedBody.meta.total == 1
+?? body contains "id":"{{t6.id}}"
+
+### Critères 3, 8 : toutes les périodes (sans periodId) : les 8, revenu compris
+GET {{baseUrl}}/{{account.id}}/transactions?limit=100
+Authorization: Bearer {{login.access_token}}
+
+?? status == 200
+?? js response.parsedBody.meta.total == 8
+
+### Critère 6 : ids = T2 + une opération du compte B, avec la période : T2 seule, sans erreur
+GET {{baseUrl}}/{{account.id}}/transactions?periodId={{p2.id}}&ids={{t2.id}},{{tb.id}}
+Authorization: Bearer {{login.access_token}}
+
+?? status == 200
+?? js response.parsedBody.meta.total == 1
+?? body contains "id":"{{t2.id}}"
+
+### Critère 6 : ids seul d'un autre compte (toutes périodes) : liste vide
+GET {{baseUrl}}/{{account.id}}/transactions?ids={{tb.id}}
+Authorization: Bearer {{login.access_token}}
+
+?? status == 200
+?? js response.parsedBody.meta.total == 0
+
+### Critère 6 : ids avec période : la fenêtre s'applique aussi (T6 hors fenêtre de P2, T2 dedans)
+GET {{baseUrl}}/{{account.id}}/transactions?periodId={{p2.id}}&ids={{t2.id}},{{t6.id}}
+Authorization: Bearer {{login.access_token}}
+
+?? status == 200
+?? js response.parsedBody.meta.total == 1
+?? body contains "id":"{{t2.id}}"
+
+### Nettoyage : suppression du compte jetable A (cascade)
+DELETE {{supabase}}/rest/v1/accounts?id=eq.{{account.id}}
+apikey: {{anon}}
+Authorization: Bearer {{login.access_token}}
+Prefer: return=representation
+
+?? status == 200
+
+### Nettoyage : suppression du compte jetable B (cascade)
+DELETE {{supabase}}/rest/v1/accounts?id=eq.{{other.id}}
+apikey: {{anon}}
+Authorization: Bearer {{login.access_token}}
+Prefer: return=representation
+
+?? status == 200

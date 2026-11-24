@@ -1,8 +1,11 @@
 import { Transaction } from './transaction.entity';
+import { WindowPeriod } from '../../reporting/domain/period-window';
 
 export interface FindAllTransactionsOptions {
   startDate?: Date;
   endDate?: Date;
+  /** Fenêtre d'une période (règle `isInPeriodWindow`) ; la liste paginée l'applique en plus des autres filtres. */
+  periodWindow?: WindowPeriod;
   search?: string;
   categoryId?: string;
   tagIds?: string[];
