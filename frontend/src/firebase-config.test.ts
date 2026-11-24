@@ -17,4 +17,13 @@ describe('firebase.json : fonction de rendu serveur Next', () => {
         : 256; // défaut firebase-tools
     expect(mib).toBeGreaterThanOrEqual(MIN_MEMORY_MIB);
   });
+
+  it('construit la codebase backend avant chaque deploy (functions[].predeploy)', () => {
+    // Sans predeploy, firebase-tools envoie functions/dist tel qu'il est sur le disque (périmé).
+    const path = resolve(process.cwd(), '../firebase.json');
+    const config = JSON.parse(readFileSync(path, 'utf8'));
+    const backend = config.functions?.find((f: { codebase?: string }) => f.codebase === 'backend');
+    const predeploy: string[] = [].concat(backend?.predeploy ?? []);
+    expect(predeploy.some((cmd) => /\brun build\b/.test(cmd))).toBe(true);
+  });
 });
