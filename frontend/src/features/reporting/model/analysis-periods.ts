@@ -37,3 +37,20 @@ export function validCompareWith(periods: Period[] | undefined, periodId: string
   const index = chrono.findIndex((p) => p.id === periodId);
   return index > 0 ? chrono[index - 1].id : null;
 }
+
+/** Nombre de périodes fermées proposées dans les écrans d'analyse (les plus récentes). */
+export const ANALYSIS_MAX_PERIODS = 6;
+
+export interface AnalysisSpan {
+  count: number;
+  /** Date de début de la plus ancienne et de la plus récente période proposées. */
+  from: string;
+  to: string;
+}
+
+/** Périodes fermées réellement proposées (6 au plus), de la plus ancienne à la plus récente ; `null` s'il n'y en a aucune. */
+export function analysisSpan(periods: Period[] | undefined): AnalysisSpan | null {
+  const proposed = closedPeriodsChronological(periods).slice(-ANALYSIS_MAX_PERIODS);
+  if (proposed.length === 0) return null;
+  return { count: proposed.length, from: proposed[0].startDate, to: proposed[proposed.length - 1].startDate };
+}

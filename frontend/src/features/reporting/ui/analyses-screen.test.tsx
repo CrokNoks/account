@@ -1,8 +1,9 @@
-import { fireEvent, render, screen, within } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { NextIntlClientProvider } from 'next-intl';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import fr from '../../../../messages/fr.json';
+import en from '../../../../messages/en.json';
 import { AnalysesScreen } from './analyses-screen';
 
 const push = vi.fn();
@@ -303,5 +304,67 @@ describe('Évolution', () => {
     expect(rows[1].textContent).not.toContain('Dépassement');
     expect(screen.getAllByTestId('overrun-mark')).toHaveLength(1);
     expect(screen.getAllByTestId('chart-legend')).toHaveLength(3);
+  });
+});
+
+describe('écran Analyses : sous-titre', () => {
+  const sub = () => screen.queryByTestId('analyses-subtitle')?.textContent;
+  const renderIn = (locale: 'fr' | 'en') =>
+    render(
+      <NextIntlClientProvider locale={locale} messages={locale === 'fr' ? fr : en}>
+        <AnalysesScreen />
+      </NextIntlClientProvider>,
+    );
+
+  it('« Six périodes fermées, de mai à octobre » : les six périodes proposées, de la plus ancienne à la plus récente', () => {
+    state.periods = [5, 6, 7, 8, 9, 10].map((n) => mk(n)).concat(mk(11, true));
+    renderScreen();
+    expect(sub()).toBe('Six périodes fermées, de mai à octobre');
+  });
+
+  it('plus de six périodes fermées : seules les six dernières sont décrites', () => {
+    state.periods = [1, 2, 3, 4, 5, 6, 7, 8].map((n) => mk(n)).concat(mk(11, true));
+    renderScreen();
+    expect(sub()).toBe('Six périodes fermées, de mars à août');
+  });
+
+  it('une seule période fermée : « Une période fermée, mars »', () => {
+    state.periods = [mk(3), mk(11, true)];
+    renderScreen();
+    expect(sub()).toBe('Une période fermée, mars');
+  });
+
+  it('mois de début identiques : une phrase correcte, sans « de mars à mars »', () => {
+    state.periods = [{ ...mk(3), id: 'a' }, { ...mk(3), id: 'b' }, mk(11, true)];
+    renderScreen();
+    expect(sub()).toBe('Deux périodes fermées, mars');
+  });
+
+  it('aucune période fermée : pas de sous-titre, le message existant suffit', () => {
+    state.periods = [mk(11, true)];
+    renderScreen();
+    expect(sub()).toBeUndefined();
+    expect(screen.getByTestId('breakdown-no-period')).toBeTruthy();
+  });
+
+  it('en anglais', () => {
+    state.periods = [5, 6, 7, 8, 9, 10].map((n) => mk(n)).concat(mk(11, true));
+    renderIn('en');
+    expect(sub()).toBe('Six closed periods, from May to October');
+    cleanup();
+    state.periods = [mk(3), mk(11, true)];
+    renderIn('en');
+    expect(sub()).toBe('One closed period, March');
+  });
+
+  it('la légende de l\'écart parle d\'orange et plus de rouge, en fr comme en en', () => {
+    state.periods = [mk(1), mk(2), mk(3, true)];
+    state.comparison = { income: [], savings: [], transfers: [], expenses: [pt('courses', '-12000', '-15000', 25)] };
+    renderScreen();
+    const fr1 = screen.getAllByTestId('chart-legend').map((e) => e.textContent).join(' ');
+    expect(fr1).toContain('orange si elle monte, bleu si elle baisse');
+    expect(fr1).not.toMatch(/rouge/);
+    expect(en.Reporting.analyses.breakdown.legend).toContain('orange if it goes up, blue if it goes down');
+    expect(en.Reporting.analyses.breakdown.legend).not.toMatch(/\bred\b/);
   });
 });

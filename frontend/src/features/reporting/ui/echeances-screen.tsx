@@ -24,6 +24,9 @@ export function EcheancesScreen() {
 
   return (
     <div className="flex flex-col gap-4 lg:gap-8">
+      <p data-testid="echeances-subtitle" className="text-sm text-muted-foreground">
+        {t('subtitle')}
+      </p>
       {activeAccountId ? (
         <>
           <CashflowForecast accountId={activeAccountId} days={days} onDaysChange={setDays} />

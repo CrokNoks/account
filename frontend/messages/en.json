@@ -150,6 +150,7 @@
     "echeances": {
       "title": "Due dates",
       "desc": "Your cash flow and upcoming due dates, on a single screen.",
+      "subtitle": "Your upcoming recurring operations",
       "no_account": "Choose an account to see its due dates.",
       "list_title": "Coming up in {month}",
       "list_none": "Nothing due in {month}.",
@@ -202,6 +203,9 @@
     "analyses": {
       "title": "Analysis",
       "desc": "Breakdown of spending, trends and overruns of closed periods, on a single screen.",
+      "subtitle_one": "One closed period, {month}",
+      "subtitle_many": "{count, select, 2 {Two} 3 {Three} 4 {Four} 5 {Five} 6 {Six} other {{count}}} closed periods, from {from} to {to}",
+      "subtitle_same_month": "{count, select, 2 {Two} 3 {Three} 4 {Four} 5 {Five} 6 {Six} other {{count}}} closed periods, {month}",
       "tabs_label": "Analysis sections",
       "tab_breakdown": "Breakdown",
       "tab_evolution": "Trends",
@@ -219,7 +223,7 @@
         "amount": "Amount",
         "gap": "Change",
         "none": "No spending in this period.",
-        "legend": "Change = variation of the amount against the comparison period: ↗ and + if spending goes up, ↘ and − if it goes down, \"New\" if it was 0. For spending, red if it goes up, blue if it goes down. For savings the change stays grey: only the arrow and the sign give the direction.",
+        "legend": "Change = variation of the amount against the comparison period: ↗ and + if spending goes up, ↘ and − if it goes down, \"New\" if it was 0. For spending, orange if it goes up, blue if it goes down. For savings the change stays grey: only the arrow and the sign give the direction.",
         "error": "Unable to load the comparison."
       },
       "evolution": {

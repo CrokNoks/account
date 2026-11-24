@@ -38,6 +38,15 @@ describe('Écran Échéances', () => {
     expect(screen.queryByText(fr.Reporting.echeances.desc)).toBeNull();
   });
 
+  it('affiche le sous-titre sous le titre de l\'en-tête, traduit en anglais', () => {
+    account.id = 'a1';
+    renderScreen();
+    expect(screen.getByTestId('echeances-subtitle').textContent).toBe('Vos opérations récurrentes à venir');
+    document.body.innerHTML = '';
+    renderScreen('en');
+    expect(screen.getByTestId('echeances-subtitle').textContent).toBe('Your upcoming recurring operations');
+  });
+
   it('passe au calendrier le jour du point bas donné par le back', () => {
     account.id = 'a1';
     renderScreen();

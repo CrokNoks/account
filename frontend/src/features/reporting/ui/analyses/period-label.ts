@@ -10,3 +10,8 @@ export function shortPeriodLabel(startDate: string, locale: string): string {
 export function longPeriodLabel(startDate: string, locale: string): string {
   return format(new Date(startDate), 'MMMM yyyy', { locale: locale === 'fr' ? fr : enUS });
 }
+
+/** « mai » : mois de la date de début d'une période (lu en UTC, jamais le fuseau du navigateur). */
+export function monthName(startDate: string, locale: string): string {
+  return new Intl.DateTimeFormat(locale, { month: 'long', timeZone: 'UTC' }).format(new Date(startDate));
+}

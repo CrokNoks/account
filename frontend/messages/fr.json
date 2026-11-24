@@ -150,6 +150,7 @@
     "echeances": {
       "title": "Échéances",
       "desc": "Votre trésorerie et vos échéances à venir, sur un seul écran.",
+      "subtitle": "Vos opérations récurrentes à venir",
       "no_account": "Choisissez un compte pour voir ses échéances.",
       "list_title": "À venir en {month}",
       "list_none": "Aucune échéance à venir en {month}.",
@@ -202,6 +203,9 @@
     "analyses": {
       "title": "Analyses",
       "desc": "Répartition des dépenses, évolution et dépassements des périodes fermées, sur un seul écran.",
+      "subtitle_one": "Une période fermée, {month}",
+      "subtitle_many": "{count, select, 2 {Deux} 3 {Trois} 4 {Quatre} 5 {Cinq} 6 {Six} other {{count}}} périodes fermées, de {from} à {to}",
+      "subtitle_same_month": "{count, select, 2 {Deux} 3 {Trois} 4 {Quatre} 5 {Cinq} 6 {Six} other {{count}}} périodes fermées, {month}",
       "tabs_label": "Sections d'analyse",
       "tab_breakdown": "Répartition",
       "tab_evolution": "Évolution",
@@ -219,7 +223,7 @@
         "amount": "Montant",
         "gap": "Écart",
         "none": "Aucune dépense sur cette période.",
-        "legend": "Écart = variation du montant par rapport à la période de comparaison : ↗ et + si la dépense monte, ↘ et − si elle baisse, « Nouveau » si elle était à 0. Pour une dépense, rouge si elle monte, bleu si elle baisse. Pour l'épargne, l'écart reste gris : seuls la flèche et le signe donnent le sens.",
+        "legend": "Écart = variation du montant par rapport à la période de comparaison : ↗ et + si la dépense monte, ↘ et − si elle baisse, « Nouveau » si elle était à 0. Pour une dépense, orange si elle monte, bleu si elle baisse. Pour l'épargne, l'écart reste gris : seuls la flèche et le signe donnent le sens.",
         "error": "Impossible de charger la comparaison."
       },
       "evolution": {
