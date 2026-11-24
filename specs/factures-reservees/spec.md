@@ -23,7 +23,7 @@ Dépense = montant < 0, quelle que soit la catégorie ou l'absence de catégorie
 5. **Budgets et évolution comptent la même dépense.** La répartition (réel, reste, %) et la comparaison de périodes incluent la dépense datée après la fin de la période active. L'évolution la compte dans le prévisionnel et les dépenses réelles de cette période. Pour une période active, la somme des réels « dépenses + épargne » de la répartition (sans catégorie exclue, comme aujourd'hui) = `realExpenses` des stats = `realExpenses` de l'évolution.
 6. **Alertes : même fenêtre que le prévu.** Un doublon ou une dépense inhabituelle datée après la fin d'une période active est détecté pour cette période, ainsi qu'une dépense future d'une période active sans fin (aujourd'hui coupée à la date du jour).
 7. **Ce qui reste borné.** (a) Période fermée : une dépense datée après sa fin n'y est pas comptée. (b) Revenu ou montant positif daté après la fin d'une période active : non compté (donc ni dans le prévu, ni dans En banque, ni dans À venir). (c) Rythme de dépense : inchangé, il s'arrête à la fin ou à aujourd'hui.
-8. **Pas de double compte à la clôture.** Quand une période suivante est créée, l'ancienne passe inactive dans la même opération (`docs/periods.md` l.19) et retrouve sa fin comme borne : dans le cas courant (la période active est la plus récente), une dépense n'est comptée que dans une période. Le cas du point ouvert 2 n'est pas couvert. Les périodes ne se chevauchent pas (`docs/periods.md` l.101) et une seule est active (l.104).
+8. **Pas de double compte à la clôture.** Quand une période suivante est créée, l'ancienne passe inactive dans la même opération (`docs/periods.md` l.19) et retrouve sa fin comme borne : dans le cas courant (la période active est la plus récente), une dépense n'est comptée que dans une période. Les périodes ne se chevauchent pas (`docs/periods.md` l.101) et une seule est active (l.104).
 
 ## Règle critique (test écrit avant le code)
 **La règle de fenêtre ci-dessus, en centimes entiers (`bigint`), pour une même liste de transactions partagée par le prévu, la composition, la simulation, la répartition, l'évolution et les alertes.** Le test écrit avant le code est la table de cas, plus l'égalité de la composition avec le prévu.
@@ -97,8 +97,8 @@ Pas de règle de droit d'accès ajoutée (toutes les routes sont sous `SupabaseA
 - Les dépenses déjà comptées avant la fin gardent leur effet exact : seules les dépenses datées après la fin d'une période active sont nouvelles.
 
 ## Points ouverts (décisions de Lucas)
-1. **Opérations et détail d'un tag restent bornés à la fin de la période.** Conséquence : la dépense datée après la fin compte dans le prévu et, si c'est une CB non rapprochée, dans « CB à pointer » de À traiter ; mais le lien « CB à pointer » ouvre Opérations sur la période (`/transactions?state=a_pointer`) et ne la montre pas, et le détail d'un tag l'ignore. Proposition : appliquer la même fenêtre à la liste d'Opérations de la période active, pour que le lien montre ce qui est compté. Hors du « go » donné, donc non fait sans accord.
-2. **Période active qui n'est pas la plus récente.** Réactiver une période ancienne par PATCH est possible si aucune autre n'est active (`docs/periods.md` l.53). Sa fenêtre sans fin recouvrirait alors des périodes fermées plus récentes : une dépense compterait deux fois d'une période à l'autre. Proposition : pour une période active suivie d'une autre, borner à la veille du début de la suivante. À trancher ; le cas courant (active = la plus récente) n'est pas concerné.
+1. **Opérations et détail d'un tag restent bornés à la fin de la période (décision : cycle à part).** Conséquence : la dépense datée après la fin compte dans le prévu et, si c'est une CB non rapprochée, dans « CB à pointer » de À traiter ; mais le lien « CB à pointer » ouvre Opérations sur la période (`/transactions?state=a_pointer`) et ne la montre pas. Le cycle à part ne traitera que la liste d'Opérations, pas le détail d'un tag.
+2. **Période active qui n'est pas la plus récente : écarté par Lucas.** Règle produit : seule la dernière période peut être réactivée. Le cas ne se présente donc pas ; rien à borner.
 
 ## Hors périmètre
 - Rythme de dépense, revenus futurs, dépassements des périodes fermées, trésorerie et calendrier (voir tableau).
@@ -117,11 +117,11 @@ Chemins vérifiés par Glob. Le schéma n'est pas touché : pas de migration.
 
 À créer (Glob : absents) :
 - `functions/src/reporting/domain/period-window.ts` et `period-window.spec.ts` : la règle de fenêtre en un seul endroit, avec la table de cas (le test d'abord).
-- `functions/http/factures-reservees.http` : scénario réel httpYac (période active, dépense après la fin, stats, simulation, répartition).
+- `http/factures-reservees.http` (racine du dépôt) : scénario réel httpYac (période active, dépense après la fin, stats, simulation, répartition).
 - `supabase/queries/depenses-hors-fenetre.sql` : requête de mesure (dossier existant, un fichier voisin : `depassements-par-periode.sql`).
 
 À réutiliser sans modifier : `functions/src/reporting/domain/period-forecast.ts`, `functions/src/reporting/domain/forecast-composition.ts` (formules inchangées).
 
-Selon la décision du point ouvert 1 : `functions/src/transactions/infrastructure/transactions.controller.ts` (l.448), `functions/src/reporting/application/get-tag-details.use-case.ts` (l.66).
+Point ouvert 1 : cycle à part (`functions/src/transactions/infrastructure/transactions.controller.ts` l.448), rien dans ce cycle.
 
 Après le cycle : `docs/reporting.md` (règles l.35, 37, 47, 53, 59), par le documentaliste. Front : aucune modification prévue.
