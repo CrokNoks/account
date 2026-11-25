@@ -34,4 +34,21 @@ describe('Category Entity', () => {
       });
     }).toThrow('Invalid color format (hex required)');
   });
+
+  it('is not a period trigger by default, and keeps the mark when given', () => {
+    const plain = Category.create({
+      name: 'Salary',
+      color: '#2ecc71',
+      type: CategoryType.INCOME,
+    });
+    const marked = Category.create({
+      name: 'Salary',
+      color: '#2ecc71',
+      type: CategoryType.INCOME,
+      isPeriodTrigger: true,
+    });
+
+    expect(plain.isPeriodTrigger).toBe(false);
+    expect(marked.isPeriodTrigger).toBe(true);
+  });
 });

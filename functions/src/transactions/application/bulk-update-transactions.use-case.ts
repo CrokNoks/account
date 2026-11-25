@@ -1,8 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { NotFoundError } from '../../shared/domain/errors';
 import { TransactionRepository } from '../domain/transaction.repository.interface';
-import { resolvePending } from '../domain/pending-rule';
+import { isLeavingPending, resolvePending } from '../domain/pending-rule';
 import { AccountReferencesService } from '../../shared/application/account-references.service';
+import {
+  ApplyPeriodSwitchService,
+  PeriodSwitchInfo,
+} from '../../periods/application/apply-period-switch.service';
 
 export interface BulkUpdateTransactionsCommand {
   accountId: string;
@@ -20,9 +24,12 @@ export class BulkUpdateTransactionsUseCase {
   constructor(
     private readonly transactionRepository: TransactionRepository,
     private readonly references: AccountReferencesService,
+    private readonly periodSwitch: ApplyPeriodSwitchService,
   ) {}
 
-  async execute(command: BulkUpdateTransactionsCommand): Promise<void> {
+  async execute(
+    command: BulkUpdateTransactionsCommand,
+  ): Promise<{ periodSwitch: PeriodSwitchInfo | null }> {
     const { accountId, data } = command;
     const ids = [...new Set(command.ids)];
 
@@ -38,10 +45,11 @@ export class BulkUpdateTransactionsUseCase {
       throw new NotFoundError('Transaction not found');
     }
 
+    const leavingPendingIds = new Set<string>();
     const updatedTransactions = targets.flatMap((tx) => {
       if (!tx) return [];
 
-      return tx.update({
+      const updated = tx.update({
         categoryId:
           data.categoryId !== undefined ? data.categoryId : tx.categoryId,
         tagIds: data.tagIds !== undefined ? data.tagIds : tx.tagIds,
@@ -49,11 +57,25 @@ export class BulkUpdateTransactionsUseCase {
           data.reconciled !== undefined ? data.reconciled : tx.reconciled,
         pending: resolvePending(data.reconciled, data.pending, tx.pending),
       });
+      if (isLeavingPending(tx.pending, updated.pending)) {
+        leavingPendingIds.add(tx.id);
+      }
+      return updated;
     });
+    if (updatedTransactions.length === 0) return { periodSwitch: null };
+
+    // Sortir du pending une paie : date du jour et, si les règles le permettent,
+    // bascule de période, dans la même écriture atomique (une bascule au plus par lot).
+    const switched = await this.periodSwitch.process({
+      accountId,
+      mode: 'update',
+      transactions: updatedTransactions,
+      leavingPendingIds,
+    });
+    if (switched.written) return { periodSwitch: switched.periodSwitch };
 
     // Une seule écriture atomique : toutes les transactions sont modifiées, ou aucune.
-    if (updatedTransactions.length > 0) {
-      await this.transactionRepository.updateMany(updatedTransactions);
-    }
+    await this.transactionRepository.updateMany(switched.transactions);
+    return { periodSwitch: null };
   }
 }

@@ -1,7 +1,11 @@
 import { Injectable, Inject } from '@nestjs/common';
 import { SupabaseClient } from '@supabase/supabase-js';
 import { Period } from '../domain/period.entity';
-import { PeriodRepository } from '../domain/period.repository.interface';
+import {
+  PeriodRepository,
+  PeriodSwitchWrite,
+  PeriodSwitchWriteResult,
+} from '../domain/period.repository.interface';
 import { BudgetInstance } from '../../budgets/domain/budget-instance.entity';
 import { toBudgetPayload } from '../../budgets/infrastructure/budget-payload';
 import { Transaction } from '../../transactions/domain/transaction.entity';
@@ -130,6 +134,58 @@ export class SupabasePeriodRepository implements PeriodRepository {
 
     // 23505 : periods_one_active_per_account ou budget_instances_period_id_category_id_key
     if (error) throw toDomainError(error, { conflict: periodConflict(error) });
+  }
+
+  async applyPeriodSwitches(
+    accountId: string,
+    expectedActiveId: string,
+    switches: PeriodSwitchWrite[],
+    transactions: Transaction[],
+    generated: Transaction[],
+    removePendingIds: string[] = [],
+    update = false,
+  ): Promise<PeriodSwitchWriteResult> {
+    const day = (d: Date) => d.toISOString().split('T')[0];
+    // Fonction SQL apply_period_switches : une seule transaction base de données,
+    // verrou de ligne sur l'active (déclenchements concurrents sérialisés).
+    const { data, error } = (await this.supabase.rpc('apply_period_switches', {
+      p_account_id: accountId,
+      p_expected_active_id: expectedActiveId,
+      p_switches: switches.map((s) => ({
+        closed_id: s.closedId,
+        close_end: day(s.closeEnd),
+        opened: {
+          id: s.opened.id,
+          account_id: s.opened.accountId,
+          start_date: day(s.opened.startDate),
+          end_date: s.opened.endDate ? day(s.opened.endDate) : null,
+          created_at: s.opened.createdAt.toISOString(),
+          updated_at: s.opened.updatedAt.toISOString(),
+        },
+        budgets: s.budgets.map(toBudgetPayload),
+      })),
+      p_transactions: transactions.map(toTransactionPayload),
+      p_generated: generated.map(toTransactionPayload),
+      p_remove_pending_ids: removePendingIds,
+      p_update: update,
+    })) as {
+      data: { switched?: boolean; removed?: number } | null;
+      error: { code?: string; message: string } | null;
+    };
+
+    // 23505 / 23P01 : une autre période active, un chevauchement, un budget en doublon
+    // (409) ; 42501 : lecture seule (403). Dans tous les cas rien n'est écrit.
+    // P0002 : en mode modification, une transaction du lot a disparu (rien n'est écrit).
+    if (error)
+      throw toDomainError(error, {
+        conflict: periodConflict(error),
+        notFound: 'Transaction not found',
+      });
+
+    return {
+      switched: data?.switched === true,
+      removed: data?.removed ?? 0,
+    };
   }
 
   async delete(id: string): Promise<void> {

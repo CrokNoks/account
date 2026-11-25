@@ -5,10 +5,20 @@ import { Transaction } from '../domain/transaction.entity';
 import { MatchSmartRulesUseCase } from '../../smart-rules/application/match-smart-rules.use-case';
 import { CreateTransactionCommand } from './create-transaction.use-case';
 import { AccountReferencesService } from '../../shared/application/account-references.service';
+import {
+  ApplyPeriodSwitchService,
+  PeriodSwitchInfo,
+} from '../../periods/application/apply-period-switch.service';
 
 export interface BulkCreateTransactionsCommand {
   accountId: string;
   transactions: Array<Omit<CreateTransactionCommand, 'accountId'>>;
+}
+
+export interface BulkCreateTransactionsResult {
+  transactions: Transaction[];
+  /** Dernière bascule déclenchée par l'import (null : aucune). */
+  periodSwitch: PeriodSwitchInfo | null;
 }
 
 @Injectable()
@@ -17,11 +27,12 @@ export class BulkCreateTransactionsUseCase {
     private readonly transactionRepository: TransactionRepository,
     private readonly matchRulesUseCase: MatchSmartRulesUseCase,
     private readonly references: AccountReferencesService,
+    private readonly periodSwitch: ApplyPeriodSwitchService,
   ) {}
 
   async execute(
     command: BulkCreateTransactionsCommand,
-  ): Promise<Transaction[]> {
+  ): Promise<BulkCreateTransactionsResult> {
     const { accountId, transactions } = command;
     const createdTransactions: Transaction[] = [];
 
@@ -60,7 +71,28 @@ export class BulkCreateTransactionsUseCase {
     }
 
     // Une seule écriture atomique : toutes les lignes (et leurs tags) ou aucune.
-    if (createdTransactions.length === 0) return [];
-    return this.transactionRepository.saveMany(createdTransactions);
+    if (createdTransactions.length === 0) {
+      return { transactions: [], periodSwitch: null };
+    }
+
+    // Les paies du lot peuvent déclencher des bascules (dans l'ordre des dates),
+    // chaque ligne allant dans la période qui contient sa date : un seul appel atomique.
+    const switched = await this.periodSwitch.process({
+      accountId,
+      mode: 'create',
+      cleanup: true,
+      transactions: createdTransactions,
+    });
+    if (switched.written) {
+      return {
+        transactions: switched.transactions,
+        periodSwitch: switched.periodSwitch,
+      };
+    }
+    return {
+      transactions:
+        await this.transactionRepository.saveMany(createdTransactions),
+      periodSwitch: null,
+    };
   }
 }

@@ -72,6 +72,9 @@ export async function createE2EApp(): Promise<{
     Object.keys(REPOSITORIES).map((k) => [k, mock()]),
   ) as Mocks;
 
+  // Sans catégorie déclencheuse (réglage vide par défaut) la bascule de période ne fait rien.
+  mocks.categories.findAllByAccount.mockResolvedValue([]);
+
   let builder = Test.createTestingModule({ imports: [AppModule] });
   for (const [key, provider] of Object.entries(REPOSITORIES)) {
     builder = builder

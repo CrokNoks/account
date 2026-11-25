@@ -4,6 +4,7 @@ import {
   CreateTransactionCommand,
 } from './create-transaction.use-case';
 import { TransactionRepository } from '../domain/transaction.repository.interface';
+import { ApplyPeriodSwitchService } from '../../periods/application/apply-period-switch.service';
 import { AccountReferencesService } from '../../shared/application/account-references.service';
 import { DomainValidationError } from '../../shared/domain/errors';
 
@@ -11,13 +12,24 @@ describe('CreateTransactionUseCase', () => {
   let useCase: CreateTransactionUseCase;
   let repository: jest.Mocked<TransactionRepository>;
   let refs: { ensureReferences: jest.Mock };
+  let periodSwitch: { process: jest.Mock };
 
   beforeEach(async () => {
+    periodSwitch = {
+      process: jest.fn((request: { transactions: unknown[] }) =>
+        Promise.resolve({
+          transactions: request.transactions,
+          written: false,
+          periodSwitch: null,
+        }),
+      ),
+    };
     refs = { ensureReferences: jest.fn().mockResolvedValue(undefined) };
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         CreateTransactionUseCase,
         { provide: AccountReferencesService, useValue: refs },
+        { provide: ApplyPeriodSwitchService, useValue: periodSwitch },
         {
           provide: TransactionRepository,
           useValue: {
@@ -42,10 +54,12 @@ describe('CreateTransactionUseCase', () => {
       amount: BigInt(-350),
     };
 
-    const result = await useCase.execute(command);
+    const { transaction: result, periodSwitch: info } =
+      await useCase.execute(command);
 
     expect(result.id).toBeDefined();
     expect(result.description).toBe('Coffee');
+    expect(info).toBeNull();
     expect(repository.save).toHaveBeenCalled();
   });
 
@@ -71,6 +85,52 @@ describe('CreateTransactionUseCase', () => {
         tagIds: ['tag-foreign'],
       }),
     );
+    expect(repository.save).not.toHaveBeenCalled();
+  });
+
+  it('lets the period switch service write the transaction atomically and does not save it a second time', async () => {
+    const info = {
+      closed: { id: 'p1', startDate: '2026-10-01', endDate: '2026-11-27' },
+      opened: { id: 'p2', startDate: '2026-11-28', endDate: '2026-12-27' },
+      count: 1,
+      dateChanged: false,
+    };
+    periodSwitch.process.mockImplementation(
+      (request: { transactions: unknown[] }) =>
+        Promise.resolve({
+          transactions: request.transactions,
+          written: true,
+          periodSwitch: info,
+        }),
+    );
+
+    const result = await useCase.execute({
+      accountId: 'acc-1',
+      categoryId: 'cat-salary',
+      date: new Date('2026-11-28'),
+      description: 'Paie',
+      amount: BigInt(200000),
+    });
+
+    expect(periodSwitch.process).toHaveBeenCalledWith(
+      expect.objectContaining({ accountId: 'acc-1', mode: 'create' }),
+    );
+    expect(repository.save).not.toHaveBeenCalled();
+    expect(result.periodSwitch).toBe(info);
+  });
+
+  it('does not save separately when the atomic switch fails', async () => {
+    periodSwitch.process.mockRejectedValue(new Error('overlap'));
+
+    await expect(
+      useCase.execute({
+        accountId: 'acc-1',
+        categoryId: 'cat-salary',
+        date: new Date('2026-11-28'),
+        description: 'Paie',
+        amount: BigInt(200000),
+      }),
+    ).rejects.toThrow('overlap');
     expect(repository.save).not.toHaveBeenCalled();
   });
 });

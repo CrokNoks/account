@@ -34,7 +34,9 @@ import { BulkDeleteTransactionsUseCase } from '../application/bulk-delete-transa
 import { CreateTransferUseCase } from '../application/create-transfer.use-case';
 import { TransactionRepository } from '../domain/transaction.repository.interface';
 import { Transaction } from '../domain/transaction.entity';
-import { resolvePending } from '../domain/pending-rule';
+import { isLeavingPending, resolvePending } from '../domain/pending-rule';
+import { ApplyPeriodSwitchService } from '../../periods/application/apply-period-switch.service';
+import type { PeriodSwitchInfo } from '../../periods/application/apply-period-switch.service';
 import {
   IsString,
   IsOptional,
@@ -206,6 +208,36 @@ export class BulkDeleteTransactionsDto {
   ids: string[];
 }
 
+export class PeriodSwitchDto {
+  @ApiProperty({ description: 'Période clôturée' })
+  closed: { id: string; startDate: string; endDate: string };
+
+  @ApiProperty({ description: 'Période ouverte' })
+  opened: { id: string; startDate: string; endDate: string };
+
+  @ApiProperty({ description: 'Nombre de bascules (import : plusieurs)' })
+  count: number;
+
+  @ApiProperty({
+    description: 'La transaction a pris la date du jour en sortant du pending',
+  })
+  dateChanged: boolean;
+
+  @ApiProperty({
+    required: false,
+    description:
+      'Import : `pending` récurrentes supprimées car leur équivalent est importé',
+  })
+  removedPending?: number;
+
+  @ApiProperty({
+    required: false,
+    description:
+      'Import : récurrentes encore `pending` datées dans la période close',
+  })
+  remainingPending?: number;
+}
+
 export class TransactionResponseDto {
   @ApiProperty()
   id: string;
@@ -248,6 +280,19 @@ export class TransactionResponseDto {
 
   @ApiProperty()
   updatedAt: string;
+
+  @ApiProperty({
+    type: PeriodSwitchDto,
+    required: false,
+    description:
+      'Présent seulement si cette requête a clos la période active et en a ouvert une',
+  })
+  periodSwitch?: PeriodSwitchInfo;
+}
+
+export class BulkUpdateResponseDto {
+  @ApiProperty({ type: PeriodSwitchDto, required: false })
+  periodSwitch?: PeriodSwitchInfo;
 }
 
 export class PredictionResponseDto {
@@ -391,6 +436,7 @@ export class TransactionsController {
     @Inject(PeriodRepository)
     private readonly periodRepository: PeriodRepository,
     private readonly references: AccountReferencesService,
+    private readonly periodSwitch: ApplyPeriodSwitchService,
   ) {}
 
   @Get('predict-category')
@@ -484,16 +530,17 @@ export class TransactionsController {
   // Express les fait correspondre à `:id` avec id = "bulk".
   @Patch('bulk')
   @ApiOperation({ summary: 'Update multiple transactions at once' })
-  @ApiResponse({ status: 200 })
+  @ApiResponse({ status: 200, type: BulkUpdateResponseDto })
   async updateBulk(
     @Param('accountId') accountId: string,
     @Body() dto: BulkUpdateTransactionsDto,
-  ): Promise<void> {
-    await this.bulkUpdateTransactionsUseCase.execute({
+  ): Promise<BulkUpdateResponseDto> {
+    const { periodSwitch } = await this.bulkUpdateTransactionsUseCase.execute({
       accountId,
       ids: dto.ids,
       data: dto.data,
     });
+    return periodSwitch ? { periodSwitch } : {};
   }
 
   @Delete('bulk')
@@ -565,7 +612,24 @@ export class TransactionsController {
       updatedAt: new Date(),
     });
 
-    const stored = await this.transactionRepository.save(updated);
+    // Sortir du pending une paie : date du jour et bascule de période éventuelle
+    // (écriture atomique) ; sinon enregistrement comme avant.
+    const leaving = isLeavingPending(existing.pending, updated.pending);
+    const switched = await this.periodSwitch.process({
+      accountId,
+      mode: 'update',
+      transactions: [updated],
+      leavingPendingIds: new Set(leaving ? [updated.id] : []),
+    });
+    if (switched.written) {
+      return this.mapToResponse(
+        switched.transactions[0],
+        switched.periodSwitch,
+      );
+    }
+    const stored = await this.transactionRepository.save(
+      switched.transactions[0],
+    );
     return this.mapToResponse(stored);
   }
 
@@ -592,15 +656,17 @@ export class TransactionsController {
     @Param('accountId') accountId: string,
     @Body() dto: BulkCreateTransactionsDto,
   ): Promise<TransactionResponseDto[]> {
-    const transactions = await this.bulkCreateTransactionsUseCase.execute({
-      accountId,
-      transactions: dto.transactions.map((t) => ({
-        ...t,
-        date: parseDateOnly(t.date),
-        amount: parseCents(t.amount),
-      })),
-    });
-    return transactions.map((t) => this.mapToResponse(t));
+    const { transactions, periodSwitch } =
+      await this.bulkCreateTransactionsUseCase.execute({
+        accountId,
+        transactions: dto.transactions.map((t) => ({
+          ...t,
+          date: parseDateOnly(t.date),
+          amount: parseCents(t.amount),
+        })),
+      });
+    // Le tableau reste celui d'avant ; la bascule éventuelle est portée par chaque élément.
+    return transactions.map((t) => this.mapToResponse(t, periodSwitch));
   }
 
   @Post('transfer')
@@ -629,16 +695,20 @@ export class TransactionsController {
     @Param('accountId') accountId: string,
     @Body() dto: CreateTransactionBodyDto,
   ): Promise<TransactionResponseDto> {
-    const transaction = await this.createTransactionUseCase.execute({
-      ...dto,
-      accountId,
-      date: parseDateOnly(dto.date),
-      amount: parseCents(dto.amount),
-    });
-    return this.mapToResponse(transaction);
+    const { transaction, periodSwitch } =
+      await this.createTransactionUseCase.execute({
+        ...dto,
+        accountId,
+        date: parseDateOnly(dto.date),
+        amount: parseCents(dto.amount),
+      });
+    return this.mapToResponse(transaction, periodSwitch);
   }
 
-  private mapToResponse(t: Transaction): TransactionResponseDto {
+  private mapToResponse(
+    t: Transaction,
+    periodSwitch: PeriodSwitchInfo | null = null,
+  ): TransactionResponseDto {
     return {
       id: t.id,
       accountId: t.accountId,
@@ -654,6 +724,7 @@ export class TransactionsController {
       tagIds: t.tagIds || [],
       createdAt: t.createdAt.toISOString(),
       updatedAt: t.updatedAt.toISOString(),
+      ...(periodSwitch ? { periodSwitch } : {}),
     };
   }
 }

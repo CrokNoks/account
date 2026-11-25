@@ -1,6 +1,7 @@
 import { BulkUpdateTransactionsUseCase } from './bulk-update-transactions.use-case';
 import { TransactionRepository } from '../domain/transaction.repository.interface';
 import { Transaction } from '../domain/transaction.entity';
+import { ApplyPeriodSwitchService } from '../../periods/application/apply-period-switch.service';
 import { AccountReferencesService } from '../../shared/application/account-references.service';
 import {
   DomainValidationError,
@@ -15,6 +16,7 @@ describe('BulkUpdateTransactionsUseCase', () => {
   };
   let useCase: BulkUpdateTransactionsUseCase;
   let refs: jest.Mocked<AccountReferencesService>;
+  let periodSwitch: { process: jest.Mock };
 
   const tx = (id: string, overrides: Partial<Transaction> = {}) =>
     Transaction.create({
@@ -36,6 +38,15 @@ describe('BulkUpdateTransactionsUseCase', () => {
     );
 
   beforeEach(() => {
+    periodSwitch = {
+      process: jest.fn((request: { transactions: unknown[] }) =>
+        Promise.resolve({
+          transactions: request.transactions,
+          written: false,
+          periodSwitch: null,
+        }),
+      ),
+    };
     repository = {
       findAllByAccountUnpaginated: jest
         .fn()
@@ -49,6 +60,7 @@ describe('BulkUpdateTransactionsUseCase', () => {
     useCase = new BulkUpdateTransactionsUseCase(
       repository as unknown as TransactionRepository,
       refs,
+      periodSwitch as unknown as ApplyPeriodSwitchService,
     );
   });
 
@@ -215,5 +227,98 @@ describe('BulkUpdateTransactionsUseCase', () => {
     ).rejects.toThrow('db down');
     expect(repository.updateMany).toHaveBeenCalledTimes(1);
     expect(repository.save).not.toHaveBeenCalled();
+  });
+
+  describe('leaving pending (period trigger)', () => {
+    it('tells the switch service which transactions leave pending, only pending to not pending', async () => {
+      repository.findAllByAccountUnpaginated.mockResolvedValue([
+        tx('t1', { pending: true }),
+        tx('t2', { pending: false }),
+        tx('t3', { pending: true }),
+      ]);
+
+      await useCase.execute({
+        accountId: 'acc-1',
+        ids: ['t1', 't2', 't3'],
+        data: { pending: false },
+      });
+
+      const request = (
+        periodSwitch.process.mock.calls as unknown[][]
+      )[0][0] as {
+        mode: string;
+        leavingPendingIds: Set<string>;
+      };
+      expect(request.mode).toBe('update');
+      expect([...request.leavingPendingIds].sort()).toEqual(['t1', 't3']);
+    });
+
+    it('counts pointing (reconciled) as leaving pending, and putting back to pending as not leaving', async () => {
+      repository.findAllByAccountUnpaginated.mockResolvedValue([
+        tx('t1', { pending: true }),
+        tx('t2', { pending: false }),
+      ]);
+
+      await useCase.execute({
+        accountId: 'acc-1',
+        ids: ['t1'],
+        data: { reconciled: true },
+      });
+      await useCase.execute({
+        accountId: 'acc-1',
+        ids: ['t2'],
+        data: { pending: true },
+      });
+
+      const first = (periodSwitch.process.mock.calls as unknown[][])[0][0] as {
+        leavingPendingIds: Set<string>;
+      };
+      const second = (periodSwitch.process.mock.calls as unknown[][])[1][0] as {
+        leavingPendingIds: Set<string>;
+      };
+      expect([...first.leavingPendingIds]).toEqual(['t1']);
+      expect(second.leavingPendingIds.size).toBe(0);
+    });
+
+    it('writes with updateMany the transactions returned by the service when it did not write', async () => {
+      const rewritten = tx('t1', { date: new Date('2026-12-01') });
+      periodSwitch.process.mockResolvedValue({
+        transactions: [rewritten],
+        written: false,
+        periodSwitch: null,
+      });
+
+      const result = await useCase.execute({
+        accountId: 'acc-1',
+        ids: ['t1'],
+        data: { pending: false },
+      });
+
+      expect(repository.updateMany).toHaveBeenCalledWith([rewritten]);
+      expect(result.periodSwitch).toBeNull();
+    });
+
+    it('does not call updateMany when the switch wrote everything atomically, and returns the switch', async () => {
+      const info = {
+        closed: { id: 'p1', startDate: '2026-10-01', endDate: '2026-11-30' },
+        opened: { id: 'p2', startDate: '2026-12-01', endDate: '2026-12-27' },
+        count: 1,
+        dateChanged: true,
+      };
+      periodSwitch.process.mockResolvedValue({
+        transactions: [tx('t1')],
+        written: true,
+        periodSwitch: info,
+      });
+
+      const result = await useCase.execute({
+        accountId: 'acc-1',
+        ids: ['t1'],
+        data: { pending: false },
+      });
+
+      expect(repository.updateMany).not.toHaveBeenCalled();
+      expect(result.periodSwitch).toBe(info);
+    });
   });
 });

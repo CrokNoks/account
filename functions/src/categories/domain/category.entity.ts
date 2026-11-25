@@ -14,6 +14,8 @@ export interface CategoryProps {
   color: string;
   type: CategoryType;
   accountId?: string | null;
+  /** Catégorie « déclencheur de période » du compte (au plus une, aucune par défaut). */
+  isPeriodTrigger?: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -25,6 +27,7 @@ export class Category {
   public readonly color: string;
   public readonly type: CategoryType;
   public readonly accountId?: string | null;
+  public readonly isPeriodTrigger: boolean;
   public readonly createdAt: Date;
   public readonly updatedAt: Date;
 
@@ -35,6 +38,7 @@ export class Category {
     this.color = props.color;
     this.type = props.type;
     this.accountId = props.accountId;
+    this.isPeriodTrigger = props.isPeriodTrigger ?? false;
     this.createdAt = props.createdAt;
     this.updatedAt = props.updatedAt;
     this.validate();

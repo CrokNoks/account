@@ -11,6 +11,8 @@ interface CategoryRow {
   color: string;
   type: string;
   account_id: string;
+  /** Absente tant que la migration 20261125100000 n'est pas appliquée. */
+  is_period_trigger?: boolean;
   user_id: string;
   created_at: string;
   updated_at: string;
@@ -63,6 +65,17 @@ export class SupabaseCategoryRepository implements CategoryRepository {
     if (error) throw toDomainError(error);
   }
 
+  async setPeriodTrigger(id: string, value: boolean): Promise<void> {
+    // Fonction SQL set_period_trigger_category : retire l'ancienne marque et pose
+    // la nouvelle dans une seule transaction (index unique par compte).
+    const { error } = await this.supabase.rpc('set_period_trigger_category', {
+      p_category_id: id,
+      p_value: value,
+    });
+
+    if (error) throw toDomainError(error, { notFound: 'Category not found' });
+  }
+
   async delete(id: string): Promise<void> {
     const { error } = await this.supabase
       .from('categories')
@@ -80,6 +93,7 @@ export class SupabaseCategoryRepository implements CategoryRepository {
       color: row.color,
       type: row.type as CategoryType,
       accountId: row.account_id,
+      isPeriodTrigger: row.is_period_trigger ?? false,
       createdAt: new Date(row.created_at),
       updatedAt: new Date(row.updated_at),
     });

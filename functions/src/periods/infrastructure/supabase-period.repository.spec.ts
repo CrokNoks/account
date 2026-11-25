@@ -1,5 +1,9 @@
 import { SupabaseClient } from '@supabase/supabase-js';
-import { ConflictError } from '../../shared/domain/errors';
+import {
+  ConflictError,
+  ForbiddenError,
+  NotFoundError,
+} from '../../shared/domain/errors';
 import { BudgetInstance } from '../../budgets/domain/budget-instance.entity';
 import { Transaction } from '../../transactions/domain/transaction.entity';
 import { Period } from '../domain/period.entity';
@@ -22,6 +26,17 @@ const transaction = Transaction.create({
   description: 'Loyer',
   amount: BigInt(-50000),
   periodId: period.id,
+  reconciled: false,
+  pending: true,
+  metadata: { source: 'recurring' },
+});
+
+const generatedTransaction = Transaction.create({
+  accountId: 'acc-1',
+  categoryId: 'cat-1',
+  date: new Date('2026-12-05'),
+  description: 'Loyer généré',
+  amount: BigInt(-50000),
   reconciled: false,
   pending: true,
   metadata: { source: 'recurring' },
@@ -203,5 +218,127 @@ describe('SupabasePeriodRepository.findById', () => {
 
     expect(found?.endDate).toBeNull();
     expect(found?.estimatedEndDate).toEqual(new Date('2026-11-30'));
+  });
+});
+
+describe('SupabasePeriodRepository.applyPeriodSwitches', () => {
+  const opened = Period.create({
+    id: 'p-new',
+    accountId: 'acc-1',
+    startDate: new Date('2026-11-28'),
+    endDate: new Date('2026-12-27'),
+  });
+  const sw = {
+    closedId: 'p-old',
+    closeEnd: new Date('2026-11-27'),
+    opened,
+    budgets: [budget],
+  };
+  const repoReturning = (
+    data: unknown,
+    error: { code?: string; message: string } | null = null,
+  ) => {
+    const rpc = jest.fn().mockResolvedValue({ data, error });
+    const repository = new SupabasePeriodRepository({
+      rpc,
+    } as unknown as SupabaseClient);
+    return { repository, rpc };
+  };
+
+  it('calls apply_period_switches once with the account, the expected active period, the switches and the transactions', async () => {
+    const { repository, rpc } = repoReturning({ switched: true, removed: 1 });
+
+    const result = await repository.applyPeriodSwitches(
+      'acc-1',
+      'p-old',
+      [sw],
+      [transaction],
+      [generatedTransaction],
+      ['pending-1'],
+      true,
+    );
+
+    expect(result).toEqual({ switched: true, removed: 1 });
+    expect(rpc).toHaveBeenCalledTimes(1);
+    expect(rpc).toHaveBeenCalledWith('apply_period_switches', {
+      p_account_id: 'acc-1',
+      p_expected_active_id: 'p-old',
+      p_switches: [
+        {
+          closed_id: 'p-old',
+          close_end: '2026-11-27',
+          opened: expect.objectContaining({
+            id: 'p-new',
+            account_id: 'acc-1',
+            start_date: '2026-11-28',
+            end_date: '2026-12-27',
+          }) as unknown,
+          budgets: [expect.objectContaining({ category_id: 'cat-1' })],
+        },
+      ],
+      p_transactions: [expect.objectContaining({ id: transaction.id })],
+      p_generated: [expect.objectContaining({ id: generatedTransaction.id })],
+      p_remove_pending_ids: ['pending-1'],
+      p_update: true,
+    });
+  });
+
+  it('defaults to create mode (p_update false)', async () => {
+    const { repository, rpc } = repoReturning({ switched: true });
+
+    await repository.applyPeriodSwitches(
+      'acc-1',
+      'p-old',
+      [sw],
+      [transaction],
+      [],
+    );
+
+    expect(rpc).toHaveBeenCalledWith(
+      'apply_period_switches',
+      expect.objectContaining({ p_update: false }),
+    );
+  });
+
+  it('reports a lost concurrent switch as switched false', async () => {
+    const { repository } = repoReturning({
+      switched: false,
+      reason: 'concurrent',
+    });
+
+    await expect(
+      repository.applyPeriodSwitches('acc-1', 'p-old', [sw], [transaction], []),
+    ).resolves.toEqual({ switched: false, removed: 0 });
+  });
+
+  it('maps an overlap (23P01) and a read-only member (42501) to domain errors', async () => {
+    const overlap = repoReturning(null, { code: '23P01', message: 'x' });
+    await expect(
+      overlap.repository.applyPeriodSwitches('acc-1', 'p-old', [sw], [], []),
+    ).rejects.toBeInstanceOf(ConflictError);
+
+    const readOnly = repoReturning(null, { code: '42501', message: 'x' });
+    await expect(
+      readOnly.repository.applyPeriodSwitches('acc-1', 'p-old', [sw], [], []),
+    ).rejects.toBeInstanceOf(ForbiddenError);
+  });
+
+  it('maps a transaction that disappeared in update mode (P0002) to the same 404 as update_transactions', async () => {
+    const gone = repoReturning(null, { code: 'P0002', message: 'x' });
+
+    await expect(
+      gone.repository.applyPeriodSwitches(
+        'acc-1',
+        'p-old',
+        [sw],
+        [],
+        [],
+        [],
+        true,
+      ),
+    ).rejects.toMatchObject({
+      constructor: NotFoundError,
+      message: 'Transaction not found',
+    });
   });
 });

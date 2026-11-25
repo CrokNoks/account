@@ -24,6 +24,7 @@ import {
   IsString,
   IsOptional,
   IsEnum,
+  IsBoolean,
   IsHexColor,
   MaxLength,
 } from 'class-validator';
@@ -78,6 +79,14 @@ export class UpdateCategoryDto {
   @IsEnum(CategoryType)
   @ApiProperty({ enum: CategoryType, required: false })
   type?: CategoryType;
+  @IsOptionalNotNull()
+  @IsBoolean()
+  @ApiProperty({
+    required: false,
+    description:
+      'Catégorie « déclencheur de période » : une seule par compte, en marquer une autre retire la première',
+  })
+  isPeriodTrigger?: boolean;
 }
 
 export class CategoryResponseDto {
@@ -87,6 +96,7 @@ export class CategoryResponseDto {
   @ApiProperty() color: string;
   @ApiProperty({ enum: CategoryType }) type: CategoryType;
   @ApiProperty({ required: false, nullable: true }) accountId: string | null;
+  @ApiProperty() isPeriodTrigger: boolean;
   @ApiProperty() createdAt: string;
   @ApiProperty() updatedAt: string;
 }
@@ -128,6 +138,16 @@ export class CategoriesController {
       'Category',
     );
 
+    // Le réglage d'abord (le plus susceptible d'être refusé), seul, atomique
+    // côté base : retire la marque de l'ancienne catégorie du compte.
+    // Appelé seulement si la valeur change : renommer ne dépend pas de la migration.
+    if (
+      dto.isPeriodTrigger !== undefined &&
+      dto.isPeriodTrigger !== existing.isPeriodTrigger
+    ) {
+      await this.categoryRepository.setPeriodTrigger(id, dto.isPeriodTrigger);
+    }
+
     const updated = new Category({
       id: existing.id,
       name: dto.name ?? existing.name,
@@ -137,6 +157,7 @@ export class CategoriesController {
       color: dto.color ?? existing.color,
       type: dto.type ?? existing.type,
       accountId: existing.accountId,
+      isPeriodTrigger: dto.isPeriodTrigger ?? existing.isPeriodTrigger,
       createdAt: existing.createdAt,
       updatedAt: new Date(),
     });
@@ -168,6 +189,7 @@ export class CategoriesController {
       color: c.color,
       type: c.type,
       accountId: c.accountId || null,
+      isPeriodTrigger: c.isPeriodTrigger,
       createdAt: c.createdAt.toISOString(),
       updatedAt: c.updatedAt.toISOString(),
     };

@@ -1,0 +1,862 @@
+@api = http://localhost:{{port}}
+@supabase = http://127.0.0.1:54321/auth/v1
+
+# Déclencheur de période (spec declencheur-periode). Local stack only (Supabase local 127.0.0.1:54321), jamais le projet lié.
+# Lancement : npx httpyac send --all functions/http/declencheur-periode.http --var port=<port du back local> --var anon=<clé publishable de `supabase status`>
+# (la clé vient de la ligne de commande, jamais du fichier). Utilisateurs, comptes et catégories sont jetables, créés par le fichier ;
+# rien n'est supprimé à la fin. Les dates sont relatives à « aujourd'hui » (fuseau Europe/Paris, comme le back).
+# Non couvert ici (deux appels simultanés) : supabase/tests/period_trigger_test.sql + deux sessions psql (voir le résumé du cycle).
+
+{{
+  const paris = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Paris', year: 'numeric', month: '2-digit', day: '2-digit' });
+  const base = new Date(paris.format(new Date()) + 'T00:00:00Z');
+  exports.day = (offset) => new Date(base.getTime() + offset * 86400000).toISOString().slice(0, 10);
+  exports.today = exports.day(0);
+  exports.dm60 = exports.day(-60);
+  exports.dm10 = exports.day(-10);
+  exports.dm11 = exports.day(-11);
+  exports.dm9 = exports.day(-9);
+  exports.dm1 = exports.day(-1);
+  exports.dp1 = exports.day(1);
+  exports.dp5 = exports.day(5);
+  exports.dp12 = exports.day(12);
+  exports.dp19 = exports.day(19);
+  exports.dp20 = exports.day(20);
+  exports.dp30 = exports.day(30);
+  exports.dayOfPay = Number(exports.day(20).slice(8, 10));
+  exports.dm80 = exports.day(-80);
+  exports.dm79 = exports.day(-79);
+  exports.dm50 = exports.day(-50);
+  exports.dm49 = exports.day(-49);
+  exports.dm20 = exports.day(-20);
+  exports.dm19 = exports.day(-19);
+  exports.dm120 = exports.day(-120);
+  exports.dm45 = exports.day(-45);
+  exports.dm30 = exports.day(-30);
+  exports.dm28 = exports.day(-28);
+  exports.dm5 = exports.day(-5);
+  exports.dm3 = exports.day(-3);
+}}
+
+### Alice (propriétaire jetable)
+# @name alice
+POST {{supabase}}/signup
+apikey: {{anon}}
+Content-Type: application/json
+
+{ "email": "dp-alice-{{$timestamp}}@example.com", "password": "Password123!" }
+
+?? status == 200
+
+### Bob (autre utilisateur connecté, non membre puis lecture seule)
+# @name bob
+POST {{supabase}}/signup
+apikey: {{anon}}
+Content-Type: application/json
+
+{ "email": "dp-bob-{{$timestamp}}@example.com", "password": "Password123!" }
+
+?? status == 200
+
+# ======================================================================
+# Compte 1 : réglage (CA1) et bascule à la création (CA2)
+# ======================================================================
+
+### Compte 1
+# @name acc1
+POST {{api}}/accounts
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "name": "dp1-{{$timestamp}}", "initialBalance": "0" }
+
+?? status == 201
+
+### Catégorie Salaire (revenu)
+# @name sal1
+POST {{api}}/{{acc1.id}}/categories
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "name": "Salaire", "color": "#22aa55", "type": "income" }
+
+?? status == 201
+
+### Catégorie Courses (dépense)
+# @name bills1
+POST {{api}}/{{acc1.id}}/categories
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "name": "Courses", "color": "#aa2255", "type": "expense" }
+
+?? status == 201
+
+### Période active commencée il y a 60 jours
+# @name per1
+POST {{api}}/{{acc1.id}}/periods
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "startDate": "{{dm60}}", "endDate": "{{dp30}}", "budgets": [] }
+
+?? status == 201
+
+### CA1 : rien n'est marqué par défaut
+GET {{api}}/{{acc1.id}}/categories
+Authorization: Bearer {{alice.access_token}}
+
+?? status == 200
+?? js response.parsedBody.every(c => c.isPeriodTrigger === false) == true
+
+### Sans marque, une paie ne bascule rien (réglage vide = fonctionnalité éteinte)
+# @name noTrigger
+POST {{api}}/{{acc1.id}}/transactions
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "categoryId": "{{sal1.id}}", "date": "{{dm10}}", "description": "Paie sans marque", "amount": "200000" }
+
+?? status == 201
+?? js JSON.stringify(response.parsedBody).includes('periodSwitch') == false
+
+### CA1 : Alice marque Salaire
+PATCH {{api}}/{{acc1.id}}/categories/{{sal1.id}}
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "isPeriodTrigger": true }
+
+?? status == 200
+?? js response.parsedBody.isPeriodTrigger == true
+
+### CA1 : marquer Courses retire la marque de Salaire (une seule par compte)
+PATCH {{api}}/{{acc1.id}}/categories/{{bills1.id}}
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "isPeriodTrigger": true }
+
+?? status == 200
+
+### CA1 : une seule marque
+GET {{api}}/{{acc1.id}}/categories
+Authorization: Bearer {{alice.access_token}}
+
+?? status == 200
+?? js response.parsedBody.filter(c => c.isPeriodTrigger).length == 1
+?? js response.parsedBody.find(c => c.name == 'Salaire').isPeriodTrigger == false
+
+### CA1 : retour sur Salaire
+PATCH {{api}}/{{acc1.id}}/categories/{{sal1.id}}
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "isPeriodTrigger": true }
+
+?? status == 200
+?? js response.parsedBody.isPeriodTrigger == true
+
+### CA1 : renommer sans toucher au réglage garde la marque (le back n'appelle pas la fonction du réglage)
+PATCH {{api}}/{{acc1.id}}/categories/{{sal1.id}}
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "name": "Salaire renomme" }
+
+?? status == 200
+?? js response.parsedBody.isPeriodTrigger == true
+?? body contains "name":"Salaire renomme"
+
+### CA1 : Bob (autre utilisateur connecté) ne voit pas la catégorie : 404
+PATCH {{api}}/{{acc1.id}}/categories/{{sal1.id}}
+Authorization: Bearer {{bob.access_token}}
+Content-Type: application/json
+
+{ "isPeriodTrigger": false }
+
+?? status == 404
+
+### CA1 : anonyme refusé
+PATCH {{api}}/{{acc1.id}}/categories/{{sal1.id}}
+Content-Type: application/json
+
+{ "isPeriodTrigger": false }
+
+?? status == 401
+
+### CA1 : valeur invalide refusée
+PATCH {{api}}/{{acc1.id}}/categories/{{sal1.id}}
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "isPeriodTrigger": null }
+
+?? status == 400
+
+### CA4 : paie en pending (même ancienne) : aucune bascule
+# @name pendingPay
+POST {{api}}/{{acc1.id}}/transactions
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "categoryId": "{{sal1.id}}", "date": "{{dm10}}", "description": "Paie pending", "amount": "200000", "pending": true }
+
+?? status == 201
+?? js JSON.stringify(response.parsedBody).includes('periodSwitch') == false
+
+### CA4 : paie datée de demain : aucune bascule
+POST {{api}}/{{acc1.id}}/transactions
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "categoryId": "{{sal1.id}}", "date": "{{dp1}}", "description": "Paie demain", "amount": "200000" }
+
+?? status == 201
+?? js JSON.stringify(response.parsedBody).includes('periodSwitch') == false
+
+### CA4 : transaction d'une autre catégorie : aucune bascule
+POST {{api}}/{{acc1.id}}/transactions
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "categoryId": "{{bills1.id}}", "date": "{{dm10}}", "description": "Courses", "amount": "-4500" }
+
+?? status == 201
+?? js JSON.stringify(response.parsedBody).includes('periodSwitch') == false
+
+### Dépense déjà saisie, datée après la future date de bascule (sera rattachée à la nouvelle période)
+# @name early
+POST {{api}}/{{acc1.id}}/transactions
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "categoryId": "{{bills1.id}}", "date": "{{dm9}}", "description": "Saisie avant la bascule", "amount": "-1000" }
+
+?? status == 201
+
+### CA2 : paie datée d'il y a 10 jours : l'active est close à la veille, la nouvelle commence ce jour-là
+# @name switch1
+POST {{api}}/{{acc1.id}}/transactions
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "categoryId": "{{sal1.id}}", "date": "{{dm10}}", "description": "Paie bascule", "amount": "200000" }
+
+?? status == 201
+?? js response.parsedBody.periodSwitch.closed.id == {{per1.id}}
+?? js response.parsedBody.periodSwitch.closed.endDate == {{dm11}}
+?? js response.parsedBody.periodSwitch.opened.startDate == {{dm10}}
+?? js response.parsedBody.periodSwitch.count == 1
+?? js response.parsedBody.periodId == {{switch1.periodSwitch.opened.id}}
+
+### CA2 : une seule période active, la nouvelle ; l'ancienne est close la veille
+GET {{api}}/{{acc1.id}}/periods
+Authorization: Bearer {{alice.access_token}}
+
+?? status == 200
+?? js response.parsedBody.filter(p => p.isActive).length == 1
+
+### CA2 : la nouvelle période est l'active et commence à la date de la paie
+GET {{api}}/{{acc1.id}}/periods/{{switch1.periodSwitch.opened.id}}
+Authorization: Bearer {{alice.access_token}}
+
+?? status == 200
+?? js response.parsedBody.isActive == true
+?? js response.parsedBody.startDate.slice(0, 10) == {{dm10}}
+
+### CA2 : l'ancienne période est close la veille et inactive
+GET {{api}}/{{acc1.id}}/periods/{{per1.id}}
+Authorization: Bearer {{alice.access_token}}
+
+?? status == 200
+?? js response.parsedBody.isActive == false
+?? js response.parsedBody.endDate.slice(0, 10) == {{dm11}}
+
+### CA2 : la dépense saisie après le début de la nouvelle période lui est rattachée, comptée une fois
+GET {{api}}/{{acc1.id}}/transactions?search=Saisie avant la bascule
+Authorization: Bearer {{alice.access_token}}
+
+?? status == 200
+?? js response.parsedBody.data.length == 1
+?? js response.parsedBody.data[0].periodId == {{switch1.periodSwitch.opened.id}}
+
+### CA4 : une nouvelle paie à moins de 15 jours du début de la période ouverte : enregistrée sans bascule
+POST {{api}}/{{acc1.id}}/transactions
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "categoryId": "{{sal1.id}}", "date": "{{dm9}}", "description": "Paie trop proche", "amount": "1000" }
+
+?? status == 201
+?? js JSON.stringify(response.parsedBody).includes('periodSwitch') == false
+
+### CA5 : un utilisateur non membre ne déclenche rien (404 du compte), anonyme refusé
+POST {{api}}/{{acc1.id}}/transactions
+Authorization: Bearer {{bob.access_token}}
+Content-Type: application/json
+
+{ "categoryId": "{{sal1.id}}", "date": "{{dm1}}", "description": "Paie Bob", "amount": "200000" }
+
+?? status >= 400
+?? status < 500
+
+###
+POST {{api}}/{{acc1.id}}/transactions
+Content-Type: application/json
+
+{ "categoryId": "{{sal1.id}}", "date": "{{dm1}}", "description": "Paie anonyme", "amount": "200000" }
+
+?? status == 401
+
+# ======================================================================
+# Compte 2 : période commencée il y a 9 jours, seuil de 15 jours (CA4)
+# ======================================================================
+
+### Compte 2
+# @name acc2
+POST {{api}}/accounts
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "name": "dp2-{{$timestamp}}", "initialBalance": "0" }
+
+?? status == 201
+
+### Catégorie Salaire du compte 2
+# @name sal2
+POST {{api}}/{{acc2.id}}/categories
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "name": "Salaire", "color": "#22aa55", "type": "income" }
+
+?? status == 201
+
+### Marque
+PATCH {{api}}/{{acc2.id}}/categories/{{sal2.id}}
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "isPeriodTrigger": true }
+
+?? status == 200
+
+### Période commencée il y a 9 jours
+# @name per2
+POST {{api}}/{{acc2.id}}/periods
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "startDate": "{{dm9}}", "endDate": "{{dp20}}", "budgets": [] }
+
+?? status == 201
+
+### CA4 : paie d'hier, écart de 8 jours : enregistrée sans bascule, période inchangée
+POST {{api}}/{{acc2.id}}/transactions
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "categoryId": "{{sal2.id}}", "date": "{{dm1}}", "description": "Paie sous le seuil", "amount": "200000" }
+
+?? status == 201
+?? js JSON.stringify(response.parsedBody).includes('periodSwitch') == false
+?? js response.parsedBody.periodId == {{per2.id}}
+
+### CA4 : la période est toujours la seule active, inchangée
+GET {{api}}/{{acc2.id}}/periods
+Authorization: Bearer {{alice.access_token}}
+
+?? status == 200
+?? js response.parsedBody.length == 1
+?? js response.parsedBody[0].isActive == true
+
+# ======================================================================
+# Compte 3 : sortie du pending, règle A (prochaine paie), CA3 et CA8
+# ======================================================================
+
+### Compte 3
+# @name acc3
+POST {{api}}/accounts
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "name": "dp3-{{$timestamp}}", "initialBalance": "0" }
+
+?? status == 201
+
+### Catégories Salaire et Facture
+# @name sal3
+POST {{api}}/{{acc3.id}}/categories
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "name": "Salaire", "color": "#22aa55", "type": "income" }
+
+?? status == 201
+
+###
+# @name bill3
+POST {{api}}/{{acc3.id}}/categories
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "name": "Facture", "color": "#aa2255", "type": "expense" }
+
+?? status == 201
+
+### Marque Salaire
+PATCH {{api}}/{{acc3.id}}/categories/{{sal3.id}}
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "isPeriodTrigger": true }
+
+?? status == 200
+
+### Période active commencée il y a 60 jours
+# @name per3
+POST {{api}}/{{acc3.id}}/periods
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "startDate": "{{dm60}}", "endDate": "{{dp30}}", "budgets": [] }
+
+?? status == 201
+
+### Paie récurrente, jour du mois de (aujourd'hui + 20) : la prochaine occurrence à au moins 15 jours est dans 20 jours
+# (jour 29 à 31 : choisir un autre jour de lancement, le mois court ramène le jour)
+# @name rec3
+POST {{api}}/{{acc3.id}}/recurring
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "categoryId": "{{sal3.id}}", "description": "Salaire Exemple", "amount": "250000", "dayOfMonth": {{dayOfPay}} }
+
+?? status == 201
+
+### Paie prévue dans 12 jours (pending)
+# @name pay3
+POST {{api}}/{{acc3.id}}/transactions
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "categoryId": "{{sal3.id}}", "date": "{{dp12}}", "description": "Salaire Exemple", "amount": "250000", "pending": true, "metadata": { "source": "recurring", "recurringId": "{{rec3.id}}" } }
+
+?? status == 201
+?? js JSON.stringify(response.parsedBody).includes('periodSwitch') == false
+
+### Facture prévue dans 5 jours (pending, autre catégorie)
+# @name facture3
+POST {{api}}/{{acc3.id}}/transactions
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "categoryId": "{{bill3.id}}", "date": "{{dp5}}", "description": "Facture EDF", "amount": "-8000", "pending": true }
+
+?? status == 201
+
+### CA3 : sortir la facture du pending garde sa date et ne bascule rien
+PATCH {{api}}/{{acc3.id}}/transactions/{{facture3.id}}
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "pending": false }
+
+?? status == 200
+?? js response.parsedBody.date.slice(0, 10) == {{dp5}}
+?? js JSON.stringify(response.parsedBody).includes('periodSwitch') == false
+
+### CA3 : Bob (non membre) ne peut pas sortir la paie du pending
+PATCH {{api}}/{{acc3.id}}/transactions/{{pay3.id}}
+Authorization: Bearer {{bob.access_token}}
+Content-Type: application/json
+
+{ "pending": false }
+
+?? status == 404
+
+### CA3 : Alice pointe la paie prévue dans 12 jours (la date envoyée est ignorée) : date du jour, bascule
+# @name sortie3
+PATCH {{api}}/{{acc3.id}}/transactions/{{pay3.id}}
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "reconciled": true, "date": "{{dm50}}" }
+
+?? status == 200
+?? js response.parsedBody.date.slice(0, 10) == {{today}}
+?? js response.parsedBody.pending == false
+?? js response.parsedBody.periodSwitch.dateChanged == true
+?? js response.parsedBody.periodSwitch.closed.endDate == {{dm1}}
+?? js response.parsedBody.periodSwitch.opened.startDate == {{today}}
+# règle A : la nouvelle période finit la veille de la prochaine paie
+?? js response.parsedBody.periodSwitch.opened.endDate == {{dp19}}
+
+### CA2/CA5 : une seule période active, la nouvelle
+GET {{api}}/{{acc3.id}}/periods
+Authorization: Bearer {{alice.access_token}}
+
+?? status == 200
+?? js response.parsedBody.filter(p => p.isActive).length == 1
+?? js response.parsedBody.length == 2
+
+### CA8 : la prochaine paie existe une seule fois en pending, au lendemain de la fin (hors période)
+GET {{api}}/{{acc3.id}}/transactions?categoryId={{sal3.id}}&pending=true
+Authorization: Bearer {{alice.access_token}}
+
+?? status == 200
+?? js response.parsedBody.data.length == 1
+?? js response.parsedBody.data[0].date.slice(0, 10) == {{dp20}}
+?? js response.parsedBody.data[0].metadata.recurringId == {{rec3.id}}
+
+# ======================================================================
+# Compte 4 : import de trois paies passées (CA2, import) et lot (CA3)
+# ======================================================================
+
+### Compte 4
+# @name acc4
+POST {{api}}/accounts
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "name": "dp4-{{$timestamp}}", "initialBalance": "0" }
+
+?? status == 201
+
+###
+# @name sal4
+POST {{api}}/{{acc4.id}}/categories
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "name": "Salaire", "color": "#22aa55", "type": "income" }
+
+?? status == 201
+
+###
+PATCH {{api}}/{{acc4.id}}/categories/{{sal4.id}}
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "isPeriodTrigger": true }
+
+?? status == 200
+
+###
+# @name per4
+POST {{api}}/{{acc4.id}}/periods
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "startDate": "{{dm120}}", "endDate": "{{dp30}}", "budgets": [] }
+
+?? status == 201
+
+### Import de trois paies passées (désordonnées) : trois bascules dans l'ordre des dates, chaque ligne dans sa période
+# @name import4
+POST {{api}}/{{acc4.id}}/transactions/bulk
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "transactions": [
+  { "categoryId": "{{sal4.id}}", "date": "{{dm20}}", "description": "Paie 3", "amount": "200000" },
+  { "categoryId": "{{sal4.id}}", "date": "{{dm80}}", "description": "Paie 1", "amount": "200000" },
+  { "categoryId": "{{sal4.id}}", "date": "{{dm50}}", "description": "Paie 2", "amount": "200000" }
+] }
+
+?? status == 201
+?? js response.parsedBody.length == 3
+?? js response.parsedBody[0].periodSwitch.count == 3
+
+### Trois périodes ouvertes en plus de l'ancienne, une seule active
+GET {{api}}/{{acc4.id}}/periods
+Authorization: Bearer {{alice.access_token}}
+
+?? status == 200
+?? js response.parsedBody.length == 4
+?? js response.parsedBody.filter(p => p.isActive).length == 1
+
+### Chaque paie est dans la période qui contient sa date (trois périodes différentes)
+GET {{api}}/{{acc4.id}}/transactions?categoryId={{sal4.id}}
+Authorization: Bearer {{alice.access_token}}
+
+?? status == 200
+?? js new Set(response.parsedBody.data.map(t => t.periodId)).size == 3
+
+# ======================================================================
+# Compte 5 : lecture seule (CA5)
+# ======================================================================
+
+### Compte 5
+# @name acc5
+POST {{api}}/accounts
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "name": "dp5-{{$timestamp}}", "initialBalance": "0" }
+
+?? status == 201
+
+###
+# @name sal5
+POST {{api}}/{{acc5.id}}/categories
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "name": "Salaire", "color": "#22aa55", "type": "income" }
+
+?? status == 201
+
+###
+PATCH {{api}}/{{acc5.id}}/categories/{{sal5.id}}
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "isPeriodTrigger": true }
+
+?? status == 200
+
+###
+# @name per5
+POST {{api}}/{{acc5.id}}/periods
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "startDate": "{{dm60}}", "endDate": "{{dp30}}", "budgets": [] }
+
+?? status == 201
+
+### Alice partage le compte à Bob en lecture seule
+POST {{api}}/accounts/{{acc5.id}}/shares
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "email": "{{bob.user.email}}", "permission": "read" }
+
+?? status == 201
+
+### Bob (lecture seule) saisit une paie : refusé 403, rien n'est modifié
+POST {{api}}/{{acc5.id}}/transactions
+Authorization: Bearer {{bob.access_token}}
+Content-Type: application/json
+
+{ "categoryId": "{{sal5.id}}", "date": "{{dm10}}", "description": "Paie lecture seule", "amount": "200000" }
+
+?? status == 403
+
+### Bob (lecture seule) ne peut pas marquer la catégorie : 403
+PATCH {{api}}/{{acc5.id}}/categories/{{sal5.id}}
+Authorization: Bearer {{bob.access_token}}
+Content-Type: application/json
+
+{ "isPeriodTrigger": false }
+
+?? status == 403
+
+### La période est inchangée, aucune paie enregistrée
+GET {{api}}/{{acc5.id}}/periods
+Authorization: Bearer {{alice.access_token}}
+
+?? status == 200
+?? js response.parsedBody.length == 1
+?? js response.parsedBody[0].isActive == true
+
+# ======================================================================
+# Compte 6 : nettoyage des pending récurrentes à l'import (équivalent déjà importé)
+# ======================================================================
+
+### Compte 6
+# @name acc6
+POST {{api}}/accounts
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "name": "dp6-{{$timestamp}}", "initialBalance": "0" }
+
+?? status == 201
+
+###
+# @name sal6
+POST {{api}}/{{acc6.id}}/categories
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "name": "Salaire", "color": "#22aa55", "type": "income" }
+
+?? status == 201
+
+###
+# @name bill6
+POST {{api}}/{{acc6.id}}/categories
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "name": "Courses", "color": "#aa2255", "type": "expense" }
+
+?? status == 201
+
+###
+# @name fun6
+POST {{api}}/{{acc6.id}}/categories
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "name": "Loisirs", "color": "#2255aa", "type": "expense" }
+
+?? status == 201
+
+###
+PATCH {{api}}/{{acc6.id}}/categories/{{sal6.id}}
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "isPeriodTrigger": true }
+
+?? status == 200
+
+###
+# @name per6
+POST {{api}}/{{acc6.id}}/periods
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "startDate": "{{dm60}}", "endDate": "{{dp30}}", "budgets": [] }
+
+?? status == 201
+
+### Récurrente Courses
+# @name recBill6
+POST {{api}}/{{acc6.id}}/recurring
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "categoryId": "{{bill6.id}}", "description": "Courses mensuelles", "amount": "-8000", "dayOfMonth": 15 }
+
+?? status == 201
+
+### Récurrente Loisirs
+# @name recFun6
+POST {{api}}/{{acc6.id}}/recurring
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "categoryId": "{{fun6.id}}", "description": "Cinéma", "amount": "-2000", "dayOfMonth": 16 }
+
+?? status == 201
+
+### Pending Courses datée d'il y a 30 jours (équivalent importé plus bas, à 2 jours)
+# @name pendBill6
+POST {{api}}/{{acc6.id}}/transactions
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "categoryId": "{{bill6.id}}", "date": "{{dm30}}", "description": "Courses mensuelles", "amount": "-8000", "pending": true, "metadata": { "source": "recurring", "recurringId": "{{recBill6.id}}" } }
+
+?? status == 201
+
+### Pending Loisirs d'il y a 45 jours, sans équivalent dans l'import
+# @name pendFun6
+POST {{api}}/{{acc6.id}}/transactions
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "categoryId": "{{fun6.id}}", "date": "{{dm45}}", "description": "Cinéma", "amount": "-2000", "pending": true, "metadata": { "source": "recurring", "recurringId": "{{recFun6.id}}" } }
+
+?? status == 201
+
+### Pending Courses sans recurringId (saisie à la main), équivalent importé : conservée
+# @name pendManual6
+POST {{api}}/{{acc6.id}}/transactions
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "categoryId": "{{bill6.id}}", "date": "{{dm28}}", "description": "Courses manuelles", "amount": "-8000", "pending": true }
+
+?? status == 201
+
+### Saisie simple d'une ligne Courses non pending (même équivalence) : rien n'est supprimé
+POST {{api}}/{{acc6.id}}/transactions
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "categoryId": "{{bill6.id}}", "date": "{{dm30}}", "description": "Courses saisies", "amount": "-8000" }
+
+?? status == 201
+
+###
+GET {{api}}/{{acc6.id}}/transactions?pending=true
+Authorization: Bearer {{alice.access_token}}
+
+?? status == 200
+?? js response.parsedBody.data.length == 3
+
+### Import : la paie d'il y a 10 jours déclenche la bascule, la ligne Courses (dm28) a pour équivalent la pending du dm30
+# @name import6
+POST {{api}}/{{acc6.id}}/transactions/bulk
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "transactions": [
+  { "categoryId": "{{sal6.id}}", "date": "{{dm10}}", "description": "Paie import", "amount": "200000" },
+  { "categoryId": "{{bill6.id}}", "date": "{{dm28}}", "description": "Courses importées", "amount": "-8200" }
+] }
+
+?? status == 201
+?? js response.parsedBody.length == 2
+?? js response.parsedBody.find(t => t.periodSwitch).periodSwitch.removedPending == 1
+# la pending Loisirs (sans équivalent) reste dans la période close
+?? js response.parsedBody.find(t => t.periodSwitch).periodSwitch.remainingPending == 1
+
+### La pending récurrente équivalente a disparu ; Loisirs (sans équivalent) et la pending sans recurringId restent
+GET {{api}}/{{acc6.id}}/transactions?pending=true
+Authorization: Bearer {{alice.access_token}}
+
+?? status == 200
+?? js response.parsedBody.data.some(t => t.description == 'Courses mensuelles' && t.date.slice(0, 10) == dm30) == false
+?? js response.parsedBody.data.some(t => t.description == 'Cinéma' && t.date.slice(0, 10) == dm45) == true
+?? js response.parsedBody.data.some(t => t.description == 'Courses manuelles') == true
+
+### Import sans bascule (paie à moins de 15 jours du début de la nouvelle période) : rien n'est supprimé, pas de bascule
+# @name pendLate6
+POST {{api}}/{{acc6.id}}/transactions
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "categoryId": "{{bill6.id}}", "date": "{{dm3}}", "description": "Courses mensuelles", "amount": "-8000", "pending": true, "metadata": { "source": "recurring", "recurringId": "{{recBill6.id}}" } }
+
+?? status == 201
+
+###
+# @name importNoSwitch6
+POST {{api}}/{{acc6.id}}/transactions/bulk
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "transactions": [
+  { "categoryId": "{{sal6.id}}", "date": "{{dm5}}", "description": "Paie sous le seuil", "amount": "200000" },
+  { "categoryId": "{{bill6.id}}", "date": "{{dm3}}", "description": "Courses importées 2", "amount": "-8000" }
+] }
+
+?? status == 201
+?? js JSON.stringify(response.parsedBody).includes('periodSwitch') == false
+
+###
+GET {{api}}/{{acc6.id}}/transactions?pending=true
+Authorization: Bearer {{alice.access_token}}
+
+?? status == 200
+?? js response.parsedBody.data.some(t => t.description == 'Courses mensuelles' && t.date.slice(0, 10) == dm3) == true
+
+### Bob (non membre) importe : refusé, rien n'est supprimé
+POST {{api}}/{{acc6.id}}/transactions/bulk
+Authorization: Bearer {{bob.access_token}}
+Content-Type: application/json
+
+{ "transactions": [
+  { "categoryId": "{{bill6.id}}", "date": "{{dm3}}", "description": "Intrus", "amount": "-8000" }
+] }
+
+?? status >= 400
+?? status < 500
+

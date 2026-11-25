@@ -8,6 +8,7 @@ import { AccountsModule } from '../accounts/accounts.module';
 import { PeriodRepositoryModule } from './period-repository.module';
 import { GetPeriodDraftUseCase } from './application/get-period-draft.use-case';
 import { CreatePeriodWithBudgetsUseCase } from './application/create-period-with-budgets.use-case';
+import { ApplyPeriodSwitchService } from './application/apply-period-switch.service';
 import { UpdatePeriodBudgetsUseCase } from './application/update-period-budgets.use-case';
 import { AccountReferencesModule } from '../shared/account-references.module';
 import { PeriodsController } from './infrastructure/periods.controller';
@@ -33,12 +34,14 @@ import { SaveBudgetTemplatesUseCase } from './application/save-budget-templates.
     UpdatePeriodBudgetsUseCase,
     SaveBudgetTemplatesUseCase,
     GetBudgetTemplatesUseCase,
+    ApplyPeriodSwitchService,
   ],
   exports: [
     PeriodRepositoryModule,
     GetPeriodDraftUseCase,
     CreatePeriodWithBudgetsUseCase,
     UpdatePeriodBudgetsUseCase,
+    ApplyPeriodSwitchService,
   ],
 })
 export class PeriodsModule {}

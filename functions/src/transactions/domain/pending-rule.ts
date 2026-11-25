@@ -12,3 +12,8 @@ export function resolvePending(
   if (reconciled === true) return false;
   return pending ?? existingPending;
 }
+
+/** Vrai pour la seule transition `pending` → non `pending` (pointer, décocher, lot). */
+export function isLeavingPending(before: boolean, after: boolean): boolean {
+  return before && !after;
+}

@@ -179,6 +179,8 @@ describe('Cross-account references (e2e)', () => {
 
   beforeEach(() => {
     jest.resetAllMocks();
+    // Réglage de bascule de période vide : aucune catégorie déclencheuse.
+    mocks.categories.findAllByAccount.mockResolvedValue([]);
     for (const m of Object.values(mocks)) {
       for (const fn of [
         'save',
