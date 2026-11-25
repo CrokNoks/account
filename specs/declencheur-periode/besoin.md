@@ -40,3 +40,7 @@ Conséquence repérée par l'orchestrateur (non tranchée) : paie récurrente jo
 
 A : s'il existe une paie récurrente (catégorie déclencheuse), la nouvelle période finit la veille de sa prochaine occurrence (au lieu de début + 1 mois - 1 jour, gardé sinon) ; cette prochaine paie est quand même injectée en `pending`, hors période, hors prévu, visible dans Opérations « toutes les périodes » et par un accès direct depuis Aujourd'hui.
 Le « go » valide aussi les hypothèses présentées : seuil de 15 jours (écart 14 rien, 15 bascule) ; date du jour à la sortie du `pending` pour la seule catégorie déclencheuse (dates prévues passées comprises, aussi sous le seuil, sans bascule) ; date envoyée dans la même modification ignorée ; catégorie finale décisive ; une bascule au plus par lot ; virement de l'app jamais déclencheur ; paie à moins de 15 jours non réinjectée ; paie saisie à la main : la `pending` restante n'est pas touchée ; rattachement des opérations déjà saisies et non-réinjection d'une récurrente déjà présente le même mois (H1) ; import : chaque opération dans la période qui contient sa date.
+
+## Contrôle 2, retour de Lucas (2026-11-25)
+
+« 1 suppression des récurrent en pending lors de l'import si une période est clôturé. Ca évite les doublonset leur rapprochement/nettoyage manuel. Ttu en pense quoi ? » puis, entre « équivalent » et « tout » : « Equivalent ».

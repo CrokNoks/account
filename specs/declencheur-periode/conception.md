@@ -92,3 +92,15 @@ Front entier du commit 3 (contrat : `category.isPeriodTrigger` en lecture et PAT
 - Import de plusieurs paies : seule la dernière bascule du lot crée la prochaine paie en `pending`.
 - Paie datée très en arrière : pas de garde-fou.
 - Ligne d'import hors de toute période : `period_id` NULL, donc période active par le trigger, comme aujourd'hui.
+
+## Nettoyage à l'import (choix « équivalent » de Lucas, contrôle 2, 2026-11-25 ; prime sur ce qui précède)
+Import seulement, et seulement s'il y a bascule. Jamais à la saisie simple ni à la sortie du `pending`.
+1. Périodes intermédiaires d'un import : aucune récurrente injectée. Seule la dernière bascule injecte.
+2. Suppression d'une transaction existante si : `metadata.recurringId`, encore `pending`, datée dans la période active close (de son début à closeEnd de la première bascule) ou, pour la catégorie déclencheuse, jusqu'à 7 jours après la ligne importée ; et une ligne importée non `pending` équivalente : même catégorie non nulle, même signe, écart de date <= 7 jours.
+3. Appariement un pour un : une ligne n'efface qu'une `pending` ; à plusieurs candidates, montant le plus proche, puis date la plus proche, puis id (résultat déterministe). Le montant n'est pas une condition.
+4. Une occurrence que la dernière bascule allait injecter n'est pas créée si une ligne importée non encore appariée en est l'équivalent (mêmes critères). La prochaine paie n'est jamais concernée.
+5. Une `pending` supprimée compte toujours comme « déjà présente » pour (c), jamais pour la prochaine paie (b).
+6. Écriture dans `apply_period_switches` : paramètre séparé d'ids à supprimer, filtré par compte et `pending` encore vrai ; même transaction (échec : rien n'est supprimé ; `concurrent` : rien n'est supprimé).
+7. Réponse `periodSwitch` de l'import : `removedPending` et `remainingPending` (récurrentes encore `pending` datées dans la période close) ; message fr/en. Log `recurring_pending_removed` par id, sans montant ni libellé.
+Conservés : `pending` sans `recurringId`, ou sans équivalent.
+Cas de test : 7 / 8 jours ; signe contraire ; catégorie nulle ; deux récurrentes même catégorie ; une ligne pour deux pendings ; pending sans recurringId ; déjà rapprochée ; paie importée avec sa pending ; facture du 29 importée avec la paie du 28 ; échec et concurrence : rien supprimé ; saisie simple : rien supprimé ; import sans bascule : rien supprimé.
