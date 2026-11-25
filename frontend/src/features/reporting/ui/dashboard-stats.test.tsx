@@ -18,6 +18,8 @@ const stats = vi.hoisted(() => ({
     cardTotal: '0',
     cardCount: 0,
     billsTotal: '0',
+    reportsTotal: '0',
+    arrivedAfterEnd: '0',
     budgetRemaining: '0',
     expectedIncome: '0',
   },

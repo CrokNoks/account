@@ -11,6 +11,11 @@ export interface ReportingStats {
   cardTotal: string;
   cardCount: number;
   billsTotal: string;
+  /** CB non pointées et factures `pending` datées avant le début de la période (signé). */
+  /** Absent d'un back plus ancien : lu comme 0. */
+  reportsTotal?: string;
+  /** -(revenus pointés après la fin d'une période active) : négatif ou nul. */
+  arrivedAfterEnd?: string;
   budgetRemaining: string;
   expectedIncome: string;
 }

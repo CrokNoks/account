@@ -14,6 +14,8 @@ const stats = (over: Partial<ReportingStats> = {}): ReportingStats => ({
   cardTotal: '-5000',
   cardCount: 1,
   billsTotal: '-8000',
+  reportsTotal: '0',
+  arrivedAfterEnd: '0',
   budgetRemaining: '-7000',
   expectedIncome: '0',
   ...over,
@@ -45,13 +47,15 @@ describe('compositionView', () => {
     ['revenus attendus > 0', { expectedIncome: '50000', forecastBalance: '320000' }],
     ['remboursement en CB (CB positive)', { cardTotal: '4000', forecastBalance: '270000' }],
     ['facture positive', { billsTotal: '1000' }],
+    ['reports positifs (facture de revenu avant le début)', { reportsTotal: '20000', forecastBalance: '290000' }],
+    ['arrivé après la fin avec revenus attendus', { arrivedAfterEnd: '-30000', expectedIncome: '30000', forecastBalance: '290000' }],
     ['prévu négatif', { forecastBalance: '-1000' }],
     ['solde en banque négatif', { realBankBalance: '-1000' }],
   ])('lignes signées : %s', (_name, over) => {
     const view = compositionView(stats(over));
     expect(view.mode).toBe('lines');
     if (view.mode === 'lines') {
-      expect(view.rows.map((r) => r.key)).toEqual(['bank', 'card', 'bills', 'budget', 'income', 'forecast']);
+      expect(view.rows.map((r) => r.key).filter((k) => k !== 'reports' && k !== 'arrived')).toEqual(['bank', 'card', 'bills', 'budget', 'income', 'forecast']);
     }
   });
 
@@ -60,6 +64,60 @@ describe('compositionView', () => {
     if (view.mode === 'lines') {
       expect(view.rows.map((r) => r.amount)).toEqual([290000, -5000, -8000, -7000, 50000, 320000].map(BigInt));
     }
+  });
+
+  it('UI2 : reports < 0 et arrivé après la fin < 0 : la barre gagne deux segments, le total reste la banque', () => {
+    // 320000 - 5000 - 8000 - 15000 - 30000 - 7000 = 255000
+    const view = compositionView(stats({ realBankBalance: '320000', reportsTotal: '-15000', arrivedAfterEnd: '-30000', forecastBalance: '255000' }));
+    expect(view.mode).toBe('bar');
+    if (view.mode === 'bar') {
+      expect(view.total).toBe(BigInt(320000));
+      expect(view.segments.map((s) => [s.key, s.amount])).toEqual([
+        ['forecast', BigInt(255000)],
+        ['card', BigInt(5000)],
+        ['bills', BigInt(8000)],
+        ['reports', BigInt(15000)],
+        ['arrived', BigInt(30000)],
+        ['budget', BigInt(7000)],
+      ]);
+      expect(view.segments.reduce((n, s) => n + s.amount, BigInt(0))).toBe(view.total);
+    }
+  });
+
+  it('UI1 : reports et arrivé à 0 : pas de segment en plus', () => {
+    const view = compositionView(stats());
+    if (view.mode === 'bar') expect(view.segments.map((s) => s.key)).toEqual(['forecast', 'card', 'bills', 'budget']);
+  });
+
+  it('UI3 : en lignes, reports et arrivé après la fin sont masqués à 0, signés sinon, dans l\'ordre de la composition', () => {
+    const none = compositionView(stats({ expectedIncome: '50000', forecastBalance: '320000' }));
+    if (none.mode === 'lines') expect(none.rows.map((r) => r.key)).toEqual(['bank', 'card', 'bills', 'budget', 'income', 'forecast']);
+    const both = compositionView(stats({ reportsTotal: '20000', arrivedAfterEnd: '-30000', expectedIncome: '30000', forecastBalance: '305000' }));
+    expect(both.mode).toBe('lines');
+    if (both.mode === 'lines') {
+      expect(both.rows.map((r) => [r.key, r.amount])).toEqual([
+        ['bank', BigInt(290000)],
+        ['card', BigInt(-5000)],
+        ['bills', BigInt(-8000)],
+        ['reports', BigInt(20000)],
+        ['arrived', BigInt(-30000)],
+        ['budget', BigInt(-7000)],
+        ['income', BigInt(30000)],
+        ['forecast', BigInt(305000)],
+      ]);
+    }
+  });
+
+  it('réponse d\'un back plus ancien (sans reportsTotal ni arrivedAfterEnd) : la vue d\'avant, jamais d\'erreur', () => {
+    const old = stats() as Partial<ReportingStats>;
+    delete old.reportsTotal;
+    delete old.arrivedAfterEnd;
+    const bar = compositionView(old as ReportingStats);
+    expect(bar.mode).toBe('bar');
+    if (bar.mode === 'bar') expect(bar.segments.map((s) => s.key)).toEqual(['forecast', 'card', 'bills', 'budget']);
+    const lines = compositionView({ ...old, expectedIncome: '50000', forecastBalance: '320000' } as ReportingStats);
+    expect(lines.mode).toBe('lines');
+    if (lines.mode === 'lines') expect(lines.rows.map((r) => r.key)).toEqual(['bank', 'card', 'bills', 'budget', 'income', 'forecast']);
   });
 
   it('reste exact au-delà de 2^53', () => {

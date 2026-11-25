@@ -12,12 +12,14 @@ const segmentColor: Record<CompositionSegment['key'], string> = {
   forecast: 'bg-primary',
   card: 'bg-amber-500',
   bills: 'bg-sky-500',
+  reports: 'bg-rose-400',
+  arrived: 'bg-emerald-500',
   budget: 'bg-slate-400',
 };
 
 /**
- * Composition du prévu (sans carte propre : elle vit dans le bloc hero de `BalanceBar`) : en banque + CB non pointées + factures à venir − budget restant + revenus
- * attendus = prévu. Barre si tout est une sortie du solde en banque, sinon lignes signées. Les
+ * Composition du prévu (sans carte propre : elle vit dans le bloc hero de `BalanceBar`) : en banque + CB non pointées + factures à venir + reports + arrivé après la fin
+ * + budget restant + revenus attendus = prévu. Barre si tout est une sortie du solde en banque, sinon lignes signées. Les
  * montants viennent de « stats » (le prévu n'est jamais recalculé).
  */
 export function ForecastComposition() {

@@ -76,6 +76,8 @@
     "composition_bank": "En banque",
     "composition_card": "CB non pointées",
     "composition_bills": "Factures à venir",
+    "composition_reports": "Reports",
+    "composition_arrived": "Arrivé après la fin",
     "composition_budget": "Budget restant",
     "composition_income": "Revenus attendus",
     "composition_forecast": "Prévu",
