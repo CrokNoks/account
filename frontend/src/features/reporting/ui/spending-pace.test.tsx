@@ -42,16 +42,22 @@ describe('Rythme de dépense', () => {
     state.planned = '241000';
   });
 
-  it('dit « de plus » quand la période dépense plus qu\'à la même date', () => {
+  it('dit « de plus » quand la période dépense plus que la précédente au même jour', () => {
     state.pace = { points: [point(1, '1500', '1000')], previousPeriodId: 'p0', gap: '500' };
     show();
-    expect(text(screen.getByTestId('pace-gap'))).toBe("5,00€deplusqu'àlamêmedate");
+    expect(text(screen.getByTestId('pace-gap'))).toBe("5,00€dépensésdeplusquelapériodeprécédenteaumêmejour");
   });
 
   it('dit « de moins » avec un écart négatif', () => {
     state.pace = { points: [point(1, '800', '1000')], previousPeriodId: 'p0', gap: '-200' };
     show();
-    expect(text(screen.getByTestId('pace-gap'))).toBe("2,00€demoinsqu'àlamêmedate");
+    expect(text(screen.getByTestId('pace-gap'))).toBe("2,00€dépensésdemoinsquelapériodeprécédenteaumêmejour");
+  });
+
+  it('dit « autant dépensé » avec un écart nul', () => {
+    state.pace = { points: [point(1, '1000', '1000')], previousPeriodId: 'p0', gap: '0' };
+    show();
+    expect(text(screen.getByTestId('pace-gap'))).toBe('Autantdépenséquelapériodeprécédenteaumêmejour');
   });
 
   it('sans période précédente : courbe seule, sans phrase d\'écart', () => {
@@ -72,7 +78,7 @@ describe('Rythme de dépense', () => {
     state.pace = { points: [point(1, '1500', '1000')], previousPeriodId: 'p0', gap: '500' };
     show('en');
     expect(screen.getByText('Spending pace')).toBeTruthy();
-    expect(text(screen.getByTestId('pace-gap'))).toContain('morethanonthesamedate');
+    expect(text(screen.getByTestId('pace-gap'))).toBe('€5.00morespentthanthepreviousperiodbythesameday');
   });
 
   describe('ligne Budget, légende, axe', () => {
@@ -128,11 +134,11 @@ describe('Rythme de dépense', () => {
   it('affiche un écart exact au-delà de 2^53 (plus et moins)', () => {
     state.pace = { points: [point(1, '1500', '1000')], previousPeriodId: 'p0', gap: '9007199254740993' };
     show();
-    expect(text(screen.getByTestId('pace-gap'))).toBe("90071992547409,93€deplusqu'àlamêmedate");
+    expect(text(screen.getByTestId('pace-gap'))).toBe("90071992547409,93€dépensésdeplusquelapériodeprécédenteaumêmejour");
     cleanup();
     state.pace = { points: [point(1, '1500', '1000')], previousPeriodId: 'p0', gap: '-9007199254740993' };
     show();
-    expect(text(screen.getByTestId('pace-gap'))).toBe("90071992547409,93€demoinsqu'àlamêmedate");
+    expect(text(screen.getByTestId('pace-gap'))).toBe("90071992547409,93€dépensésdemoinsquelapériodeprécédenteaumêmejour");
   });
 });
 
