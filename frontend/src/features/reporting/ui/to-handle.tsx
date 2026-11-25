@@ -1,11 +1,15 @@
 'use client';
 
-import { AlertTriangle, CheckCircle2, CreditCard, ListChecks, TrendingUp } from 'lucide-react';
-import { useTranslations } from 'next-intl';
+import { AlertTriangle, CalendarClock, CheckCircle2, CreditCard, ListChecks, TrendingUp } from 'lucide-react';
+import { useLocale, useTranslations } from 'next-intl';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Link } from '@/i18n/routing';
 import { useFormatCurrency } from '@/shared/lib/use-format-currency';
+import { formatDateOnly } from '@/shared/lib/date-only';
 import { useAccountStore } from '@/features/accounts/model/use-account-store';
+import { useCategories } from '@/features/categories/api/use-categories';
+import { usePeriods } from '@/features/budgets/api/use-periods';
+import { useTransactions } from '@/features/transactions/api/use-transactions';
 import { useAnomalies } from '../api/use-anomalies';
 import { useBudgetBreakdown } from '../api/use-budget-breakdown';
 import { useReportingStats } from '../api/use-reporting-stats';
@@ -18,17 +22,36 @@ const rowClass =
 
 /**
  * Bloc « À traiter » de l'écran Aujourd'hui : anomalies, CB à pointer (nombre et total des stats) et dépassements en cours (même calcul que la répartition du budget). Chaque ligne mène à
- * l'écran concerné ; sinon « tout est à jour ».
+ * l'écran concerné ; sinon « tout est à jour ». S'y ajoute la prochaine paie (catégorie déclencheuse de période) en attente, datée après la
+ * fin de la période active : elle n'entre dans aucun total, la ligne mène à Opérations, toutes périodes, pour la pointer.
  */
 export function ToHandle() {
   const formatCurrency = useFormatCurrency();
   const t = useTranslations('Dashboard');
+  const locale = useLocale();
   const { activeAccountId, activePeriodId } = useAccountStore();
   const { data: anomalies, isLoading: loadingAnomalies, isError: errorAnomalies } = useAnomalies(activeAccountId, activePeriodId);
   const { data: breakdown, isLoading: loadingBreakdown, isError: errorBreakdown } = useBudgetBreakdown(activeAccountId, activePeriodId);
   const { data: stats, isLoading: loadingStats, isError: errorStats } = useReportingStats(activeAccountId, activePeriodId);
-  const isLoading = loadingAnomalies || loadingBreakdown || loadingStats;
-  const isError = errorAnomalies || errorBreakdown || errorStats;
+
+  // Prochaine paie : transaction `pending` de la catégorie déclencheuse (liste existante, sans fenêtre de période)
+  // datée après la fin de la période active. Rien n'est lu tant qu'aucune catégorie n'est déclencheuse.
+  const { data: categories, isLoading: loadingCategories, isError: errorCategories } = useCategories(activeAccountId);
+  const { data: periods } = usePeriods(activeAccountId);
+  const triggerCategory = categories?.find((c) => c.isPeriodTrigger);
+  const { data: pendingPays, isLoading: loadingPays, isError: errorPays } = useTransactions(
+    triggerCategory ? activeAccountId : null,
+    { categoryId: triggerCategory?.id, pending: true, limit: 100 },
+  );
+  const activeEnd = periods?.find((p) => p.isActive)?.endDate?.slice(0, 10);
+  const nextPay = triggerCategory && activeEnd
+    ? (pendingPays?.data ?? [])
+        .filter((tx) => tx.date.slice(0, 10) > activeEnd)
+        .sort((a, b) => a.date.localeCompare(b.date))[0]
+    : undefined;
+
+  const isLoading = loadingAnomalies || loadingBreakdown || loadingStats || loadingCategories || (!!triggerCategory && loadingPays);
+  const isError = errorAnomalies || errorBreakdown || errorStats || errorCategories || (!!triggerCategory && errorPays);
 
   // Nombre et total des CB à pointer : fournis par les stats (mêmes données que la composition du prévu).
   const cardCount = stats?.cardCount ?? 0;
@@ -36,7 +59,7 @@ export function ToHandle() {
   const overruns = currentOverruns(breakdown);
   const hasAnomalies = (anomalies?.length ?? 0) > 0;
   // « Tout est à jour » seulement quand les trois sources ont répondu sans erreur.
-  const allGood = !isLoading && !isError && !hasAnomalies && cardCount === 0 && overruns.length === 0;
+  const allGood = !isLoading && !isError && !hasAnomalies && cardCount === 0 && overruns.length === 0 && !nextPay;
 
   return (
     <Card className="border-2 shadow-sm h-full overflow-hidden flex flex-col">
@@ -70,6 +93,17 @@ export function ToHandle() {
               {t('todo_card', { count: cardCount })}
             </span>
             <span className="font-black shrink-0 whitespace-nowrap">{formatCurrency(cardTotal)}</span>
+          </Link>
+        )}
+        {nextPay && (
+          <Link href={operationsHref({ ids: [nextPay.id], allPeriods: true })} className={rowClass}>
+            <span className="flex items-center gap-2 min-w-0">
+              <CalendarClock className="w-4 h-4 shrink-0 text-primary" />
+              <span className="truncate">
+                {t('todo_next_pay', { label: nextPay.description, date: formatDateOnly(nextPay.date, locale) })}
+              </span>
+            </span>
+            <span className="font-black shrink-0 whitespace-nowrap">{formatCurrency(nextPay.amount)}</span>
           </Link>
         )}
         {overruns.map((overrun) => (

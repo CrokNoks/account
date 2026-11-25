@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { useAccountStore } from '@/features/accounts/model/use-account-store';
 import { usePeriods } from '@/features/budgets/api/use-periods';
 import { useBulkCreateTransactions } from '@/features/transactions/api/use-bulk-create-transactions';
+import { usePeriodSwitchNotice } from '@/features/transactions/model/use-period-switch-notice';
 import { Loader2, ArrowRight, ArrowLeft, CheckCircle2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTranslations } from 'next-intl';
@@ -38,6 +39,7 @@ export default function ImportTransactionsPage() {
   const { activeAccountId } = useAccountStore();
   const { data: periods } = usePeriods(activeAccountId);
   const { mutate: bulkCreate, isPending } = useBulkCreateTransactions();
+  const notifyPeriodSwitch = usePeriodSwitchNotice();
   
   const [step, setStep] = useState<ImportStep>('upload');
   
@@ -214,7 +216,8 @@ export default function ImportTransactionsPage() {
       accountId: activeAccountId,
       transactions: payload,
     }, {
-      onSuccess: () => {
+      onSuccess: (result) => {
+        notifyPeriodSwitch(result);
         toast.success(
           invalidCount > 0
             ? t('success_with_skipped', { imported: validCount, skipped: invalidCount })

@@ -259,4 +259,33 @@ describe('transactions API hooks', () => {
     });
     expect(prediction).toEqual({ categoryId: 'cat-1' });
   });
+
+  // CA6 : une bascule de période déclenchée par le serveur rafraîchit aussi les écrans périodes.
+  describe('period switch refresh', () => {
+    const periodSwitch = {
+      closed: { id: 'p1', startDate: '2026-10-01', endDate: '2026-11-27' },
+      opened: { id: 'p2', startDate: '2026-11-28', endDate: '2026-12-27' },
+      count: 1,
+      dateChanged: false,
+    };
+
+    it.each([
+      ['useCreateTransaction', () => useCreateTransaction(), 'post', { accountId: 'acc-1', date: '2026-11-28', description: 'Paie', amount: '200000', categoryId: 'c' }, { id: 't1', periodSwitch }],
+      ['useUpdateTransaction', () => useUpdateTransaction(), 'patch', { accountId: 'acc-1', id: 't1', data: { pending: false } }, { id: 't1', periodSwitch }],
+      ['useBulkUpdateTransactions', () => useBulkUpdateTransactions(), 'patch', { accountId: 'acc-1', command: { ids: ['t1'], data: { pending: false } } }, { periodSwitch }],
+      ['useBulkCreateTransactions', () => useBulkCreateTransactions(), 'post', { accountId: 'acc-1', transactions: [] }, [{ id: 't1', periodSwitch }]],
+    ] as const)('%s refreshes the periods when the response carries a switch, and only then', async (_name, hook, method, variables, response) => {
+      const first = setup();
+      api[method].mockResolvedValue({ data: response });
+      const { result } = renderHook(hook as () => { mutateAsync: (v: unknown) => Promise<unknown> }, { wrapper: first.wrapper });
+      await act(() => result.current.mutateAsync(variables));
+      expect(first.invalidatedKeys()).toContainEqual(['periods', 'acc-1']);
+
+      const second = setup();
+      api[method].mockResolvedValue({ data: Array.isArray(response) ? [{ id: 't1' }] : { id: 't1' } });
+      const again = renderHook(hook as () => { mutateAsync: (v: unknown) => Promise<unknown> }, { wrapper: second.wrapper });
+      await act(() => again.result.current.mutateAsync(variables));
+      expect(second.invalidatedKeys()).not.toContainEqual(['periods', 'acc-1']);
+    });
+  });
 });

@@ -6,7 +6,7 @@ const createTransaction = vi.fn();
 const createTransfer = vi.fn();
 let desktop = false;
 
-vi.mock('next-intl', () => ({ useTranslations: () => (key: string) => key }));
+vi.mock('next-intl', () => ({ useTranslations: () => (key: string) => key, useLocale: () => 'fr' }));
 vi.mock('sonner', () => ({ toast: { error: vi.fn(), success: vi.fn(), info: vi.fn() } }));
 vi.mock('@/shared/lib/use-is-desktop', () => ({ useIsDesktop: () => desktop }));
 vi.mock('@/features/accounts/model/use-account-store', () => ({

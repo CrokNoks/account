@@ -20,6 +20,7 @@ import { useTranslations } from 'next-intl';
 import { toCents, toAbsCents, isUnreadableAmount } from '@/shared/lib/format';
 import { useIsDesktop } from '@/shared/lib/use-is-desktop';
 import { toEntryCents } from '../model/entry-amount';
+import { usePeriodSwitchNotice } from '../model/use-period-switch-notice';
 
 export function CreateTransactionDrawer() {
   const t = useTranslations('Transactions');
@@ -28,6 +29,7 @@ export function CreateTransactionDrawer() {
   const { isCreateTransactionDrawerOpen, setCreateTransactionDrawerOpen } = useUiStore();
   const { data: periods } = usePeriods(activeAccountId);
   const { mutate: createTransaction, isPending: isCreatingTransaction } = useCreateTransaction();
+  const notifyPeriodSwitch = usePeriodSwitchNotice();
   const { mutate: createTransfer, isPending: isCreatingTransfer } = useCreateTransfer();
 
   const isPending = isCreatingTransaction || isCreatingTransfer;
@@ -103,8 +105,9 @@ export function CreateTransactionDrawer() {
         tagIds: values.tagIds,
       }, {
         ...release,
-        onSuccess: () => {
+        onSuccess: (result) => {
           toast.success(t('transaction_added', { description: values.description }));
+          notifyPeriodSwitch(result);
           setInitialValues({});
           setFormKey(k => k + 1);
           if (!addAnother) setCreateTransactionDrawerOpen(false);

@@ -34,6 +34,7 @@ import {
   PaginationNext, 
   PaginationPrevious 
 } from "@/components/ui/pagination";
+import { usePeriodSwitchNotice } from '../model/use-period-switch-notice';
 import { TransactionForm, TransactionFormValues } from './transaction-form';
 import { TransactionTable } from './transaction-table';
 import { TransactionMobileList } from './transaction-mobile-list';
@@ -72,6 +73,7 @@ export function TransactionList({
   const { mutate: updateTransaction, isPending: isUpdating } = useUpdateTransaction();
   const { mutate: deleteTransaction } = useDeleteTransaction();
   const { mutate: bulkUpdate } = useBulkUpdateTransactions();
+  const notifyPeriodSwitch = usePeriodSwitchNotice();
   const { mutate: bulkDelete } = useBulkDeleteTransactions();
   
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
@@ -265,9 +267,15 @@ export function TransactionList({
     }
 
     function update(txId: string, data: Partial<Transaction>, onSuccess: () => void) {
-      updateTransaction({ accountId: activeAccountId!, id: txId, data }, { onSuccess });
+      updateTransaction({ accountId: activeAccountId!, id: txId, data }, {
+        // Pointer une paie peut ouvrir une nouvelle période : on le dit (dates, date du jour prise).
+        onSuccess: (result) => {
+          notifyPeriodSwitch(result);
+          onSuccess();
+        },
+      });
     }
-  }, [activeAccountId, updateTransaction, pointedFromUpcoming, t]);
+  }, [activeAccountId, updateTransaction, pointedFromUpcoming, t, notifyPeriodSwitch]);
 
   const handleDelete = useCallback((id: string) => {
     if (!activeAccountId || !confirm(t('delete_confirm'))) return;
@@ -299,7 +307,8 @@ export function TransactionList({
         data: { reconciled: true } 
       }
     }, {
-      onSuccess: () => {
+      onSuccess: (result) => {
+        notifyPeriodSwitch(result);
         if (upcomingIds.length > 0) setPointedFromUpcoming(prev => new Set([...prev, ...upcomingIds]));
         toast.success(t('bulk.reconciled', { count: bulkIds.length }));
         setSelectedIds([]);
@@ -507,6 +516,7 @@ function EditTransactionDialog({ transaction, open, onOpenChange }: { transactio
   const locale = useLocale();
   const { activeAccountId } = useAccountStore();
   const { mutate: updateTransaction, isPending } = useUpdateTransaction();
+  const notifyPeriodSwitch = usePeriodSwitchNotice();
 
   const handleSubmit = (values: TransactionFormValues) => {
     if (!activeAccountId) return;
@@ -526,7 +536,8 @@ function EditTransactionDialog({ transaction, open, onOpenChange }: { transactio
         pending: values.pending,
       }
     }, {
-      onSuccess: () => {
+      onSuccess: (result) => {
+        notifyPeriodSwitch(result);
         toast.success(tc('success'));
         onOpenChange(false);
       }

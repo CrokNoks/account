@@ -532,3 +532,41 @@ describe('CSV import page, Crédit Agricole export', () => {
     error.mockRestore();
   });
 });
+
+describe('CSV import page period switch message', () => {
+  const csv = ['Date;Libellé;Montant', '28/11/2026;PAIE;2000,00'].join('\n');
+  const periodSwitch = {
+    closed: { id: 'p1', startDate: '2026-10-01', endDate: '2026-11-27' },
+    opened: { id: 'p2', startDate: '2026-11-28', endDate: '2026-12-27' },
+    count: 1,
+    dateChanged: false,
+  };
+
+  beforeEach(() => {
+    bulkCreate.mockReset();
+    vi.mocked(toast.success).mockReset();
+    useAccountStore.setState({ activeAccountId: 'acc-1' });
+    vi.mocked(apiClient.get).mockReset();
+    vi.mocked(apiClient.post).mockReset();
+    mockPredictions();
+  });
+
+  it('tells which period was closed and which one opened when the import switched', async () => {
+    bulkCreate.mockImplementation((_vars, options) => options.onSuccess([{ id: 't1', periodSwitch }]));
+    const confirm = await openValidation(csv);
+    fireEvent.click(confirm);
+
+    expect(toast.success).toHaveBeenCalledWith(
+      'Période du 01/10/2026 au 27/11/2026 clôturée ; nouvelle période du 28/11/2026 au 27/12/2026.',
+      undefined,
+    );
+  });
+
+  it('says nothing about periods when the import did not switch', async () => {
+    bulkCreate.mockImplementation((_vars, options) => options.onSuccess([{ id: 't1' }]));
+    const confirm = await openValidation(csv);
+    fireEvent.click(confirm);
+
+    expect(toast.success).toHaveBeenCalledTimes(1);
+  });
+});

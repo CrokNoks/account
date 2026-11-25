@@ -68,6 +68,7 @@
     "todo_error": "Could not load everything to handle. Please try again.",
     "todo_card": "{count} card payments to reconcile",
     "todo_overrun": "{name} is over budget by {amount}",
+    "todo_next_pay": "To reconcile on arrival: {label} ({date})",
     "new_transaction": "New transaction",
     "no_period_title": "No period for this account",
     "no_period_desc": "Create a period to track your budget and see your forecast balance at the end of the period.",
@@ -312,6 +313,11 @@
     "delete_confirm": "Are you sure you want to delete this transaction ?",
     "deleted": "Transaction deleted",
     "toggled": "Transaction updated",
+    "period_switch": "Period from {closedStart} to {closedEnd} closed; new period from {openedStart} to {openedEnd}.",
+    "period_switch_many": "{count} periods opened; the last one runs from {openedStart} to {openedEnd}.",
+    "period_switch_date_today": "The transaction date is now today's date.",
+    "period_switch_removed_pending": "{removed, plural, one {# pending recurring removed: its line is already imported.} other {# pending recurring removed: their lines are already imported.}}",
+    "period_switch_remaining_pending": "{remaining, plural, one {# recurring is still pending in the closed period.} other {# recurring are still pending in the closed period.}}",
     "bulk": {
       "selected": "Selected",
       "delete": "Delete",
@@ -442,7 +448,10 @@
       "name": "Name",
       "type": "Type",
       "color": "Color",
-      "name_placeholder": "Rent, Groceries..."
+      "name_placeholder": "Rent, Groceries...",
+      "period_trigger": "Period trigger",
+      "period_trigger_hint": "Recording a transaction of this category closes the current period and opens a new one (one category per account). Taking a transaction of this category out of pending gives it today's date.",
+      "period_trigger_badge": "Trigger"
     },
     "types": {
       "expense": "Expense",

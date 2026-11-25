@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@/shared/api/api-client';
+import { extractPeriodSwitch } from '../model/period-switch';
 
 export interface CreateTransactionCommand {
   accountId: string;
@@ -23,10 +24,14 @@ export function useCreateTransaction() {
       const { data } = await apiClient.post(`/${accountId}/transactions`, body);
       return data;
     },
-    onSuccess: (_, variables) => {
+    onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['transactions', variables.accountId] });
       queryClient.invalidateQueries({ queryKey: ['reporting'] });
       queryClient.invalidateQueries({ queryKey: ['anomalies', variables.accountId] });
+      // Une bascule de période (déclencheur) change aussi les périodes et le budget affichés.
+      if (extractPeriodSwitch(data)) {
+        queryClient.invalidateQueries({ queryKey: ['periods', variables.accountId] });
+      }
     },
   });
 }

@@ -8,6 +8,7 @@ import { useUpdateCategory } from '../api/use-update-category';
 import { useAccountStore } from '@/features/accounts/model/use-account-store';
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Pencil } from 'lucide-react';
 import { 
   Sheet, 
@@ -85,6 +86,11 @@ export function CategoryList() {
                           style={{ backgroundColor: category.color }} 
                         />
                         <span className="truncate">{category.name}</span>
+                        {category.isPeriodTrigger && (
+                          <Badge variant="outline" className="shrink-0 text-[10px] max-lg:text-xs">
+                            {t('fields.period_trigger_badge')}
+                          </Badge>
+                        )}
                       </CardTitle>
                       <div className="flex items-center gap-1 absolute right-2 top-2">
                         <Button 
@@ -123,10 +129,12 @@ function EditCategoryDialog({ category, open, onOpenChange }: { category: Catego
   const nameId = useId();
   const typeId = useId();
   const colorId = useId();
+  const triggerId = useId();
   const [name, setName] = useState(category.name);
   const [type, setType] = useState(category.type);
   const [color, setColor] = useState(category.color);
-  
+  const [isPeriodTrigger, setIsPeriodTrigger] = useState(!!category.isPeriodTrigger);
+
   const { mutate: updateCategory, isPending } = useUpdateCategory();
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -140,6 +148,9 @@ function EditCategoryDialog({ category, open, onOpenChange }: { category: Catego
         name,
         type,
         color,
+        // Seulement si la case a changé : renommer ne dépend pas du réglage
+        // (ni de la migration, ni d'un ancien back).
+        ...(isPeriodTrigger !== !!category.isPeriodTrigger ? { isPeriodTrigger } : {}),
       }
     }, {
       onSuccess: () => {
@@ -187,6 +198,20 @@ function EditCategoryDialog({ category, open, onOpenChange }: { category: Catego
                   <Input id={colorId} type="color" value={color} onChange={(e) => setColor(e.target.value)} className="w-12 p-1 h-10" />
                   <Input value={color} onChange={(e) => setColor(e.target.value)} />
                 </div>
+              </div>
+            </div>
+            <div className="flex items-start space-x-2 bg-primary/5 p-4 rounded-xl border border-primary/10">
+              <Checkbox
+                id={triggerId}
+                aria-labelledby={`${triggerId}-label`}
+                checked={isPeriodTrigger}
+                onCheckedChange={(checked) => setIsPeriodTrigger(!!checked)}
+              />
+              <div className="space-y-1">
+                <label id={`${triggerId}-label`} htmlFor={triggerId} className="text-sm font-medium leading-none cursor-pointer">
+                  {t('fields.period_trigger')}
+                </label>
+                <p className="text-xs text-muted-foreground">{t('fields.period_trigger_hint')}</p>
               </div>
             </div>
             <div className="pt-4">

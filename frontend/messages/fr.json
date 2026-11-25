@@ -68,6 +68,7 @@
     "todo_error": "Impossible de charger tous les éléments à traiter. Réessayez.",
     "todo_card": "{count} CB à pointer",
     "todo_overrun": "{name} dépasse son budget de {amount}",
+    "todo_next_pay": "À pointer à l'arrivée : {label} ({date})",
     "new_transaction": "Nouvelle opération",
     "no_period_title": "Aucune période pour ce compte",
     "no_period_desc": "Créez une période pour suivre votre budget et connaître votre solde prévu en fin de période.",
@@ -312,6 +313,11 @@
     "delete_confirm": "Êtes-vous sûr de vouloir supprimer cette transaction ?",
     "deleted": "Transaction supprimée",
     "toggled": "Transaction mise à jour",
+    "period_switch": "Période du {closedStart} au {closedEnd} clôturée ; nouvelle période du {openedStart} au {openedEnd}.",
+    "period_switch_many": "{count} périodes ouvertes ; la dernière va du {openedStart} au {openedEnd}.",
+    "period_switch_date_today": "La date de la transaction est devenue celle du jour.",
+    "period_switch_removed_pending": "{removed, plural, one {# récurrente en attente supprimée : sa ligne est déjà importée.} other {# récurrentes en attente supprimées : leurs lignes sont déjà importées.}}",
+    "period_switch_remaining_pending": "{remaining, plural, one {# récurrente reste en attente dans la période clôturée.} other {# récurrentes restent en attente dans la période clôturée.}}",
     "bulk": {
       "selected": "Sélectionnées",
       "delete": "Supprimer",
@@ -442,7 +448,10 @@
       "name": "Nom",
       "type": "Type",
       "color": "Couleur",
-      "name_placeholder": "Loyer, Courses..."
+      "name_placeholder": "Loyer, Courses...",
+      "period_trigger": "Déclencheur de période",
+      "period_trigger_hint": "Enregistrer une transaction de cette catégorie clôt la période en cours et en ouvre une nouvelle (une seule catégorie par compte). Sortir du pending une transaction de cette catégorie lui donne la date du jour.",
+      "period_trigger_badge": "Déclencheur"
     },
     "types": {
       "expense": "Dépense",

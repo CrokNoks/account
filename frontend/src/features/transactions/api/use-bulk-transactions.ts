@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@/shared/api/api-client';
+import { extractPeriodSwitch } from '../model/period-switch';
 
 export interface BulkUpdateCommand {
   ids: string[];
@@ -17,13 +18,18 @@ export function useBulkUpdateTransactions() {
   return useMutation({
     meta: { skipGlobalErrorToast: true }, // the caller handles the error
     mutationFn: async ({ accountId, command }: { accountId: string, command: BulkUpdateCommand }) => {
-      await apiClient.patch(`/${accountId}/transactions/bulk`, command);
+      const { data } = await apiClient.patch(`/${accountId}/transactions/bulk`, command);
+      return data;
     },
-    onSuccess: (_, { accountId }) => {
+    onSuccess: (data, { accountId }) => {
       queryClient.invalidateQueries({ queryKey: ['transactions', accountId] });
       // Un pointage en lot change les soldes et les anomalies, comme un pointage à l'unité.
       queryClient.invalidateQueries({ queryKey: ['reporting'] });
       queryClient.invalidateQueries({ queryKey: ['anomalies', accountId] });
+      // Une bascule de période (déclencheur) change aussi les périodes et le budget affichés.
+      if (extractPeriodSwitch(data)) {
+        queryClient.invalidateQueries({ queryKey: ['periods', accountId] });
+      }
     },
   });
 }

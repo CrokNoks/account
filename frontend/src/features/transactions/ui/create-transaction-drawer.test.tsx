@@ -9,7 +9,7 @@ let formAmount = '';
 let formDirection: 'expense' | 'income' | undefined;
 let desktop = true;
 
-vi.mock('next-intl', () => ({ useTranslations: () => (key: string) => key }));
+vi.mock('next-intl', () => ({ useTranslations: () => (key: string) => key, useLocale: () => 'fr' }));
 vi.mock('sonner', () => ({ toast: { error: vi.fn(), success: vi.fn(), info: vi.fn() } }));
 vi.mock('@/shared/lib/use-is-desktop', () => ({ useIsDesktop: () => desktop }));
 vi.mock('@/features/accounts/model/use-account-store', () => ({
@@ -186,5 +186,37 @@ describe('CreateTransactionDrawer envoi unique', () => {
     fireEvent.click(screen.getByText('another'));
     fireEvent.click(screen.getByText('another'));
     expect(createTransaction).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe('CreateTransactionDrawer period switch message', () => {
+  it('tells the closed and opened periods when the created transaction switched', () => {
+    formAmount = '2000';
+    createTransaction.mockImplementation((_v, o) =>
+      o.onSuccess({
+        id: 't1',
+        periodSwitch: {
+          closed: { id: 'p1', startDate: '2026-10-01', endDate: '2026-11-27' },
+          opened: { id: 'p2', startDate: '2026-11-28', endDate: '2026-12-27' },
+          count: 1,
+          dateChanged: false,
+        },
+      }),
+    );
+    vi.mocked(toast.success).mockReset();
+    render(<CreateTransactionDrawer />);
+    fireEvent.click(screen.getByText('submit'));
+
+    expect(toast.success).toHaveBeenCalledWith('period_switch', undefined);
+  });
+
+  it('keeps the usual message only when nothing switched', () => {
+    formAmount = '2000';
+    createTransaction.mockImplementation((_v, o) => o.onSuccess({ id: 't1' }));
+    vi.mocked(toast.success).mockReset();
+    render(<CreateTransactionDrawer />);
+    fireEvent.click(screen.getByText('submit'));
+
+    expect(toast.success).toHaveBeenCalledTimes(1);
   });
 });

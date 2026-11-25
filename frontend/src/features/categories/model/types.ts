@@ -10,4 +10,6 @@ export interface Category {
   name: string;
   type: CategoryType;
   color: string;
+  /** Catégorie « déclencheur de période » du compte (une seule, aucune par défaut). */
+  isPeriodTrigger?: boolean;
 }

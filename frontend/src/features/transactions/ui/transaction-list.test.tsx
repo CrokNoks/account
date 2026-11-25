@@ -43,7 +43,12 @@ vi.mock('@/features/recurring/ui/create-recurring-dialog', () => ({
   CreateRecurringDialog: (p: { initialData?: { amount: string } }) => <span data-testid="recurring-amount">{p.initialData?.amount}</span>,
 }));
 vi.mock('./transaction-form', () => ({
-  TransactionForm: (p: { initialValues?: { amount: string } }) => <span data-testid="form-amount">{p.initialValues?.amount}</span>,
+  TransactionForm: (p: { initialValues?: { amount: string }; onSubmit?: (v: unknown) => void }) => (
+    <>
+      <span data-testid="form-amount">{p.initialValues?.amount}</span>
+      <button data-testid="form-submit" onClick={() => p.onSubmit?.({ date: '2026-12-01', description: 'Paie', categoryId: 'c', tagIds: [], amount: '2000', pending: false })}>submit</button>
+    </>
+  ),
 }));
 vi.mock('./transaction-table', () => ({
   TransactionTable: (p: { transactions: { id: string }[]; onToggleSelect: (id: string) => void; onTogglePointage: (tx: { id: string }) => void; onEdit: (tx: { id: string }) => void; onMakeRecurring: (tx: { id: string }) => void }) => (
@@ -414,6 +419,66 @@ describe('TransactionList pointing', () => {
     fireEvent.click(screen.getByText('point fa'));
 
     expect(toast.info).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('TransactionList period switch message (déclencheur de période)', () => {
+  const periodSwitch = {
+    closed: { id: 'p1', startDate: '2026-10-01', endDate: '2026-11-30' },
+    opened: { id: 'p2', startDate: '2026-12-01', endDate: '2026-12-27' },
+    count: 1,
+    dateChanged: true,
+  };
+
+  beforeEach(() => {
+    update.mockReset();
+    bulkUpdate.mockReset();
+    vi.mocked(toast.success).mockReset();
+    useTransactions.mockReset();
+    useTransactions.mockReturnValue({
+      data: {
+        data: [{ id: 'pay', pending: true, reconciled: false, date: '2026-11-28T00:00:00.000Z', description: 'Paie', amount: '200000', categoryId: 'c', tagIds: [] }],
+        meta: { page: 1, totalPages: 1, total: 1, limit: 25 },
+      },
+      isLoading: false,
+    });
+  });
+
+  it('pointing a salary that opens a period says which period closed and opened, and that the date became today', () => {
+    update.mockImplementation((_v, o) => o.onSuccess({ id: 'pay', periodSwitch }));
+    render(<TransactionList />);
+    fireEvent.click(screen.getByText('point pay'));
+
+    expect(toast.success).toHaveBeenCalledWith('period_switch', { description: 'period_switch_date_today' });
+  });
+
+  it('pointing without a switch gives the usual message only', () => {
+    update.mockImplementation((_v, o) => o.onSuccess({ id: 'pay' }));
+    render(<TransactionList />);
+    fireEvent.click(screen.getByText('point pay'));
+
+    expect(toast.success).toHaveBeenCalledTimes(1);
+    expect(toast.success).toHaveBeenCalledWith('toggled');
+  });
+
+  it('a bulk pointing that opens a period says so', () => {
+    bulkUpdate.mockImplementation((_v, o) => o.onSuccess({ periodSwitch }));
+    render(<TransactionList />);
+    fireEvent.click(screen.getByText('select pay'));
+    fireEvent.click(screen.getByText('bulk reconcile'));
+
+    expect(toast.success).toHaveBeenCalledWith('period_switch', { description: 'period_switch_date_today' });
+  });
+
+  it('editing a salary out of pending says so too', () => {
+    update.mockImplementation((_v, o) => o.onSuccess({ id: 'pay', periodSwitch }));
+    render(<TransactionList />);
+    fireEvent.click(screen.getByText('edit pay'));
+
+    expect(screen.getByTestId('form-submit')).toBeTruthy();
+    fireEvent.click(screen.getByTestId('form-submit'));
+
+    expect(toast.success).toHaveBeenCalledWith('period_switch', { description: 'period_switch_date_today' });
   });
 });
 
