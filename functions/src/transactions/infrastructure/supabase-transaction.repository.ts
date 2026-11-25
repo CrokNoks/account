@@ -220,13 +220,7 @@ export class SupabaseTransactionRepository implements TransactionRepository {
       p_date: date.toISOString().split('T')[0],
     });
 
-    if (response.error) {
-      console.warn(
-        'RPC sum_transactions_before_date failed, fallback to manual sum',
-        response.error,
-      );
-      return BigInt(0);
-    }
+    if (response.error) throw new Error(response.error.message);
 
     const dataValue = response.data as string | number | null;
     return BigInt(dataValue || 0);

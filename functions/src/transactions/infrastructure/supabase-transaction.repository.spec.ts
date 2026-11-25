@@ -74,6 +74,31 @@ const repoWith = (error: { code?: string; message: string } | null) => {
   return { repository, rpc };
 };
 
+describe('SupabaseTransactionRepository sumAmountByAccountBeforeDate', () => {
+  it('throws when the rpc fails instead of returning a wrong 0 balance', async () => {
+    const { repository } = repoWith({ message: 'rpc down' });
+
+    await expect(
+      repository.sumAmountByAccountBeforeDate('acc-1', new Date('2026-03-01')),
+    ).rejects.toThrow('rpc down');
+  });
+
+  it('returns the sum as a bigint', async () => {
+    const rpc = jest.fn().mockResolvedValue({ data: '12345', error: null });
+    const repository = new SupabaseTransactionRepository({
+      rpc,
+    } as unknown as SupabaseClient);
+
+    await expect(
+      repository.sumAmountByAccountBeforeDate('acc-1', new Date('2026-03-01')),
+    ).resolves.toBe(BigInt(12345));
+    expect(rpc).toHaveBeenCalledWith('sum_transactions_before_date', {
+      p_account_id: 'acc-1',
+      p_date: '2026-03-01',
+    });
+  });
+});
+
 describe('SupabaseTransactionRepository atomic writes', () => {
   describe('saveTransfer', () => {
     it('calls create_transfer once with both sides and writes nothing else', async () => {
