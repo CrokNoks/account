@@ -5,6 +5,7 @@
  * lignes sont calculées à côté, indépendamment, et un test vérifie que
  *   banque + CB + factures + budget restant + revenus attendus = prévu.
  */
+import { expenseRule } from './period-forecast';
 
 export interface CompositionTransaction {
   amount: bigint;
@@ -27,7 +28,7 @@ export interface ForecastComposition {
   cardCount: number;
   /** `pending` non rapprochées : signées. */
   billsTotal: bigint;
-  /** -(max(|réel|, |prévu|) + dépenses réelles signées) : négatif ou nul. */
+  /** -(max(dépensé, |prévu|) - dépensé) : négatif ou nul (un remboursement net n'y entre pas). */
   budgetRemaining: bigint;
   /** max(réel, prévu) - réel : positif ou nul. */
   expectedIncome: bigint;
@@ -51,10 +52,11 @@ export function computeForecastComposition(
     }
   }
 
-  const absReal = abs(input.realExpenses);
-  const absPlanned = abs(input.plannedExpenses);
-  const maxAbsExpenses = absReal > absPlanned ? absReal : absPlanned;
-  const budgetRemaining = -(maxAbsExpenses + input.realExpenses);
+  const { spent, maxExpenses } = expenseRule(
+    input.realExpenses,
+    input.plannedExpenses,
+  );
+  const budgetRemaining = -(maxExpenses - spent);
 
   const plannedIncome = abs(input.plannedIncome);
   const maxIncome =

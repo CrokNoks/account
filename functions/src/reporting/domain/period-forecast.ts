@@ -6,8 +6,10 @@ import { CategoryType } from '../../categories/domain/category.entity';
  * Fonction pure, centimes entiers (bigint).
  *
  *   forecast = départ + max(revenus réels, revenus prévus)
- *            - max(|dépenses réelles|, |dépenses prévues|)
+ *            - max(dépensé, |dépenses prévues|) + remboursement net
  *            + transactions sans catégorie (pending comprises, au réel)
+ *
+ *   dépensé = max(0, -dépenses réelles) ; remboursement net = max(0, dépenses réelles).
  */
 export interface PeriodForecastInput {
   startBalance: bigint;
@@ -32,6 +34,24 @@ export interface PeriodForecast {
 
 const ZERO = BigInt(0);
 const abs = (n: bigint) => (n < ZERO ? -n : n);
+
+/**
+ * Règle des dépenses, écrite une seule fois (utilisée aussi par la composition du prévu).
+ * Un réel net positif sur les catégories de dépense est un remboursement, pas une dépense.
+ *
+ * Réel net > 0 ET prévu > 0 : le budget entier reste à dépenser et le remboursement
+ * s'ajoute (règle décidée par Lucas, option B).
+ */
+export function expenseRule(
+  realExpenses: bigint,
+  plannedExpenses: bigint,
+): { spent: bigint; maxExpenses: bigint; refundSurplus: bigint } {
+  const spent = realExpenses < ZERO ? -realExpenses : ZERO;
+  const absPlanned = abs(plannedExpenses);
+  const maxExpenses = spent > absPlanned ? spent : absPlanned;
+  const refundSurplus = realExpenses > ZERO ? realExpenses : ZERO;
+  return { spent, maxExpenses, refundSurplus };
+}
 
 export function computePeriodForecast(
   input: PeriodForecastInput,
@@ -59,15 +79,18 @@ export function computePeriodForecast(
     }
   }
 
-  const absRealExpenses = abs(realExpenses);
-  const absPlannedExpenses = abs(plannedExpenses);
-
+  const { maxExpenses: maxAbsExpenses, refundSurplus } = expenseRule(
+    realExpenses,
+    plannedExpenses,
+  );
   const maxIncome = realIncome > plannedIncome ? realIncome : plannedIncome;
-  const maxAbsExpenses =
-    absRealExpenses > absPlannedExpenses ? absRealExpenses : absPlannedExpenses;
 
   const forecastBalance =
-    input.startBalance + maxIncome - maxAbsExpenses + input.uncategorized;
+    input.startBalance +
+    maxIncome -
+    maxAbsExpenses +
+    refundSurplus +
+    input.uncategorized;
 
   return {
     realIncome,

@@ -109,6 +109,27 @@ describe('computePeriodForecast', () => {
     );
   });
 
+  describe('net refund on expense categories (real > 0)', () => {
+    it('without budget, the refund adds to the forecast instead of counting as a spending', () => {
+      const r = computePeriodForecast(input({ A: 10000 }, {}));
+      expect(r.forecastBalance).toBe(B(110000));
+      expect(r.maxAbsExpenses).toBe(B(0));
+    });
+
+    // Cas ambigu, choix à valider : départ 100000, réel +10000, prévu 50000.
+    // Règle décidée par Lucas : budget entier encore à dépenser + remboursement = 60000.
+    it('with a budget, the whole budget is still to spend and the refund comes on top', () => {
+      const r = computePeriodForecast(input({ A: 10000 }, { A: 50000 }));
+      expect(r.forecastBalance).toBe(B(60000));
+    });
+
+    it('a refund on one category does not offset the spending of another (sum of categories)', () => {
+      // réel net des dépenses : -30000 + 10000 = -20000, budgets 0
+      const r = computePeriodForecast(input({ A: -30000, B: 10000 }, {}));
+      expect(r.forecastBalance).toBe(B(80000));
+    });
+  });
+
   describe('effect of a change of budgets (CA3)', () => {
     // A réel -50000, B réel -100000 : réel total 150000.
     const real = { A: -50000, B: -100000 };

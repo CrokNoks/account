@@ -84,12 +84,20 @@ describe('computeForecastComposition', () => {
     expect(a.budgetRemaining).toBe(-30000n);
   });
 
-  it('dépenses nettes positives (remboursement > dépenses) : budget restant -(max + réel)', () => {
+  it('dépenses nettes positives (remboursement) : tout le budget reste à dépenser', () => {
     const r = computeForecastComposition({
       transactions: [t(5000, { reconciled: true })],
       ...totals({ realExpenses: 5000, plannedExpenses: 3000 }),
     });
-    expect(r.budgetRemaining).toBe(-10000n);
+    expect(r.budgetRemaining).toBe(-3000n);
+  });
+
+  it('dépenses nettes positives sans budget : budget restant 0', () => {
+    const r = computeForecastComposition({
+      transactions: [t(10000, { reconciled: true })],
+      ...totals({ realExpenses: 10000 }),
+    });
+    expect(r.budgetRemaining).toBe(0n);
   });
 
   it('pending rapprochée : ni CB ni facture', () => {
