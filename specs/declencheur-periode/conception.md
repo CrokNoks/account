@@ -104,3 +104,6 @@ Import seulement, et seulement s'il y a bascule. Jamais à la saisie simple ni �
 7. Réponse `periodSwitch` de l'import : `removedPending` et `remainingPending` (récurrentes encore `pending` datées dans la période close) ; message fr/en. Log `recurring_pending_removed` par id, sans montant ni libellé.
 Conservés : `pending` sans `recurringId`, ou sans équivalent.
 Cas de test : 7 / 8 jours ; signe contraire ; catégorie nulle ; deux récurrentes même catégorie ; une ligne pour deux pendings ; pending sans recurringId ; déjà rapprochée ; paie importée avec sa pending ; facture du 29 importée avec la paie du 28 ; échec et concurrence : rien supprimé ; saisie simple : rien supprimé ; import sans bascule : rien supprimé.
+
+## Validé par Lucas (contrôle 2, 2026-11-25 : « Commit sans »)
+Le nettoyage s'arrête à la fin de la période close : une `pending` datée après passe dans la nouvelle période, « une facture est due quelle que soit la période ». Limite assumée : si cette facture est dans le même import, sa `pending` reste à nettoyer à la main.
