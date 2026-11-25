@@ -1,12 +1,12 @@
 # Transactions récurrentes — modèles de dépenses/revenus qui reviennent chaque mois à un jour fixe
 
-Mise à jour : 2026-11-01 · Commit : fc285ef
+Mise à jour : 2026-11-25 · Commit : 90f9a7e (declencheur-periode : occurrences sur une période à cheval, injection par la bascule, prochaine paie) ; avant : fc285ef
 
 ## Vocabulaire
 | Mot | Ce que ça veut dire ici |
 | --- | --- |
-| Transaction récurrente | Un modèle (description, montant, catégorie, jour du mois). Ce n'est pas une vraie transaction : elle n'apparaît dans les comptes que si on l'injecte à la création d'une période. |
-| Jour du mois | Entier de 1 à 31 ; pour un mois plus court, le dernier jour du mois est utilisé (règle unique `shared/domain/recurring-day.ts`, appliquée par `periods`, le calendrier et la trésorerie prévue ; une seule occurrence par mois). |
+| Transaction récurrente | Un modèle (description, montant, catégorie, jour du mois). Ce n'est pas une vraie transaction : elle n'apparaît dans les comptes que si on l'injecte, à la création d'une période ou à la bascule déclenchée par la catégorie déclencheuse (voir `docs/periods.md`). |
+| Jour du mois | Entier de 1 à 31 ; pour un mois plus court, le dernier jour du mois est utilisé (règle unique `shared/domain/recurring-day.ts`, appliquée par `periods`, le calendrier et la trésorerie prévue ; une seule occurrence par mois civil touché par la période : une période à cheval sur deux mois en reçoit une dans chacun, une période de plus d'un mois en reçoit plusieurs ; `recurringOccurrences`, même fichier). |
 
 ## Règles métier
 | Règle | Source | Testée |
@@ -21,7 +21,8 @@ Mise à jour : 2026-11-01 · Commit : fc285ef
 | Modification partielle : seuls les champs envoyés changent (le contrôleur ne transmet que les champs fournis) et l'entité est revalidée ; sans `amount`, le montant existant est conservé | `recurring.controller.ts:135-159`, `update-recurring-transaction.use-case.ts:29-37` | ✅ e2e `validation.e2e-spec.ts` |
 | Le corps de la modification est validé par `UpdateRecurringTransactionDto` (champs facultatifs : catégorie, description, montant en chaîne d'entier de centimes (`@IsCents`), jour 1-31) ; tout autre champ, dont `accountId`, est refusé en 400 : une récurrente ne change jamais de compte | `recurring.controller.ts:61-85` | ✅ e2e `validation.e2e-spec.ts` |
 | Modifier une récurrente inexistante renvoie 404 (`NotFoundError`) | `update-recurring-transaction.use-case.ts:19-23` (`ensureBelongsToAccount`, aussi pour une récurrente d'un autre compte) | ✅ `recurring-transactions.use-cases.spec.ts` (« rejects an unknown recurring transaction », « …of another account… ») |
-| Injection dans une période (jour calculé, transactions « en attente ») | `functions/src/periods/application/create-period-with-budgets.use-case.ts:54-89` | ✅ partielle (voir `docs/periods.md`) |
+| Injection dans une période (jour calculé à chaque mois civil touché, transactions « en attente ») : à la création manuelle (toutes les occurrences, sans contrôle de doublon) et à la bascule du déclencheur (une occurrence par mois civil et par récurrente, sauf si une transaction de la même récurrente `metadata.recurringId` existe déjà ce mois-ci, y compris dans l'ancienne période, et sauf une paie à moins de 15 jours du début) | `functions/src/periods/application/create-period-with-budgets.use-case.ts:64-92`, `functions/src/shared/domain/recurring-day.ts:26-45`, `functions/src/periods/domain/period-switch.ts:356-393` | ✅ `recurring-day.spec.ts`, `create-period-with-budgets.use-case.spec.ts`, `period-switch.spec.ts` (voir `docs/periods.md`) |
+| **Paie récurrente** : une récurrente de la catégorie déclencheuse du compte et de montant strictement positif sert à fixer la fin de la nouvelle période (la veille de sa prochaine occurrence, à au moins 15 jours du début ; la plus proche s'il y en a plusieurs) ; cette prochaine occurrence est créée en `pending` le lendemain de la fin, une seule fois. Une récurrente négative de cette catégorie ne fait pas cela (traitée comme les autres). Le lien entre une transaction et sa récurrente est `metadata.recurringId` (posé à l'injection) : modifiable ensuite par la personne via `metadata`, donc fragile | `period-switch.ts:299-300,342-354,395-414` | ✅ `period-switch.spec.ts` (aucune paie, plusieurs, négative, 14 / 15 jours, prochaine paie une seule fois) |
 | Elles servent aussi à calculer le montant par défaut d'une catégorie dans le brouillon de période | `functions/src/periods/application/get-period-draft.use-case.ts:59-75` | ✅ (spec des périodes) |
 | Supprimer un compte supprime ses récurrentes ; accès en base selon l'accès au compte | `20260309000000_create_recurring_transactions.sql:4,17-31` | ❌ |
 | Tests du module : création, refus d'une catégorie d'un autre compte, enregistrement invalide refusé, liste, suppression, fusion des champs, récurrente inconnue ou d'un autre compte, validation du résultat fusionné. Non couverts : jour du mois hors 1-31 (entité), description blanche (entité) | `functions/src/recurring/application/recurring-transactions.use-cases.spec.ts`, `domain/recurring-transaction.entity.spec.ts` | ✅ partielle |
@@ -48,6 +49,6 @@ Pas de cycle de vie.
 ## Zones d'ombre
 - Les identifiants reçus en body (`categoryId`) doivent être des UUID : sinon 400 (voir `transactions.md`). Ceux de la route (`:accountId`, `:id`) le sont aussi (voir `transactions.md`).
 - Une récurrente n'a ni date de début/fin ni état actif : le code ne permet pas de la suspendre.
-- Rien ne les injecte automatiquement chaque mois : seule la création d'une période avec `injectRecurring` le fait.
+- Rien ne les injecte automatiquement chaque mois (aucune tâche planifiée) : seules la création d'une période avec `injectRecurring` et la bascule du déclencheur le font, quand une transaction de la catégorie déclencheuse est enregistrée (voir `docs/periods.md`). Une récurrente ajoutée ou modifiée n'est pas injectée dans la période en cours.
 - Le signe attendu du montant (dépense négative ?) n'est pas imposé.
 - Erreur « not found » = `NotFoundError`, traduite en 404 par le filtre global.
