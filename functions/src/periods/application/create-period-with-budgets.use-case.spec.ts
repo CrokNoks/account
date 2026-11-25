@@ -3,6 +3,7 @@ import { PeriodRepository } from '../domain/period.repository.interface';
 import { RecurringTransactionRepository } from '../../recurring/domain/recurring-transaction.repository.interface';
 import { RecurringTransaction } from '../../recurring/domain/recurring-transaction.entity';
 import { AccountReferencesService } from '../../shared/application/account-references.service';
+import { Logger } from '@nestjs/common';
 import { Period } from '../domain/period.entity';
 import {
   DomainValidationError,
@@ -125,6 +126,101 @@ describe('CreatePeriodWithBudgetsUseCase', () => {
       amount: BigInt(-50000),
       metadata: { source: 'recurring' },
     });
+  });
+
+  describe('recurring occurrences over a period of any dates', () => {
+    const recurring = (dayOfMonth: number) =>
+      RecurringTransaction.create({
+        accountId: 'acc-1',
+        categoryId: 'cat-1',
+        description: 'Loyer',
+        amount: BigInt(-50000),
+        dayOfMonth,
+      });
+    const injectedDates = () =>
+      (
+        periodRepo.createWithBudgets.mock.calls[0] as [
+          unknown,
+          unknown,
+          Array<{ date: Date }>,
+        ]
+      )[2].map((t) => t.date.toISOString().slice(0, 10));
+
+    it('injects the day 5 of a period spanning two months (25 Oct to 24 Nov)', async () => {
+      recurringRepo.findAllByAccount.mockResolvedValue([recurring(5)]);
+
+      await useCase.execute({
+        ...command,
+        startDate: new Date('2026-10-25'),
+        endDate: new Date('2026-11-24'),
+        injectRecurring: true,
+      });
+
+      expect(injectedDates()).toEqual(['2026-11-05']);
+    });
+
+    it('injects several occurrences when the period is longer than a month', async () => {
+      recurringRepo.findAllByAccount.mockResolvedValue([recurring(5)]);
+
+      await useCase.execute({
+        ...command,
+        startDate: new Date('2026-10-01'),
+        endDate: new Date('2026-12-31'),
+        injectRecurring: true,
+      });
+
+      expect(injectedDates()).toEqual([
+        '2026-10-05',
+        '2026-11-05',
+        '2026-12-05',
+      ]);
+    });
+
+    it('brings day 31 back to the last day of a short month', async () => {
+      recurringRepo.findAllByAccount.mockResolvedValue([recurring(31)]);
+
+      await useCase.execute({
+        ...command,
+        startDate: new Date('2026-02-01'),
+        endDate: new Date('2026-02-28'),
+        injectRecurring: true,
+      });
+
+      expect(injectedDates()).toEqual(['2026-02-28']);
+    });
+
+    it('injects nothing when the day falls outside the period', async () => {
+      recurringRepo.findAllByAccount.mockResolvedValue([recurring(5)]);
+
+      await useCase.execute({
+        ...command,
+        startDate: new Date('2026-11-06'),
+        endDate: new Date('2026-12-04'),
+        injectRecurring: true,
+      });
+
+      expect(injectedDates()).toEqual([]);
+    });
+  });
+
+  it('logs period_opened with origin manual, without label or amount', async () => {
+    const log = jest
+      .spyOn(Logger.prototype, 'log')
+      .mockImplementation(() => undefined);
+
+    const result = await useCase.execute(command);
+
+    expect(log).toHaveBeenCalledWith({
+      event: 'period_opened',
+      origin: 'manual',
+      accountId: 'acc-1',
+      periodId: result.period.id,
+      start: '2026-03-01',
+      end: '2026-03-31',
+      injected: 0,
+      nextPaie: false,
+    });
+    log.mockRestore();
   });
 
   it('does not read recurring transactions unless asked', async () => {

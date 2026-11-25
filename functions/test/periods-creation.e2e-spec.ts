@@ -52,4 +52,39 @@ describe('POST /:accountId/periods ordering (e2e)', () => {
     await post('2026-05-01', '2026-05-31').expect(201);
     expect(mocks.periods.createWithBudgets).toHaveBeenCalledTimes(1);
   });
+
+  it('injects the recurring of the second month of a period spanning two months (25 Oct to 24 Nov, day 5)', async () => {
+    mocks.periods.findAllByAccount.mockResolvedValue([]);
+    mocks.recurring.findAllByAccount.mockResolvedValue([
+      {
+        id: '00000000-0000-4000-8000-000000000301',
+        accountId: ACCOUNT,
+        categoryId: null,
+        description: 'Loyer',
+        amount: BigInt(-50000),
+        dayOfMonth: 5,
+      },
+    ]);
+
+    await request(app.getHttpServer())
+      .post(`/${ACCOUNT}/periods`)
+      .set(auth())
+      .send({
+        startDate: '2026-10-25',
+        endDate: '2026-11-24',
+        budgets: [],
+        injectRecurring: true,
+      })
+      .expect(201);
+
+    const [, , generated] = mocks.periods.createWithBudgets.mock.calls[0] as [
+      unknown,
+      unknown,
+      Array<{ date: Date; pending: boolean }>,
+    ];
+    expect(generated.map((t) => t.date.toISOString().slice(0, 10))).toEqual([
+      '2026-11-05',
+    ]);
+    expect(generated[0].pending).toBe(true);
+  });
 });

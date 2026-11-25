@@ -1,12 +1,12 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { PeriodRepository } from '../domain/period.repository.interface';
 import { Period, ensureCanBeCreated } from '../domain/period.entity';
 import { BudgetInstance } from '../../budgets/domain/budget-instance.entity';
 import { RecurringTransactionRepository } from '../../recurring/domain/recurring-transaction.repository.interface';
 import { Transaction } from '../../transactions/domain/transaction.entity';
-import { recurringDayInMonth } from '../../shared/domain/recurring-day';
+import { recurringOccurrences } from '../../shared/domain/recurring-day';
 import { AccountReferencesService } from '../../shared/application/account-references.service';
-import { dateOnly } from '../../shared/domain/date-only';
+import { toDateOnly } from '../../shared/domain/date-only';
 
 export interface CreatePeriodWithBudgetsCommand {
   accountId: string;
@@ -21,6 +21,8 @@ export interface CreatePeriodWithBudgetsCommand {
 
 @Injectable()
 export class CreatePeriodWithBudgetsUseCase {
+  private readonly logger = new Logger(CreatePeriodWithBudgetsUseCase.name);
+
   constructor(
     private readonly periodRepository: PeriodRepository,
     private readonly recurringRepository: RecurringTransactionRepository,
@@ -65,18 +67,13 @@ export class CreatePeriodWithBudgetsUseCase {
       );
 
       for (const rec of recurring) {
-        // Jour demandé, ramené au dernier jour du mois s'il n'existe pas (31 en février)
-        const day = recurringDayInMonth(rec.dayOfMonth, command.startDate);
-        const transactionDate = dateOnly(
-          command.startDate.getUTCFullYear(),
-          command.startDate.getUTCMonth() + 1,
-          day,
-        );
-        // Ensure date is within period range (if period is shorter than a month or unusual)
-        if (
-          transactionDate >= command.startDate &&
-          transactionDate <= command.endDate
-        ) {
+        // Toutes les dates où le jour tombe dans la période (à cheval sur deux
+        // mois, plus d'un mois), jour ramené au dernier jour d'un mois court.
+        for (const transactionDate of recurringOccurrences(
+          rec.dayOfMonth,
+          command.startDate,
+          command.endDate,
+        )) {
           generatedTransactions.push(
             Transaction.create({
               accountId: command.accountId,
@@ -101,6 +98,19 @@ export class CreatePeriodWithBudgetsUseCase {
       budgetInstances,
       generatedTransactions,
     );
+
+    // Mesure d'impact : part des périodes ouvertes par le déclencheur
+    // (`origin: 'trigger'`, voir ApplyPeriodSwitchService) plutôt qu'à la main.
+    this.logger.log({
+      event: 'period_opened',
+      origin: 'manual',
+      accountId: command.accountId,
+      periodId: period.id,
+      start: toDateOnly(period.startDate),
+      end: toDateOnly(command.endDate),
+      injected: generatedTransactions.length,
+      nextPaie: false,
+    });
 
     return { period, budgets: budgetInstances };
   }
