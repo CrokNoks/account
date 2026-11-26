@@ -1,6 +1,6 @@
 # Accounts — comptes bancaires de l'utilisateur et partage avec d'autres personnes
 
-Mise à jour : 2026-10-31 · Commit : ac92968
+Mise à jour : 2026-11-26 · Commit : 67441b2 (virements-deux-cotes : effet du partage en lecture sur la suppression de transactions et sur les virements) ; avant : ac92968
 
 ## Vocabulaire
 | Mot | Ce que ça veut dire ici |
@@ -28,6 +28,7 @@ Mise à jour : 2026-10-31 · Commit : ac92968
 | Les réponses (création, liste, modification) ne contiennent pas `description` | `accounts.controller.ts:158-165` | ✅ `accounts.e2e-spec.ts:79,92,120` |
 | En base : voir un compte = propriétaire ou partagé ; créer = être propriétaire du compte créé ; modifier/supprimer = propriétaire | `supabase/migrations/20251221_schema_complete.sql:168-186` | ❌ |
 | En base : fonction `has_account_access(compte, 'read'|'write')` : vrai si propriétaire ; sinon si partage de même permission (un `write` donne aussi `read`). Utilisée par les règles des autres tables (transactions, tags) | `20260106081523_remote_schema.sql:48-70` | ❌ |
+| Effet d'un partage `read` sur les transactions : la base ignore en silence la suppression d'une transaction du compte partagé (0 ligne, pas d'erreur) ; depuis le 2026-11-26 l'API compte les lignes supprimées et répond **403** « You do not have permission to modify this resource » au lieu d'un 204 qui ne supprimait rien. Un partage `read` sur le compte d'en face d'un virement empêche aussi de modifier le montant/la date ou de supprimer l'autre côté (403), un compte sans aucun accès donne 404. Détail : `docs/transactions.md` | `functions/src/transactions/infrastructure/supabase-transaction.repository.ts:364-383`, `transactions/application/transfer-write-access.service.ts:27-42` | ✅ `supabase-transaction.repository.spec.ts`, `bulk-delete-transactions.use-case.spec.ts`, e2e `transactions.e2e-spec.ts` (dépôts simulés, pas de vraie RLS) |
 | En base : les partages sont gérables/visibles par le propriétaire ; un utilisateur voit aussi les partages qui le concernent | `20260106081523_remote_schema.sql:75-95` | ❌ |
 | En base : `app_users` lisible par tout utilisateur connecté | `20251221_schema_complete.sql:321` | ❌ |
 | `null` refusé en 400 sur `name` et `initialBalance`, à la création comme à la modification (champ absent = inchangé) | `accounts.controller.ts` (`@IsOptionalNotNull()`) | ✅ `functions/test/validation.e2e-spec.ts` (« null on a field that cannot be null »), `http/null-refuse.http` |
