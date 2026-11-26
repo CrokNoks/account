@@ -7,6 +7,7 @@ import { Transaction } from '../../transactions/domain/transaction.entity';
 import { recurringOccurrences } from '../../shared/domain/recurring-day';
 import { AccountReferencesService } from '../../shared/application/account-references.service';
 import { toDateOnly } from '../../shared/domain/date-only';
+import { dueDateMetadata } from '../../shared/domain/recurring-due-date';
 
 export interface CreatePeriodWithBudgetsCommand {
   accountId: string;
@@ -84,7 +85,11 @@ export class CreatePeriodWithBudgetsUseCase {
               periodId: period.id,
               reconciled: false,
               pending: true,
-              metadata: { source: 'recurring', recurringId: rec.id },
+              metadata: {
+                source: 'recurring',
+                recurringId: rec.id,
+                ...dueDateMetadata(transactionDate),
+              },
             }),
           );
         }

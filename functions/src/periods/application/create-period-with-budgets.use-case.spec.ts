@@ -128,6 +128,39 @@ describe('CreatePeriodWithBudgetsUseCase', () => {
     });
   });
 
+  it('stamps each generated transaction with its due date (the occurrence date)', async () => {
+    recurringRepo.findAllByAccount.mockResolvedValue([
+      RecurringTransaction.create({
+        accountId: 'acc-1',
+        categoryId: 'cat-1',
+        description: 'Loyer',
+        amount: BigInt(-50000),
+        dayOfMonth: 5,
+      }),
+    ]);
+
+    await useCase.execute({
+      ...command,
+      startDate: new Date('2026-03-01'),
+      endDate: new Date('2026-04-10'),
+      injectRecurring: true,
+    });
+
+    const [, , transactions] = periodRepo.createWithBudgets.mock.calls[0] as [
+      unknown,
+      unknown,
+      Array<{ date: Date; metadata: Record<string, unknown> }>,
+    ];
+    expect(transactions.map((t) => t.metadata.dueDate)).toEqual([
+      '2026-03-05',
+      '2026-04-05',
+    ]);
+    expect(transactions.map((t) => t.date.toISOString().slice(0, 10))).toEqual([
+      '2026-03-05',
+      '2026-04-05',
+    ]);
+  });
+
   describe('recurring occurrences over a period of any dates', () => {
     const recurring = (dayOfMonth: number) =>
       RecurringTransaction.create({

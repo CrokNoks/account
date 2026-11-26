@@ -522,6 +522,29 @@ describe('Transactions routes (e2e)', () => {
       expect(res.body).toMatchObject({ reconciled: true, pending: false });
     });
 
+    it('keeps the due date of a recurring transaction when only its date changes', async () => {
+      mocks.transactions.findById.mockResolvedValue(
+        tx('00000000-0000-4000-8000-000000000016', {
+          metadata: { source: 'recurring', dueDate: '2026-11-30' },
+        }),
+      );
+
+      await http()
+        .patch(
+          '/00000000-0000-4000-8000-000000000101/transactions/00000000-0000-4000-8000-000000000111',
+        )
+        .set(auth())
+        .send({ date: '2026-12-01', notes: 'payé en retard' })
+        .expect(200);
+
+      const [[saved]] = mocks.transactions.save.mock.calls as [Transaction][];
+      expect(saved.metadata).toEqual({
+        source: 'recurring',
+        dueDate: '2026-11-30',
+      });
+      expect(saved.date).toEqual(new Date('2026-12-01'));
+    });
+
     it('answers 404 for an unknown transaction', async () => {
       mocks.transactions.findById.mockResolvedValue(null);
 

@@ -68,6 +68,33 @@ describe('IgnoreAnomalyUseCase', () => {
     expect(transactionRepository.save).not.toHaveBeenCalled();
   });
 
+  it('keeps the due date of a recurring transaction (metadata.dueDate)', async () => {
+    transactionRepository.findById.mockResolvedValue(
+      Transaction.create({
+        id: 'tx-1',
+        accountId: 'acc-1',
+        categoryId: 'cat-1',
+        date: new Date('2026-12-01'),
+        description: 'Loyer',
+        amount: BigInt(-50000),
+        reconciled: false,
+        pending: false,
+        metadata: { source: 'recurring', dueDate: '2026-11-30' },
+      }),
+    );
+
+    await useCase.execute('acc-1', ['tx-1'], 'outlier');
+
+    const [[written]] = transactionRepository.updateMany.mock.calls as [
+      Transaction[],
+    ][];
+    expect(written[0].metadata).toEqual({
+      source: 'recurring',
+      dueDate: '2026-11-30',
+      ignoredAnomalies: ['outlier'],
+    });
+  });
+
   it('refuses (404) a transaction of another account, without any write', async () => {
     const accountId = 'acc-1';
     const transactionId = 'tx-1';

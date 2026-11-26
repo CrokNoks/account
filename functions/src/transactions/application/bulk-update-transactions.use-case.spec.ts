@@ -133,6 +133,49 @@ describe('BulkUpdateTransactionsUseCase', () => {
     expect(saved().map((t) => t.id)).toEqual(['t1']);
   });
 
+  describe('keeps the due date of a recurring transaction (metadata.dueDate)', () => {
+    const redated = (pending: boolean) =>
+      tx('t1', {
+        pending,
+        date: new Date('2026-12-01'),
+        metadata: { source: 'recurring', dueDate: '2026-11-30' },
+      });
+
+    it('on a category change', async () => {
+      repository.findAllByAccountUnpaginated.mockResolvedValue([
+        redated(false),
+      ]);
+
+      await useCase.execute({
+        accountId: 'acc-1',
+        ids: ['t1'],
+        data: { categoryId: 'cat-new' },
+      });
+
+      expect(saved()[0].metadata).toEqual({
+        source: 'recurring',
+        dueDate: '2026-11-30',
+      });
+    });
+
+    it('when a pending transaction is ticked off (the date moves, the due date stays)', async () => {
+      repository.findAllByAccountUnpaginated.mockResolvedValue([redated(true)]);
+
+      await useCase.execute({
+        accountId: 'acc-1',
+        ids: ['t1'],
+        data: { reconciled: true },
+      });
+
+      expect(saved()[0]).toMatchObject({
+        pending: false,
+        reconciled: true,
+        date: new Date('2026-12-01'),
+        metadata: { source: 'recurring', dueDate: '2026-11-30' },
+      });
+    });
+  });
+
   it('keeps fields that are not provided', async () => {
     await useCase.execute({
       accountId: 'acc-1',
