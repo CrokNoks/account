@@ -1,0 +1,77 @@
+@api = http://localhost:{{port}}
+@supabase = http://127.0.0.1:54321/auth/v1
+
+# search_path figé sur les fonctions de public : la RLS (has_account_access) et les déclencheurs fonctionnent toujours. Local stack only (Supabase local 127.0.0.1:54321), jamais le projet lié.
+# Lancement : npx httpyac send --all functions/http/search-path-fonctions.http --var port=<port du back local> --var anon=<clé publishable de `supabase status`>
+# (la clé vient de la ligne de commande, jamais du fichier). Utilisateurs et compte jetables, créés par le fichier ; rien n'est supprimé à la fin.
+# Acteurs : Alice (propriétaire), Carol (étrangère au compte).
+
+### Alice
+# @name alice
+POST {{supabase}}/signup
+apikey: {{anon}}
+Content-Type: application/json
+
+{ "email": "spf-alice-{{$timestamp}}@example.com", "password": "Password123!" }
+
+?? status == 200
+
+### Carol
+# @name carol
+POST {{supabase}}/signup
+apikey: {{anon}}
+Content-Type: application/json
+
+{ "email": "spf-carol-{{$timestamp}}@example.com", "password": "Password123!" }
+
+?? status == 200
+
+### Alice crée un compte (auto_assign_user_id / RLS accounts)
+# @name acc
+POST {{api}}/accounts
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "name": "spf-{{$timestamp}}", "initialBalance": "0" }
+
+?? status == 201
+
+### Alice écrit une transaction (has_account_access write)
+# @name tx
+POST {{api}}/{{acc.id}}/transactions
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "date": "2026-10-15T00:00:00.000Z", "amount": "-1234", "description": "spf écriture" }
+
+?? status == 201
+
+### Alice relit sa transaction (has_account_access read)
+GET {{api}}/{{acc.id}}/transactions
+Authorization: Bearer {{alice.access_token}}
+
+?? status == 200
+?? body contains "spf écriture"
+
+### Carol ne peut pas écrire sur le compte d'Alice
+POST {{api}}/{{acc.id}}/transactions
+Authorization: Bearer {{carol.access_token}}
+Content-Type: application/json
+
+{ "date": "2026-10-15T00:00:00.000Z", "amount": "-999", "description": "spf intrus" }
+
+?? js response.statusCode >= 400
+
+### Carol ne voit rien du compte d'Alice
+GET {{api}}/{{acc.id}}/transactions
+Authorization: Bearer {{carol.access_token}}
+
+?? js !response.body.includes("spf")
+
+### Alice : la transaction de Carol n'existe pas, la sienne est intacte
+GET {{api}}/{{acc.id}}/transactions
+Authorization: Bearer {{alice.access_token}}
+
+?? status == 200
+?? body contains "spf écriture"
+?? js !response.body.includes("spf intrus")
