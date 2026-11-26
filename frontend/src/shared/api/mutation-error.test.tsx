@@ -26,6 +26,17 @@ describe('getApiErrorMessage', () => {
     );
     expect(getApiErrorMessage(apiError('Tag not found'), 'fallback', t)).toBe('Étiquette introuvable');
   });
+  it('translates the transfer messages (both sides of a transfer)', () => {
+    const cases: Array<[string, string]> = [
+      ['This transfer is linked to several transactions, nothing was changed', "Ce virement est lié à plusieurs transactions : rien n'a été modifié"],
+      ['Transfer amount must be negative on the outgoing side', "Le montant d'un virement doit être négatif côté sortie"],
+      ['Transfer amount must be positive on the incoming side', "Le montant d'un virement doit être positif côté entrée"],
+      ['The transfer link cannot be changed', 'Le lien du virement ne peut pas être modifié'],
+      ['Write access to the destination account is required', 'Vous devez avoir un accès en écriture au compte de destination'],
+      ['Write access to the other account of the transfer is required', "Vous devez avoir un accès en écriture à l'autre compte du virement"],
+    ];
+    for (const [api, fr] of cases) expect(getApiErrorMessage(apiError(api), 'fallback', t)).toBe(fr);
+  });
   it('translates class-validator messages by rule, with the field name', () => {
     expect(getApiErrorMessage(apiError('color must be a hexadecimal color'), 'fallback', t)).toBe(
       'Le champ « couleur » doit être une couleur hexadécimale (ex. #FF5733)',

@@ -712,7 +712,13 @@
       "budget_duplicate": "Un budget existe déjà pour cette catégorie sur cette période",
       "share_with_self": "Vous ne pouvez pas partager un compte avec vous-même",
       "user_not_found": "Aucun utilisateur avec l'adresse {email}. Il ou elle doit s'être connecté(e) au moins une fois.",
-      "period_overlap": "Cette période chevauche une période existante"
+      "period_overlap": "Cette période chevauche une période existante",
+      "transfer_ambiguous": "Ce virement est lié à plusieurs transactions : rien n'a été modifié",
+      "transfer_amount_negative": "Le montant d'un virement doit être négatif côté sortie",
+      "transfer_amount_positive": "Le montant d'un virement doit être positif côté entrée",
+      "transfer_link_locked": "Le lien du virement ne peut pas être modifié",
+      "destination_write_required": "Vous devez avoir un accès en écriture au compte de destination",
+      "other_account_write_required": "Vous devez avoir un accès en écriture à l'autre compte du virement"
     },
     "rules": {
       "string": "Le champ « {field} » doit être un texte",

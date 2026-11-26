@@ -712,7 +712,13 @@
       "budget_duplicate": "A budget already exists for this category in this period",
       "share_with_self": "You cannot share an account with yourself",
       "user_not_found": "No user with the email {email}. They must have logged in at least once.",
-      "period_overlap": "This period overlaps an existing period"
+      "period_overlap": "This period overlaps an existing period",
+      "transfer_ambiguous": "This transfer is linked to several transactions, nothing was changed",
+      "transfer_amount_negative": "Transfer amount must be negative on the outgoing side",
+      "transfer_amount_positive": "Transfer amount must be positive on the incoming side",
+      "transfer_link_locked": "The transfer link cannot be changed",
+      "destination_write_required": "Write access to the destination account is required",
+      "other_account_write_required": "Write access to the other account of the transfer is required"
     },
     "rules": {
       "string": "The \"{field}\" field must be text",
