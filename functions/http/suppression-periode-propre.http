@@ -1,0 +1,469 @@
+@api = http://localhost:{{port}}
+@supabase = http://127.0.0.1:54321/auth/v1
+
+# Suppression propre d'une période et annulation d'une bascule (spec suppression-periode-propre). Local stack only (Supabase local 127.0.0.1:54321), jamais le projet lié.
+# Lancement : npx httpyac send --all functions/http/suppression-periode-propre.http --var port=<port du back local> --var anon=<clé publishable de `supabase status`>
+# (la clé vient de la ligne de commande, jamais du fichier). Utilisateurs, comptes, catégories et périodes sont jetables, créés par le fichier ;
+# rien n'est supprimé à la fin. Les dates sont relatives à « aujourd'hui » (fuseau Europe/Paris, comme le back).
+# Non couvert ici (deux appels simultanés) : supabase/tests/delete_period_test.sql + deux sessions psql (voir le résumé du cycle).
+# Acteurs : Alice (propriétaire), Bob (lecture seule sur le compte 1), Carol (étrangère au compte), anonyme.
+
+{{
+  const paris = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Paris', year: 'numeric', month: '2-digit', day: '2-digit' });
+  const base = new Date(paris.format(new Date()) + 'T00:00:00Z');
+  exports.day = (offset) => new Date(base.getTime() + offset * 86400000).toISOString().slice(0, 10);
+  exports.dom = (offset) => Number(exports.day(offset).slice(8, 10));
+  exports.today = exports.day(0);
+  exports.dm60 = exports.day(-60);
+  exports.dm20 = exports.day(-20);
+  exports.dm19 = exports.day(-19);
+  exports.dm10 = exports.day(-10);
+  exports.dm9 = exports.day(-9);
+  exports.dm5 = exports.day(-5);
+  exports.dp1 = exports.day(1);
+  exports.dp10 = exports.day(10);
+  exports.dp19 = exports.day(19);
+  exports.dp20 = exports.day(20);
+  exports.dp30 = exports.day(30);
+  exports.domPay = exports.dom(20);
+  exports.domAssurance = exports.dom(2);
+  exports.domLoyer = exports.dom(8);
+  exports.domAbo = exports.dom(12);
+  exports.domRent2 = exports.dom(-5);
+}}
+
+### Alice (propriétaire jetable)
+# @name alice
+POST {{supabase}}/signup
+apikey: {{anon}}
+Content-Type: application/json
+
+{ "email": "sp-alice-{{$timestamp}}@example.com", "password": "Password123!" }
+
+?? status == 200
+
+### Bob (lecture seule sur le compte 1)
+# @name bob
+POST {{supabase}}/signup
+apikey: {{anon}}
+Content-Type: application/json
+
+{ "email": "sp-bob-{{$timestamp}}@example.com", "password": "Password123!" }
+
+?? status == 200
+
+### Carol (étrangère à tous les comptes)
+# @name carol
+POST {{supabase}}/signup
+apikey: {{anon}}
+Content-Type: application/json
+
+{ "email": "sp-carol-{{$timestamp}}@example.com", "password": "Password123!" }
+
+?? status == 200
+
+# ======================================================================
+# Compte 1 : bascule faite par erreur, puis annulée (CA1 à CA4, CA7)
+# ======================================================================
+
+### Compte 1
+# @name acc1
+POST {{api}}/accounts
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "name": "sp1-{{$timestamp}}", "initialBalance": "0" }
+
+?? status == 201
+
+### Catégorie Salaire (déclencheuse)
+# @name sal1
+POST {{api}}/{{acc1.id}}/categories
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "name": "Salaire", "color": "#22aa55", "type": "income" }
+
+?? status == 201
+
+### Catégorie Charges
+# @name bills1
+POST {{api}}/{{acc1.id}}/categories
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "name": "Charges", "color": "#aa2255", "type": "expense" }
+
+?? status == 201
+
+###
+PATCH {{api}}/{{acc1.id}}/categories/{{sal1.id}}
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "isPeriodTrigger": true }
+
+?? status == 200
+
+### Période d'avant : commencée il y a 60 jours, finit dans 30 jours (la « fin d'avant » à retrouver)
+# @name per1
+POST {{api}}/{{acc1.id}}/periods
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "startDate": "{{dm60}}", "endDate": "{{dp30}}", "budgets": [] }
+
+?? status == 201
+
+### Récurrente paie (prochaine occurrence dans 20 jours : la « prochaine paie »)
+POST {{api}}/{{acc1.id}}/recurring
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "categoryId": "{{sal1.id}}", "description": "Salaire", "amount": "280000", "dayOfMonth": {{domPay}} }
+
+?? status == 201
+
+### Récurrente assurance
+POST {{api}}/{{acc1.id}}/recurring
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "categoryId": "{{bills1.id}}", "description": "Assurance", "amount": "-4200", "dayOfMonth": {{domAssurance}} }
+
+?? status == 201
+
+### Récurrente loyer
+POST {{api}}/{{acc1.id}}/recurring
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "categoryId": "{{bills1.id}}", "description": "Loyer", "amount": "-75000", "dayOfMonth": {{domLoyer}} }
+
+?? status == 201
+
+### Récurrente abonnement
+POST {{api}}/{{acc1.id}}/recurring
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "categoryId": "{{bills1.id}}", "description": "Abonnement", "amount": "-1599", "dayOfMonth": {{domAbo}} }
+
+?? status == 201
+
+### Saisie de 18,50 (sera rattachée à la période ouverte par la bascule)
+# @name saisie1
+POST {{api}}/{{acc1.id}}/transactions
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "categoryId": "{{bills1.id}}", "date": "{{dm9}}", "description": "Saisie", "amount": "-1850" }
+
+?? status == 201
+
+### Pending saisie à la main (sans source récurrente) : doit rester
+# @name manual1
+POST {{api}}/{{acc1.id}}/transactions
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "categoryId": "{{bills1.id}}", "date": "{{dp1}}", "description": "Facture à la main", "amount": "-1000", "pending": true }
+
+?? status == 201
+
+### La bascule par erreur : paie de 2 800,00 datée d'il y a 10 jours
+# @name switch1
+POST {{api}}/{{acc1.id}}/transactions
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "categoryId": "{{sal1.id}}", "date": "{{dm10}}", "description": "Paie par erreur", "amount": "280000" }
+
+?? status == 201
+?? js response.parsedBody.periodSwitch.closed.id == {{per1.id}}
+?? js response.parsedBody.periodSwitch.opened.endDate == {{dp19}}
+
+### État avant suppression : l'ancienne période est close la veille (plus sa fin d'avant)
+GET {{api}}/{{acc1.id}}/periods/{{per1.id}}
+Authorization: Bearer {{alice.access_token}}
+
+?? status == 200
+?? js response.parsedBody.isActive == false
+?? js response.parsedBody.endDate.slice(0, 10) != {{dp30}}
+
+### État avant suppression : 3 pending récurrentes injectées + 1 pending à la main dans la fenêtre de la période ouverte
+GET {{api}}/{{acc1.id}}/transactions?periodId={{switch1.periodSwitch.opened.id}}&pending=true&limit=100
+Authorization: Bearer {{alice.access_token}}
+
+?? status == 200
+?? js response.parsedBody.data.filter(t => t.metadata && t.metadata.source == 'recurring').length == 3
+?? js response.parsedBody.data.filter(t => !(t.metadata && t.metadata.source == 'recurring')).length == 1
+
+### État avant suppression : la prochaine paie (4e pending récurrente) est datée après la fin de la période, hors de cette fenêtre
+GET {{api}}/{{acc1.id}}/transactions?categoryId={{sal1.id}}&pending=true&limit=100
+Authorization: Bearer {{alice.access_token}}
+
+?? status == 200
+?? js response.parsedBody.data.length == 1
+?? js response.parsedBody.data[0].date.slice(0, 10) == {{dp20}}
+?? js response.parsedBody.data[0].metadata.source == recurring
+
+### Partage : Bob en lecture seule
+POST {{api}}/accounts/{{acc1.id}}/shares
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "email": "{{bob.user.email}}", "permission": "read" }
+
+?? status == 201
+
+### CA3 : l'aperçu annonce 4 supprimées, 3 conservées (paie déclenchante, saisie, pending à la main) et la réouverture ; aucun montant
+# @name preview1
+GET {{api}}/{{acc1.id}}/periods/{{switch1.periodSwitch.opened.id}}/deletion-preview
+Authorization: Bearer {{alice.access_token}}
+
+?? status == 200
+?? js response.parsedBody.removedPending == 4
+?? js response.parsedBody.keptTransactions == 3
+?? js response.parsedBody.origin == trigger
+?? js response.parsedBody.reopen.periodId == {{per1.id}}
+?? js response.parsedBody.reopen.endDate == {{dp30}}
+?? js JSON.stringify(response.parsedBody).includes('amount') == false
+
+### CA3 : lire l'aperçu ne supprime rien (la période existe toujours)
+GET {{api}}/{{acc1.id}}/periods/{{switch1.periodSwitch.opened.id}}
+Authorization: Bearer {{alice.access_token}}
+
+?? status == 200
+?? js response.parsedBody.isActive == true
+
+### CA7 : Bob (lecture seule) lit l'aperçu
+GET {{api}}/{{acc1.id}}/periods/{{switch1.periodSwitch.opened.id}}/deletion-preview
+Authorization: Bearer {{bob.access_token}}
+
+?? status == 200
+?? js response.parsedBody.removedPending == 4
+
+### CA7 : Bob (lecture seule) supprime : refusé 403
+DELETE {{api}}/{{acc1.id}}/periods/{{switch1.periodSwitch.opened.id}}
+Authorization: Bearer {{bob.access_token}}
+
+?? status == 403
+
+### CA7 : rien n'est modifié (période toujours là et active, ancienne toujours close, 4 pending toujours là)
+GET {{api}}/{{acc1.id}}/periods
+Authorization: Bearer {{alice.access_token}}
+
+?? status == 200
+?? js response.parsedBody.length == 2
+?? js response.parsedBody.filter(p => p.isActive).length == 1
+
+###
+GET {{api}}/{{acc1.id}}/periods/{{per1.id}}
+Authorization: Bearer {{alice.access_token}}
+
+?? status == 200
+?? js response.parsedBody.isActive == false
+
+###
+GET {{api}}/{{acc1.id}}/transactions?pending=true&limit=100
+Authorization: Bearer {{alice.access_token}}
+
+?? status == 200
+?? js response.parsedBody.data.filter(t => t.metadata && t.metadata.source == 'recurring').length == 4
+
+### Carol (étrangère) : aperçu et suppression refusés (404), rien n'est modifié
+GET {{api}}/{{acc1.id}}/periods/{{switch1.periodSwitch.opened.id}}/deletion-preview
+Authorization: Bearer {{carol.access_token}}
+
+?? status >= 400
+?? status < 500
+
+###
+DELETE {{api}}/{{acc1.id}}/periods/{{switch1.periodSwitch.opened.id}}
+Authorization: Bearer {{carol.access_token}}
+
+?? status >= 400
+?? status < 500
+
+### Anonyme : 401
+DELETE {{api}}/{{acc1.id}}/periods/{{switch1.periodSwitch.opened.id}}
+
+?? status == 401
+
+###
+GET {{api}}/{{acc1.id}}/periods/{{switch1.periodSwitch.opened.id}}/deletion-preview
+
+?? status == 401
+
+### CA1, CA2, CA4 : Alice supprime la période ouverte par erreur : 204 sans corps
+DELETE {{api}}/{{acc1.id}}/periods/{{switch1.periodSwitch.opened.id}}
+Authorization: Bearer {{alice.access_token}}
+
+?? status == 204
+
+### CA4 : la période d'avant est rouverte, active, avec sa fin d'avant la bascule ; la nouvelle a disparu
+GET {{api}}/{{acc1.id}}/periods
+Authorization: Bearer {{alice.access_token}}
+
+?? status == 200
+?? js response.parsedBody.length == 1
+?? js response.parsedBody[0].id == {{per1.id}}
+?? js response.parsedBody[0].isActive == true
+?? js response.parsedBody[0].endDate.slice(0, 10) == {{dp30}}
+
+### CA1 : plus aucune pending récurrente dans le compte ; CA2 : la pending à la main reste
+GET {{api}}/{{acc1.id}}/transactions?pending=true&limit=100
+Authorization: Bearer {{alice.access_token}}
+
+?? status == 200
+?? js response.parsedBody.data.filter(t => t.metadata && t.metadata.source == 'recurring').length == 0
+?? js response.parsedBody.data.length == 1
+?? js response.parsedBody.data[0].description == Facture à la main
+
+### CA4 : la paie déclenchante (pointée) et la saisie de 18,50 ont pour période la rouverte
+GET {{api}}/{{acc1.id}}/transactions?periodId={{per1.id}}&limit=100
+Authorization: Bearer {{alice.access_token}}
+
+?? status == 200
+# la requête filtre déjà sur la période rouverte : on lit ses lignes
+?? js response.parsedBody.data.filter(t => t.description == 'Paie par erreur').length == 1
+?? js response.parsedBody.data.filter(t => t.description == 'Saisie').length == 1
+?? js response.parsedBody.data.filter(t => t.description == 'Facture à la main').length == 1
+?? js response.parsedBody.data.length == 3
+?? js response.parsedBody.data.every(t => t.periodId != null) == true
+
+### Supprimer deux fois : la seconde est un 404
+DELETE {{api}}/{{acc1.id}}/periods/{{switch1.periodSwitch.opened.id}}
+Authorization: Bearer {{alice.access_token}}
+
+?? status == 404
+
+### CA5 : l'ancienne période (active, mais ouverte à la main) : suppression simple, rien à rouvrir
+# @name preview1b
+GET {{api}}/{{acc1.id}}/periods/{{per1.id}}/deletion-preview
+Authorization: Bearer {{alice.access_token}}
+
+?? status == 200
+?? js response.parsedBody.reopen == null
+?? js response.parsedBody.origin == manual
+
+# ======================================================================
+# Compte 2 : période ouverte à la main, suppression puis recréation avec injection (CA3, CA5, CA8)
+# ======================================================================
+
+### Compte 2
+# @name acc2
+POST {{api}}/accounts
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "name": "sp2-{{$timestamp}}", "initialBalance": "0" }
+
+?? status == 201
+
+### Catégorie Loyer
+# @name rent2
+POST {{api}}/{{acc2.id}}/categories
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "name": "Loyer", "color": "#aa2255", "type": "expense" }
+
+?? status == 201
+
+### Période 1 (close)
+# @name p21
+POST {{api}}/{{acc2.id}}/periods
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "startDate": "{{dm60}}", "endDate": "{{dm20}}", "budgets": [] }
+
+?? status == 201
+
+### Récurrente loyer (jour d'il y a 5 jours : dans la période 2)
+POST {{api}}/{{acc2.id}}/recurring
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "categoryId": "{{rent2.id}}", "description": "Loyer", "amount": "-75000", "dayOfMonth": {{domRent2}} }
+
+?? status == 201
+
+### Période 2 créée à la main avec injection des récurrentes
+# @name p22
+POST {{api}}/{{acc2.id}}/periods
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "startDate": "{{dm19}}", "endDate": "{{dp10}}", "budgets": [], "injectRecurring": true }
+
+?? status == 201
+
+### Saisie dans la période 2
+# @name saisie2
+POST {{api}}/{{acc2.id}}/transactions
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "categoryId": "{{rent2.id}}", "date": "{{dm5}}", "description": "Saisie 2", "amount": "-1850" }
+
+?? status == 201
+
+### Une pending de la récurrente a été injectée
+GET {{api}}/{{acc2.id}}/transactions?periodId={{p22.id}}&pending=true&limit=100
+Authorization: Bearer {{alice.access_token}}
+
+?? status == 200
+?? js response.parsedBody.data.filter(t => t.metadata && t.metadata.source == 'recurring').length == 1
+
+### CA3/CA5 : l'aperçu annonce 1 supprimée, 1 conservée, aucune réouverture (période manuelle)
+GET {{api}}/{{acc2.id}}/periods/{{p22.id}}/deletion-preview
+Authorization: Bearer {{alice.access_token}}
+
+?? status == 200
+?? js response.parsedBody.removedPending == 1
+?? js response.parsedBody.keptTransactions == 1
+?? js response.parsedBody.reopen == null
+?? js response.parsedBody.origin == manual
+
+### CA5 : suppression simple
+DELETE {{api}}/{{acc2.id}}/periods/{{p22.id}}
+Authorization: Bearer {{alice.access_token}}
+
+?? status == 204
+
+### CA5 : rien n'est rouvert (la période 1 reste inactive, sa fin inchangée), la saisie n'a plus de période
+GET {{api}}/{{acc2.id}}/periods/{{p21.id}}
+Authorization: Bearer {{alice.access_token}}
+
+?? status == 200
+?? js response.parsedBody.isActive == false
+?? js response.parsedBody.endDate.slice(0, 10) == {{dm20}}
+
+###
+GET {{api}}/{{acc2.id}}/transactions?limit=100
+Authorization: Bearer {{alice.access_token}}
+
+?? status == 200
+?? js response.parsedBody.data.length == 1
+?? js response.parsedBody.data[0].description == Saisie 2
+?? js response.parsedBody.data[0].periodId == null
+
+### CA8 : recréer la période 2 avec injection : la récurrente n'existe qu'une fois en pending (0 doublon)
+# @name p22b
+POST {{api}}/{{acc2.id}}/periods
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "startDate": "{{dm19}}", "endDate": "{{dp10}}", "budgets": [], "injectRecurring": true }
+
+?? status == 201
+
+###
+GET {{api}}/{{acc2.id}}/transactions?pending=true&limit=100
+Authorization: Bearer {{alice.access_token}}
+
+?? status == 200
+?? js response.parsedBody.data.filter(t => t.metadata && t.metadata.source == 'recurring').length == 1

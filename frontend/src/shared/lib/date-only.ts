@@ -28,6 +28,19 @@ export function formatDateOnly(value: string, locale: string): string {
   }).format(new Date(Date.UTC(Number(year), Number(month) - 1, Number(day))));
 }
 
+/** Long calendar date in the language (fr: "27 septembre 2026", en: "September 27, 2026"), without time zone shift. */
+export function formatLongDateOnly(value: string, locale: string): string {
+  const match = DATE_ONLY.exec(value);
+  if (!match) return value;
+  const [, year, month, day] = match;
+  return new Intl.DateTimeFormat(locale, {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+    timeZone: 'UTC',
+  }).format(new Date(Date.UTC(Number(year), Number(month) - 1, Number(day))));
+}
+
 /**
  * Short calendar date in the language ("6 nov." in fr, "Nov 6" in en); the year is added only when
  * it differs from the current one ("6 nov. 2025"). The current year is read in UTC, not in the local

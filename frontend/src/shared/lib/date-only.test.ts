@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formatDateOnly, formatShortDate, formatShortRange, todayDateOnly } from './date-only';
+import { formatDateOnly, formatLongDateOnly, formatShortDate, formatShortRange, todayDateOnly } from './date-only';
 
 describe('formatDateOnly', () => {
   it('uses the format of the active language', () => {
@@ -67,5 +67,14 @@ describe('formatShortRange', () => {
 
   it('porte l\'année des bornes d\'une autre année', () => {
     expect(formatShortRange('2025-12-25', '2026-01-24', 'fr', now)).toBe('25 déc. 2025 → 24 janv.');
+  });
+});
+
+describe('formatLongDateOnly', () => {
+  it('writes the month in full in the language, from the calendar fields (no time zone shift)', () => {
+    expect(formatLongDateOnly('2026-09-27', 'fr')).toBe('27 septembre 2026');
+    expect(formatLongDateOnly('2026-09-27', 'en')).toBe('September 27, 2026');
+    expect(formatLongDateOnly('2026-12-01T00:00:00.000Z', 'fr')).toBe('1 décembre 2026');
+    expect(formatLongDateOnly('not a date', 'fr')).toBe('not a date');
   });
 });

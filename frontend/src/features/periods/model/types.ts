@@ -8,6 +8,15 @@ export interface Period {
   isActive: boolean;
 }
 
+/** Ce que la suppression d'une période ferait (aperçu : nombres et dates, aucun montant). */
+export interface PeriodDeletionPreview {
+  removedPending: number;
+  keptTransactions: number;
+  /** Période rouverte (annulation de bascule), sinon null. */
+  reopen: { periodId: string; startDate: string; endDate: string | null } | null;
+  origin: 'manual' | 'trigger';
+}
+
 export interface PeriodBudget {
   id: string;
   periodId: string;

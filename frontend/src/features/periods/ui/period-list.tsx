@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useId } from 'react';
+import { useState, useId, useRef } from 'react';
 import { periodEnd } from '../model/period-end';
 import { canReactivate } from '../model/can-reactivate';
 import { useAccountStore } from '@/features/accounts/model/use-account-store';
@@ -8,8 +8,9 @@ import { Period } from '../model/types';
 import { usePeriods } from '@/features/budgets/api/use-periods';
 import { useUpdatePeriod } from '../api/use-update-period';
 import { useDeletePeriod } from '../api/use-delete-period';
+import { fetchPeriodDeletionPreview } from '../api/fetch-period-deletion-preview';
+import { deleteConfirmation } from '../model/delete-confirmation';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { format } from 'date-fns';
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Pencil, Lock, Trash2 } from 'lucide-react';
@@ -24,15 +25,25 @@ import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from 'sonner';
 import { isAxiosError } from 'axios';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
+import { formatLongDateOnly } from '@/shared/lib/date-only';
 
 export function PeriodList() {
   const t = useTranslations('Budgets');
+  const locale = useLocale();
   const { activeAccountId } = useAccountStore();
   const { data: periods, isLoading } = usePeriods(activeAccountId);
   const { mutate: updatePeriod, isPending: isUpdating } = useUpdatePeriod();
   const { mutate: deletePeriod, isPending: isDeleting } = useDeletePeriod();
   const [editingPeriod, setEditingPeriod] = useState<Period | null>(null);
+  // Périodes dont la suppression est en cours (aperçu lu, confirmation, suppression) : un double clic n'en lance qu'une.
+  const [busyIds, setBusyIds] = useState<string[]>([]);
+  const busyRef = useRef(new Set<string>());
+  const setBusy = (id: string, busy: boolean) => {
+    if (busy) busyRef.current.add(id);
+    else busyRef.current.delete(id);
+    setBusyIds([...busyRef.current]);
+  };
 
   const handleClosePeriod = (period: Period) => {
     if (!activeAccountId || !confirm(t('close_confirm'))) return;
@@ -45,17 +56,33 @@ export function PeriodList() {
     });
   };
 
-  const handleDelete = (id: string) => {
-    if (!activeAccountId || !confirm(t('confirm_delete'))) return;
+  const handleDelete = async (id: string) => {
+    if (!activeAccountId || busyRef.current.has(id)) return;
+    setBusy(id, true);
 
-    deletePeriod({
-      accountId: activeAccountId,
-      id: id
-    }, {
-      onSuccess: () => {
-        toast.success(t('deleted'));
-      }
-    });
+    // L'annonce vient d'une lecture seule : elle ne supprime rien, et sans elle on ne supprime pas.
+    let preview;
+    try {
+      preview = await fetchPeriodDeletionPreview(activeAccountId, id);
+    } catch {
+      toast.error(t('delete_preview_error'));
+      setBusy(id, false);
+      return;
+    }
+    if (!confirm(deleteConfirmation(t, preview, locale))) {
+      setBusy(id, false);
+      return;
+    }
+
+    deletePeriod(
+      { accountId: activeAccountId, id },
+      {
+        onSuccess: () => {
+          toast.success(t('deleted'));
+        },
+        onSettled: () => setBusy(id, false),
+      },
+    );
   };
 
   if (isLoading) return <div className="h-64 bg-muted animate-pulse rounded-xl" />;
@@ -67,8 +94,8 @@ export function PeriodList() {
           <Card key={period.id} className={period.isActive ? "border-primary/50 group relative" : "group relative"}>
             <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-2 pb-2 space-y-0">
               <CardTitle className="text-sm font-medium">
-                {format(new Date(period.startDate), 'dd MMMM yyyy')}
-                {periodEnd(period) && ` - ${format(new Date(periodEnd(period)!), 'dd MMMM yyyy')}`}
+                {formatLongDateOnly(period.startDate, locale)}
+                {periodEnd(period) && ` - ${formatLongDateOnly(periodEnd(period)!, locale)}`}
               </CardTitle>
               <div className="flex items-center gap-2">
                 {period.isActive && (
@@ -99,7 +126,7 @@ export function PeriodList() {
                     className="lg:opacity-0 lg:group-hover:opacity-100 transition-opacity h-11 w-11 lg:h-8 lg:w-8 text-destructive"
                     onClick={() => handleDelete(period.id)}
                     title={t('delete_period')}
-                    disabled={isDeleting}
+                    disabled={isDeleting || busyIds.includes(period.id)}
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                   </Button>
