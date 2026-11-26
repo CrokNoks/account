@@ -227,14 +227,14 @@ describe('GetCashflowForecastUseCase', () => {
       });
     });
 
-    it('reads only the transactions of today', async () => {
+    it('reads 31 days of transactions before today and 7 days after the horizon', async () => {
       await useCase.execute('acc-1', 5);
 
       expect(transactions.findAllByAccountUnpaginated).toHaveBeenCalledWith(
         'acc-1',
         {
-          startDate: new Date('2026-04-28T00:00:00.000Z'),
-          endDate: new Date('2026-04-28T00:00:00.000Z'),
+          startDate: new Date('2026-03-28T00:00:00.000Z'),
+          endDate: new Date('2026-05-10T00:00:00.000Z'),
         },
       );
     });
@@ -279,7 +279,7 @@ describe('GetCashflowForecastUseCase', () => {
       expect((await useCase.execute('acc-1', 5)).events).toEqual([]);
     });
 
-    it('keeps the current behaviour for two identical recurrings and one transaction', async () => {
+    it('one transaction settles one occurrence only: two identical recurrings, one transaction', async () => {
       recurrings.findAllByAccount.mockResolvedValue([internet(), internet()]);
       transactions.findAllByAccountUnpaginated.mockResolvedValue([
         paid('Internet', -3000),
@@ -287,12 +287,12 @@ describe('GetCashflowForecastUseCase', () => {
 
       const r = await useCase.execute('acc-1', 5);
 
-      expect(r.events).toEqual([]);
+      expect(r.events).toHaveLength(1);
       expect(logSpy).toHaveBeenCalledWith(
         expect.objectContaining({
           event: 'cashflow_forecast_built',
           recurringCount: 2,
-          alreadyPaidCount: 2,
+          alreadyPaidCount: 1,
         }),
       );
     });
@@ -352,6 +352,169 @@ describe('GetCashflowForecastUseCase', () => {
       expect(
         r.events.filter((e) => e.date === '2026-04-30T00:00:00.000Z'),
       ).toHaveLength(2);
+    });
+  });
+
+  describe('échéance d’origine (lien, équivalence)', () => {
+    const paie = () =>
+      RecurringTransaction.create({
+        id: 'r-paie',
+        accountId: 'acc-1',
+        categoryId: 'c-salaire',
+        description: 'Salaire',
+        amount: BigInt(200000),
+        dayOfMonth: 28,
+      });
+    const loyer = (id = 'r-loyer', dayOfMonth = 30) =>
+      RecurringTransaction.create({
+        id,
+        accountId: 'acc-1',
+        categoryId: 'c-loyer',
+        description: 'Loyer',
+        amount: BigInt(-80000),
+        dayOfMonth,
+      });
+    const txOf = (
+      id: string,
+      date: string,
+      over: Partial<{
+        categoryId: string | null;
+        amount: number;
+        pending: boolean;
+        metadata: Record<string, unknown>;
+      }> = {},
+    ) =>
+      Transaction.create({
+        id,
+        accountId: 'acc-1',
+        categoryId:
+          over.categoryId === undefined ? 'c-salaire' : over.categoryId,
+        date: new Date(date),
+        description: 'Virement',
+        amount: BigInt(over.amount ?? 200000),
+        reconciled: false,
+        pending: over.pending ?? false,
+        metadata: over.metadata ?? {},
+      });
+    const eventDates = (r: { events: { date: string }[] }) =>
+      r.events.map((e) => e.date.slice(0, 10));
+
+    beforeEach(() => {
+      // aujourd'hui : 26 novembre 2026
+      jest.setSystemTime(new Date('2026-11-26T09:00:00Z'));
+    });
+
+    it('CA1 : paie du 28 pointée le 26 (même lien, échéance 28) : aucun événement le 28', async () => {
+      recurrings.findAllByAccount.mockResolvedValue([paie()]);
+      transactions.findAllByAccountUnpaginated.mockResolvedValue([
+        txOf('t1', '2026-11-26', {
+          metadata: { recurringId: 'r-paie', dueDate: '2026-11-28' },
+        }),
+      ]);
+
+      const r = await useCase.execute('acc-1', 10);
+
+      expect(eventDates(r)).toEqual([]);
+      expect(logSpy).toHaveBeenCalledWith(
+        expect.objectContaining({ alreadyPaidCount: 1 }),
+      );
+    });
+
+    it('une seconde paie le 28 du mois suivant reste un événement', async () => {
+      recurrings.findAllByAccount.mockResolvedValue([paie()]);
+      transactions.findAllByAccountUnpaginated.mockResolvedValue([
+        txOf('t1', '2026-11-26', {
+          metadata: { recurringId: 'r-paie', dueDate: '2026-11-28' },
+        }),
+      ]);
+
+      const r = await useCase.execute('acc-1', 40);
+
+      expect(eventDates(r)).toEqual(['2026-12-28']);
+    });
+
+    it('CA2 : un paiement sans lien à 7 jours règle l’échéance, à 8 jours non', async () => {
+      recurrings.findAllByAccount.mockResolvedValue([loyer()]);
+      transactions.findAllByAccountUnpaginated.mockResolvedValue([
+        txOf('t1', '2026-11-23', { categoryId: 'c-loyer', amount: -80000 }),
+      ]);
+      expect(eventDates(await useCase.execute('acc-1', 10))).toEqual([]);
+
+      transactions.findAllByAccountUnpaginated.mockResolvedValue([
+        txOf('t1', '2026-11-22', { categoryId: 'c-loyer', amount: -80000 }),
+      ]);
+      expect(eventDates(await useCase.execute('acc-1', 10))).toEqual([
+        '2026-11-30',
+      ]);
+    });
+
+    it('CA3 : réglée par une transaction future (pending du 30), l’échéance reste projetée', async () => {
+      recurrings.findAllByAccount.mockResolvedValue([loyer()]);
+      transactions.findAllByAccountUnpaginated.mockResolvedValue([
+        txOf('t1', '2026-11-30', {
+          categoryId: 'c-loyer',
+          amount: -80000,
+          pending: true,
+          metadata: { recurringId: 'r-loyer', dueDate: '2026-11-30' },
+        }),
+      ]);
+
+      const r = await useCase.execute('acc-1', 10);
+
+      expect(eventDates(r)).toEqual(['2026-11-30']);
+      expect(logSpy).toHaveBeenCalledWith(
+        expect.objectContaining({ alreadyPaidCount: 0 }),
+      );
+    });
+
+    it('une transaction du jour règle l’échéance du jour (non-régression)', async () => {
+      recurrings.findAllByAccount.mockResolvedValue([loyer('r-loyer', 26)]);
+      transactions.findAllByAccountUnpaginated.mockResolvedValue([
+        txOf('t1', '2026-11-26', { categoryId: 'c-loyer', amount: -80000 }),
+      ]);
+
+      expect(eventDates(await useCase.execute('acc-1', 5))).toEqual([]);
+    });
+
+    it('loyer du 30/11 payé le 05/11 (lien exact, 25 jours avant) : plus compté le 30', async () => {
+      recurrings.findAllByAccount.mockResolvedValue([loyer()]);
+      transactions.findAllByAccountUnpaginated.mockResolvedValue([
+        txOf('t1', '2026-11-05', {
+          categoryId: 'c-loyer',
+          amount: -80000,
+          metadata: { recurringId: 'r-loyer', dueDate: '2026-11-30' },
+        }),
+      ]);
+
+      expect(eventDates(await useCase.execute('acc-1', 10))).toEqual([]);
+    });
+
+    it('deux récurrentes de même catégorie à 27 et 30, une transaction sans lien : une seule écartée', async () => {
+      recurrings.findAllByAccount.mockResolvedValue([
+        loyer('r-a', 27),
+        loyer('r-b', 30),
+      ]);
+      transactions.findAllByAccountUnpaginated.mockResolvedValue([
+        txOf('t1', '2026-11-25', { categoryId: 'c-loyer', amount: -80000 }),
+      ]);
+
+      const r = await useCase.execute('acc-1', 10);
+
+      expect(eventDates(r)).toEqual(['2026-11-30']);
+      expect(logSpy).toHaveBeenCalledWith(
+        expect.objectContaining({ alreadyPaidCount: 1 }),
+      );
+    });
+
+    it('une échéance invalide (metadata.dueDate "abc") est lue comme absente', async () => {
+      recurrings.findAllByAccount.mockResolvedValue([paie()]);
+      transactions.findAllByAccountUnpaginated.mockResolvedValue([
+        txOf('t1', '2026-11-26', {
+          metadata: { recurringId: 'r-paie', dueDate: 'abc' },
+        }),
+      ]);
+
+      expect(eventDates(await useCase.execute('acc-1', 10))).toEqual([]);
     });
   });
 

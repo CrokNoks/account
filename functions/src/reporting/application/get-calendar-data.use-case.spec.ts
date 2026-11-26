@@ -3,7 +3,6 @@ import { GetCalendarDataUseCase } from './get-calendar-data.use-case';
 import { TransactionRepository } from '../../transactions/domain/transaction.repository.interface';
 import { RecurringTransactionRepository } from '../../recurring/domain/recurring-transaction.repository.interface';
 import { Transaction } from '../../transactions/domain/transaction.entity';
-import * as alreadyPaid from '../domain/recurring-already-paid';
 import { RecurringTransaction } from '../../recurring/domain/recurring-transaction.entity';
 
 describe('GetCalendarDataUseCase', () => {
@@ -210,7 +209,7 @@ describe('GetCalendarDataUseCase', () => {
     transactionRepository.findAllByAccountUnpaginated.mockResolvedValue([
       Transaction.create({
         accountId,
-        categoryId: null,
+        categoryId: 'cat-2',
         date: new Date('2026-03-20'),
         description: 'Prélèvement INTERNET',
         amount: BigInt(-3000),
@@ -226,14 +225,168 @@ describe('GetCalendarDataUseCase', () => {
     jest.useRealTimers();
   });
 
-  it('calls the shared predicate', async () => {
-    jest.useFakeTimers().setSystemTime(new Date('2026-03-01T09:00:00Z'));
-    const spy = jest.spyOn(alreadyPaid, 'isRecurringAlreadyPaid');
+  describe('échéance d’origine', () => {
+    const paie = RecurringTransaction.create({
+      id: 'r-paie',
+      accountId,
+      categoryId: 'c-salaire',
+      description: 'Salaire',
+      amount: BigInt(200000),
+      dayOfMonth: 28,
+    });
+    const loyer = (id = 'r-loyer', dayOfMonth = 30) =>
+      RecurringTransaction.create({
+        id,
+        accountId,
+        categoryId: 'c-loyer',
+        description: 'Loyer',
+        amount: BigInt(-80000),
+        dayOfMonth,
+      });
+    const txOf = (
+      id: string,
+      date: string,
+      over: {
+        categoryId?: string | null;
+        amount?: number;
+        pending?: boolean;
+        metadata?: Record<string, unknown>;
+      } = {},
+    ) =>
+      Transaction.create({
+        id,
+        accountId,
+        categoryId:
+          over.categoryId === undefined ? 'c-salaire' : over.categoryId,
+        date: new Date(date),
+        description: 'Virement',
+        amount: BigInt(over.amount ?? 200000),
+        reconciled: false,
+        pending: over.pending ?? false,
+        metadata: over.metadata ?? {},
+      });
+    const setup = (recurrings: RecurringTransaction[], txs: Transaction[]) => {
+      (
+        useCase as unknown as {
+          recurringRepository: { findAllByAccount: jest.Mock };
+        }
+      ).recurringRepository.findAllByAccount.mockResolvedValue(recurrings);
+      transactionRepository.findAllByAccountUnpaginated.mockResolvedValue(txs);
+    };
+    const projected = (r: { type: string; date: string }[]) =>
+      r.filter((e) => e.type === 'recurring').map((e) => e.date.slice(0, 10));
 
-    await useCase.execute(accountId, year, month);
+    beforeEach(() => {
+      jest.useFakeTimers().setSystemTime(new Date('2026-11-26T09:00:00Z'));
+    });
+    afterEach(() => jest.useRealTimers());
 
-    expect(spy).toHaveBeenCalled();
-    spy.mockRestore();
-    jest.useRealTimers();
+    it('CA1 : paie du 28 pointée le 26 : pas de « Prévue » le 28, la transaction du 26 est affichée', async () => {
+      setup(
+        [paie],
+        [
+          txOf('t1', '2026-11-26', {
+            metadata: { recurringId: 'r-paie', dueDate: '2026-11-28' },
+          }),
+        ],
+      );
+
+      const r = await useCase.execute(accountId, 2026, 11);
+
+      expect(projected(r)).toEqual([]);
+      expect(r.filter((e) => e.type === 'actual').map((e) => e.id)).toEqual([
+        't1',
+      ]);
+    });
+
+    it('CA3 : loyer du 30/11 daté 01/12, calendrier de novembre : plus de « Prévue » le 30/11', async () => {
+      setup(
+        [loyer()],
+        [
+          txOf('t1', '2026-12-01', {
+            categoryId: 'c-loyer',
+            amount: -80000,
+            metadata: { recurringId: 'r-loyer', dueDate: '2026-11-30' },
+          }),
+        ],
+      );
+
+      const r = await useCase.execute(accountId, 2026, 11);
+
+      expect(projected(r)).toEqual([]);
+      // la transaction du 01/12 n'est pas affichée dans novembre
+      expect(r.filter((e) => e.type === 'actual')).toEqual([]);
+    });
+
+    it('CA3 : une pending future du 30 règle l’échéance, sans doublon « Prévue »', async () => {
+      setup(
+        [loyer()],
+        [
+          txOf('t1', '2026-11-30', {
+            categoryId: 'c-loyer',
+            amount: -80000,
+            pending: true,
+            metadata: { recurringId: 'r-loyer', dueDate: '2026-11-30' },
+          }),
+        ],
+      );
+
+      const r = await useCase.execute(accountId, 2026, 11);
+
+      expect(projected(r)).toEqual([]);
+      expect(r).toHaveLength(1);
+    });
+
+    it('CA2 : sans lien à 7 jours règle, à 8 jours non', async () => {
+      setup(
+        [loyer()],
+        [txOf('t1', '2026-11-23', { categoryId: 'c-loyer', amount: -80000 })],
+      );
+      expect(projected(await useCase.execute(accountId, 2026, 11))).toEqual([]);
+
+      setup(
+        [loyer()],
+        [txOf('t1', '2026-11-22', { categoryId: 'c-loyer', amount: -80000 })],
+      );
+      expect(projected(await useCase.execute(accountId, 2026, 11))).toEqual([
+        '2026-11-30',
+      ]);
+    });
+
+    it('une transaction du mois suivant règle l’échéance de fin de mois sans être affichée', async () => {
+      setup(
+        [loyer()],
+        [txOf('t1', '2026-12-04', { categoryId: 'c-loyer', amount: -80000 })],
+      );
+
+      const r = await useCase.execute(accountId, 2026, 11);
+
+      expect(projected(r)).toEqual([]);
+      expect(r).toEqual([]);
+    });
+
+    it('deux loyers à 27 et 30, une transaction sans lien : une seule « Prévue » écartée', async () => {
+      setup(
+        [loyer('r-a', 27), loyer('r-b', 30)],
+        [txOf('t1', '2026-11-28', { categoryId: 'c-loyer', amount: -80000 })],
+      );
+
+      const r = await useCase.execute(accountId, 2026, 11);
+
+      expect(projected(r)).toEqual(['2026-11-30']);
+    });
+
+    it('lit 31 jours de transactions autour du mois et garde le même résultat que la trésorerie', async () => {
+      setup([paie], []);
+
+      await useCase.execute(accountId, 2026, 11);
+
+      expect(
+        transactionRepository.findAllByAccountUnpaginated,
+      ).toHaveBeenCalledWith(accountId, {
+        startDate: new Date('2026-10-01T00:00:00.000Z'),
+        endDate: new Date('2026-12-31T00:00:00.000Z'),
+      });
+    });
   });
 });

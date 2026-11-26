@@ -3,9 +3,20 @@ import { AccountRepository } from '../../accounts/domain/account.repository.inte
 import { TransactionRepository } from '../../transactions/domain/transaction.repository.interface';
 import { RecurringTransactionRepository } from '../../recurring/domain/recurring-transaction.repository.interface';
 import { addDaysDateOnly, todayDateOnly } from '../../shared/domain/date-only';
-import { isRecurringDueOn } from '../../shared/domain/recurring-day';
+import {
+  isRecurringDueOn,
+  recurringOccurrences,
+} from '../../shared/domain/recurring-day';
+import { EQUIVALENT_DAYS } from '../../shared/domain/recurring-equivalence';
+import {
+  readDueDate,
+  readRecurringId,
+} from '../../shared/domain/recurring-due-date';
 import { NotFoundError } from '../../shared/domain/errors';
-import { isRecurringAlreadyPaid } from '../domain/recurring-already-paid';
+import {
+  occurrenceKey,
+  settleOccurrences,
+} from '../domain/recurring-already-paid';
 import { computeLowPoint } from '../domain/cashflow-low-point';
 
 export interface CashflowEvent {
@@ -24,6 +35,9 @@ export interface CashflowForecastResponse {
   /** Plus bas solde de fin de journée de l'horizon (premier jour en cas d'égalité). */
   lowPoint: { date: string; balance: string };
 }
+
+/** Jours de transactions lus avant aujourd'hui pour reconnaître une échéance payée en avance. */
+const TRANSACTIONS_LOOKBACK_DAYS = 31;
 
 @Injectable()
 export class GetCashflowForecastUseCase {
@@ -56,12 +70,42 @@ export class GetCashflowForecastUseCase {
     const recurringTxs =
       await this.recurringRepository.findAllByAccount(accountId);
 
-    // Transactions d'aujourd'hui : seules à pouvoir « payer » une récurrence (déjà dans le solde du jour)
-    const todayTransactions =
+    // Transactions lues pour reconnaître les échéances réglées : 31 jours avant aujourd'hui
+    // (une facture payée en avance, retrouvée par son lien) et 7 jours après l'horizon.
+    const lastDay = addDaysDateOnly(startDate, days);
+    const transactions =
       await this.transactionRepository.findAllByAccountUnpaginated(accountId, {
-        startDate,
-        endDate: startDate,
+        startDate: addDaysDateOnly(startDate, -TRANSACTIONS_LOOKBACK_DAYS),
+        endDate: addDaysDateOnly(lastDay, EQUIVALENT_DAYS),
       });
+    // Occurrences débordant de 7 jours de chaque côté de l'horizon : une transaction
+    // ne règle qu'une occurrence, y compris une voisine hors de la vue.
+    const occurrences = recurringTxs.flatMap((rt) =>
+      recurringOccurrences(
+        rt.dayOfMonth,
+        addDaysDateOnly(startDate, -EQUIVALENT_DAYS),
+        addDaysDateOnly(lastDay, EQUIVALENT_DAYS),
+      ).map((date) => ({
+        recurringId: rt.id,
+        categoryId: rt.categoryId,
+        description: rt.description,
+        amount: rt.amount,
+        date,
+      })),
+    );
+    const settled = settleOccurrences(
+      occurrences,
+      transactions.map((t) => ({
+        id: t.id,
+        date: t.date,
+        categoryId: t.categoryId,
+        description: t.description,
+        amount: t.amount,
+        recurringId: readRecurringId(t.metadata),
+        dueDate: readDueDate(t.metadata),
+      })),
+      new Set(recurringTxs.map((rt) => rt.id)),
+    );
     let alreadyPaidCount = 0;
 
     // 3. Project events
@@ -78,12 +122,10 @@ export class GetCashflowForecastUseCase {
       );
 
       for (const match of matches) {
-        // Aujourd'hui seulement : une récurrence déjà payée est dans le solde du jour.
-        // Un jour futur n'est jamais écarté (sa transaction n'est pas dans le solde).
-        if (
-          d === 0 &&
-          isRecurringAlreadyPaid(match, currentDay, todayTransactions)
-        ) {
+        // Réglée par une transaction déjà dans le solde du jour (datée d'aujourd'hui ou avant) :
+        // comptée une fois, dans le solde. Réglée par une transaction future : reste projetée.
+        const by = settled.get(occurrenceKey(match.id, currentDay));
+        if (by && by.txDate <= startDate) {
           alreadyPaidCount++;
           continue;
         }

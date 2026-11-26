@@ -1,4 +1,8 @@
-import { dueDateMetadata, readDueDate } from './recurring-due-date';
+import {
+  dueDateMetadata,
+  readDueDate,
+  readRecurringId,
+} from './recurring-due-date';
 
 describe('readDueDate', () => {
   it('reads a valid YYYY-MM-DD as a date-only (midnight UTC)', () => {
@@ -43,5 +47,15 @@ describe('dueDateMetadata', () => {
   it('round-trips with readDueDate', () => {
     const date = new Date('2026-03-31');
     expect(readDueDate(dueDateMetadata(date))).toEqual(date);
+  });
+});
+
+describe('readRecurringId', () => {
+  it('reads a non-empty string, otherwise undefined', () => {
+    expect(readRecurringId({ recurringId: 'r-1' })).toBe('r-1');
+    expect(readRecurringId({ recurringId: '' })).toBeUndefined();
+    expect(readRecurringId({ recurringId: 3 })).toBeUndefined();
+    expect(readRecurringId(undefined)).toBeUndefined();
+    expect(readRecurringId(null)).toBeUndefined();
   });
 });

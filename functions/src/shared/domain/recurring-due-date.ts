@@ -30,3 +30,10 @@ export function readDueDate(metadata: unknown): Date | undefined {
 export function dueDateMetadata(date: Date): { dueDate: string } {
   return { dueDate: toDateOnly(date) };
 }
+
+/** Lit `metadata.recurringId` (chaîne non vide), sinon `undefined`. */
+export function readRecurringId(metadata: unknown): string | undefined {
+  if (typeof metadata !== 'object' || metadata === null) return undefined;
+  const value = (metadata as Record<string, unknown>).recurringId;
+  return typeof value === 'string' && value !== '' ? value : undefined;
+}
