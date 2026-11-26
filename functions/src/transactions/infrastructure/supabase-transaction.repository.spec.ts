@@ -328,6 +328,50 @@ describe('SupabaseTransactionRepository atomic writes', () => {
   });
 });
 
+describe('SupabaseTransactionRepository findTransferSides', () => {
+  it('reads the lines of the account carrying the transferId, with their tags', async () => {
+    const other = tx({ accountId: 'acc-2', amount: BigInt(15000) });
+    const returns = jest.fn().mockResolvedValue({
+      data: [{ ...rowOf(other, 'p-2'), transaction_tags: [{ tag_id: 't1' }] }],
+      error: null,
+    });
+    const eqTransfer = jest.fn().mockReturnValue({ returns });
+    const eqAccount = jest.fn().mockReturnValue({ eq: eqTransfer });
+    const select = jest.fn().mockReturnValue({ eq: eqAccount });
+    const from = jest.fn().mockReturnValue({ select });
+    const repository = new SupabaseTransactionRepository({
+      from,
+    } as unknown as SupabaseClient);
+
+    const result = await repository.findTransferSides('tr-1', 'acc-2');
+
+    expect(from).toHaveBeenCalledWith('transactions');
+    expect(eqAccount).toHaveBeenCalledWith('account_id', 'acc-2');
+    expect(eqTransfer).toHaveBeenCalledWith('metadata->>transferId', 'tr-1');
+    expect(result.map((t) => t.id)).toEqual([other.id]);
+    expect(result[0].tagIds).toEqual(['t1']);
+    expect(result[0].amount).toBe(BigInt(15000));
+  });
+
+  it('throws when the database fails (never an empty list taken for an orphan)', async () => {
+    const returns = jest
+      .fn()
+      .mockResolvedValue({ data: null, error: { message: 'boom' } });
+    const eqTransfer = jest.fn().mockReturnValue({ returns });
+    const eqAccount = jest.fn().mockReturnValue({ eq: eqTransfer });
+    const from = jest
+      .fn()
+      .mockReturnValue({ select: () => ({ eq: eqAccount }) });
+    const repository = new SupabaseTransactionRepository({
+      from,
+    } as unknown as SupabaseClient);
+
+    await expect(repository.findTransferSides('tr-1', 'acc-2')).rejects.toThrow(
+      'boom',
+    );
+  });
+});
+
 describe('SupabaseTransactionRepository returns the rows as stored', () => {
   const build = (read: { data: unknown; error: unknown }) => {
     const rpc = jest.fn().mockResolvedValue({ data: null, error: null });

@@ -45,6 +45,14 @@ export abstract class TransactionRepository {
   ): Promise<Transaction[]>;
   abstract findAllByPeriod(periodId: string): Promise<Transaction[]>;
   abstract findById(id: string): Promise<Transaction | null>;
+  /**
+   * Lignes (avec leurs tags) d'un compte portant ce `metadata.transferId`, lues
+   * avec les droits de l'appelant (RLS) : un compte invisible ressemble à un orphelin.
+   */
+  abstract findTransferSides(
+    transferId: string,
+    accountId: string,
+  ): Promise<Transaction[]>;
   /** Renvoie la ligne telle qu'enregistrée (periodId posé par le trigger inclus). */
   abstract save(transaction: Transaction): Promise<Transaction>;
   /**

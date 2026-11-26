@@ -283,6 +283,22 @@ export class SupabaseTransactionRepository implements TransactionRepository {
     return this.mapToDomain(data);
   }
 
+  async findTransferSides(
+    transferId: string,
+    accountId: string,
+  ): Promise<Transaction[]> {
+    const { data, error } = await this.supabase
+      .from('transactions')
+      .select('*, transaction_tags(tag_id)')
+      .eq('account_id', accountId)
+      .eq('metadata->>transferId', transferId)
+      .returns<TransactionRow[]>();
+
+    if (error) throw new Error(error.message);
+
+    return (data || []).map((row) => this.mapToDomain(row));
+  }
+
   async save(transaction: Transaction): Promise<Transaction> {
     // Fonction SQL save_transaction : upsert + remplacement des tags dans une
     // seule transaction base de données, toutes les erreurs sont remontées.

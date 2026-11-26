@@ -31,6 +31,7 @@ import { PredictCategoryUseCase } from '../application/predict-category.use-case
 import { BulkCreateTransactionsUseCase } from '../application/bulk-create-transactions.use-case';
 import { BulkUpdateTransactionsUseCase } from '../application/bulk-update-transactions.use-case';
 import { BulkDeleteTransactionsUseCase } from '../application/bulk-delete-transactions.use-case';
+import { UpdateTransferUseCase } from '../application/update-transfer.use-case';
 import { CreateTransferUseCase } from '../application/create-transfer.use-case';
 import { TransactionRepository } from '../domain/transaction.repository.interface';
 import { Transaction } from '../domain/transaction.entity';
@@ -458,6 +459,7 @@ export class TransactionsController {
     private readonly bulkUpdateTransactionsUseCase: BulkUpdateTransactionsUseCase,
     private readonly bulkDeleteTransactionsUseCase: BulkDeleteTransactionsUseCase,
     private readonly createTransferUseCase: CreateTransferUseCase,
+    private readonly updateTransferUseCase: UpdateTransferUseCase,
     private readonly predictCategoryUseCase: PredictCategoryUseCase,
     private readonly transactionRepository: TransactionRepository,
     @Inject(PeriodRepository)
@@ -591,6 +593,7 @@ export class TransactionsController {
     @Param('accountId') accountId: string,
     @Param('id') id: string,
     @Body() dto: UpdateTransactionDto,
+    @Request() req: AuthenticatedRequest,
   ): Promise<TransactionResponseDto> {
     // `null` n'a de sens que pour catégorie, période, moyen de paiement et notes.
     rejectNullFields(dto, [
@@ -639,6 +642,17 @@ export class TransactionsController {
         dto.amount !== undefined ? parseCents(dto.amount) : existing.amount,
       updatedAt: new Date(),
     });
+
+    // Un côté de virement : montant et date suivent l'autre côté (règle dans
+    // UpdateTransferUseCase), jamais de bascule de période.
+    if (existing.metadata?.transferId) {
+      const stored = await this.updateTransferUseCase.execute({
+        userId: req.user.id,
+        existing,
+        updated,
+      });
+      return this.mapToResponse(stored);
+    }
 
     // Sortir du pending une paie : date du jour et bascule de période éventuelle
     // (écriture atomique) ; sinon enregistrement comme avant.

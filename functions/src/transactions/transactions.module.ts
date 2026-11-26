@@ -9,6 +9,8 @@ import { BulkCreateTransactionsUseCase } from './application/bulk-create-transac
 import { BulkUpdateTransactionsUseCase } from './application/bulk-update-transactions.use-case';
 import { BulkDeleteTransactionsUseCase } from './application/bulk-delete-transactions.use-case';
 import { CreateTransferUseCase } from './application/create-transfer.use-case';
+import { UpdateTransferUseCase } from './application/update-transfer.use-case';
+import { TransferWriteAccessService } from './application/transfer-write-access.service';
 import { TransactionsController } from './infrastructure/transactions.controller';
 import { AccountReferencesModule } from '../shared/account-references.module';
 import { AccountsModule } from '../accounts/accounts.module';
@@ -36,6 +38,8 @@ import { SmartRulesModule } from '../smart-rules/smart-rules.module';
     BulkUpdateTransactionsUseCase,
     BulkDeleteTransactionsUseCase,
     CreateTransferUseCase,
+    UpdateTransferUseCase,
+    TransferWriteAccessService,
   ],
   exports: [
     TransactionRepository,
