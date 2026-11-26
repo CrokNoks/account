@@ -10,6 +10,7 @@ import {
   TableRow 
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useLocale, useTranslations } from 'next-intl';
 import { X } from 'lucide-react';
 import { toCents } from '@/shared/lib/format';
@@ -33,6 +34,8 @@ export function ImportValidationStep({
   const t = useTranslations('Import.validation');
   const locale = useLocale();
   const invalidCount = parsedData.filter((row) => row.invalidReason).length;
+  const setAsideCount = parsedData.filter((row) => !row.invalidReason && row.excluded).length;
+  const nearCount = parsedData.filter((row) => row.nearOf && !row.invalidReason).length;
 
   return (
     <div className="p-0">
@@ -41,10 +44,21 @@ export function ImportValidationStep({
           {t('skipped_banner', { count: invalidCount })}
         </div>
       )}
+      {setAsideCount > 0 && (
+        <div role="status" className="px-8 py-3 text-sm font-medium bg-muted/40 border-b">
+          {t('duplicate_banner', { count: setAsideCount })}
+        </div>
+      )}
+      {nearCount > 0 && (
+        <div role="status" className="px-8 py-3 text-sm font-medium text-amber-700 dark:text-amber-400 bg-amber-500/10 border-b">
+          {t('near_banner', { count: nearCount })}
+        </div>
+      )}
       <Table className="table-fixed w-full">
         <TableHeader>
           <TableRow className="bg-muted/30">
-            <TableHead className="w-[120px] pl-8 text-xs">{t('date')}</TableHead>
+            <TableHead className="w-[60px] pl-8 text-xs"><span className="sr-only">{t('import')}</span></TableHead>
+            <TableHead className="w-[120px] text-xs">{t('date')}</TableHead>
             <TableHead className="min-w-[250px] text-xs">{t('description')}</TableHead>
             <TableHead className="w-[150px] text-right text-xs">{t('amount')}</TableHead>
             <TableHead className="w-[300px] text-xs">{t('category')}</TableHead>
@@ -53,12 +67,38 @@ export function ImportValidationStep({
         </TableHeader>
         <TableBody>
           {parsedData.map((row) => (
-            <TableRow key={row.id} className={row.invalidReason ? 'bg-destructive/10' : undefined} data-invalid={row.invalidReason ? 'true' : undefined}>
-              <TableCell className="pl-8 font-medium text-xs">
+            <TableRow
+              key={row.id}
+              className={row.invalidReason ? 'bg-destructive/10' : row.excluded ? 'opacity-60' : undefined}
+              data-invalid={row.invalidReason ? 'true' : undefined}
+            >
+              <TableCell className="pl-8">
+                <Checkbox
+                  aria-label={t('include_row', { description: row.description })}
+                  disabled={!!row.invalidReason}
+                  checked={!row.invalidReason && !row.excluded}
+                  onCheckedChange={(checked) =>
+                    setParsedData(prev => prev.map(item => item.id === row.id ? { ...item, excluded: !checked } : item))
+                  }
+                />
+              </TableCell>
+              <TableCell className="font-medium text-xs">
                 {formatDateOnly(row.date, locale)}
                 {row.invalidReason === 'date' && <span className="block text-destructive">{t('unreadable_date')}</span>}
               </TableCell>
-              <TableCell className="truncate text-xs" title={row.description}>{row.description}</TableCell>
+              <TableCell className="text-xs" title={row.description}>
+                <span className="block truncate">{row.description}</span>
+                {row.duplicateOf && (
+                  <span className="block truncate font-medium text-muted-foreground">
+                    {t('duplicate_badge')} · {t('found', { date: formatDateOnly(row.duplicateOf.date, locale), description: row.duplicateOf.description })}
+                  </span>
+                )}
+                {row.nearOf && !row.duplicateOf && (
+                  <span className="block truncate font-medium text-amber-700 dark:text-amber-400">
+                    {t('near_badge')} · {t('found', { date: formatDateOnly(row.nearOf.date, locale), description: row.nearOf.description })}
+                  </span>
+                )}
+              </TableCell>
               <TableCell className={`text-right font-bold text-xs ${row.invalidReason === 'amount' ? '' : present(toCents(row.amount), 'flow').className}`}>
                 {row.invalidReason === 'amount' ? (
                   <span className="text-destructive">{t('unreadable_amount')}</span>

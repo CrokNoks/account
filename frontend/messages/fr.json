@@ -405,7 +405,8 @@
     "prediction_error": "Catégories non proposées : l'analyse a échoué, vous pouvez les choisir à la main",
     "parse_error": "Impossible de lire le fichier CSV",
     "success": "{imported, plural, one {# transaction importée} other {# transactions importées}}",
-    "success_with_skipped": "{imported, plural, one {# transaction importée} other {# transactions importées}}, {skipped, plural, one {# ligne ignorée} other {# lignes ignorées}}",
+    "success_with_skipped": "{imported, plural, one {# transaction importée} other {# transactions importées}}{skipped, plural, =0 {} one {, # ligne ignorée} other {, # lignes ignorées}}{excluded, plural, =0 {} one {, # ligne écartée (déjà présente)} other {, # lignes écartées (déjà présentes)}}{unselected, plural, =0 {} one {, # ligne non sélectionnée} other {, # lignes non sélectionnées}}",
+    "existing_error": "Transactions existantes illisibles : aucune ligne n'a été décochée, vérifiez les doublons à la main",
     "upload": {
       "delimiter": "Séparateur CSV",
       "comma": "Virgule ( , )",
@@ -433,6 +434,13 @@
       "active_columns": "Colonnes actives surlignées"
     },
     "validation": {
+      "duplicate_banner": "{count, plural, one {# ligne écartée} other {# lignes écartées}} (décochées, non envoyées à l'import ; recochez-les pour les importer)",
+      "near_banner": "{count, plural, one {# ligne proche d'une transaction existante} other {# lignes proches d'une transaction existante}} (restent cochées, à vérifier)",
+      "duplicate_badge": "Déjà présente",
+      "near_badge": "Ligne proche",
+      "found": "{date} · {description}",
+      "include_row": "Importer : {description}",
+      "import": "Importer",
       "category_of": "Catégorie de : {description}",
       "skipped_banner": "{count, plural, one {# ligne ignorée} other {# lignes ignorées}} (non envoyées à l'import)",
       "date": "Date",

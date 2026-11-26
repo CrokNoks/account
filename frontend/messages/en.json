@@ -405,7 +405,8 @@
     "prediction_error": "Categories not suggested: the analysis failed, you can pick them by hand",
     "parse_error": "Could not read the CSV file",
     "success": "{imported, plural, one {# transaction imported} other {# transactions imported}}",
-    "success_with_skipped": "{imported, plural, one {# transaction imported} other {# transactions imported}}, {skipped, plural, one {# line skipped} other {# lines skipped}}",
+    "success_with_skipped": "{imported, plural, one {# transaction imported} other {# transactions imported}}{skipped, plural, =0 {} one {, # line skipped} other {, # lines skipped}}{excluded, plural, =0 {} one {, # line set aside (already present)} other {, # lines set aside (already present)}}{unselected, plural, =0 {} one {, # line not selected} other {, # lines not selected}}",
+    "existing_error": "Existing transactions could not be read: no line was unchecked, check duplicates by hand",
     "upload": {
       "delimiter": "CSV separator",
       "comma": "Comma ( , )",
@@ -433,6 +434,13 @@
       "active_columns": "Active columns highlighted"
     },
     "validation": {
+      "duplicate_banner": "{count, plural, one {# line set aside} other {# lines set aside}} (unchecked, not sent to the import; check them again to import them)",
+      "near_banner": "{count, plural, one {# line close to an existing transaction} other {# lines close to an existing transaction}} (still checked, please review)",
+      "duplicate_badge": "Already present",
+      "near_badge": "Close line",
+      "found": "{date} · {description}",
+      "include_row": "Import: {description}",
+      "import": "Import",
       "category_of": "Category for: {description}",
       "skipped_banner": "{count, plural, one {# line skipped} other {# lines skipped}} (not sent to the import)",
       "date": "Date",

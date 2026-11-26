@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import Papa from 'papaparse';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -16,10 +16,14 @@ import { useRouter } from '@/i18n/routing';
 import { toCents, parseAmountToCents, centsToDecimalString } from '@/shared/lib/format';
 import { ParsedTransaction, ImportStep, ImportMapping } from '@/features/transactions/model/import-types';
 import { cleanDescription, decodeCsv, findHeaderRow, guessMapping } from '@/features/transactions/model/import-csv';
+import { markImportRows, windowForRows, type ExistingTransaction, type ImportRowToCompare } from '@/features/transactions/model/import-duplicates';
 import { parseImportDate } from '@/features/transactions/model/parse-import-date';
 import { ImportUploadStep } from '@/features/transactions/ui/import/import-upload-step';
 import { ImportMappingStep } from '@/features/transactions/ui/import/import-mapping-step';
 import { ImportValidationStep } from '@/features/transactions/ui/import/import-validation-step';
+
+// Back limit of the transactions list (`limit`).
+const EXISTING_LIMIT = 5000;
 
 // Must stay under the back limit of 1000 descriptions per request.
 const PREDICTION_CHUNK_SIZE = 500;
@@ -61,8 +65,24 @@ export default function ImportTransactionsPage() {
   });
 
   const [isProcessing, setIsProcessing] = useState(false);
+  // The comparison with the account was made (false: not read, no line unchecked, no counts sent).
+  const [compared, setCompared] = useState(false);
+  const accountRef = useRef(activeAccountId);
+  // One id per import run (analysis of a file) : an answer of an older run, or of another account, is dropped.
+  const sessionRef = useRef(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const activePeriod = periods?.find(p => p.isActive);
+
+  // Marks and rows belong to the account they were read for: changing account starts over.
+  useEffect(() => {
+    if (accountRef.current === activeAccountId) return;
+    accountRef.current = activeAccountId;
+    sessionRef.current += 1;
+    setIsProcessing(false);
+    setStep('upload');
+    setParsedData([]);
+    setCompared(false);
+  }, [activeAccountId]);
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -115,6 +135,8 @@ export default function ImportTransactionsPage() {
   };
 
   const processMapping = async () => {
+    const session = ++sessionRef.current;
+    const isCurrent = () => sessionRef.current === session;
     setIsProcessing(true);
     const mappedData: ParsedTransaction[] = [];
     const dateIdx = csvHeaders.indexOf(mapping.date);
@@ -163,12 +185,49 @@ export default function ImportTransactionsPage() {
       });
     }
 
-    setParsedData(mappedData);
+    // Rows already in the account are unchecked by default; the account read is the imported one only.
+    const accountId = activeAccountId;
+    let marked = mappedData;
+    let didCompare = false;
+    if (accountId) {
+      const toCompare: ImportRowToCompare[] = mappedData.map((r) => ({
+        id: r.id,
+        date: r.date,
+        description: r.description,
+        amount: r.invalidReason ? '' : toCents(r.amount),
+        invalid: !!r.invalidReason,
+      }));
+      const window = windowForRows(toCompare);
+      if (window) {
+        try {
+          const { data } = await apiClient.get(`/${accountId}/transactions`, {
+            params: { ...window, limit: EXISTING_LIMIT },
+          });
+          const existing: ExistingTransaction[] = data.data;
+          // A truncated read would uncheck on an incomplete base: treated as a failure.
+          if (!Array.isArray(existing) || data.meta.total > existing.length) throw new Error('Existing transactions truncated');
+          const marks = markImportRows(toCompare, existing);
+          marked = mappedData.map((r) => {
+            const m = marks[r.id];
+            return m ? { ...r, ...m, excluded: !!m.duplicateOf } : r;
+          });
+          didCompare = true;
+        } catch (error) {
+          console.error('Existing transactions read failed', error);
+          if (isCurrent()) toast.warning(t('existing_error'));
+        }
+      }
+    }
+    // The account changed on screen while reading: this answer is for another account.
+    if (!isCurrent() || accountRef.current !== accountId) return;
+
+    setCompared(didCompare);
+    setParsedData(marked);
     setStep('validation');
     
-    if (activeAccountId && mappedData.some(r => !r.invalidReason)) {
+    if (activeAccountId && marked.some(r => !r.invalidReason)) {
       toast.info(t('analyzing_categories'));
-      const updatedData = [...mappedData];
+      const updatedData = [...marked];
       let predictionFailed = false;
       // Invalid rows are never predicted; the others go by chunks, one request per chunk.
       const validIndexes = updatedData.flatMap((row, i) => (row.invalidReason ? [] : [i]));
@@ -179,31 +238,43 @@ export default function ImportTransactionsPage() {
             descriptions: chunk.map((i) => updatedData[i].description),
           });
           const predictions: { categoryId: string | null }[] = data.predictions ?? [];
+          // Answer of an older run or of another account: ignored.
+          if (!isCurrent()) return;
+          // Applied by id on the current rows: a box checked or a category chosen meanwhile is kept.
+          const predicted = new Map<string, string>();
           chunk.forEach((rowIndex, k) => {
             const categoryId = predictions[k]?.categoryId;
-            if (categoryId) {
-              updatedData[rowIndex] = { ...updatedData[rowIndex], categoryId, predicted: true };
-            }
+            if (categoryId) predicted.set(updatedData[rowIndex].id, categoryId);
           });
-          setParsedData([...updatedData]);
+          setParsedData(prev => prev.map(row => {
+            const categoryId = predicted.get(row.id);
+            return categoryId && !row.categoryId ? { ...row, categoryId, predicted: true } : row;
+          }));
         } catch (error) {
           // The import stays usable without predicted categories, but the failure is not silent.
+          if (!isCurrent()) return;
           console.error('Category prediction failed', error);
           predictionFailed = true;
         }
       }
-      if (predictionFailed) toast.warning(t('prediction_error'));
+      if (predictionFailed && isCurrent()) toast.warning(t('prediction_error'));
     }
-    setIsProcessing(false);
+    if (isCurrent()) setIsProcessing(false);
   };
 
   const invalidCount = parsedData.filter(item => item.invalidReason).length;
   const validCount = parsedData.length - invalidCount;
+  // Only checked, readable rows are sent.
+  const sentRows = parsedData.filter(item => !item.invalidReason && !item.excluded);
+  const sentCount = sentRows.length;
+  // Exact duplicates unchecked by default vs readable lines unchecked by hand (not duplicates, or comparison failed).
+  const setAsideCount = parsedData.filter(item => !item.invalidReason && item.excluded && item.duplicateOf).length;
+  const unselectedCount = validCount - sentCount - setAsideCount;
 
   const handleImport = () => {
-    if (!activeAccountId || validCount === 0) return;
+    if (!activeAccountId || sentCount === 0) return;
 
-    const payload = parsedData.filter(item => !item.invalidReason).map(item => ({
+    const payload = sentRows.map(item => ({
       date: item.date,
       description: item.description,
       amount: toCents(item.amount),
@@ -215,13 +286,20 @@ export default function ImportTransactionsPage() {
     bulkCreate({
       accountId: activeAccountId,
       transactions: payload,
+      importStats: compared
+        ? {
+            excluded: parsedData.filter(item => item.duplicateOf).length,
+            rechecked: parsedData.filter(item => item.duplicateOf && !item.excluded).length,
+            closeFlagged: parsedData.filter(item => item.nearOf).length,
+          }
+        : undefined,
     }, {
       onSuccess: (result) => {
         notifyPeriodSwitch(result);
         toast.success(
-          invalidCount > 0
-            ? t('success_with_skipped', { imported: validCount, skipped: invalidCount })
-            : t('success', { imported: validCount })
+          invalidCount > 0 || setAsideCount > 0 || unselectedCount > 0
+            ? t('success_with_skipped', { imported: sentCount, skipped: invalidCount, excluded: setAsideCount, unselected: unselectedCount })
+            : t('success', { imported: sentCount })
         );
         router.push('/transactions');
       }
@@ -244,7 +322,7 @@ export default function ImportTransactionsPage() {
           </div>
         </div>
         {step === 'validation' && (
-          <Button onClick={handleImport} disabled={isPending || validCount === 0} size="lg" className="gap-2">
+          <Button onClick={handleImport} disabled={isPending || sentCount === 0} size="lg" className="gap-2">
             {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
             {t('confirm')}
           </Button>

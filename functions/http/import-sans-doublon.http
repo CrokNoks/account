@@ -1,0 +1,185 @@
+@api = http://localhost:{{port}}
+@supabase = http://127.0.0.1:54321
+@anon = sb_publishable_ACJWlzQHlZjBrEguHvfOxg_3BJgxAaH
+@courant = {{courantAcc.id}}
+@livret = {{livretAcc.id}}
+@label = http import {{$timestamp}}
+
+# Local stack only (npx httpyac send --all functions/http/import-sans-doublon.http --var port=8090).
+# Users and accounts are created by the file (disposable, local only) ; Bob owns nothing. Transactions are deleted at the end.
+# The screen reads the account list over the file window then compares on the screen : here we check
+# what that read relies on (dates, cents, pending, meta.total) and the optional counts of POST /bulk.
+
+### Alice (disposable user)
+# @name aliceLogin
+POST {{supabase}}/auth/v1/signup
+apikey: {{anon}}
+Content-Type: application/json
+
+{"email":"alice-import-{{$timestamp}}@test.local","password":"Test-1234!"}
+
+?? status == 200
+
+### Bob (disposable user)
+# @name bobLogin
+POST {{supabase}}/auth/v1/signup
+apikey: {{anon}}
+Content-Type: application/json
+
+{"email":"bob-import-{{$timestamp}}@test.local","password":"Test-1234!"}
+
+?? status == 200
+
+### Alice's two accounts
+# @name courantAcc
+POST {{api}}/accounts
+Authorization: Bearer {{aliceLogin.access_token}}
+Content-Type: application/json
+
+{"name":"Import courant {{$timestamp}}"}
+
+?? status == 201
+
+###
+# @name livretAcc
+POST {{api}}/accounts
+Authorization: Bearer {{aliceLogin.access_token}}
+Content-Type: application/json
+
+{"name":"Import livret {{$timestamp}}"}
+
+?? status == 201
+
+### Existing: a manual purchase and a pending one (not to be compared)
+# @name manual
+POST {{api}}/{{courant}}/transactions
+Authorization: Bearer {{aliceLogin.access_token}}
+Content-Type: application/json
+
+{"date":"2026-10-15","amount":"-850","description":"{{label}} Boulangerie"}
+
+?? status == 201
+
+###
+# @name pendingOne
+POST {{api}}/{{courant}}/transactions
+Authorization: Bearer {{aliceLogin.access_token}}
+Content-Type: application/json
+
+{"date":"2026-10-16","amount":"-850","description":"{{label}} Loyer","pending":true}
+
+?? status == 201
+
+### Same line on the other account (must never be read for Courant)
+# @name other
+POST {{api}}/{{livret}}/transactions
+Authorization: Bearer {{aliceLogin.access_token}}
+Content-Type: application/json
+
+{"date":"2026-10-15","amount":"-850","description":"{{label}} Boulangerie"}
+
+?? status == 201
+
+### The screen's read : window of the file +/- 3 days, the account only, cents and calendar days, pending flagged
+# @name window
+GET {{api}}/{{courant}}/transactions?startDate=2026-10-12&endDate=2026-10-19&limit=5000
+Authorization: Bearer {{aliceLogin.access_token}}
+
+?? status == 200
+?? body contains "{{label}} Boulangerie"
+?? body contains "{{label}} Loyer"
+?? js response.parsedBody.data.filter(t => t.description.includes(label)).length == 2
+?? js response.parsedBody.data.filter(t => t.id == other.id).length == 0
+?? js response.parsedBody.data.find(t => t.id == manual.id).amount === '-850' == true
+?? js response.parsedBody.data.find(t => t.id == manual.id).date.slice(0, 10) === '2026-10-15' == true
+?? js response.parsedBody.data.find(t => t.id == pendingOne.id).pending == true
+?? js response.parsedBody.meta.total === response.parsedBody.data.length == true
+
+### A user without access gets nothing from the account (no comparison base for others)
+GET {{api}}/{{courant}}/transactions?startDate=2026-10-12&endDate=2026-10-19&limit=5000
+Authorization: Bearer {{bobLogin.access_token}}
+
+?? status == 200
+?? js response.parsedBody.data.length == 0
+
+### Anonymous
+GET {{api}}/{{courant}}/transactions?startDate=2026-10-12&endDate=2026-10-19&limit=5000
+
+?? status == 401
+
+### Import of the checked lines only, with the counts : same write as before
+# @name imported
+POST {{api}}/{{courant}}/transactions/bulk
+Authorization: Bearer {{aliceLogin.access_token}}
+Content-Type: application/json
+
+{
+  "transactions": [
+    {"date":"2026-10-16","amount":"-850","description":"{{label}} CB BOULANGERIE PAUL","reconciled":true},
+    {"date":"2026-10-17","amount":"-100","description":"{{label}} NOUVEAU","reconciled":true}
+  ],
+  "importStats": {"excluded": 1, "rechecked": 0, "closeFlagged": 1}
+}
+
+?? status == 201
+?? js response.parsedBody.length == 2
+
+### The counts stay optional
+# @name importedNoStats
+POST {{api}}/{{courant}}/transactions/bulk
+Authorization: Bearer {{aliceLogin.access_token}}
+Content-Type: application/json
+
+{"transactions":[{"date":"2026-10-18","amount":"-100","description":"{{label}} SANS COMPTAGE"}]}
+
+?? status == 201
+
+### Invalid counts are refused and nothing is written
+POST {{api}}/{{courant}}/transactions/bulk
+Authorization: Bearer {{aliceLogin.access_token}}
+Content-Type: application/json
+
+{"transactions":[{"date":"2026-10-18","amount":"-100","description":"{{label}} REFUSE"}],"importStats":{"excluded":-1,"rechecked":0,"closeFlagged":0}}
+
+?? status == 400
+
+###
+POST {{api}}/{{courant}}/transactions/bulk
+Authorization: Bearer {{aliceLogin.access_token}}
+Content-Type: application/json
+
+{"transactions":[{"date":"2026-10-18","amount":"-100","description":"{{label}} REFUSE"}],"importStats":{"excluded":"a","rechecked":0,"closeFlagged":0}}
+
+?? status == 400
+
+### Nothing was written by the refused calls
+GET {{api}}/{{courant}}/transactions?startDate=2026-10-12&endDate=2026-10-19&limit=5000
+Authorization: Bearer {{aliceLogin.access_token}}
+
+?? status == 200
+?? js response.parsedBody.data.filter(t => t.description.endsWith('REFUSE')).length == 0
+?? js response.parsedBody.data.filter(t => t.description.includes(label)).length == 5
+
+### Bob cannot import into Alice's account, counts or not
+POST {{api}}/{{courant}}/transactions/bulk
+Authorization: Bearer {{bobLogin.access_token}}
+Content-Type: application/json
+
+{"transactions":[{"date":"2026-10-18","amount":"-100","description":"{{label}} BOB"}],"importStats":{"excluded":0,"rechecked":0,"closeFlagged":0}}
+
+?? status >= 403
+
+### Cleanup (Courant)
+DELETE {{api}}/{{courant}}/transactions/bulk
+Authorization: Bearer {{aliceLogin.access_token}}
+Content-Type: application/json
+
+{"ids":["{{manual.id}}","{{pendingOne.id}}","{{imported[0].id}}","{{imported[1].id}}","{{importedNoStats[0].id}}"]}
+
+?? status == 204
+
+### Cleanup (Livret)
+DELETE {{api}}/{{livret}}/transactions/{{other.id}}
+Authorization: Bearer {{aliceLogin.access_token}}
+
+?? status == 204

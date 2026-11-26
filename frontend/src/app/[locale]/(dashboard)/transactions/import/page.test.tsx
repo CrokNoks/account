@@ -43,8 +43,14 @@ type ImportedLine = {
 
 const catalogs = { fr, en };
 
+// Back stand-in: transactions already in the account (list answer).
+function mockExisting(existing: Array<Record<string, unknown>>) {
+  vi.mocked(apiClient.get).mockResolvedValue({ data: { data: existing, meta: { total: existing.length } } });
+}
+
 // Back stand-in: one prediction per description, in order.
 function mockPredictions(byDescription: Record<string, string> = {}) {
+  mockExisting([]);
   vi.mocked(apiClient.post).mockImplementation((_url, body) =>
     Promise.resolve({
       data: {
@@ -148,7 +154,6 @@ describe('CSV import page', () => {
     expect(apiClient.post).toHaveBeenCalledWith('/acc-1/transactions/predict-categories', {
       descriptions: ['CB CARREFOUR', 'AUTRE'],
     });
-    expect(apiClient.get).not.toHaveBeenCalled();
     expect(lines.map((l) => l.categoryId)).toEqual(['cat-courses', null]);
   });
 
@@ -568,5 +573,222 @@ describe('CSV import page period switch message', () => {
     fireEvent.click(confirm);
 
     expect(toast.success).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('CSV import page : lignes déjà présentes', () => {
+  const csv = [
+    'Date;Libellé;Montant',
+    '25/11/2026;CB CAFE;-2,50',
+    '25/11/2026;CB CAFE;-2,50',
+    '26/11/2026;CB BOULANGERIE PAUL;-8,50',
+    '27/11/2026;NOUVEAU;-1',
+    'nope;ILLISIBLE;-3',
+  ].join('\n');
+  const existing = [
+    { id: 't1', date: '2026-11-25T00:00:00.000Z', description: 'cb café', amount: '-250', pending: false },
+    { id: 't2', date: '2026-11-25', description: 'Boulangerie', amount: '-850', pending: false },
+    { id: 't3', date: '2026-11-27', description: 'NOUVEAU', amount: '-100', pending: true },
+  ];
+
+  beforeEach(() => {
+    bulkCreate.mockReset();
+    vi.mocked(toast.success).mockReset();
+    vi.mocked(toast.warning).mockReset();
+    useAccountStore.setState({ activeAccountId: 'acc-1' });
+    vi.mocked(apiClient.get).mockReset();
+    vi.mocked(apiClient.post).mockReset();
+    mockPredictions();
+    mockExisting(existing);
+  });
+
+  const boxes = () => screen.getAllByRole('checkbox');
+
+  it('lit les transactions du compte importé sur la fenêtre du fichier (+/- 3 jours)', async () => {
+    await openValidation(csv);
+    expect(apiClient.get).toHaveBeenCalledTimes(1);
+    expect(apiClient.get).toHaveBeenCalledWith('/acc-1/transactions', {
+      params: { startDate: '2026-11-22', endDate: '2026-11-30', limit: 5000 },
+    });
+  });
+
+  it('décoche la ligne identique (un seul café en base), signale la proche, et n envoie que les cochées', async () => {
+    const confirm = await openValidation(csv);
+
+    expect(boxes().map((b) => b.getAttribute('aria-checked'))).toEqual(['false', 'true', 'true', 'true', 'false']);
+    expect(screen.getByText(/Déjà présente · 25\/11\/2026 · cb café/)).toBeInTheDocument();
+    expect(screen.getByText(/Ligne proche · 25\/11\/2026 · Boulangerie/)).toBeInTheDocument();
+
+    fireEvent.click(confirm);
+    const [{ transactions, importStats }] = bulkCreate.mock.calls[0] as [
+      { transactions: ImportedLine[]; importStats: unknown },
+    ];
+    expect(transactions.map((l) => l.description)).toEqual(['CB CAFE', 'CB BOULANGERIE PAUL', 'NOUVEAU']);
+    expect(importStats).toEqual({ excluded: 1, rechecked: 0, closeFlagged: 1 });
+
+    bulkCreate.mock.calls[0][1].onSuccess();
+    expect(toast.success).toHaveBeenCalledWith('3 transactions importées, 1 ligne ignorée, 1 ligne écartée (déjà présente)');
+  });
+
+  it('recocher une ligne décochée l envoie et la compte comme recochée', async () => {
+    const confirm = await openValidation(csv);
+    fireEvent.click(boxes()[0]);
+    await waitFor(() => expect(boxes()[0].getAttribute('aria-checked')).toBe('true'));
+    fireEvent.click(confirm);
+    const [{ transactions, importStats }] = bulkCreate.mock.calls[0] as [
+      { transactions: ImportedLine[]; importStats: unknown },
+    ];
+    expect(transactions).toHaveLength(4);
+    expect(importStats).toEqual({ excluded: 1, rechecked: 1, closeFlagged: 1 });
+  });
+
+  it('désactive la confirmation quand plus aucune ligne n est cochée', async () => {
+    mockExisting([{ id: 't1', date: '2026-03-01', description: 'a', amount: '-100', pending: false }]);
+    const confirm = await openValidation(['Date;Libellé;Montant', '01/03/2026;A;-1'].join('\n'));
+    expect(confirm).toBeDisabled();
+    fireEvent.click(confirm);
+    expect(bulkCreate).not.toHaveBeenCalled();
+  });
+
+  it('ne compare jamais une ligne illisible', async () => {
+    mockExisting([{ id: 't1', date: '2026-03-01', description: 'A', amount: '0', pending: false }]);
+    await openValidation(['Date;Libellé;Montant', '01/03/2026;A;x'].join('\n'));
+    expect(screen.queryByText(/Déjà présente/)).toBeNull();
+    expect(screen.queryByText(/Ligne proche/)).toBeNull();
+  });
+
+  it('CA8 : lecture impossible, import possible, rien de décoché, avertissement, pas de comptage', async () => {
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+    vi.mocked(apiClient.get).mockRejectedValue(new Error('boom'));
+    const confirm = await openValidation(csv);
+    expect(toast.warning).toHaveBeenCalledWith(fr.Import.existing_error);
+    expect(boxes().filter((b) => b.getAttribute('aria-checked') === 'true')).toHaveLength(4);
+    fireEvent.click(confirm);
+    const [call] = bulkCreate.mock.calls[0] as [{ transactions: ImportedLine[]; importStats?: unknown }];
+    expect(call.transactions).toHaveLength(4);
+    expect(call.importStats).toBeUndefined();
+    error.mockRestore();
+  });
+
+  it('lecture tronquée (plus de transactions que reçues) : traitée comme un échec', async () => {
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+    vi.mocked(apiClient.get).mockResolvedValue({ data: { data: existing, meta: { total: 6000 } } });
+    await openValidation(csv);
+    expect(toast.warning).toHaveBeenCalledWith(fr.Import.existing_error);
+    expect(boxes().filter((b) => b.getAttribute('aria-checked') === 'true')).toHaveLength(4);
+    error.mockRestore();
+  });
+
+  it('CA7 : une paie écartée n est pas envoyée (donc ni bascule ni nettoyage)', async () => {
+    mockExisting([{ id: 't1', date: '2026-11-28', description: 'PAIE', amount: '200000', pending: false }]);
+    const confirm = await openValidation(['Date;Libellé;Montant', '28/11/2026;PAIE;2000,00', '29/11/2026;X;-1'].join('\n'));
+    fireEvent.click(confirm);
+    const [{ transactions }] = bulkCreate.mock.calls[0] as [{ transactions: ImportedLine[] }];
+    expect(transactions.map((l) => l.description)).toEqual(['X']);
+  });
+
+  it('change de compte à l écran : le résultat de l ancien compte est rejeté (retour à l étape 1)', async () => {
+    let release: (v: unknown) => void = () => {};
+    vi.mocked(apiClient.get).mockReturnValue(new Promise((r) => (release = r)) as never);
+    const { container } = renderPage();
+    fireEvent.change(container.querySelector('input[type="file"]')!, {
+      target: { files: [new File([csv], 'releve.csv')] },
+    });
+    fireEvent.click(await screen.findByRole('button', { name: /Analyser les données/ }));
+    await waitFor(() => expect(apiClient.get).toHaveBeenCalled());
+    useAccountStore.setState({ activeAccountId: 'acc-2' });
+    release({ data: { data: existing, meta: { total: existing.length } } });
+    await waitFor(() => expect(screen.queryByRole('button', { name: /Confirmer l.import/ })).toBeNull());
+    expect(screen.getByText(fr.Import.subtitle_upload)).toBeInTheDocument();
+  });
+
+  it('toast : une ligne décochée à la main est « non sélectionnée », pas « écartée »', async () => {
+    const confirm = await openValidation(csv);
+    fireEvent.click(boxes()[3]); // boulangerie (proche, pas un doublon exact)
+    await waitFor(() => expect(boxes()[3].getAttribute('aria-checked')).toBe('false'));
+    fireEvent.click(confirm);
+    bulkCreate.mock.calls[0][1].onSuccess();
+    expect(toast.success).toHaveBeenCalledWith(
+      '2 transactions importées, 1 ligne ignorée, 1 ligne écartée (déjà présente), 1 ligne non sélectionnée',
+    );
+  });
+
+  it('toast : lecture en échec, une ligne décochée à la main est comptée non sélectionnée', async () => {
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+    vi.mocked(apiClient.get).mockRejectedValue(new Error('boom'));
+    const confirm = await openValidation(['Date;Libellé;Montant', '01/03/2026;A;-1', '02/03/2026;B;-2'].join('\n'));
+    fireEvent.click(boxes()[0]);
+    await waitFor(() => expect(boxes()[0].getAttribute('aria-checked')).toBe('false'));
+    fireEvent.click(confirm);
+    bulkCreate.mock.calls[0][1].onSuccess();
+    expect(toast.success).toHaveBeenCalledWith('1 transaction importée, 1 ligne non sélectionnée');
+    error.mockRestore();
+  });
+
+  it('toast en anglais : not selected', async () => {
+    const { container } = renderPage('en');
+    fireEvent.change(container.querySelector('input[type="file"]')!, {
+      target: { files: [new File(['Date;Label;Amount\n01/03/2026;A;-1\n02/03/2026;B;-2'], 'a.csv')] },
+    });
+    fireEvent.click(await screen.findByRole('button', { name: /Analyze/ }));
+    const confirm = await screen.findByRole('button', { name: /Confirm/ });
+    await waitFor(() => expect(apiClient.post).toHaveBeenCalled());
+    await new Promise((r) => setTimeout(r, 0));
+    fireEvent.click(boxes()[0]);
+    await waitFor(() => expect(boxes()[0].getAttribute('aria-checked')).toBe('false'));
+    fireEvent.click(confirm);
+    bulkCreate.mock.calls[0][1].onSuccess();
+    expect(toast.success).toHaveBeenCalledWith('1 transaction imported, 1 line not selected');
+  });
+
+  it('prédiction : une réponse tardive d\'un compte ou d\'une session remplacée est ignorée', async () => {
+    let releaseOld: (v: unknown) => void = () => {};
+    vi.mocked(apiClient.post).mockReset();
+    vi.mocked(apiClient.post).mockImplementationOnce(
+      () => new Promise((r) => (releaseOld = r)) as never,
+    );
+    vi.mocked(apiClient.post).mockImplementation((_url, body) =>
+      Promise.resolve({
+        data: { predictions: (body as { descriptions: string[] }).descriptions.map(() => ({ categoryId: null })) },
+      }),
+    );
+    const { container } = renderPage();
+    const load = (content: string) =>
+      fireEvent.change(container.querySelector('input[type="file"]')!, {
+        target: { files: [new File([content], 'releve.csv')] },
+      });
+    load('Date;Libellé;Montant\n01/03/2026;ANCIEN;-1');
+    fireEvent.click(await screen.findByRole('button', { name: /Analyser les données/ }));
+    await waitFor(() => expect(apiClient.post).toHaveBeenCalledTimes(1)); // prédiction en attente
+
+    useAccountStore.setState({ activeAccountId: 'acc-2' }); // retour à l'étape 1
+    await waitFor(() => expect(container.querySelector('input[type="file"]')).not.toBeNull());
+    load('Date;Libellé;Montant\n01/03/2026;NOUVEAU;-2');
+    fireEvent.click(await screen.findByRole('button', { name: /Analyser les données/ }));
+    const confirm = await screen.findByRole('button', { name: /Confirmer l.import/ });
+    await waitFor(() => expect(apiClient.post).toHaveBeenCalledTimes(2));
+    await new Promise((r) => setTimeout(r, 0));
+
+    // La réponse de l'ancienne session arrive : même id de ligne (row-0), mais elle ne doit rien changer.
+    releaseOld({ data: { predictions: [{ categoryId: 'cat-ancien' }] } });
+    await new Promise((r) => setTimeout(r, 10));
+    fireEvent.click(confirm);
+    const [{ accountId, transactions }] = bulkCreate.mock.calls[0] as [
+      { accountId: string; transactions: ImportedLine[] },
+    ];
+    expect(accountId).toBe('acc-2');
+    expect(transactions.map((l) => [l.description, l.categoryId])).toEqual([['NOUVEAU', null]]);
+  });
+
+  it('en anglais : toast et bandeaux traduits', async () => {
+    const { container } = renderPage('en');
+    fireEvent.change(container.querySelector('input[type="file"]')!, {
+      target: { files: [new File([csv], 'releve.csv')] },
+    });
+    fireEvent.click(await screen.findByRole('button', { name: /Analyze/ }));
+    await screen.findByRole('button', { name: /Confirm/ });
+    expect(await screen.findByText(/Already present · 11\/25\/2026/)).toBeInTheDocument();
+    expect(screen.getByText(/Close line/)).toBeInTheDocument();
+    expect(screen.getByText(/1 line set aside/)).toBeInTheDocument();
   });
 });

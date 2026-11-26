@@ -12,6 +12,8 @@ export interface BulkCreateTransactionsData {
     amount: string;
     reconciled?: boolean;
   }>;
+  /** Counts from the import screen, for measurement only (numbers, no effect on the write). */
+  importStats?: { excluded: number; rechecked: number; closeFlagged: number };
 }
 
 export function useBulkCreateTransactions() {
@@ -19,8 +21,8 @@ export function useBulkCreateTransactions() {
 
   return useMutation({
     mutationFn: async (data: BulkCreateTransactionsData) => {
-      const { accountId, transactions } = data;
-      const response = await apiClient.post(`/${accountId}/transactions/bulk`, { transactions });
+      const { accountId, transactions, importStats } = data;
+      const response = await apiClient.post(`/${accountId}/transactions/bulk`, { transactions, importStats });
       return response.data;
     },
     onSuccess: (data, variables) => {
