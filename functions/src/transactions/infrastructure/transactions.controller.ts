@@ -579,8 +579,10 @@ export class TransactionsController {
   async deleteBulk(
     @Param('accountId') accountId: string,
     @Body() dto: BulkDeleteTransactionsDto,
+    @Request() req: AuthenticatedRequest,
   ): Promise<void> {
     await this.bulkDeleteTransactionsUseCase.execute({
+      userId: req.user.id,
       accountId,
       ids: dto.ids,
     });
@@ -682,13 +684,14 @@ export class TransactionsController {
   async delete(
     @Param('accountId') accountId: string,
     @Param('id') id: string,
+    @Request() req: AuthenticatedRequest,
   ): Promise<void> {
-    ensureBelongsToAccount(
-      await this.transactionRepository.findById(id),
+    // Même règle que la suppression en lot : l'autre côté d'un virement suit.
+    await this.bulkDeleteTransactionsUseCase.deleteOne({
+      userId: req.user.id,
       accountId,
-      'Transaction',
-    );
-    await this.transactionRepository.delete(id);
+      id,
+    });
   }
 
   @Post('bulk')

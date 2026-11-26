@@ -1,0 +1,516 @@
+@api = http://localhost:8080
+@supabase = http://127.0.0.1:54321
+@anon = sb_publishable_ACJWlzQHlZjBrEguHvfOxg_3BJgxAaH
+
+# Local stack only. Two throwaway users (alice, bob) and their accounts are created by this file.
+# Cleanup (local database): delete from auth.users where email like 'vd-%@test.local';
+
+{{
+  const stamp = Date.now();
+  exports.aliceEmail = `vd-alice-${stamp}@test.local`;
+  exports.bobEmail = `vd-bob-${stamp}@test.local`;
+  exports.stamp = stamp;
+}}
+
+### Alice signs up
+# @name alice
+POST {{supabase}}/auth/v1/signup
+apikey: {{anon}}
+Content-Type: application/json
+
+{"email":"{{aliceEmail}}","password":"Test-1234!"}
+
+?? status == 200
+
+### Bob signs up
+# @name bob
+POST {{supabase}}/auth/v1/signup
+apikey: {{anon}}
+Content-Type: application/json
+
+{"email":"{{bobEmail}}","password":"Test-1234!"}
+
+?? status == 200
+
+### Alice owns AX and AY
+# @name ax
+POST {{api}}/accounts
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{"name":"VD AX {{stamp}}"}
+
+?? status == 201
+
+###
+# @name ay
+POST {{api}}/accounts
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{"name":"VD AY {{stamp}}"}
+
+?? status == 201
+
+### Bob owns BX
+# @name bx
+POST {{api}}/accounts
+Authorization: Bearer {{bob.access_token}}
+Content-Type: application/json
+
+{"name":"VD BX {{stamp}}"}
+
+?? status == 201
+
+### Bob shares BX with Alice (write); Alice shares AX with Bob (write)
+POST {{api}}/accounts/{{bx.id}}/shares
+Authorization: Bearer {{bob.access_token}}
+Content-Type: application/json
+
+{"email":"{{aliceEmail}}","permission":"write"}
+
+?? status == 201
+
+###
+POST {{api}}/accounts/{{ax.id}}/shares
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{"email":"{{bobEmail}}","permission":"write"}
+
+?? status == 201
+
+# ---------------------------------------------------------------------------
+# CA1, CA3, CA4 : Alice, transfer AX -> AY (50 EUR), both accounts are hers
+# ---------------------------------------------------------------------------
+
+### Transfer of 50 EUR on 2026-11-20
+# @name t1
+POST {{api}}/{{ax.id}}/transactions/transfer
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{"destinationAccountId":"{{ay.id}}","date":"2026-11-20","description":"vd t1","amount":"5000"}
+
+?? status == 201
+?? js response.parsedBody[0].amount == -5000
+?? js response.parsedBody[1].amount == 5000
+
+### CA1: outgoing side to -8000 -> incoming side becomes +8000 (same call)
+PATCH {{api}}/{{ax.id}}/transactions/{{t1[0].id}}
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{"amount":"-8000"}
+
+?? status == 200
+?? js response.parsedBody.amount == -8000
+
+### CA1: the other side was written
+GET {{api}}/{{ay.id}}/transactions
+Authorization: Bearer {{alice.access_token}}
+
+?? status == 200
+?? js response.parsedBody.data.find(t => t.id == t1[1].id).amount == 8000
+
+### CA1 from the incoming side: +9000 -> outgoing side becomes -9000
+PATCH {{api}}/{{ay.id}}/transactions/{{t1[1].id}}
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{"amount":"9000"}
+
+?? status == 200
+?? js response.parsedBody.amount == 9000
+
+###
+GET {{api}}/{{ax.id}}/transactions
+Authorization: Bearer {{alice.access_token}}
+
+?? status == 200
+?? js response.parsedBody.data.find(t => t.id == t1[0].id).amount == -9000
+
+### CA2: wrong sign refused, nothing written
+PATCH {{api}}/{{ax.id}}/transactions/{{t1[0].id}}
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{"amount":"8000"}
+
+?? status == 400
+
+###
+PATCH {{api}}/{{ax.id}}/transactions/{{t1[0].id}}
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{"amount":"0"}
+
+?? status == 400
+
+###
+PATCH {{api}}/{{ay.id}}/transactions/{{t1[1].id}}
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{"amount":"-1"}
+
+?? status == 400
+
+###
+PATCH {{api}}/{{ay.id}}/transactions/{{t1[1].id}}
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{"amount":"0"}
+
+?? status == 400
+
+### CA2: both sides are unchanged (-9000 / +9000)
+GET {{api}}/{{ax.id}}/transactions
+Authorization: Bearer {{alice.access_token}}
+
+?? status == 200
+?? js response.parsedBody.data.find(t => t.id == t1[0].id).amount == -9000
+
+###
+GET {{api}}/{{ay.id}}/transactions
+Authorization: Bearer {{alice.access_token}}
+
+?? status == 200
+?? js response.parsedBody.data.find(t => t.id == t1[1].id).amount == 9000
+
+### CA3: date 2026-11-20 -> 2026-11-22 on one side
+PATCH {{api}}/{{ax.id}}/transactions/{{t1[0].id}}
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{"date":"2026-11-22"}
+
+?? status == 200
+?? js response.parsedBody.date == 2026-11-22T00:00:00.000Z
+
+###
+GET {{api}}/{{ay.id}}/transactions
+Authorization: Bearer {{alice.access_token}}
+
+?? status == 200
+?? js response.parsedBody.data.find(t => t.id == t1[1].id).date == 2026-11-22T00:00:00.000Z
+?? js response.parsedBody.data.find(t => t.id == t1[1].id).amount == 9000
+
+### CA8: libellé et notes d'un côté ne touchent pas l'autre
+PATCH {{api}}/{{ax.id}}/transactions/{{t1[0].id}}
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{"description":"vd t1 renomme","notes":"note A","reconciled":true}
+
+?? status == 200
+
+###
+GET {{api}}/{{ay.id}}/transactions
+Authorization: Bearer {{alice.access_token}}
+
+?? status == 200
+?? js response.parsedBody.data.find(t => t.id == t1[1].id).description == vd t1
+?? js response.parsedBody.data.find(t => t.id == t1[1].id).reconciled == false
+?? js response.parsedBody.data.find(t => t.id == t1[1].id).notes == null
+
+### The transfer link cannot be broken through metadata (400)
+PATCH {{api}}/{{ax.id}}/transactions/{{t1[0].id}}
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{"metadata":{"type":"transfer_out"}}
+
+?? status == 400
+
+### CA4: simple deletion of one side removes the other
+DELETE {{api}}/{{ax.id}}/transactions/{{t1[0].id}}
+Authorization: Bearer {{alice.access_token}}
+
+?? status == 204
+
+###
+GET {{api}}/{{ay.id}}/transactions
+Authorization: Bearer {{alice.access_token}}
+
+?? status == 200
+?? js response.parsedBody.data.filter(t => t.id == t1[1].id).length == 0
+
+# ---------------------------------------------------------------------------
+# CA5 : bulk deletion
+# ---------------------------------------------------------------------------
+
+### Two transfers and an ordinary line on AX
+# @name t2
+POST {{api}}/{{ax.id}}/transactions/transfer
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{"destinationAccountId":"{{ay.id}}","date":"2026-11-20","description":"vd t2","amount":"1000"}
+
+?? status == 201
+
+###
+# @name t3
+POST {{api}}/{{ax.id}}/transactions/transfer
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{"destinationAccountId":"{{ay.id}}","date":"2026-11-20","description":"vd t3","amount":"2000"}
+
+?? status == 201
+
+###
+# @name o1
+POST {{api}}/{{ax.id}}/transactions
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{"date":"2026-11-20","amount":"-300","description":"vd ordinaire 1"}
+
+?? status == 201
+
+### CA5: a batch with one side of t2 and an ordinary line removes the other side of t2 too
+DELETE {{api}}/{{ax.id}}/transactions/bulk
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{"ids":["{{t2[0].id}}","{{o1.id}}"]}
+
+?? status == 204
+
+###
+GET {{api}}/{{ax.id}}/transactions
+Authorization: Bearer {{alice.access_token}}
+
+?? status == 200
+?? js response.parsedBody.data.filter(t => [t2[0].id,o1.id].includes(t.id)).length == 0
+?? js response.parsedBody.data.filter(t => t.id == t3[0].id).length == 1
+
+###
+GET {{api}}/{{ay.id}}/transactions
+Authorization: Bearer {{alice.access_token}}
+
+?? status == 200
+?? js response.parsedBody.data.filter(t => t.id == t2[1].id).length == 0
+?? js response.parsedBody.data.filter(t => t.id == t3[1].id).length == 1
+
+### A batch naming both sides: the URL scopes the batch to one account, the foreign id answers 404 as before, nothing deleted
+DELETE {{api}}/{{ax.id}}/transactions/bulk
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{"ids":["{{t3[0].id}}","{{t3[1].id}}"]}
+
+?? status == 404
+
+###
+GET {{api}}/{{ay.id}}/transactions
+Authorization: Bearer {{alice.access_token}}
+
+?? status == 200
+?? js response.parsedBody.data.filter(t => t.id == t3[1].id).length == 1
+
+# ---------------------------------------------------------------------------
+# CA6, CA7, CA8 : rights on the other account (Alice -> BX owned by Bob)
+# ---------------------------------------------------------------------------
+
+### Alice (write on BX) transfers 50 EUR from AX to BX
+# @name t4
+POST {{api}}/{{ax.id}}/transactions/transfer
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{"destinationAccountId":"{{bx.id}}","date":"2026-11-20","description":"vd t4","amount":"5000"}
+
+?? status == 201
+
+###
+# @name o2
+POST {{api}}/{{ax.id}}/transactions
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{"date":"2026-11-20","amount":"-700","description":"vd ordinaire 2"}
+
+?? status == 201
+
+### Bob lowers Alice's share on BX to read
+POST {{api}}/accounts/{{bx.id}}/shares
+Authorization: Bearer {{bob.access_token}}
+Content-Type: application/json
+
+{"email":"{{aliceEmail}}","permission":"read"}
+
+?? status == 201
+
+### CA6: amount change refused (403), own side untouched
+PATCH {{api}}/{{ax.id}}/transactions/{{t4[0].id}}
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{"amount":"-7000"}
+
+?? status == 403
+
+###
+GET {{api}}/{{ax.id}}/transactions
+Authorization: Bearer {{alice.access_token}}
+
+?? status == 200
+?? js response.parsedBody.data.find(t => t.id == t4[0].id).amount == -5000
+
+###
+GET {{api}}/{{bx.id}}/transactions
+Authorization: Bearer {{bob.access_token}}
+
+?? status == 200
+?? js response.parsedBody.data.find(t => t.id == t4[1].id).amount == 5000
+
+### CA6: date change refused (403)
+PATCH {{api}}/{{ax.id}}/transactions/{{t4[0].id}}
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{"date":"2026-11-25"}
+
+?? status == 403
+
+### CA6: simple deletion refused (403), both sides remain
+DELETE {{api}}/{{ax.id}}/transactions/{{t4[0].id}}
+Authorization: Bearer {{alice.access_token}}
+
+?? status == 403
+
+### CA6: a batch of 3 lines with one transfer to a read-only account: 403, none deleted
+DELETE {{api}}/{{ax.id}}/transactions/bulk
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{"ids":["{{o2.id}}","{{t4[0].id}}","{{t3[0].id}}"]}
+
+?? status == 403
+
+###
+GET {{api}}/{{ax.id}}/transactions
+Authorization: Bearer {{alice.access_token}}
+
+?? status == 200
+?? js response.parsedBody.data.filter(t => [o2.id,t4[0].id,t3[0].id].includes(t.id)).length == 3
+
+###
+GET {{api}}/{{bx.id}}/transactions
+Authorization: Bearer {{bob.access_token}}
+
+?? status == 200
+?? js response.parsedBody.data.filter(t => t.id == t4[1].id).length == 1
+
+### CA8: own-side fields still editable with a read-only other account (no right needed)
+PATCH {{api}}/{{ax.id}}/transactions/{{t4[0].id}}
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{"description":"vd t4 renomme","notes":"note A","reconciled":true}
+
+?? status == 200
+
+###
+GET {{api}}/{{bx.id}}/transactions
+Authorization: Bearer {{bob.access_token}}
+
+?? status == 200
+?? js response.parsedBody.data.find(t => t.id == t4[1].id).description == vd t4
+?? js response.parsedBody.data.find(t => t.id == t4[1].id).reconciled == false
+
+### CA6: Bob removes Alice's share on BX: BX becomes invisible to her, 404 (not 403)
+DELETE {{api}}/accounts/{{bx.id}}/shares/{{alice.user.id}}
+Authorization: Bearer {{bob.access_token}}
+
+?? status == 204
+
+###
+PATCH {{api}}/{{ax.id}}/transactions/{{t4[0].id}}
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{"amount":"-7000"}
+
+?? status == 404
+?? body contains "Account not found"
+
+###
+DELETE {{api}}/{{ax.id}}/transactions/{{t4[0].id}}
+Authorization: Bearer {{alice.access_token}}
+
+?? status == 404
+
+### CA6 as Bob: Alice shares AX with Bob in read only -> Bob cannot change the incoming side of t4
+POST {{api}}/accounts/{{ax.id}}/shares
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{"email":"{{bobEmail}}","permission":"read"}
+
+?? status == 201
+
+###
+PATCH {{api}}/{{bx.id}}/transactions/{{t4[1].id}}
+Authorization: Bearer {{bob.access_token}}
+Content-Type: application/json
+
+{"amount":"7000"}
+
+?? status == 403
+
+### Write share on AX for Bob: Bob changes his side, Alice's side follows
+POST {{api}}/accounts/{{ax.id}}/shares
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{"email":"{{bobEmail}}","permission":"write"}
+
+?? status == 201
+
+###
+PATCH {{api}}/{{bx.id}}/transactions/{{t4[1].id}}
+Authorization: Bearer {{bob.access_token}}
+Content-Type: application/json
+
+{"amount":"7000"}
+
+?? status == 200
+?? js response.parsedBody.amount == 7000
+
+###
+GET {{api}}/{{ax.id}}/transactions
+Authorization: Bearer {{alice.access_token}}
+
+?? status == 200
+?? js response.parsedBody.data.find(t => t.id == t4[0].id).amount == -7000
+
+### Alice has write on BX again: batch of an ordinary line and one side of t4 removes both sides
+POST {{api}}/accounts/{{bx.id}}/shares
+Authorization: Bearer {{bob.access_token}}
+Content-Type: application/json
+
+{"email":"{{aliceEmail}}","permission":"write"}
+
+?? status == 201
+
+###
+DELETE {{api}}/{{ax.id}}/transactions/bulk
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{"ids":["{{o2.id}}","{{t4[0].id}}"]}
+
+?? status == 204
+
+###
+GET {{api}}/{{bx.id}}/transactions
+Authorization: Bearer {{bob.access_token}}
+
+?? status == 200
+?? js response.parsedBody.data.filter(t => t.id == t4[1].id).length == 0

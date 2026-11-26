@@ -22,8 +22,21 @@ const tx = (
     ...overrides,
   });
 
-const deleteChain = (error: { code?: string; message: string } | null) => {
-  const inFn = jest.fn().mockResolvedValue({ error });
+const deleteChain = (
+  error: { code?: string; message: string } | null,
+  /** Lignes réellement supprimées renvoyées par la base (par défaut : une par id). */
+  deleted?: number,
+) => {
+  const select = jest.fn((cols: string) => {
+    void cols;
+    return Promise.resolve({
+      data: error
+        ? null
+        : Array.from({ length: deleted ?? 99 }, (_, i) => ({ id: `d${i}` })),
+      error,
+    });
+  });
+  const inFn = jest.fn().mockReturnValue({ select });
   const del = jest.fn().mockReturnValue({ in: inFn });
   const from = jest.fn().mockReturnValue({ delete: del });
   const repository = new SupabaseTransactionRepository({
@@ -302,6 +315,22 @@ describe('SupabaseTransactionRepository atomic writes', () => {
       expect(from).toHaveBeenCalledWith('transactions');
       expect(inFn).toHaveBeenCalledTimes(1);
       expect(inFn).toHaveBeenCalledWith('id', ['t1', 't2']);
+    });
+
+    it('refuses (403) when fewer rows than requested were deleted (RLS ignores rows in silence)', async () => {
+      const { repository } = deleteChain(null, 1);
+
+      const result = repository.deleteMany(['t1', 't2']);
+
+      await expect(result).rejects.toBeInstanceOf(ForbiddenError);
+    });
+
+    it('accepts exactly as many deleted rows as requested', async () => {
+      const { repository } = deleteChain(null, 2);
+
+      await expect(
+        repository.deleteMany(['t1', 't2']),
+      ).resolves.toBeUndefined();
     });
 
     it('sends nothing for an empty list', async () => {

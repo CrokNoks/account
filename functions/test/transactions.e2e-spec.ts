@@ -927,6 +927,10 @@ describe('Transactions routes (e2e)', () => {
   });
 
   it('DELETE /:accountId/transactions/:id answers 204', async () => {
+    mocks.transactions.findById.mockResolvedValue(
+      tx('00000000-0000-4000-8000-000000000111'),
+    );
+
     await http()
       .delete(
         '/00000000-0000-4000-8000-000000000101/transactions/00000000-0000-4000-8000-000000000111',
@@ -934,9 +938,316 @@ describe('Transactions routes (e2e)', () => {
       .set(auth())
       .expect(204);
 
-    expect(mocks.transactions.delete).toHaveBeenCalledWith(
-      '00000000-0000-4000-8000-000000000111',
-    );
+    expect(mocks.transactions.deleteMany.mock.calls).toEqual([
+      [['00000000-0000-4000-8000-000000000111']],
+    ]);
+  });
+
+  describe('transfers: the other side follows', () => {
+    const A = '00000000-0000-4000-8000-000000000101';
+    const B = '00000000-0000-4000-8000-000000000102';
+    const OUT = '00000000-0000-4000-8000-0000000000a1';
+    const IN = '00000000-0000-4000-8000-0000000000b1';
+    const ME = '00000000-0000-4000-8000-000000000106';
+
+    const side = (
+      id: string,
+      accountId: string,
+      type: 'transfer_out' | 'transfer_in',
+      amount: number,
+      overrides: Partial<Transaction> = {},
+    ) =>
+      tx(id, {
+        accountId,
+        categoryId: null,
+        periodId: `period-${accountId}`,
+        date: new Date('2026-11-20T00:00:00.000Z'),
+        amount: BigInt(amount),
+        metadata: {
+          transferId: 'tr-1',
+          type,
+          relatedAccountId: accountId === A ? B : A,
+        },
+        ...overrides,
+      });
+    const out = (o: Partial<Transaction> = {}) =>
+      side(OUT, A, 'transfer_out', -5000, o);
+    const into = (o: Partial<Transaction> = {}) =>
+      side(IN, B, 'transfer_in', 5000, o);
+
+    const accountOf = (ownerId: string) =>
+      new Account({ id: B, name: 'B', ownerId });
+    const readShare = { userId: ME, permission: 'read' };
+
+    beforeEach(() => {
+      mocks.transactions.findById.mockImplementation((id: string) =>
+        Promise.resolve(id === OUT ? out() : id === IN ? into() : null),
+      );
+      mocks.transactions.findTransferSides.mockImplementation(
+        (_t: string, accountId: string) =>
+          Promise.resolve(accountId === B ? [into()] : [out()]),
+      );
+      mocks.transactions.updateMany.mockResolvedValue(undefined);
+      mocks.transactions.deleteMany.mockResolvedValue(undefined);
+      mocks.accounts.findById.mockResolvedValue(accountOf(ME));
+      mocks.shares.findAllByAccount.mockResolvedValue([]);
+    });
+
+    it('PATCH amount -5000 -> -8000 writes -8000/+8000 in one updateMany', async () => {
+      await http()
+        .patch(`/${A}/transactions/${OUT}`)
+        .set(auth())
+        .send({ amount: '-8000' })
+        .expect(200);
+
+      const [[lines]] = mocks.transactions.updateMany.mock.calls as [
+        Transaction[],
+      ][];
+      expect(lines.map((l) => [l.id, l.amount])).toEqual([
+        [OUT, BigInt(-8000)],
+        [IN, BigInt(8000)],
+      ]);
+      expect(mocks.transactions.save).not.toHaveBeenCalled();
+    });
+
+    it('PATCH date gives the same date to the other side and keeps both periods', async () => {
+      await http()
+        .patch(`/${A}/transactions/${OUT}`)
+        .set(auth())
+        .send({ date: '2026-11-22' })
+        .expect(200);
+
+      const [[lines]] = mocks.transactions.updateMany.mock.calls as [
+        Transaction[],
+      ][];
+      expect(lines.map((l) => l.date.toISOString().slice(0, 10))).toEqual([
+        '2026-11-22',
+        '2026-11-22',
+      ]);
+      expect(lines.map((l) => l.periodId)).toEqual([
+        `period-${A}`,
+        `period-${B}`,
+      ]);
+      expect(mocks.periods.findByAccount).not.toHaveBeenCalled();
+    });
+
+    it('PATCH with a wrong sign answers 400 and writes nothing', async () => {
+      await http()
+        .patch(`/${A}/transactions/${OUT}`)
+        .set(auth())
+        .send({ amount: '8000' })
+        .expect(400);
+      await http()
+        .patch(`/${B}/transactions/${IN}`)
+        .set(auth())
+        .send({ amount: '0' })
+        .expect(400);
+
+      expect(mocks.transactions.updateMany).not.toHaveBeenCalled();
+      expect(mocks.transactions.save).not.toHaveBeenCalled();
+    });
+
+    it('PATCH answers 403 and writes nothing when the other account is read-only', async () => {
+      mocks.accounts.findById.mockResolvedValue(accountOf('someone-else'));
+      mocks.shares.findAllByAccount.mockResolvedValue([readShare]);
+
+      await http()
+        .patch(`/${A}/transactions/${OUT}`)
+        .set(auth())
+        .send({ amount: '-8000' })
+        .expect(403);
+
+      expect(mocks.transactions.updateMany).not.toHaveBeenCalled();
+      expect(mocks.transactions.save).not.toHaveBeenCalled();
+    });
+
+    it('PATCH answers 404 (not 403) when the other account is invisible', async () => {
+      mocks.accounts.findById.mockResolvedValue(null);
+
+      await http()
+        .patch(`/${A}/transactions/${OUT}`)
+        .set(auth())
+        .send({ amount: '-8000' })
+        .expect(404);
+
+      expect(mocks.transactions.updateMany).not.toHaveBeenCalled();
+      expect(mocks.transactions.save).not.toHaveBeenCalled();
+    });
+
+    it('PATCH of own fields touches only this side, even with a read-only other account', async () => {
+      mocks.accounts.findById.mockResolvedValue(accountOf('someone-else'));
+      mocks.shares.findAllByAccount.mockResolvedValue([readShare]);
+
+      await http()
+        .patch(`/${A}/transactions/${OUT}`)
+        .set(auth())
+        .send({
+          description: 'Nouveau libellé',
+          notes: 'note',
+          reconciled: true,
+          amount: '-5000',
+          date: '2026-11-20',
+        })
+        .expect(200);
+
+      expect(mocks.transactions.save).toHaveBeenCalledTimes(1);
+      expect(mocks.transactions.updateMany).not.toHaveBeenCalled();
+      expect(mocks.transactions.findTransferSides).not.toHaveBeenCalled();
+    });
+
+    it('PATCH and DELETE answer 409 on a line with a transferId but no relatedAccountId', async () => {
+      const broken = out({
+        metadata: { transferId: 'tr-1', type: 'transfer_out' },
+      });
+      mocks.transactions.findById.mockResolvedValue(broken);
+
+      await http()
+        .patch(`/${A}/transactions/${OUT}`)
+        .set(auth())
+        .send({ amount: '-8000' })
+        .expect(409);
+      await http().delete(`/${A}/transactions/${OUT}`).set(auth()).expect(409);
+
+      expect(mocks.accounts.findById).not.toHaveBeenCalled();
+      expect(mocks.transactions.updateMany).not.toHaveBeenCalled();
+      expect(mocks.transactions.deleteMany).not.toHaveBeenCalled();
+    });
+
+    it('PATCH metadata that breaks the link answers 400', async () => {
+      await http()
+        .patch(`/${A}/transactions/${OUT}`)
+        .set(auth())
+        .send({ metadata: { type: 'transfer_out' } })
+        .expect(400);
+
+      expect(mocks.transactions.save).not.toHaveBeenCalled();
+    });
+
+    it('PATCH answers 409 on an ambiguous link', async () => {
+      mocks.transactions.findTransferSides.mockResolvedValue([into(), into()]);
+
+      await http()
+        .patch(`/${A}/transactions/${OUT}`)
+        .set(auth())
+        .send({ amount: '-8000' })
+        .expect(409);
+
+      expect(mocks.transactions.updateMany).not.toHaveBeenCalled();
+    });
+
+    it('PATCH propagates a refusal of the atomic write (nothing modified on either side)', async () => {
+      mocks.transactions.updateMany.mockRejectedValue(
+        new ForbiddenError('denied'),
+      );
+
+      await http()
+        .patch(`/${A}/transactions/${OUT}`)
+        .set(auth())
+        .send({ amount: '-8000' })
+        .expect(403);
+
+      expect(mocks.transactions.save).not.toHaveBeenCalled();
+    });
+
+    it('PATCH keeps a reconciled/pending combination of the other side', async () => {
+      mocks.transactions.findTransferSides.mockResolvedValue([
+        into({ pending: true }),
+      ]);
+
+      await http()
+        .patch(`/${A}/transactions/${OUT}`)
+        .set(auth())
+        .send({ amount: '-8000', reconciled: true })
+        .expect(200);
+
+      const [[lines]] = mocks.transactions.updateMany.mock.calls as [
+        Transaction[],
+      ][];
+      expect(lines[0].reconciled).toBe(true);
+      expect(lines[0].pending).toBe(false);
+      expect(lines[1].reconciled).toBe(false);
+      expect(lines[1].pending).toBe(true);
+    });
+
+    it('DELETE /:id deletes both sides in one request', async () => {
+      await http().delete(`/${A}/transactions/${OUT}`).set(auth()).expect(204);
+
+      expect(mocks.transactions.deleteMany.mock.calls).toEqual([[[OUT, IN]]]);
+    });
+
+    it('DELETE /:id answers 403 and deletes nothing when the other account is read-only', async () => {
+      mocks.accounts.findById.mockResolvedValue(accountOf('someone-else'));
+      mocks.shares.findAllByAccount.mockResolvedValue([readShare]);
+
+      await http().delete(`/${A}/transactions/${OUT}`).set(auth()).expect(403);
+
+      expect(mocks.transactions.deleteMany).not.toHaveBeenCalled();
+    });
+
+    it('DELETE /:id answers 404 and deletes nothing when the other account is invisible', async () => {
+      mocks.accounts.findById.mockResolvedValue(null);
+
+      await http().delete(`/${A}/transactions/${OUT}`).set(auth()).expect(404);
+
+      expect(mocks.transactions.deleteMany).not.toHaveBeenCalled();
+    });
+
+    const ORDINARY = [
+      '00000000-0000-4000-8000-000000000016',
+      '00000000-0000-4000-8000-000000000017',
+    ];
+
+    it('DELETE /bulk adds the other side of a transfer to the ordinary lines', async () => {
+      mocks.transactions.findAllByAccountUnpaginated.mockResolvedValue([
+        tx(ORDINARY[0], { accountId: A }),
+        out(),
+        tx(ORDINARY[1], { accountId: A }),
+      ]);
+
+      await http()
+        .delete(`/${A}/transactions/bulk`)
+        .set(auth())
+        .send({ ids: [ORDINARY[0], OUT, ORDINARY[1]] })
+        .expect(204);
+
+      const [[ids]] = mocks.transactions.deleteMany.mock.calls as [string[]][];
+      expect([...ids].sort()).toEqual([IN, OUT, ...ORDINARY].sort());
+    });
+
+    it('DELETE /bulk answers 403 and deletes none of the 3 lines when one transfer goes to a read-only account', async () => {
+      mocks.accounts.findById.mockResolvedValue(accountOf('someone-else'));
+      mocks.shares.findAllByAccount.mockResolvedValue([readShare]);
+      mocks.transactions.findAllByAccountUnpaginated.mockResolvedValue([
+        tx(ORDINARY[0], { accountId: A }),
+        out(),
+        tx(ORDINARY[1], { accountId: A }),
+      ]);
+
+      await http()
+        .delete(`/${A}/transactions/bulk`)
+        .set(auth())
+        .send({ ids: [ORDINARY[0], OUT, ORDINARY[1]] })
+        .expect(403);
+
+      expect(mocks.transactions.deleteMany).not.toHaveBeenCalled();
+    });
+
+    it('PATCH /bulk (category, tags, reconciled, pending) leaves the other side alone', async () => {
+      mocks.transactions.findAllByAccountUnpaginated.mockResolvedValue([out()]);
+
+      await http()
+        .patch(`/${A}/transactions/bulk`)
+        .set(auth())
+        .send({ ids: [OUT], data: { pending: true } })
+        .expect(200);
+
+      const [[lines]] = mocks.transactions.updateMany.mock.calls as [
+        Transaction[],
+      ][];
+      expect(lines.map((l) => l.id)).toEqual([OUT]);
+      expect(lines[0].amount).toBe(BigInt(-5000));
+      expect(mocks.transactions.findTransferSides).not.toHaveBeenCalled();
+    });
   });
 
   describe('period trigger (salary category)', () => {

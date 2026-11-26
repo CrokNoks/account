@@ -10,6 +10,7 @@ import {
 } from '../domain/transaction.repository.interface';
 import { WindowPeriod } from '../../reporting/domain/period-window';
 import { buildSearchFilter } from './search-filter';
+import { ForbiddenError } from '../../shared/domain/errors';
 import { toDomainError } from '../../shared/infrastructure/supabase-error';
 
 interface TransactionTagRow {
@@ -364,12 +365,21 @@ export class SupabaseTransactionRepository implements TransactionRepository {
     if (ids.length === 0) return;
 
     // Un seul DELETE ... WHERE id IN (...) : une instruction SQL est atomique.
-    const { error } = await this.supabase
+    const { data, error } = await this.supabase
       .from('transactions')
       .delete()
-      .in('id', ids);
+      .in('id', ids)
+      .select('id');
 
     if (error) throw toDomainError(error);
+
+    // La RLS ignore en silence les lignes qu'on ne peut pas supprimer (0 ligne,
+    // pas d'erreur) : moins de lignes supprimées que demandées = refus.
+    if ((data ?? []).length < ids.length) {
+      throw new ForbiddenError(
+        'You do not have permission to modify this resource',
+      );
+    }
   }
 
   /**
