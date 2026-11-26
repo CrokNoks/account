@@ -20,6 +20,11 @@ import {
   todayDateOnly,
   toDateOnly,
 } from '../../shared/domain/date-only';
+import {
+  dueDateMetadata,
+  readDueDate,
+  readRecurringId,
+} from '../../shared/domain/recurring-due-date';
 
 /** Période clôturée et période ouverte, telles que la personne les voit (CA6). */
 export interface PeriodSwitchInfo {
@@ -116,6 +121,8 @@ export class ApplyPeriodSwitchService {
       date: tx.date,
       pending: tx.pending,
       categoryId: tx.categoryId,
+      amount: tx.amount,
+      recurringId: readRecurringId(tx.metadata),
     }));
     const base = {
       triggerCategoryId: triggerCategory.id,
@@ -187,15 +194,14 @@ export class ApplyPeriodSwitchService {
           dayOfMonth: r.dayOfMonth,
         })),
         existing: known.flatMap((tx): ExistingRecurringTx[] => {
-          const recurringId = (
-            tx.metadata as Record<string, unknown> | undefined
-          )?.recurringId;
-          return typeof recurringId === 'string'
+          const recurringId = readRecurringId(tx.metadata);
+          return recurringId
             ? [
                 {
                   id: tx.id,
                   recurringId,
                   date: tx.date,
+                  dueDate: readDueDate(tx.metadata),
                   pending: tx.pending,
                   categoryId: tx.categoryId,
                   amount: tx.amount,
@@ -255,6 +261,7 @@ export class ApplyPeriodSwitchService {
       description: string;
       amount: bigint;
       date: Date;
+      dueDate: Date;
     }) =>
       Transaction.create({
         accountId,
@@ -264,7 +271,11 @@ export class ApplyPeriodSwitchService {
         date: o.date,
         reconciled: false,
         pending: true,
-        metadata: { source: 'recurring', recurringId: o.recurringId },
+        metadata: {
+          source: 'recurring',
+          recurringId: o.recurringId,
+          ...dueDateMetadata(o.dueDate),
+        },
       });
     const generated = plan.switches.flatMap((sw) => [
       ...sw.injected.map((o) =>

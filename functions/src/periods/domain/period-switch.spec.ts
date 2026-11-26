@@ -5,6 +5,7 @@ import {
   SwitchRecurring,
   SwitchTrigger,
   periodIdOnDate,
+  findTriggerSalary,
   planPeriodSwitches,
 } from './period-switch';
 
@@ -36,6 +37,7 @@ const trigger = (date: string, extra: Partial<SwitchTrigger> = {}) =>
     date: d(date),
     pending: false,
     categoryId: SALARY,
+    amount: 200000n,
     ...extra,
   }) satisfies SwitchTrigger;
 
@@ -158,14 +160,14 @@ describe('planPeriodSwitches', () => {
       expect(iso(sw.nextPaie!.date)).toBe('2026-12-28');
     });
 
-    it('takes the nearest salary when there are several (at least 15 days away)', () => {
+    it('without a salary within 7 days of the trigger, takes the nearest of all (at least 15 days away)', () => {
       const result = plan({
-        recurring: [salary(28), salary(20, 'rec-bonus', 5000n)],
+        recurring: [salary(15, 'rec-a'), salary(20, 'rec-b', 5000n)],
         triggers: [trigger('2026-11-28')],
       });
       const [sw] = result.switches;
-      expect(sw.nextPaie?.recurringId).toBe('rec-bonus');
-      expect(iso(sw.opened.end)).toBe('2026-12-19');
+      expect(sw.nextPaie?.recurringId).toBe('rec-a');
+      expect(iso(sw.opened.end)).toBe('2026-12-14');
     });
 
     it('does not apply rule A to a negative recurring of the trigger category', () => {
@@ -707,6 +709,184 @@ describe('planPeriodSwitches', () => {
         [line('l1', '2026-11-12')],
       );
       expect(result.switches[0].opened.id).toBe(result.windows[1].id);
+    });
+  });
+
+  describe('échéance d’origine (règle c)', () => {
+    const rentTx = (date: string, dueDate?: string): ExistingRecurringTx => ({
+      id: 'tx-rent',
+      recurringId: 'rec-rent',
+      date: d(date),
+      pending: false,
+      ...(dueDate ? { dueDate: d(dueDate) } : {}),
+    });
+    const loyer30: SwitchRecurring = { ...rent, dayOfMonth: 30 };
+    const at1512 = (existing: ExistingRecurringTx[]) =>
+      plan({
+        active: { id: 'p-active', start: d('2026-11-01') },
+        recurring: [loyer30],
+        existing,
+        triggers: [trigger('2026-12-15')],
+      }).switches[0];
+
+    it('règle critique : loyer du 30/11 payé et daté 01/12, bascule du 15/12 : 30/12 injectée en pending avec son échéance', () => {
+      const sw = at1512([rentTx('2026-12-01', '2026-11-30')]);
+
+      expect(sw.injected.map((o) => [o.recurringId, iso(o.date)])).toEqual([
+        ['rec-rent', '2026-12-30'],
+      ]);
+      expect(iso(sw.injected[0].dueDate)).toBe('2026-12-30');
+    });
+
+    it('sans échéance, le même loyer daté 01/12 bloque décembre (repli sur la date)', () => {
+      expect(at1512([rentTx('2026-12-01')]).injected).toEqual([]);
+    });
+
+    it('transaction liée d’échéance 30/12 datée 28/12 : 30/12 non injectée', () => {
+      expect(at1512([rentTx('2026-12-28', '2026-12-30')]).injected).toEqual([]);
+    });
+
+    it('les occurrences injectées portent dueDate = date, la prochaine paie aussi', () => {
+      const result = plan({
+        recurring: [salary(28), rent],
+        triggers: [trigger('2026-11-28')],
+      });
+      const sw = result.switches[0];
+      for (const o of [...sw.injected, sw.nextPaie!]) {
+        expect(o.dueDate).toEqual(o.date);
+      }
+    });
+  });
+
+  describe('paie déclenchante (règles A et d)', () => {
+    const paies = [salary(28), salary(2, 'rec-second', 150000n)];
+
+    it('CA5 : paies 28 et 2, déclencheuse liée à la paie 28, bascule le 28/11 : fin 27/12, paie du 2 injectée', () => {
+      const result = plan({
+        recurring: paies,
+        triggers: [trigger('2026-11-28', { recurringId: 'rec-salary' })],
+      });
+      const [sw] = result.switches;
+
+      expect(iso(sw.opened.end)).toBe('2026-12-27');
+      expect(sw.injected.map((o) => [o.recurringId, iso(o.date)])).toEqual([
+        ['rec-second', '2026-12-02'],
+      ]);
+      expect(iso(sw.nextPaie!.date)).toBe('2026-12-28');
+      expect(sw.nextPaie!.recurringId).toBe('rec-salary');
+    });
+
+    it('H1 (ii) : déclencheuse sans lien saisie le 26/11 : paie du 28 identifiée, même résultat', () => {
+      const result = plan({
+        recurring: paies,
+        triggers: [trigger('2026-11-26')],
+      });
+      const [sw] = result.switches;
+
+      expect(iso(sw.opened.end)).toBe('2026-12-27');
+      expect(sw.injected.map((o) => iso(o.date))).toEqual(['2026-12-02']);
+      expect(sw.nextPaie!.recurringId).toBe('rec-salary');
+    });
+
+    it('H1 (iii) : sans paie à 7 jours ou moins, la plus proche de toutes et toutes écartées en (d)', () => {
+      const result = plan({
+        recurring: [salary(12), rent],
+        triggers: [trigger('2026-11-28')],
+      });
+      const [sw] = result.switches;
+      expect(sw.injected.map((o) => o.recurringId)).not.toContain('rec-salary');
+      expect(iso(sw.nextPaie!.date)).toBe('2027-01-12');
+    });
+
+    it('recurringId d’une récurrente supprimée : passe à (ii) puis (iii)', () => {
+      const viaSimilar = plan({
+        recurring: paies,
+        triggers: [trigger('2026-11-28', { recurringId: 'rec-disparue' })],
+      }).switches[0];
+      expect(iso(viaSimilar.opened.end)).toBe('2026-12-27');
+
+      const viaAll = plan({
+        recurring: [salary(15, 'rec-a')],
+        triggers: [trigger('2026-11-28', { recurringId: 'rec-disparue' })],
+      }).switches[0];
+      expect(viaAll.nextPaie!.recurringId).toBe('rec-a');
+    });
+
+    it('findTriggerSalary : le lien prime, puis la plus proche à 7 jours au plus (puis id)', () => {
+      const t = trigger('2026-11-26', { recurringId: 'rec-second' });
+      expect(findTriggerSalary(t, paies)?.id).toBe('rec-second');
+      expect(findTriggerSalary(trigger('2026-11-26'), paies)?.id).toBe(
+        'rec-salary',
+      );
+      expect(
+        findTriggerSalary(trigger('2026-11-15'), [salary(5), salary(25)]),
+      ).toBeNull();
+      const tie = findTriggerSalary(trigger('2026-11-15'), [
+        salary(12, 'b'),
+        salary(18, 'a'),
+      ]);
+      expect(tie?.id).toBe('a');
+    });
+
+    it('lot de deux déclencheuses : une identification par déclencheuse, nextPaie seulement à la dernière', () => {
+      const result = plan({
+        active: { id: 'p-active', start: d('2026-08-28') },
+        recurring: paies,
+        triggers: [
+          trigger('2026-09-28', { id: 'tx-1', recurringId: 'rec-salary' }),
+          trigger('2026-10-28', { id: 'tx-2', recurringId: 'rec-salary' }),
+        ],
+      });
+      expect(result.switches[0].nextPaie).toBeNull();
+      expect(result.switches[1].nextPaie!.recurringId).toBe('rec-salary');
+      expect(iso(result.switches[0].opened.end)).toBe('2026-10-27');
+    });
+
+    it('deux passes identiques donnent le même plan', () => {
+      const run = () =>
+        plan({
+          recurring: paies,
+          triggers: [trigger('2026-11-28', { recurringId: 'rec-salary' })],
+          newId: (() => {
+            let n = 0;
+            return () => `id-${++n}`;
+          })(),
+        });
+      expect(run()).toEqual(run());
+    });
+  });
+
+  describe('montant de la déclencheuse (CA6)', () => {
+    it.each([-5000n, 0n])(
+      'montant %s à 20 jours : aucune bascule, raison non_positive',
+      (amount) => {
+        const result = plan({
+          active: { id: 'p-active', start: d('2026-11-08') },
+          triggers: [trigger('2026-11-28', { amount })],
+        });
+        expect(result.switches).toEqual([]);
+        expect(result.skipped).toEqual([
+          { triggerId: 'tx-1', reason: 'non_positive', gapDays: 20 },
+        ]);
+      },
+    );
+
+    it('montant négatif à 10 jours : threshold prime', () => {
+      const result = plan({
+        active: { id: 'p-active', start: d('2026-11-18') },
+        triggers: [trigger('2026-11-28', { amount: -5000n })],
+      });
+      expect(result.skipped[0].reason).toBe('threshold');
+    });
+
+    it('une récurrente négative de la catégorie déclencheuse reste traitée comme les autres', () => {
+      const result = plan({
+        recurring: [salary(28, 'rec-neg', -3000n)],
+        triggers: [trigger('2026-11-28')],
+      });
+      expect(result.switches[0].injected.map((o) => o.recurringId)).toEqual([
+        'rec-neg',
+      ]);
     });
   });
 });

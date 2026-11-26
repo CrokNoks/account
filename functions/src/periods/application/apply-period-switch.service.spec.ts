@@ -768,4 +768,196 @@ describe('ApplyPeriodSwitchService', () => {
       ).toEqual([]);
     });
   });
+
+  describe('échéance d’origine, paie déclenchante, montant', () => {
+    /** Transaction relue comme l'ORM la renvoie : `metadata` vient d'une ligne JSON. */
+    const fromRow = (row: {
+      id: string;
+      categoryId: string;
+      date: string;
+      pending: boolean;
+      amount: bigint;
+      metadata: string;
+    }) =>
+      new Transaction({
+        id: row.id,
+        accountId: ACC,
+        categoryId: row.categoryId,
+        date: d(row.date),
+        description: 'Ligne',
+        amount: row.amount,
+        reconciled: false,
+        pending: row.pending,
+        tagIds: [],
+        metadata: JSON.parse(row.metadata) as Record<string, unknown>,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+    const secondSalary = RecurringTransaction.create({
+      id: 'rec-second',
+      accountId: ACC,
+      categoryId: SALARY,
+      description: 'Prime',
+      amount: 150000n,
+      dayOfMonth: 2,
+    });
+    const meta = (t: Transaction) =>
+      t.metadata as { recurringId?: string; dueDate?: string };
+    const skippedReasons = () =>
+      log.mock.calls
+        .map(([entry]) => entry as Record<string, unknown>)
+        .filter((e) => e.event === 'period_trigger_skipped')
+        .map((e) => e.reason);
+
+    it('CA5/CA7 : paies 28 et 2, déclencheuse liée à la paie 28 : fin 27/12, paie du 2 injectée avec son échéance, prochaine paie avec la sienne', async () => {
+      recurring.findAllByAccount.mockResolvedValue([
+        salaryRecurring,
+        secondSalary,
+      ]);
+
+      await service.process({
+        accountId: ACC,
+        mode: 'create',
+        transactions: [
+          tx('t1', {
+            date: d('2026-11-28'),
+            metadata: { recurringId: 'rec-salary' },
+          }),
+        ],
+      });
+
+      const [, , switches] = lastWrite();
+      expect(iso(switches[0].opened.endDate!)).toBe('2026-12-27');
+      const generated = generatedWrite();
+      const second = generated.find(
+        (t) => meta(t).recurringId === 'rec-second',
+      );
+      expect(iso(second!.date)).toBe('2026-12-02');
+      expect(second!.pending).toBe(true);
+      expect(meta(second!).dueDate).toBe('2026-12-02');
+      const next = generated.find((t) => meta(t).recurringId === 'rec-salary');
+      expect(iso(next!.date)).toBe('2026-12-28');
+      expect(meta(next!).dueDate).toBe('2026-12-28');
+    });
+
+    it('CA4 : loyer du 30/11 payé et daté 01/12 (lu comme l’ORM), bascule du 15/12 : 30/12 injectée avec dueDate', async () => {
+      jest.setSystemTime(new Date('2026-12-15T10:00:00Z'));
+      periods.findAllByAccount.mockResolvedValue([active('2026-11-01')]);
+      const loyer = RecurringTransaction.create({
+        id: 'rec-rent',
+        accountId: ACC,
+        categoryId: BILLS,
+        description: 'Loyer',
+        amount: -80000n,
+        dayOfMonth: 30,
+      });
+      recurring.findAllByAccount.mockResolvedValue([loyer]);
+      const stored = fromRow({
+        id: 'old-rent',
+        categoryId: BILLS,
+        date: '2026-12-01',
+        pending: false,
+        amount: -80000n,
+        metadata:
+          '{"source":"recurring","recurringId":"rec-rent","dueDate":"2026-11-30"}',
+      });
+      transactions.findAllByAccountUnpaginated.mockImplementation(
+        (_a: string, options?: { ids?: string[] }) =>
+          Promise.resolve(
+            options?.ids
+              ? lastWrite()[3].filter((t) => options.ids!.includes(t.id))
+              : [stored],
+          ),
+      );
+
+      await service.process({
+        accountId: ACC,
+        mode: 'create',
+        transactions: [tx('t1', { date: d('2026-12-15') })],
+      });
+
+      const rents = generatedWrite().filter(
+        (t) => meta(t).recurringId === 'rec-rent',
+      );
+      expect(rents.map((t) => iso(t.date))).toEqual(['2026-12-30']);
+      expect(meta(rents[0]).dueDate).toBe('2026-12-30');
+      expect(rents[0].pending).toBe(true);
+    });
+
+    it.each([-5000n, 0n])(
+      'CA6 : déclencheuse de %s centimes à 33 jours du début : aucune bascule, enregistrée telle quelle, raison non_positive',
+      async (amount) => {
+        const input = [tx('t1', { amount })];
+
+        const result = await service.process({
+          accountId: ACC,
+          mode: 'create',
+          transactions: input,
+        });
+
+        expect(result).toEqual({
+          transactions: input,
+          written: false,
+          periodSwitch: null,
+        });
+        expect(periods.applyPeriodSwitches).not.toHaveBeenCalled();
+        expect(skippedReasons()).toEqual(['non_positive']);
+      },
+    );
+
+    it('pointage d’une paie à 0 : la date du jour est posée, dateChanged vrai, pas de bascule', async () => {
+      recurring.findAllByAccount.mockResolvedValue([salaryRecurring]);
+      const zero = tx('t1', {
+        amount: 0n,
+        date: d('2026-11-28'),
+        metadata: { recurringId: 'rec-salary' },
+      });
+
+      const result = await service.process({
+        accountId: ACC,
+        mode: 'update',
+        transactions: [zero],
+        leavingPendingIds: new Set(['t1']),
+      });
+
+      expect(periods.applyPeriodSwitches).not.toHaveBeenCalled();
+      expect(iso(result.transactions[0].date)).toBe('2026-12-01');
+      expect(skippedReasons()).toEqual(['non_positive']);
+    });
+
+    it('le pointage d’une paie conserve dueDate : la date devient celle du jour, l’échéance reste', async () => {
+      recurring.findAllByAccount.mockResolvedValue([salaryRecurring]);
+      const row = fromRow({
+        id: 't1',
+        categoryId: SALARY,
+        date: '2026-12-28',
+        pending: false,
+        amount: 200000n,
+        metadata:
+          '{"source":"recurring","recurringId":"rec-salary","dueDate":"2026-12-28"}',
+      });
+
+      await service.process({
+        accountId: ACC,
+        mode: 'update',
+        transactions: [row],
+        leavingPendingIds: new Set(['t1']),
+      });
+
+      const written = lastWrite()[3].find((t) => t.id === 't1')!;
+      expect(iso(written.date)).toBe('2026-12-01');
+      expect(meta(written).dueDate).toBe('2026-12-28');
+      expect(meta(written).recurringId).toBe('rec-salary');
+    });
+
+    it('ne pose pas dueDate sur la ligne saisie (sans recurringId)', async () => {
+      await service.process({
+        accountId: ACC,
+        mode: 'create',
+        transactions: [tx('t1')],
+      });
+
+      expect(meta(lastWrite()[3][0]).dueDate).toBeUndefined();
+    });
+  });
 });

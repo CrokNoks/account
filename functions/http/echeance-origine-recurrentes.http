@@ -1,0 +1,549 @@
+@api = http://localhost:{{port}}
+@supabase = http://127.0.0.1:54321/auth/v1
+
+# Échéance d'origine des récurrentes (spec echeance-origine-recurrentes). Local stack only (Supabase local 127.0.0.1:54321), jamais le projet lié.
+# Lancement : npx httpyac send --all functions/http/echeance-origine-recurrentes.http --var port=<port du back local> --var anon=<clé publishable de la stack locale>
+# Utilisateurs, comptes, catégories jetables, créés par le fichier ; rien n'est supprimé. Dates relatives à « aujourd'hui » (Europe/Paris).
+# Limites : les jours de récurrence sont ceux des dates relatives (éviter de lancer un 25 à 31 du mois : jours 29 à 31 ramenés en mois court).
+# Non couvert ici : deux appels simultanés (voir supabase/tests).
+
+{{
+  const paris = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Paris', year: 'numeric', month: '2-digit', day: '2-digit' });
+  const base = new Date(paris.format(new Date()) + 'T00:00:00Z');
+  const day = (offset) => new Date(base.getTime() + offset * 86400000).toISOString().slice(0, 10);
+  exports.day = day;
+  exports.today = day(0);
+  for (const o of [-60, -30, -5, 2, 4, 5, 7, 8, 30]) exports['d' + (o < 0 ? 'm' + -o : 'p' + o)] = day(o);
+  const dom = (offset) => Number(day(offset).slice(8, 10));
+  exports.dom0 = dom(0);
+  exports.dom2 = dom(2);
+  exports.dom4 = dom(4);
+  exports.dom5 = dom(5);
+  exports.dom7 = dom(7);
+  exports.dom8 = dom(8);
+  exports.y4 = Number(day(4).slice(0, 4)); exports.m4 = Number(day(4).slice(5, 7));
+  exports.y5 = Number(day(5).slice(0, 4)); exports.m5 = Number(day(5).slice(5, 7));
+  exports.y2 = Number(day(2).slice(0, 4)); exports.m2 = Number(day(2).slice(5, 7));
+  // CA4 : premier du mois de l'occurrence (dom4) et dernier jour du mois précédent (échéance d'origine)
+  exports.firstOfOccMonth = day(4).slice(0, 8) + '01';
+  exports.lastOfPrevMonth = new Date(new Date(exports.firstOfOccMonth + 'T00:00:00Z').getTime() - 86400000).toISOString().slice(0, 10);
+  // CA5 : première occurrence du jour dom0 à au moins 15 jours ; la fin attendue est la veille
+  let cursor = 15;
+  while (dom(cursor) !== dom(0) && cursor < 60) cursor++;
+  exports.nextPaieDay = day(cursor);
+  exports.expectedEnd = day(cursor - 1);
+}}
+
+### Alice (propriétaire jetable)
+# @name alice
+POST {{supabase}}/signup
+apikey: {{anon}}
+Content-Type: application/json
+
+{ "email": "eo-alice-{{$timestamp}}@example.com", "password": "Password123!" }
+
+?? status == 200
+
+### Bob (autre utilisateur connecté)
+# @name bob
+POST {{supabase}}/signup
+apikey: {{anon}}
+Content-Type: application/json
+
+{ "email": "eo-bob-{{$timestamp}}@example.com", "password": "Password123!" }
+
+?? status == 200
+
+# ======================================================================
+# Compte 1 : CA1 paie du jour 28 (ici +2 jours) pointée aujourd'hui
+# ======================================================================
+
+### Compte 1
+# @name acc1
+POST {{api}}/accounts
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "name": "eo1-{{$timestamp}}", "initialBalance": "0" }
+
+?? status == 201
+
+### Salaire (déclencheur)
+# @name sal1
+POST {{api}}/{{acc1.id}}/categories
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "name": "Salaire", "color": "#22aa55", "type": "income" }
+
+?? status == 201
+
+### Salaire marqué déclencheur
+PATCH {{api}}/{{acc1.id}}/categories/{{sal1.id}}
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "isPeriodTrigger": true }
+
+?? status == 200
+
+### Période active commencée il y a 5 jours (sous le seuil : pointer ne bascule pas)
+# @name per1
+POST {{api}}/{{acc1.id}}/periods
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "startDate": "{{dm5}}", "endDate": "{{dp30}}", "budgets": [] }
+
+?? status == 201
+
+### Paie récurrente A (jour de +2 jours)
+# @name recA
+POST {{api}}/{{acc1.id}}/recurring
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "categoryId": "{{sal1.id}}", "description": "Paie A", "amount": "200000", "dayOfMonth": {{dom2}} }
+
+?? status == 201
+
+### Paie A injectée en pending à son échéance (+2 jours), avec son échéance d'origine
+# @name payA
+POST {{api}}/{{acc1.id}}/transactions
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "categoryId": "{{sal1.id}}", "date": "{{dp2}}", "description": "Paie A", "amount": "200000", "pending": true,
+  "metadata": { "source": "recurring", "recurringId": "{{recA.id}}", "dueDate": "{{dp2}}" } }
+
+?? status == 201
+
+### Avant pointage : la paie pending (future) n'est pas dans le solde ; son événement est projeté une seule fois
+GET {{api}}/{{acc1.id}}/reporting/cashflow?days=10
+Authorization: Bearer {{alice.access_token}}
+
+?? status == 200
+?? js response.parsedBody.currentBalance == 0
+?? js response.parsedBody.events.filter(e => e.description == 'Paie A').length == 1
+
+### CA1 : pointer la paie en avance : la date devient celle du jour, l'échéance d'origine reste (CA7)
+PATCH {{api}}/{{acc1.id}}/transactions/{{payA.id}}
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "pending": false }
+
+?? status == 200
+?? js response.parsedBody.date.slice(0, 10) == {{today}}
+?? js response.parsedBody.metadata.dueDate == {{dp2}}
+?? js response.parsedBody.metadata.recurringId == {{recA.id}}
+
+### CA1 : Échéances n'ajoute plus 2 000,00 € à l'échéance : solde 200000, aucun événement « Paie A » dans les 10 jours
+GET {{api}}/{{acc1.id}}/reporting/cashflow?days=10
+Authorization: Bearer {{alice.access_token}}
+
+?? status == 200
+?? js response.parsedBody.currentBalance == 200000
+?? js response.parsedBody.events.filter(e => e.description == 'Paie A').length == 0
+?? js response.parsedBody.lowPoint.balance == 200000
+
+### Règle un pour un : la paie du mois suivant reste projetée (une seule fois)
+GET {{api}}/{{acc1.id}}/reporting/cashflow?days=40
+Authorization: Bearer {{alice.access_token}}
+
+?? status == 200
+?? js response.parsedBody.events.filter(e => e.description == 'Paie A').length == 1
+?? js response.parsedBody.events.find(e => e.description == 'Paie A').projectedBalance == 400000
+
+### CA1 : calendrier du mois : pas de « Prévue » pour la paie, la transaction pointée est affichée
+GET {{api}}/{{acc1.id}}/reporting/calendar?year={{y2}}&month={{m2}}
+Authorization: Bearer {{alice.access_token}}
+
+?? status == 200
+?? js response.parsedBody.filter(e => e.type == 'recurring' && e.description == 'Paie A').length == 0
+?? js response.parsedBody.filter(e => e.type == 'actual' && e.description == 'Paie A').length == 1
+
+### Bob (autre utilisateur connecté) ne lit pas la trésorerie du compte d'Alice
+GET {{api}}/{{acc1.id}}/reporting/cashflow?days=10
+Authorization: Bearer {{bob.access_token}}
+
+?? status == 404
+
+### Anonyme refusé
+GET {{api}}/{{acc1.id}}/reporting/cashflow?days=10
+
+?? status == 401
+
+# ======================================================================
+# Compte 2 : CA2 (7 / 8 jours, un pour un), CA3 (transaction future, mois voisin)
+# ======================================================================
+
+### Compte 2
+# @name acc2
+POST {{api}}/accounts
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "name": "eo2-{{$timestamp}}", "initialBalance": "0" }
+
+?? status == 201
+
+### Catégorie Loyer
+# @name loy2
+POST {{api}}/{{acc2.id}}/categories
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "name": "Loyer", "color": "#aa2255", "type": "expense" }
+
+?? status == 201
+
+### Catégorie Divers
+# @name div2
+POST {{api}}/{{acc2.id}}/categories
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "name": "Divers", "color": "#2255aa", "type": "expense" }
+
+?? status == 201
+
+### Période active
+POST {{api}}/{{acc2.id}}/periods
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "startDate": "{{dm5}}", "endDate": "{{dp30}}", "budgets": [] }
+
+?? status == 201
+
+### Loyer A (échéance à +7 jours)
+POST {{api}}/{{acc2.id}}/recurring
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "categoryId": "{{loy2.id}}", "description": "Loyer A", "amount": "-80000", "dayOfMonth": {{dom7}} }
+
+?? status == 201
+
+### Loyer B (échéance à +8 jours, même catégorie)
+POST {{api}}/{{acc2.id}}/recurring
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "categoryId": "{{loy2.id}}", "description": "Loyer B", "amount": "-80000", "dayOfMonth": {{dom8}} }
+
+?? status == 201
+
+### Paiement saisi à la main aujourd'hui, sans lien, même catégorie et même signe
+POST {{api}}/{{acc2.id}}/transactions
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "categoryId": "{{loy2.id}}", "date": "{{today}}", "description": "Virement propriétaire", "amount": "-80000" }
+
+?? status == 201
+
+### CA2 : règle l'échéance à 7 jours (Loyer A) mais pas celle à 8 jours (Loyer B) : une transaction, une occurrence
+GET {{api}}/{{acc2.id}}/reporting/cashflow?days=12
+Authorization: Bearer {{alice.access_token}}
+
+?? status == 200
+?? js response.parsedBody.events.filter(e => e.description == 'Loyer A').length == 0
+?? js response.parsedBody.events.filter(e => e.description == 'Loyer B').length == 1
+?? js response.parsedBody.currentBalance == -80000
+
+### Loyer N (échéance à +4 jours)
+# @name recN
+POST {{api}}/{{acc2.id}}/recurring
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "categoryId": "{{div2.id}}", "description": "Loyer N", "amount": "-50000", "dayOfMonth": {{dom4}} }
+
+?? status == 201
+
+### Loyer N payé et daté un jour plus tard (+5 jours), échéance d'origine +4 jours (mois voisin possible)
+POST {{api}}/{{acc2.id}}/transactions
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "categoryId": "{{div2.id}}", "date": "{{dp5}}", "description": "Loyer N", "amount": "-50000", "pending": true,
+  "metadata": { "source": "recurring", "recurringId": "{{recN.id}}", "dueDate": "{{dp4}}" } }
+
+?? status == 201
+
+### CA3 trésorerie : réglée par une transaction future, l'échéance reste projetée (une fois)
+GET {{api}}/{{acc2.id}}/reporting/cashflow?days=12
+Authorization: Bearer {{alice.access_token}}
+
+?? status == 200
+?? js response.parsedBody.events.filter(e => e.description == 'Loyer N').length == 1
+
+### CA3 calendrier : mois de l'échéance : plus de « Prévue » pour Loyer N
+GET {{api}}/{{acc2.id}}/reporting/calendar?year={{y4}}&month={{m4}}
+Authorization: Bearer {{alice.access_token}}
+
+?? status == 200
+?? js response.parsedBody.filter(e => e.type == 'recurring' && e.description == 'Loyer N').length == 0
+
+### CA3 calendrier : mois voisin de la transaction : pas de « Prévue » non plus
+GET {{api}}/{{acc2.id}}/reporting/calendar?year={{y5}}&month={{m5}}
+Authorization: Bearer {{alice.access_token}}
+
+?? status == 200
+?? js response.parsedBody.filter(e => e.type == 'recurring' && e.description == 'Loyer N' && e.date.slice(0, 10) == dp4).length == 0
+?? js response.parsedBody.filter(e => e.type == 'actual' && e.description == 'Loyer N').length == 1
+
+# ======================================================================
+# Compte 3 : CA5 bascule avec deux paies (jour d'aujourd'hui et +4 jours)
+# ======================================================================
+
+### Compte 3
+# @name acc3
+POST {{api}}/accounts
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "name": "eo3-{{$timestamp}}", "initialBalance": "0" }
+
+?? status == 201
+
+### Salaire déclencheur
+# @name sal3
+POST {{api}}/{{acc3.id}}/categories
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "name": "Salaire", "color": "#22aa55", "type": "income" }
+
+?? status == 201
+
+### Marqué déclencheur
+PATCH {{api}}/{{acc3.id}}/categories/{{sal3.id}}
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "isPeriodTrigger": true }
+
+?? status == 200
+
+### Période active commencée il y a 60 jours
+POST {{api}}/{{acc3.id}}/periods
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "startDate": "{{dm60}}", "endDate": "{{dp30}}", "budgets": [] }
+
+?? status == 201
+
+### Paie 1 (jour d'aujourd'hui)
+# @name p1
+POST {{api}}/{{acc3.id}}/recurring
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "categoryId": "{{sal3.id}}", "description": "Paie 1", "amount": "200000", "dayOfMonth": {{dom0}} }
+
+?? status == 201
+
+### Paie 2 (jour de +4 jours)
+# @name p2
+POST {{api}}/{{acc3.id}}/recurring
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "categoryId": "{{sal3.id}}", "description": "Paie 2", "amount": "150000", "dayOfMonth": {{dom4}} }
+
+?? status == 201
+
+### CA5 : la paie 1 aujourd'hui, liée à sa récurrente, bascule ; la fin ne se cale que sur elle (≥ 15 jours)
+# @name sw3
+POST {{api}}/{{acc3.id}}/transactions
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "categoryId": "{{sal3.id}}", "date": "{{today}}", "description": "Paie 1", "amount": "200000",
+  "metadata": { "source": "recurring", "recurringId": "{{p1.id}}", "dueDate": "{{today}}" } }
+
+?? status == 201
+?? js response.parsedBody.periodSwitch.count == 1
+?? js response.parsedBody.periodSwitch.opened.startDate == {{today}}
+?? js response.parsedBody.periodSwitch.opened.endDate == {{expectedEnd}}
+
+### CA5/CA7 : la paie 2 est injectée en pending à +4 jours avec son échéance d'origine
+GET {{api}}/{{acc3.id}}/transactions?categoryId={{sal3.id}}&pending=true
+Authorization: Bearer {{alice.access_token}}
+
+?? status == 200
+?? js response.parsedBody.data.filter(t => t.description == 'Paie 2' && t.date.slice(0, 10) == dp4 && t.metadata.dueDate == dp4).length == 1
+
+### CA5/CA7 : la prochaine paie 1 est créée en pending à la fin + 1 jour avec son échéance ; la paie 1 d'aujourd'hui n'est pas dupliquée
+GET {{api}}/{{acc3.id}}/transactions?categoryId={{sal3.id}}&pending=true
+Authorization: Bearer {{alice.access_token}}
+
+?? status == 200
+?? js response.parsedBody.data.filter(t => t.description == 'Paie 1' && t.date.slice(0, 10) == nextPaieDay && t.metadata.dueDate == nextPaieDay).length == 1
+?? js response.parsedBody.data.filter(t => t.description == 'Paie 1').length == 1
+
+# ======================================================================
+# Compte 4 : CA6 montant négatif ou nul ne bascule pas
+# ======================================================================
+
+### Compte 4
+# @name acc4
+POST {{api}}/accounts
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "name": "eo4-{{$timestamp}}", "initialBalance": "0" }
+
+?? status == 201
+
+### Salaire déclencheur
+# @name sal4
+POST {{api}}/{{acc4.id}}/categories
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "name": "Salaire", "color": "#22aa55", "type": "income" }
+
+?? status == 201
+
+### Marqué déclencheur
+PATCH {{api}}/{{acc4.id}}/categories/{{sal4.id}}
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "isPeriodTrigger": true }
+
+?? status == 200
+
+### Période active commencée il y a 60 jours
+# @name per4
+POST {{api}}/{{acc4.id}}/periods
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "startDate": "{{dm60}}", "endDate": "{{dp30}}", "budgets": [] }
+
+?? status == 201
+
+### CA6 : −50,00 € de la catégorie déclencheuse : enregistrée, aucune bascule
+POST {{api}}/{{acc4.id}}/transactions
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "categoryId": "{{sal4.id}}", "date": "{{today}}", "description": "Remboursement paie", "amount": "-5000" }
+
+?? status == 201
+?? js JSON.stringify(response.parsedBody).includes('periodSwitch') == false
+?? js response.parsedBody.amount == -5000
+
+### CA6 : montant 0 : enregistrée, aucune bascule
+POST {{api}}/{{acc4.id}}/transactions
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "categoryId": "{{sal4.id}}", "date": "{{today}}", "description": "Paie nulle", "amount": "0" }
+
+?? status == 201
+?? js JSON.stringify(response.parsedBody).includes('periodSwitch') == false
+
+### CA6 : la période d'origine reste la seule active
+GET {{api}}/{{acc4.id}}/periods
+Authorization: Bearer {{alice.access_token}}
+
+?? status == 200
+?? js response.parsedBody.filter(p => p.isActive).length == 1
+?? js response.parsedBody.find(p => p.isActive).id == {{per4.id}}
+
+# ======================================================================
+# Compte 5 : CA4 loyer d'échéance du mois précédent, daté dans le mois de l'occurrence
+# ======================================================================
+
+### Compte 5
+# @name acc5
+POST {{api}}/accounts
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "name": "eo5-{{$timestamp}}", "initialBalance": "0" }
+
+?? status == 201
+
+### Salaire déclencheur
+# @name sal5
+POST {{api}}/{{acc5.id}}/categories
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "name": "Salaire", "color": "#22aa55", "type": "income" }
+
+?? status == 201
+
+### Loyer
+# @name loy5
+POST {{api}}/{{acc5.id}}/categories
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "name": "Loyer", "color": "#aa2255", "type": "expense" }
+
+?? status == 201
+
+### Marqué déclencheur
+PATCH {{api}}/{{acc5.id}}/categories/{{sal5.id}}
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "isPeriodTrigger": true }
+
+?? status == 200
+
+### Période active commencée il y a 60 jours
+POST {{api}}/{{acc5.id}}/periods
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "startDate": "{{dm60}}", "endDate": "{{dp30}}", "budgets": [] }
+
+?? status == 201
+
+### Loyer récurrent (jour de +4 jours)
+# @name rec5
+POST {{api}}/{{acc5.id}}/recurring
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "categoryId": "{{loy5.id}}", "description": "Loyer 5", "amount": "-80000", "dayOfMonth": {{dom4}} }
+
+?? status == 201
+
+### Loyer du mois précédent payé et daté le 1er du mois de l'occurrence (échéance d'origine : dernier jour du mois précédent)
+POST {{api}}/{{acc5.id}}/transactions
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "categoryId": "{{loy5.id}}", "date": "{{firstOfOccMonth}}", "description": "Loyer 5", "amount": "-80000",
+  "metadata": { "source": "recurring", "recurringId": "{{rec5.id}}", "dueDate": "{{lastOfPrevMonth}}" } }
+
+?? status == 201
+
+### Bascule par une paie d'aujourd'hui
+# @name sw5
+POST {{api}}/{{acc5.id}}/transactions
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "categoryId": "{{sal5.id}}", "date": "{{today}}", "description": "Paie", "amount": "200000" }
+
+?? status == 201
+?? js response.parsedBody.periodSwitch.count == 1
+
+### CA4 : l'occurrence de +4 jours est injectée en pending avec son échéance (avant : perdue, une transaction du même mois existait)
+GET {{api}}/{{acc5.id}}/transactions?categoryId={{loy5.id}}
+Authorization: Bearer {{alice.access_token}}
+
+?? status == 200
+?? js response.parsedBody.data.filter(t => t.pending && t.date.slice(0, 10) == dp4 && t.metadata.dueDate == dp4).length == 1

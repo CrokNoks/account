@@ -1040,6 +1040,7 @@ describe('Transactions routes (e2e)', () => {
       mocks.transactions.findById.mockResolvedValue(
         tx(id, {
           categoryId: SALARY,
+          amount: BigInt(200000),
           pending: true,
           date: addDaysDateOnly(todayDateOnly(), 12),
         }),
@@ -1066,6 +1067,7 @@ describe('Transactions routes (e2e)', () => {
       mocks.transactions.findById.mockResolvedValue(
         tx(id, {
           categoryId: SALARY,
+          amount: BigInt(200000),
           pending: true,
           date: new Date('2026-01-05'),
         }),
@@ -1133,11 +1135,13 @@ describe('Transactions routes (e2e)', () => {
               : [
                   tx(a, {
                     categoryId: SALARY,
+                    amount: BigInt(200000),
                     pending: true,
                     date: new Date('2026-12-28'),
                   }),
                   tx(b, {
                     categoryId: SALARY,
+                    amount: BigInt(200000),
                     pending: true,
                     date: new Date('2026-11-28'),
                   }),

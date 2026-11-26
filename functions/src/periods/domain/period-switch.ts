@@ -4,6 +4,12 @@ import {
   toDateOnly,
 } from '../../shared/domain/date-only';
 import { recurringOccurrences } from '../../shared/domain/recurring-day';
+import {
+  Comparable,
+  daysBetween,
+  EQUIVALENT_DAYS,
+  isEquivalent,
+} from '../../shared/domain/recurring-equivalence';
 
 /**
  * Bascule de période déclenchée par une transaction « paie » (catégorie
@@ -15,10 +21,16 @@ import { recurringOccurrences } from '../../shared/domain/recurring-day';
  *   passé, une période active, et un écart d'au moins 15 jours avec le début
  *   de l'active (14 : rien ; 15 : bascule ; date <= début : rien) ;
  * - l'active est close la veille de la date, la nouvelle commence à la date ;
+ * - une déclencheuse de montant <= 0 ne bascule pas (`non_positive`, après `threshold`) ;
+ * - paie déclenchante (`findTriggerSalary`) : la récurrente du lien
+ *   `recurringId`, sinon l'équivalente à 7 jours au plus, sinon aucune ;
  * - règle A : la nouvelle période finit la veille de la prochaine occurrence
- *   d'une récurrente de montant positif de la catégorie déclencheuse, à au
- *   moins 15 jours du début (la plus proche) ; à défaut début + 1 mois - 1 jour ;
+ *   de la paie déclenchante (à défaut de toutes les paies : la plus proche), à au
+ *   moins 15 jours du début ; à défaut début + 1 mois - 1 jour ;
  *   cette occurrence est créée en `pending` le lendemain de la fin ;
+ * - règle (c) : « déjà présente » se compare sur l'échéance d'origine
+ *   (`dueDate`, sinon la date) ; règle (d) : seule la paie déclenchante n'est
+ *   pas injectée à moins de 15 jours du début ;
  * - un lot est simulé dans l'ordre des dates : l'active simulée devient la
  *   nouvelle période, le seuil se mesure à son début, et seule la dernière
  *   bascule garde sa prochaine paie.
@@ -27,14 +39,13 @@ import { recurringOccurrences } from '../../shared/domain/recurring-day';
 /** Écart minimal, en jours, entre la déclencheuse et le début de l'active. */
 export const SWITCH_THRESHOLD_DAYS = 15;
 
-const DAY_MS = 24 * 60 * 60 * 1000;
-
 export type SkipReason =
   | 'not_trigger'
   | 'pending'
   | 'future'
   | 'no_active'
-  | 'threshold';
+  | 'threshold'
+  | 'non_positive';
 
 export interface SwitchRecurring {
   id: string;
@@ -49,6 +60,8 @@ export interface ExistingRecurringTx {
   id: string;
   recurringId: string;
   date: Date;
+  /** Échéance d'origine (`metadata.dueDate`) ; absente : on lit `date`. */
+  dueDate?: Date;
   pending: boolean;
   /** Utiles au nettoyage de l'import (équivalence avec une ligne importée). */
   categoryId?: string | null;
@@ -70,6 +83,10 @@ export interface SwitchTrigger {
   date: Date;
   pending: boolean;
   categoryId: string | null;
+  /** Centimes : une déclencheuse de montant <= 0 ne bascule pas. */
+  amount: bigint;
+  /** `metadata.recurringId` : la paie qui a déclenché, si elle vient d'une récurrente. */
+  recurringId?: string;
 }
 
 export interface PlanInput {
@@ -95,6 +112,8 @@ export interface PlannedOccurrence {
   description: string;
   amount: bigint;
   date: Date;
+  /** Échéance d'origine (= `date` pour une injection ou la prochaine paie). */
+  dueDate: Date;
 }
 
 export interface PeriodWindow {
@@ -129,27 +148,9 @@ export interface PeriodSwitchPlan {
   remainingPending: number;
 }
 
-/** Écart maximal, en jours, entre une `pending` récurrente et la ligne importée équivalente. */
-export const EQUIVALENT_DAYS = 7;
+export { EQUIVALENT_DAYS };
 
-interface Comparable {
-  categoryId: string | null | undefined;
-  amount: bigint;
-  date: Date;
-}
-
-const sign = (n: bigint) => (n > 0n ? 1 : n < 0n ? -1 : 0);
 const abs = (n: bigint) => (n < 0n ? -n : n);
-
-/** Même catégorie non nulle, même signe, écart de date <= 7 jours (le montant n'est pas une condition). */
-function isEquivalent(a: Comparable, b: Comparable): boolean {
-  return (
-    a.categoryId != null &&
-    a.categoryId === b.categoryId &&
-    sign(a.amount) === sign(b.amount) &&
-    Math.abs(daysBetween(a.date, b.date)) <= EQUIVALENT_DAYS
-  );
-}
 
 /** Meilleur candidat : montant le plus proche, puis date la plus proche, puis id (déterministe). */
 function pickBest<T extends Comparable & { id?: string }>(
@@ -177,8 +178,39 @@ function pickBest<T extends Comparable & { id?: string }>(
   return best;
 }
 
-function daysBetween(from: Date, to: Date): number {
-  return Math.round((to.getTime() - from.getTime()) / DAY_MS);
+/**
+ * Paie qui a déclenché la bascule : (i) la récurrente du lien `recurringId` si
+ * c'est une paie ; (ii) sinon celle dont l'occurrence la plus proche de la date
+ * de la déclencheuse est à 7 jours au plus (la plus proche, puis id) ; (iii)
+ * sinon `null` (comportement d'avant : toutes les paies).
+ */
+export function findTriggerSalary(
+  trigger: Pick<SwitchTrigger, 'date' | 'recurringId'>,
+  salaries: SwitchRecurring[],
+): SwitchRecurring | null {
+  if (trigger.recurringId) {
+    const linked = salaries.find((s) => s.id === trigger.recurringId);
+    if (linked) return linked;
+  }
+  let best: { salary: SwitchRecurring; gap: number } | null = null;
+  for (const salary of salaries) {
+    const occurrences = recurringOccurrences(
+      salary.dayOfMonth,
+      addDaysDateOnly(trigger.date, -EQUIVALENT_DAYS),
+      addDaysDateOnly(trigger.date, EQUIVALENT_DAYS),
+    );
+    for (const occurrence of occurrences) {
+      const gap = Math.abs(daysBetween(trigger.date, occurrence));
+      if (
+        !best ||
+        gap < best.gap ||
+        (gap === best.gap && salary.id < best.salary.id)
+      ) {
+        best = { salary, gap };
+      }
+    }
+  }
+  return best ? best.salary : null;
 }
 
 function monthKey(date: Date): string {
@@ -322,7 +354,9 @@ function simulate(input: PlanInput, pass: Pass): PeriodSwitchPlan {
               ? 'no_active'
               : gap !== null && gap < SWITCH_THRESHOLD_DAYS
                 ? 'threshold'
-                : null;
+                : t.amount <= 0n
+                  ? 'non_positive'
+                  : null;
     if (reason !== null || !simulated) {
       skipped.push({
         triggerId: t.id,
@@ -339,9 +373,13 @@ function simulate(input: PlanInput, pass: Pass): PeriodSwitchPlan {
     // Les autres lignes du compte, sans la déclencheuse elle-même (jamais un doublon d'elle-même).
     const others = known.filter((e) => e.id !== t.id);
 
-    // (a) prochaine paie : première occurrence >= début + 15 j, la plus proche.
+    // Paie déclenchante : seule à fixer la fin (A) et à ne pas être injectée à < 15 jours (d).
+    const triggerSalary = findTriggerSalary(t, salaries);
+
+    // (a) prochaine paie : première occurrence >= début + 15 j (la paie déclenchante,
+    // à défaut la plus proche de toutes).
     let next: { salary: SwitchRecurring; date: Date } | null = null;
-    for (const salary of salaries) {
+    for (const salary of triggerSalary ? [triggerSalary] : salaries) {
       const [first] = recurringOccurrences(
         salary.dayOfMonth,
         farEnough,
@@ -359,7 +397,9 @@ function simulate(input: PlanInput, pass: Pass): PeriodSwitchPlan {
     // Import : seule la dernière bascule injecte (les périodes intermédiaires restent vides).
     const mayInject = !input.importLines || switches.length === pass.lastIndex;
     for (const rec of mayInject ? recurring : []) {
-      const isSalary = salaries.includes(rec);
+      const isSalary = triggerSalary
+        ? rec.id === triggerSalary.id
+        : salaries.includes(rec);
       for (const date of recurringOccurrences(
         rec.dayOfMonth,
         newStart,
@@ -369,7 +409,8 @@ function simulate(input: PlanInput, pass: Pass): PeriodSwitchPlan {
           continue;
         const present = [...others, ...injectedAsKnown(injected)].some(
           (e) =>
-            e.recurringId === rec.id && monthKey(e.date) === monthKey(date),
+            e.recurringId === rec.id &&
+            monthKey(e.dueDate ?? e.date) === monthKey(date),
         );
         if (present) continue;
         if (
@@ -387,6 +428,7 @@ function simulate(input: PlanInput, pass: Pass): PeriodSwitchPlan {
           description: rec.description,
           amount: rec.amount,
           date,
+          dueDate: date,
         });
       }
     }
@@ -409,6 +451,7 @@ function simulate(input: PlanInput, pass: Pass): PeriodSwitchPlan {
           description: next.salary.description,
           amount: next.salary.amount,
           date: next.date,
+          dueDate: next.date,
         };
       }
     }
@@ -457,6 +500,7 @@ function injectedAsKnown(injected: PlannedOccurrence[]): ExistingRecurringTx[] {
     id: `planned:${o.recurringId}:${toDateOnly(o.date)}`,
     recurringId: o.recurringId,
     date: o.date,
+    dueDate: o.dueDate,
     pending: true,
   }));
 }
