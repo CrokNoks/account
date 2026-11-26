@@ -1,4 +1,4 @@
-import { INestApplication } from '@nestjs/common';
+import { INestApplication, Logger } from '@nestjs/common';
 import request from 'supertest';
 import { App } from 'supertest/types';
 import { auth, createE2EApp, Mocks } from './e2e-app';
@@ -405,6 +405,51 @@ describe('Transactions routes (e2e)', () => {
         })
         .expect(400);
       expect(mocks.transactions.saveMany).not.toHaveBeenCalled();
+    });
+
+    describe('import counts (measure)', () => {
+      const url = '/00000000-0000-4000-8000-000000000101/transactions/bulk';
+      const lines = [
+        { date: '2026-03-01', description: 'LIBELLE SECRET', amount: '-100' },
+      ];
+
+      it('logs the counts at info level without label nor amount, and writes as usual', async () => {
+        const log = jest.spyOn(Logger.prototype, 'log').mockImplementation();
+        await http()
+          .post(url)
+          .set(auth())
+          .send({
+            transactions: lines,
+            importStats: { excluded: 4, rechecked: 1, closeFlagged: 2 },
+          })
+          .expect(201);
+        const out = log.mock.calls.map((c) => String(c[0])).join('\n');
+        expect(out).toContain('excluded=4');
+        expect(out).toContain('rechecked=1');
+        expect(out).toContain('closeFlagged=2');
+        expect(out).toContain('sent=1');
+        expect(out).not.toContain('LIBELLE SECRET');
+        expect(out).not.toContain('-100');
+        expect(mocks.transactions.saveMany).toHaveBeenCalledTimes(1);
+        log.mockRestore();
+      });
+
+      it('stays optional', () =>
+        http().post(url).set(auth()).send({ transactions: lines }).expect(201));
+
+      it.each([
+        [{ excluded: -1, rechecked: 0, closeFlagged: 0 }],
+        [{ excluded: 'a', rechecked: 0, closeFlagged: 0 }],
+        [{ excluded: 1.5, rechecked: 0, closeFlagged: 0 }],
+        [{ excluded: 1, rechecked: 0 }],
+      ])('answers 400 on invalid counts %j', async (importStats) => {
+        await http()
+          .post(url)
+          .set(auth())
+          .send({ transactions: lines, importStats })
+          .expect(400);
+        expect(mocks.transactions.saveMany).not.toHaveBeenCalled();
+      });
     });
 
     it('validates each line', () =>

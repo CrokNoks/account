@@ -3,6 +3,7 @@ import { TransactionRepository } from '../domain/transaction.repository.interfac
 import { MatchSmartRulesUseCase } from '../../smart-rules/application/match-smart-rules.use-case';
 import { ApplyPeriodSwitchService } from '../../periods/application/apply-period-switch.service';
 import { AccountReferencesService } from '../../shared/application/account-references.service';
+import { Logger } from '@nestjs/common';
 import { DomainValidationError } from '../../shared/domain/errors';
 
 describe('BulkCreateTransactionsUseCase', () => {
@@ -250,5 +251,27 @@ describe('BulkCreateTransactionsUseCase', () => {
       useCase.execute({ accountId: 'acc-1', transactions: [line()] }),
     ).rejects.toThrow('overlap');
     expect(repository.saveMany).not.toHaveBeenCalled();
+  });
+
+  it('logs the import counts (numbers only) and writes the same lines', async () => {
+    const log = jest.spyOn(Logger.prototype, 'log').mockImplementation();
+    const { transactions: result } = await useCase.execute({
+      accountId: 'acc-1',
+      transactions: [line({ description: 'SECRET' })],
+      importStats: { excluded: 3, rechecked: 1, closeFlagged: 2 },
+    });
+    expect(result).toHaveLength(1);
+    expect(log).toHaveBeenCalledTimes(1);
+    const out = String(log.mock.calls[0][0]);
+    expect(out).toContain('sent=1 excluded=3 rechecked=1 closeFlagged=2');
+    expect(out).not.toContain('SECRET');
+    log.mockRestore();
+  });
+
+  it('logs nothing without counts', async () => {
+    const log = jest.spyOn(Logger.prototype, 'log').mockImplementation();
+    await useCase.execute({ accountId: 'acc-1', transactions: [line()] });
+    expect(log).not.toHaveBeenCalled();
+    log.mockRestore();
   });
 });

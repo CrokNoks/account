@@ -157,12 +157,39 @@ export class CreateTransferDto {
   amount: string;
 }
 
+/** Comptage de l'écran d'import (mesure seulement : journalisé, sans effet sur l'écriture). */
+export class ImportStatsDto {
+  @IsInt()
+  @Min(0)
+  @Max(100000)
+  @ApiProperty({ description: 'Lines unchecked by default (already present)' })
+  excluded: number;
+
+  @IsInt()
+  @Min(0)
+  @Max(100000)
+  @ApiProperty({ description: 'Unchecked lines checked again and sent' })
+  rechecked: number;
+
+  @IsInt()
+  @Min(0)
+  @Max(100000)
+  @ApiProperty({ description: 'Lines flagged as close to an existing one' })
+  closeFlagged: number;
+}
+
 export class BulkCreateTransactionsDto {
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => CreateTransactionDto)
   @ApiProperty({ type: [CreateTransactionDto] })
   transactions: CreateTransactionDto[];
+
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => ImportStatsDto)
+  @ApiProperty({ type: ImportStatsDto, required: false })
+  importStats?: ImportStatsDto;
 }
 
 export class BulkUpdateTransactionsDataDto {
@@ -665,6 +692,7 @@ export class TransactionsController {
           date: parseDateOnly(t.date),
           amount: parseCents(t.amount),
         })),
+        importStats: dto.importStats,
       });
     // Le tableau reste celui d'avant ; la bascule éventuelle est portée par chaque élément.
     return transactions.map((t) => this.mapToResponse(t, periodSwitch));

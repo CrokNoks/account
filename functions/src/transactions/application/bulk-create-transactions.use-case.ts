@@ -1,5 +1,5 @@
 import { parseDateOnly, todayDateOnly } from '../../shared/domain/date-only';
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { TransactionRepository } from '../domain/transaction.repository.interface';
 import { Transaction } from '../domain/transaction.entity';
 import { MatchSmartRulesUseCase } from '../../smart-rules/application/match-smart-rules.use-case';
@@ -13,6 +13,8 @@ import {
 export interface BulkCreateTransactionsCommand {
   accountId: string;
   transactions: Array<Omit<CreateTransactionCommand, 'accountId'>>;
+  /** Comptage de l'écran d'import, pour la mesure seulement (aucun effet sur l'écriture). */
+  importStats?: { excluded: number; rechecked: number; closeFlagged: number };
 }
 
 export interface BulkCreateTransactionsResult {
@@ -23,6 +25,8 @@ export interface BulkCreateTransactionsResult {
 
 @Injectable()
 export class BulkCreateTransactionsUseCase {
+  private readonly logger = new Logger(BulkCreateTransactionsUseCase.name);
+
   constructor(
     private readonly transactionRepository: TransactionRepository,
     private readonly matchRulesUseCase: MatchSmartRulesUseCase,
@@ -31,6 +35,20 @@ export class BulkCreateTransactionsUseCase {
   ) {}
 
   async execute(
+    command: BulkCreateTransactionsCommand,
+  ): Promise<BulkCreateTransactionsResult> {
+    const result = await this.createAll(command);
+    const { importStats } = command;
+    if (importStats) {
+      // Après l'écriture réussie, nombres seulement : ni libellé ni montant.
+      this.logger.log(
+        `Import review: sent=${command.transactions.length} excluded=${importStats.excluded} rechecked=${importStats.rechecked} closeFlagged=${importStats.closeFlagged}`,
+      );
+    }
+    return result;
+  }
+
+  private async createAll(
     command: BulkCreateTransactionsCommand,
   ): Promise<BulkCreateTransactionsResult> {
     const { accountId, transactions } = command;
