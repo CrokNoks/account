@@ -20,6 +20,29 @@ export interface PeriodSwitchWriteResult {
   removed: number;
 }
 
+/** Ce que la suppression d'une période va faire (aperçu : rien n'est écrit, rien n'engage). */
+export interface PeriodDeletionPlan {
+  /** `pending` issues d'une récurrente rattachées à la période : supprimées avec elle. */
+  removedPending: number;
+  /** Autres transactions de la période : conservées. */
+  keptTransactions: number;
+  /** Période qui sera rouverte (annulation de bascule), sinon null. Dates seulement, aucun montant. */
+  reopen: {
+    periodId: string;
+    startDate: string;
+    endDate: string | null;
+  } | null;
+  origin: 'manual' | 'trigger';
+}
+
+/** Ce que la suppression a réellement fait (les nombres de CETTE exécution). */
+export interface PeriodDeletionResult {
+  removedPending: number;
+  keptTransactions: number;
+  reopenedPeriodId: string | null;
+  origin: 'manual' | 'trigger';
+}
+
 export abstract class PeriodRepository {
   abstract findById(id: string): Promise<Period | null>;
   abstract findLastByAccount(accountId: string): Promise<Period | null>;
@@ -57,5 +80,13 @@ export abstract class PeriodRepository {
     removePendingIds?: string[],
     update?: boolean,
   ): Promise<PeriodSwitchWriteResult>;
-  abstract delete(id: string): Promise<void>;
+  /**
+   * Suppression atomique (fonction SQL `delete_period_clean`) : la période, ses budgets et ses
+   * `pending` récurrentes ; les autres transactions suivent la période rouverte (annulation de
+   * bascule) ou perdent leur période. Erreurs : NotFound (inconnue), Forbidden (lecture seule),
+   * Conflict (filet des index) ; dans tous les cas rien n'est modifié.
+   */
+  abstract delete(id: string): Promise<PeriodDeletionResult>;
+  /** Aperçu de la suppression (fonction SQL `preview_delete_period`) : lecture seule. */
+  abstract previewDelete(id: string): Promise<PeriodDeletionPlan>;
 }

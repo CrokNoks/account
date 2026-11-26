@@ -2,6 +2,8 @@ import { Injectable, Inject } from '@nestjs/common';
 import { SupabaseClient } from '@supabase/supabase-js';
 import { Period } from '../domain/period.entity';
 import {
+  PeriodDeletionPlan,
+  PeriodDeletionResult,
   PeriodRepository,
   PeriodSwitchWrite,
   PeriodSwitchWriteResult,
@@ -189,10 +191,64 @@ export class SupabasePeriodRepository implements PeriodRepository {
     };
   }
 
-  async delete(id: string): Promise<void> {
-    const { error } = await this.supabase.from('periods').delete().eq('id', id);
+  async delete(id: string): Promise<PeriodDeletionResult> {
+    // Fonction SQL delete_period_clean : une seule transaction (pending récurrentes, rattachement,
+    // période, réouverture). 42501 : lecture seule (403) ; P0002 : inconnue (404) ; 23505/23P01 : 409.
+    const { data, error } = (await this.supabase.rpc('delete_period_clean', {
+      p_period_id: id,
+    })) as {
+      data: PeriodDeletionResult | null;
+      error: { code?: string; message: string } | null;
+    };
 
-    if (error) throw toDomainError(error);
+    if (error)
+      throw toDomainError(error, {
+        conflict: periodConflict(error),
+        notFound: 'Period not found',
+      });
+
+    // Une réponse vide ne dit pas ce qui a été supprimé : jamais de zéros inventés.
+    if (!data)
+      throw new Error('delete_period_clean returned an empty response');
+
+    return {
+      removedPending: data.removedPending ?? 0,
+      keptTransactions: data.keptTransactions ?? 0,
+      reopenedPeriodId: data.reopenedPeriodId ?? null,
+      origin: data.origin === 'trigger' ? 'trigger' : 'manual',
+    };
+  }
+
+  async previewDelete(id: string): Promise<PeriodDeletionPlan> {
+    const { data, error } = (await this.supabase.rpc('preview_delete_period', {
+      p_period_id: id,
+    })) as {
+      data: {
+        removedPending?: number;
+        keptTransactions?: number;
+        reopenId?: string | null;
+        reopenStart?: string | null;
+        reopenEnd?: string | null;
+        origin?: string;
+      } | null;
+      error: { code?: string; message: string } | null;
+    };
+
+    if (error) throw toDomainError(error, { notFound: 'Period not found' });
+
+    return {
+      removedPending: data?.removedPending ?? 0,
+      keptTransactions: data?.keptTransactions ?? 0,
+      reopen:
+        data?.reopenId && data.reopenStart
+          ? {
+              periodId: data.reopenId,
+              startDate: data.reopenStart,
+              endDate: data.reopenEnd ?? null,
+            }
+          : null,
+      origin: data?.origin === 'trigger' ? 'trigger' : 'manual',
+    };
   }
 
   private mapToDomain(row: PeriodRow): Period {

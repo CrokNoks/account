@@ -178,6 +178,14 @@ const routes: Route[] = [
     okStatus: 204,
   },
   {
+    name: 'GET periods/:id/deletion-preview',
+    repo: 'periods',
+    method: 'get',
+    url: '/00000000-0000-4000-8000-000000000101/periods/00000000-0000-4000-8000-000000000107/deletion-preview',
+    writes: ['periods.delete'],
+    okStatus: 200,
+  },
+  {
     name: 'GET periods/:id/budgets',
     repo: 'periods',
     method: 'get',
@@ -229,6 +237,19 @@ describe('Account ownership of :id routes (e2e)', () => {
         m[fn].mockResolvedValue(undefined);
       }
     }
+    // La suppression d'une période rend ce qu'elle a fait ; l'aperçu, ce qu'elle ferait.
+    mocks.periods.delete.mockResolvedValue({
+      removedPending: 0,
+      keptTransactions: 0,
+      reopenedPeriodId: null,
+      origin: 'manual',
+    });
+    mocks.periods.previewDelete.mockResolvedValue({
+      removedPending: 0,
+      keptTransactions: 0,
+      reopen: null,
+      origin: 'manual',
+    });
     // Les écritures renvoient les lignes enregistrées : ici, celles reçues.
     mocks.transactions.save.mockImplementation((t: unknown) =>
       Promise.resolve(t),

@@ -360,3 +360,127 @@ describe('SupabasePeriodRepository.applyPeriodSwitches', () => {
     });
   });
 });
+
+describe('SupabasePeriodRepository.delete and previewDelete', () => {
+  const repoReturning = (
+    data: unknown,
+    error: { code?: string; message: string } | null = null,
+  ) => {
+    const rpc = jest.fn().mockResolvedValue({ data, error });
+    const from = jest.fn();
+    const repository = new SupabasePeriodRepository({
+      rpc,
+      from,
+    } as unknown as SupabaseClient);
+    return { repository, rpc, from };
+  };
+
+  it('deletes through the single atomic SQL function (no direct table write) and returns its result', async () => {
+    const { repository, rpc, from } = repoReturning({
+      removedPending: 4,
+      keptTransactions: 5,
+      reopenedPeriodId: 'p-old',
+      origin: 'trigger',
+    });
+
+    const result = await repository.delete('p-new');
+
+    expect(rpc).toHaveBeenCalledTimes(1);
+    expect(rpc).toHaveBeenCalledWith('delete_period_clean', {
+      p_period_id: 'p-new',
+    });
+    expect(from).not.toHaveBeenCalled();
+    expect(result).toEqual({
+      removedPending: 4,
+      keptTransactions: 5,
+      reopenedPeriodId: 'p-old',
+      origin: 'trigger',
+    });
+  });
+
+  it('throws instead of returning zeros when the database answers nothing (data null)', async () => {
+    const { repository } = repoReturning(null);
+    await expect(repository.delete('p-new')).rejects.toThrow(/empty response/i);
+  });
+
+  it('maps read-only (42501) to 403, unknown (P0002) to 404 and an index conflict to 409', async () => {
+    await expect(
+      repoReturning(null, { code: '42501', message: 'x' }).repository.delete(
+        'p',
+      ),
+    ).rejects.toBeInstanceOf(ForbiddenError);
+    await expect(
+      repoReturning(null, { code: 'P0002', message: 'x' }).repository.delete(
+        'p',
+      ),
+    ).rejects.toBeInstanceOf(NotFoundError);
+    await expect(
+      repoReturning(null, {
+        code: '23P01',
+        message: 'x',
+      }).repository.delete('p'),
+    ).rejects.toBeInstanceOf(ConflictError);
+  });
+
+  it('reads the preview through preview_delete_period and shapes the reopened period', async () => {
+    const { repository, rpc } = repoReturning({
+      removedPending: 4,
+      keptTransactions: 5,
+      reopenId: 'p-old',
+      reopenStart: '2026-10-25',
+      reopenEnd: '2026-11-30',
+      origin: 'trigger',
+    });
+
+    const plan = await repository.previewDelete('p-new');
+
+    expect(rpc).toHaveBeenCalledWith('preview_delete_period', {
+      p_period_id: 'p-new',
+    });
+    expect(plan).toEqual({
+      removedPending: 4,
+      keptTransactions: 5,
+      reopen: {
+        periodId: 'p-old',
+        startDate: '2026-10-25',
+        endDate: '2026-11-30',
+      },
+      origin: 'trigger',
+    });
+  });
+
+  it('announces no reopening when the plan has none, and keeps a null end', async () => {
+    const none = repoReturning({
+      removedPending: 2,
+      keptTransactions: 1,
+      reopenId: null,
+      reopenStart: null,
+      reopenEnd: null,
+      origin: 'manual',
+    });
+    expect((await none.repository.previewDelete('p')).reopen).toBeNull();
+
+    const open = repoReturning({
+      removedPending: 0,
+      keptTransactions: 0,
+      reopenId: 'p-old',
+      reopenStart: '2026-10-25',
+      reopenEnd: null,
+      origin: 'trigger',
+    });
+    expect((await open.repository.previewDelete('p')).reopen).toEqual({
+      periodId: 'p-old',
+      startDate: '2026-10-25',
+      endDate: null,
+    });
+  });
+
+  it('maps preview errors (P0002 -> 404)', async () => {
+    await expect(
+      repoReturning(null, {
+        code: 'P0002',
+        message: 'x',
+      }).repository.previewDelete('p'),
+    ).rejects.toBeInstanceOf(NotFoundError);
+  });
+});

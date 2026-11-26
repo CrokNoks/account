@@ -26,6 +26,7 @@ import {
 } from '../application/get-period-draft.use-case';
 import { CreatePeriodWithBudgetsUseCase } from '../application/create-period-with-budgets.use-case';
 import { UpdatePeriodBudgetsUseCase } from '../application/update-period-budgets.use-case';
+import { DeletePeriodUseCase } from '../application/delete-period.use-case';
 import { PeriodRepository } from '../domain/period.repository.interface';
 import { BudgetRepository } from '../../budgets/domain/budget.repository.interface';
 import {
@@ -133,6 +134,7 @@ export class PeriodsController {
     private readonly getPeriodDraftUseCase: GetPeriodDraftUseCase,
     private readonly createPeriodWithBudgetsUseCase: CreatePeriodWithBudgetsUseCase,
     private readonly updatePeriodBudgetsUseCase: UpdatePeriodBudgetsUseCase,
+    private readonly deletePeriodUseCase: DeletePeriodUseCase,
     private readonly periodRepository: PeriodRepository,
     private readonly budgetRepository: BudgetRepository,
   ) {}
@@ -258,8 +260,20 @@ export class PeriodsController {
     @Param('accountId') accountId: string,
     @Param('id') id: string,
   ): Promise<void> {
-    await this.getOwnedPeriod(accountId, id);
-    await this.periodRepository.delete(id);
+    await this.deletePeriodUseCase.execute({ accountId, periodId: id });
+  }
+
+  @Get(':id/deletion-preview')
+  @ApiOperation({
+    summary:
+      'What deleting this period would do (pending removed, transactions kept, period reopened): read only',
+  })
+  @ApiResponse({ status: 200 })
+  async deletionPreview(
+    @Param('accountId') accountId: string,
+    @Param('id') id: string,
+  ) {
+    return this.deletePeriodUseCase.preview({ accountId, periodId: id });
   }
 
   private async getOwnedPeriod(accountId: string, id: string): Promise<Period> {
