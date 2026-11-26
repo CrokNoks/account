@@ -28,6 +28,12 @@ export interface PaginatedResult<T> {
   };
 }
 
+export interface BalanceStarts {
+  all: bigint;
+  reconciled: bigint;
+  nonPending: bigint;
+}
+
 export abstract class TransactionRepository {
   abstract findAllByAccount(
     accountId: string,
@@ -70,4 +76,13 @@ export abstract class TransactionRepository {
     accountId: string,
     date: Date,
   ): Promise<bigint>;
+  /**
+   * Trois sommes des transactions datées strictement avant `date`, en un appel :
+   * toutes, pointées seules, non `pending` (départs de « En banque », « À venir » et du prévu).
+   * Lève si la base échoue ou ne répond pas : jamais un départ à 0.
+   */
+  abstract sumAmountsBeforeDateByBalance(
+    accountId: string,
+    date: Date,
+  ): Promise<BalanceStarts>;
 }

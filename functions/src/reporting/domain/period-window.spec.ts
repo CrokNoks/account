@@ -7,7 +7,11 @@ import {
 } from '../../categories/domain/category.entity';
 import { BudgetInstance } from '../../budgets/domain/budget-instance.entity';
 import { Transaction } from '../../transactions/domain/transaction.entity';
-import { isInPeriodWindow, periodLoadEndDate } from './period-window';
+import {
+  isInPeriodWindow,
+  isLateReconciledIncome,
+  periodLoadEndDate,
+} from './period-window';
 
 const category = (id: string, type: CategoryType) =>
   new Category({
@@ -62,13 +66,17 @@ const run = async (
     } as never,
     { findById: jest.fn().mockResolvedValue(period) } as never,
     {
-      sumAmountByAccountBeforeDate: jest.fn((_: string, before: Date) =>
-        Promise.resolve(
+      sumAmountsBeforeDateByBalance: jest.fn((_: string, before: Date) => {
+        const sum = (f: (t: Transaction) => boolean) =>
           all
-            .filter((t) => t.date < before)
-            .reduce((s, t) => s + t.amount, BigInt(0)),
-        ),
-      ),
+            .filter((t) => t.date < before && f(t))
+            .reduce((n, t) => n + t.amount, BigInt(0));
+        return Promise.resolve({
+          all: sum(() => true),
+          reconciled: sum((t) => t.reconciled),
+          nonPending: sum((t) => !t.pending),
+        });
+      }),
       findAllByAccountUnpaginated: jest.fn(
         (_: string, o?: { startDate?: Date; endDate?: Date }) =>
           Promise.resolve(
@@ -96,8 +104,9 @@ const run = async (
   return {
     start,
     forecast: BigInt(s.forecastBalance) - start,
-    bank: BigInt(s.realBankBalance) - start,
-    upcoming: BigInt(s.upcomingBalance) - start,
+    // relatifs au solde initial (100 000) : les départs de la banque et de À venir diffèrent de `start`
+    bank: BigInt(s.realBankBalance) - 100000n,
+    upcoming: BigInt(s.upcomingBalance) - 100000n,
     bills: BigInt(s.billsTotal),
     card: BigInt(s.cardTotal),
     cardCount: s.cardCount,
@@ -105,6 +114,8 @@ const run = async (
       BigInt(s.realBankBalance) +
       BigInt(s.cardTotal) +
       BigInt(s.billsTotal) +
+      BigInt(s.reportsTotal) +
+      BigInt(s.arrivedAfterEnd) +
       BigInt(s.budgetRemaining) +
       BigInt(s.expectedIncome),
     forecastAbs: BigInt(s.forecastBalance),
@@ -129,7 +140,7 @@ const closed = () =>
     isActive: false,
   });
 
-describe('fenêtre de période : table de la règle critique (14 cas)', () => {
+describe('fenêtre de période : table de la règle critique (15 cas)', () => {
   // Effets de la dépense -12 000 (ou de l'opération) par rapport à « avant ».
   const cases: Array<{
     n: number;
@@ -183,15 +194,17 @@ describe('fenêtre de période : table de la règle critique (14 cas)', () => {
     },
     {
       n: 4,
-      label: 'active avec fin, pending et rapprochée 05/12',
+      label:
+        'active avec fin, CB non rapprochée avant le début (31/10) : dans le prévu et À venir, pas en banque',
       period: active,
-      t: () => tx('2026-12-05', -12000, { pending: true, reconciled: true }),
-      forecast: -12000n,
-      bank: -12000n,
-      upcoming: 0n,
+      t: () => tx('2026-10-31', -12000),
+      forecast: 0n,
+      bank: 0n,
+      upcoming: -12000n,
       bills: 0n,
       card: 0n,
       cardCount: 0,
+      inStart: true,
     },
     {
       n: 5,
@@ -256,12 +269,13 @@ describe('fenêtre de période : table de la règle critique (14 cas)', () => {
     },
     {
       n: 10,
-      label: 'active avec fin, remboursement +12 000 sur dépense le 05/12',
+      label:
+        'active avec fin, revenu pointé +12 000 sur une dépense le 05/12 : tardif, en banque et à venir, pas au prévu',
       period: active,
       t: () => tx('2026-12-05', 12000, { reconciled: true }),
       forecast: 0n,
-      bank: 0n,
-      upcoming: 0n,
+      bank: 12000n,
+      upcoming: 12000n,
       bills: 0n,
       card: 0n,
       cardCount: 0,
@@ -314,6 +328,20 @@ describe('fenêtre de période : table de la règle critique (14 cas)', () => {
       card: -12000n,
       cardCount: 1,
     },
+    {
+      n: 15,
+      label:
+        'active avec fin, salaire pointé +12 000 le 05/12 : tardif (exemple F)',
+      period: active,
+      t: () =>
+        tx('2026-12-05', 12000, { categoryId: 'salaire', reconciled: true }),
+      forecast: 0n,
+      bank: 12000n,
+      upcoming: 12000n,
+      bills: 0n,
+      card: 0n,
+      cardCount: 0,
+    },
   ];
 
   it.each(cases)('cas $n : $label', async (c) => {
@@ -353,13 +381,14 @@ describe('fenêtre de période : table de la règle critique (14 cas)', () => {
       ],
       [budget],
     );
-    expect(r.forecastAbs).toBe(53000n);
+    // par catégorie : Courses max(35000, 40000) + Loyer 12000 = 52000
+    expect(r.forecastAbs).toBe(48000n);
     expect(r.stats.realBankBalance).toBe('70000');
     expect(r.stats.upcomingBalance).toBe('65000');
     expect(r.card).toBe(-5000n);
     expect(r.bills).toBe(-12000n);
-    expect(BigInt(r.stats.budgetRemaining)).toBe(0n);
-    expect(r.composition).toBe(53000n);
+    expect(BigInt(r.stats.budgetRemaining)).toBe(-5000n);
+    expect(r.composition).toBe(48000n);
   });
 });
 
@@ -413,5 +442,36 @@ describe('isInPeriodWindow / periodLoadEndDate', () => {
     expect(periodLoadEndDate(p('2026-11-30', true))).toBeUndefined();
     expect(periodLoadEndDate(p('2026-11-30', false))).toEqual(d('2026-11-30'));
     expect(periodLoadEndDate(p(null, false))).toBeUndefined();
+  });
+});
+
+describe('isLateReconciledIncome (CA4)', () => {
+  const late = (
+    date: string,
+    amount: bigint,
+    reconciled: boolean,
+    period = active(),
+  ) => isLateReconciledIncome({ date: d(date), amount, reconciled }, period);
+
+  it('F : revenu pointé après la fin d’une période active', () => {
+    expect(late('2026-12-02', 30000n, true)).toBe(true);
+  });
+  it('F3 : revenu non pointé après la fin : ignoré', () => {
+    expect(late('2026-12-02', 30000n, false)).toBe(false);
+  });
+  it('F4 : dépense pointée après la fin : déjà dans la fenêtre, pas un tardif', () => {
+    expect(late('2026-12-02', -5000n, true)).toBe(false);
+  });
+  it('un montant à 0 n’est pas un revenu', () => {
+    expect(late('2026-12-02', 0n, true)).toBe(false);
+  });
+  it('le jour de la fin : dans la fenêtre, pas un tardif', () => {
+    expect(late('2026-11-30', 30000n, true)).toBe(false);
+  });
+  it('F2 : période fermée : jamais de tardif', () => {
+    expect(late('2026-12-02', 30000n, true, closed())).toBe(false);
+  });
+  it('F5 : période active sans fin : jamais de tardif', () => {
+    expect(late('2027-03-02', 30000n, true, active(null))).toBe(false);
   });
 });

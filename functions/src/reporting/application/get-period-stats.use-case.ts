@@ -4,7 +4,10 @@ import { PeriodRepository } from '../../periods/domain/period.repository.interfa
 import { TransactionRepository } from '../../transactions/domain/transaction.repository.interface';
 import { BudgetRepository } from '../../budgets/domain/budget.repository.interface';
 import { CategoryRepository } from '../../categories/domain/category.repository.interface';
-import { computeForecastComposition } from '../domain/forecast-composition';
+import {
+  computeBankBalances,
+  computeForecastComposition,
+} from '../domain/forecast-composition';
 import { computePeriodForecast } from '../domain/period-forecast';
 import { loadPeriodForecastInput } from './load-period-forecast-input';
 
@@ -21,6 +24,10 @@ export interface PeriodStatsResponse {
   cardTotal: string;
   cardCount: number;
   billsTotal: string;
+  /** CB non pointées et factures `pending` datées avant le début (signé). */
+  reportsTotal: string;
+  /** -(revenus pointés après la fin d'une période active) : négatif ou nul. */
+  arrivedAfterEnd: string;
   budgetRemaining: string;
   expectedIncome: string;
 }
@@ -42,6 +49,10 @@ export class GetPeriodStatsUseCase {
     const {
       categories,
       startBalance,
+      startReconciled,
+      startNonPending,
+      reportsTotal,
+      lateReconciledIncome,
       periodTransactions,
       realByCategory,
       uncategorized,
@@ -62,6 +73,8 @@ export class GetPeriodStatsUseCase {
       plannedIncome,
       realExpenses,
       plannedExpenses,
+      budgetRemaining,
+      expectedIncome,
       forecastBalance,
     } = computePeriodForecast({
       startBalance,
@@ -74,24 +87,21 @@ export class GetPeriodStatsUseCase {
       })),
     });
 
-    // 4. Real Bank Balance (Start + reconciled in this period)
-    const reconciledInPeriod = periodTransactions
-      .filter((t) => t.reconciled)
-      .reduce((sum, t) => sum + t.amount, BigInt(0));
-    const realBankBalance = startBalance + reconciledInPeriod;
-
-    // 5. Upcoming Balance (Start + all NOT pending in this period)
-    const nonPendingInPeriod = periodTransactions
-      .filter((t) => !t.pending)
-      .reduce((sum, t) => sum + t.amount, BigInt(0));
-    const upcomingBalance = startBalance + nonPendingInPeriod;
+    // En banque : départ pointé + pointées de la période + revenu pointé tardif.
+    // À venir : départ non pending + non pending de la période + revenu pointé tardif.
+    const { realBankBalance, upcomingBalance } = computeBankBalances({
+      startReconciled,
+      startNonPending,
+      transactions: periodTransactions,
+      lateReconciledIncome,
+    });
 
     const composition = computeForecastComposition({
       transactions: periodTransactions,
-      realIncome,
-      plannedIncome,
-      realExpenses,
-      plannedExpenses,
+      reportsTotal,
+      lateReconciledIncome,
+      budgetRemaining,
+      expectedIncome,
     });
 
     return {
@@ -106,6 +116,8 @@ export class GetPeriodStatsUseCase {
       cardTotal: composition.cardTotal.toString(),
       cardCount: composition.cardCount,
       billsTotal: composition.billsTotal.toString(),
+      reportsTotal: composition.reportsTotal.toString(),
+      arrivedAfterEnd: composition.arrivedAfterEnd.toString(),
       budgetRemaining: composition.budgetRemaining.toString(),
       expectedIncome: composition.expectedIncome.toString(),
     };

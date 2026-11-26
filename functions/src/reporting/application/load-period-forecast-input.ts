@@ -5,7 +5,11 @@ import { CategoryRepository } from '../../categories/domain/category.repository.
 import { Category } from '../../categories/domain/category.entity';
 import { Transaction } from '../../transactions/domain/transaction.entity';
 import { NotFoundError } from '../../shared/domain/errors';
-import { filterPeriodWindow, periodLoadEndDate } from '../domain/period-window';
+import {
+  filterPeriodWindow,
+  isLateReconciledIncome,
+  periodLoadEndDate,
+} from '../domain/period-window';
 
 export interface PeriodForecastSources {
   accountRepository: AccountRepository;
@@ -16,7 +20,16 @@ export interface PeriodForecastSources {
 
 export interface LoadedPeriodForecastInput {
   categories: Category[];
+  /** Départ complet (tout ce qui est daté avant le début) : celui du prévu. */
   startBalance: bigint;
+  /** Solde initial + pointées avant le début : départ de « En banque ». */
+  startReconciled: bigint;
+  /** Solde initial + non `pending` avant le début : départ de « À venir ». */
+  startNonPending: bigint;
+  /** Départ complet - départ pointé : CB non pointées et factures `pending` avant le début (signé). */
+  reportsTotal: bigint;
+  /** Revenus pointés datés après la fin d'une période active (hors fenêtre, donc hors prévu). */
+  lateReconciledIncome: bigint;
   periodTransactions: Transaction[];
   /** Réel par catégorie (tous types, pending comprises). */
   realByCategory: Map<string, bigint>;
@@ -42,23 +55,29 @@ export async function loadPeriodForecastInput(
   const categories =
     await sources.categoryRepository.findAllByAccount(accountId);
 
-  // Solde de départ : solde initial + transactions avant la période (calculé en base)
-  const sumBeforeStart =
-    await sources.transactionRepository.sumAmountByAccountBeforeDate(
+  // Trois départs en un appel (calculés en base) : tout (prévu), pointées (En banque),
+  // non pending (À venir). Une panne remonte, jamais un départ à 0.
+  const starts =
+    await sources.transactionRepository.sumAmountsBeforeDateByBalance(
       accountId,
       period.startDate,
     );
-  const startBalance = account.initialBalance + sumBeforeStart;
+  const startBalance = account.initialBalance + starts.all;
+  const startReconciled = account.initialBalance + starts.reconciled;
+  const startNonPending = account.initialBalance + starts.nonPending;
+  const reportsTotal = starts.all - starts.reconciled;
 
   // Fenêtre unique (domain/period-window) : période active = pas de borne haute
   // au chargement, le revenu tardif est écarté par le filtre.
-  const periodTransactions = filterPeriodWindow(
+  const loaded =
     await sources.transactionRepository.findAllByAccountUnpaginated(accountId, {
       startDate: period.startDate,
       endDate: periodLoadEndDate(period),
-    }),
-    period,
-  );
+    });
+  const periodTransactions = filterPeriodWindow(loaded, period);
+  const lateReconciledIncome = loaded
+    .filter((t) => isLateReconciledIncome(t, period))
+    .reduce((sum, t) => sum + t.amount, BigInt(0));
 
   const realByCategory = new Map<string, bigint>();
   let uncategorized = BigInt(0);
@@ -74,6 +93,10 @@ export async function loadPeriodForecastInput(
   return {
     categories,
     startBalance,
+    startReconciled,
+    startNonPending,
+    reportsTotal,
+    lateReconciledIncome,
     periodTransactions,
     realByCategory,
     uncategorized,

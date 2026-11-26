@@ -2,14 +2,20 @@ import { CategoryType } from '../../categories/domain/category.entity';
 
 /**
  * Règle du prévu de fin de période (docs/reporting.md, « Solde prévisionnel »),
- * écrite une seule fois : utilisée par les stats et par la simulation des budgets.
- * Fonction pure, centimes entiers (bigint).
+ * écrite une seule fois : utilisée par les stats, la composition et la simulation
+ * des budgets. Fonction pure, centimes entiers (bigint).
  *
- *   forecast = départ + max(revenus réels, revenus prévus)
- *            - max(dépensé, |dépenses prévues|) + remboursement net
- *            + transactions sans catégorie (pending comprises, au réel)
+ * Le max se prend PAR CATÉGORIE, puis on additionne (un dépassement n'est plus
+ * masqué par un budget non consommé ailleurs) :
  *
- *   dépensé = max(0, -dépenses réelles) ; remboursement net = max(0, dépenses réelles).
+ *   forecast = départ + Σ revenus retenus - Σ dépenses retenues
+ *            + Σ remboursements + transactions sans catégorie (pending comprises)
+ *
+ *   Dépenses et épargne (`expenseRule`) : dépensé = max(0, -réel),
+ *     retenu = max(dépensé, |budget|), remboursement = max(0, réel).
+ *   Revenus et virements (`incomeRule`) : réel >= 0 : retenu = max(réel, |budget|) ;
+ *     revenu à réel < 0 : retenu = |budget| + réel (miroir du remboursement) ;
+ *     virement à réel < 0 (sortant, déjà passé) : retenu = réel, budget ignoré.
  */
 export interface PeriodForecastInput {
   startBalance: bigint;
@@ -29,6 +35,12 @@ export interface PeriodForecast {
   plannedExpenses: bigint;
   maxIncome: bigint;
   maxAbsExpenses: bigint;
+  /** Σ des remboursements par catégorie de dépense (réel net positif). */
+  refundSurplus: bigint;
+  /** Σ -(retenu - dépensé) par catégorie de dépense : négatif ou nul. */
+  budgetRemaining: bigint;
+  /** Σ (retenu - réel) par catégorie de revenu : positif ou nul. */
+  expectedIncome: bigint;
   forecastBalance: bigint;
 }
 
@@ -53,6 +65,30 @@ export function expenseRule(
   return { spent, maxExpenses, refundSurplus };
 }
 
+/**
+ * Règle des revenus et virements d'UNE catégorie, écrite une seule fois.
+ * Réel >= 0 : le plus grand de (réel, |budget|). Réel négatif (correction) : le budget
+ * reste entier et le négatif se déduit. Exception, catégorie de type virement (`isTransfer`) :
+ * un réel négatif est un virement sortant déjà passé, le budget est ignoré (retenu = réel, rien
+ * d'attendu). `expected` = ce qui reste à recevoir sur la catégorie.
+ */
+export function incomeRule(
+  realIncome: bigint,
+  plannedIncome: bigint,
+  isTransfer = false,
+): { retained: bigint; expected: bigint } {
+  const absPlanned = abs(plannedIncome);
+  let retained: bigint;
+  if (realIncome >= ZERO) {
+    retained = realIncome > absPlanned ? realIncome : absPlanned;
+  } else if (isTransfer) {
+    retained = realIncome;
+  } else {
+    retained = absPlanned + realIncome;
+  }
+  return { retained, expected: retained - realIncome };
+}
+
 export function computePeriodForecast(
   input: PeriodForecastInput,
 ): PeriodForecast {
@@ -60,6 +96,11 @@ export function computePeriodForecast(
   let realExpenses = ZERO;
   let plannedIncome = ZERO;
   let plannedExpenses = ZERO;
+  let maxIncome = ZERO;
+  let maxAbsExpenses = ZERO;
+  let refundSurplus = ZERO;
+  let budgetRemaining = ZERO;
+  let expectedIncome = ZERO;
 
   for (const cat of input.categories) {
     const catReal = input.realByCategory.get(cat.id) ?? ZERO;
@@ -73,17 +114,26 @@ export function computePeriodForecast(
     if (isIncome) {
       realIncome += catReal;
       plannedIncome += catBudget;
+      const { retained, expected } = incomeRule(
+        catReal,
+        catBudget,
+        cat.type === CategoryType.TRANSFER,
+      );
+      maxIncome += retained;
+      expectedIncome += expected;
     } else {
       realExpenses += catReal;
       plannedExpenses += catBudget;
+      const {
+        spent,
+        maxExpenses,
+        refundSurplus: refund,
+      } = expenseRule(catReal, catBudget);
+      maxAbsExpenses += maxExpenses;
+      refundSurplus += refund;
+      budgetRemaining -= maxExpenses - spent;
     }
   }
-
-  const { maxExpenses: maxAbsExpenses, refundSurplus } = expenseRule(
-    realExpenses,
-    plannedExpenses,
-  );
-  const maxIncome = realIncome > plannedIncome ? realIncome : plannedIncome;
 
   const forecastBalance =
     input.startBalance +
@@ -99,6 +149,9 @@ export function computePeriodForecast(
     plannedExpenses,
     maxIncome,
     maxAbsExpenses,
+    refundSurplus,
+    budgetRemaining,
+    expectedIncome,
     forecastBalance,
   };
 }

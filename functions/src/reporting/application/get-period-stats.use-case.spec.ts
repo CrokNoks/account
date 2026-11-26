@@ -38,6 +38,16 @@ const tx = (
     pending: flags.pending ?? false,
   });
 
+/** Trois départs identiques par défaut ; `all`, `reconciled`, `nonPending` se surchargent. */
+const starts = (
+  all: number,
+  o: { reconciled?: number; nonPending?: number } = {},
+) => ({
+  all: BigInt(all),
+  reconciled: BigInt(o.reconciled ?? all),
+  nonPending: BigInt(o.nonPending ?? all),
+});
+
 describe('GetPeriodStatsUseCase', () => {
   const period = Period.create({
     id: 'per-1',
@@ -49,7 +59,7 @@ describe('GetPeriodStatsUseCase', () => {
   let accounts: { findById: jest.Mock };
   let periods: { findById: jest.Mock };
   let transactions: {
-    sumAmountByAccountBeforeDate: jest.Mock;
+    sumAmountsBeforeDateByBalance: jest.Mock;
     findAllByAccountUnpaginated: jest.Mock;
   };
   let budgets: { findAllByPeriod: jest.Mock };
@@ -69,7 +79,7 @@ describe('GetPeriodStatsUseCase', () => {
     };
     periods = { findById: jest.fn().mockResolvedValue(period) };
     transactions = {
-      sumAmountByAccountBeforeDate: jest.fn().mockResolvedValue(BigInt(20000)),
+      sumAmountsBeforeDateByBalance: jest.fn().mockResolvedValue(starts(20000)),
       findAllByAccountUnpaginated: jest
         .fn()
         .mockResolvedValue([
@@ -116,7 +126,7 @@ describe('GetPeriodStatsUseCase', () => {
   it('computes the start balance from the initial balance and transactions before the period', async () => {
     const stats = await useCase.execute('acc-1', 'per-1');
 
-    expect(transactions.sumAmountByAccountBeforeDate).toHaveBeenCalledWith(
+    expect(transactions.sumAmountsBeforeDateByBalance).toHaveBeenCalledWith(
       'acc-1',
       period.startDate,
     );
@@ -280,6 +290,8 @@ describe('GetPeriodStatsUseCase', () => {
       cardTotal: '0',
       cardCount: 0,
       billsTotal: '0',
+      reportsTotal: '0',
+      arrivedAfterEnd: '0',
       budgetRemaining: '0',
       expectedIncome: '0',
     });
@@ -308,7 +320,7 @@ describe('GetPeriodStatsUseCase', () => {
         category('T', CategoryType.TRANSFER),
       ],
     ) => {
-      transactions.sumAmountByAccountBeforeDate.mockResolvedValue(BigInt(0));
+      transactions.sumAmountsBeforeDateByBalance.mockResolvedValue(starts(0));
       transactions.findAllByAccountUnpaginated.mockResolvedValue(txs);
       budgets.findAllByPeriod.mockResolvedValue(budgetList);
       categories.findAllByAccount.mockResolvedValue(cats);
@@ -318,6 +330,8 @@ describe('GetPeriodStatsUseCase', () => {
         BigInt(s.realBankBalance) +
         BigInt(s.cardTotal) +
         BigInt(s.billsTotal) +
+        BigInt(s.reportsTotal) +
+        BigInt(s.arrivedAfterEnd) +
         BigInt(s.budgetRemaining) +
         BigInt(s.expectedIncome)
       ).toString();
@@ -383,19 +397,6 @@ describe('GetPeriodStatsUseCase', () => {
         undefined,
         { billsTotal: '-11000' },
         '267000',
-      ],
-      [
-        'pending rapprochée',
-        () => [
-          tx(200000, 'I', { reconciled: true }),
-          tx(-10000, 'D', { reconciled: true }),
-          tx(-5000, 'D'),
-          tx(-8000, 'D', { pending: true, reconciled: true }),
-        ],
-        undefined,
-        undefined,
-        { realBankBalance: '282000', billsTotal: '0', cardTotal: '-5000' },
-        '270000',
       ],
       [
         'remboursement CB +4000',
@@ -466,8 +467,9 @@ describe('GetPeriodStatsUseCase', () => {
         () => [tx(-2000, 'I', { reconciled: true })],
         [],
         undefined,
-        { expectedIncome: '2000' },
-        '100000',
+        // Miroir de l'option B : sans budget le négatif se déduit (retenu = réel), rien n'est attendu.
+        { expectedIncome: '0' },
+        '98000',
       ],
       [
         'budget D stocké en négatif',
@@ -497,6 +499,252 @@ describe('GetPeriodStatsUseCase', () => {
       setup([...base(), tx(-3000, null)]);
 
       expect((await useCase.execute('acc-1', 'per-1')).cardCount).toBe(2);
+    });
+  });
+
+  describe('départs séparés et revenu tardif (CA1-CA4, CA7)', () => {
+    const b = (categoryId: string, amount: number) =>
+      BudgetInstance.create({
+        periodId: 'per-1',
+        categoryId,
+        amountAllocated: BigInt(amount),
+      });
+    const at = (
+      date: string,
+      amount: number,
+      categoryId: string | null,
+      flags: { reconciled?: boolean; pending?: boolean } = {},
+    ) =>
+      Transaction.create({
+        accountId: 'acc-1',
+        categoryId,
+        date: new Date(`${date}T00:00:00.000Z`),
+        description: 'tx',
+        amount: BigInt(amount),
+        reconciled: flags.reconciled ?? false,
+        pending: flags.pending ?? false,
+      });
+    const sevenLines = (
+      s: Awaited<ReturnType<GetPeriodStatsUseCase['execute']>>,
+    ) =>
+      (
+        BigInt(s.realBankBalance) +
+        BigInt(s.cardTotal) +
+        BigInt(s.billsTotal) +
+        BigInt(s.reportsTotal) +
+        BigInt(s.arrivedAfterEnd) +
+        BigInt(s.budgetRemaining) +
+        BigInt(s.expectedIncome)
+      ).toString();
+
+    // Exemple A (centimes) : compte initial 0, P2 = mars active (fin 31/03).
+    // Avant : salaire +2000 pointé, loyer -800 pointé, CB -60, facture -90 pending.
+    const exampleA = () => {
+      accounts.findById.mockResolvedValue(
+        new Account({
+          id: 'acc-1',
+          name: 'Courant',
+          ownerId: 'u-1',
+          initialBalance: BigInt(0),
+        }),
+      );
+      // tout 1050 ; pointées 1200 ; non pending 1200 - 60 = 1140
+      transactions.sumAmountsBeforeDateByBalance.mockResolvedValue({
+        all: 105000n,
+        reconciled: 120000n,
+        nonPending: 114000n,
+      });
+      transactions.findAllByAccountUnpaginated.mockResolvedValue([
+        at('2026-03-05', 200000, 'salaire', { reconciled: true }),
+        at('2026-03-10', -30000, 'courses', { reconciled: true }),
+        at('2026-03-12', -4000, 'resto'),
+        at('2026-03-20', -80000, 'loyer', { pending: true }),
+      ]);
+      budgets.findAllByPeriod.mockResolvedValue([
+        b('salaire', 200000),
+        b('courses', 40000),
+        b('resto', 10000),
+        b('loyer', 80000),
+      ]);
+      categories.findAllByAccount.mockResolvedValue([
+        category('salaire', CategoryType.INCOME),
+        category('courses', CategoryType.EXPENSE),
+        category('resto', CategoryType.EXPENSE),
+        category('loyer', CategoryType.EXPENSE),
+        category('prime', CategoryType.INCOME),
+      ]);
+    };
+
+    it('A : En banque 2 900, À venir 2 800, prévu 1 750, reports -150, composition = prévu', async () => {
+      exampleA();
+
+      const stats = await useCase.execute('acc-1', 'per-1');
+
+      expect(stats).toMatchObject({
+        startBalance: '105000',
+        realBankBalance: '290000',
+        upcomingBalance: '280000',
+        forecastBalance: '175000',
+        cardTotal: '-4000',
+        billsTotal: '-80000',
+        reportsTotal: '-15000',
+        arrivedAfterEnd: '0',
+        budgetRemaining: '-16000',
+        expectedIncome: '0',
+      });
+      expect(sevenLines(stats)).toBe(stats.forecastBalance);
+    });
+
+    it('A2 : une CB ancienne non pointée reste dans À venir mais plus dans En banque', async () => {
+      exampleA();
+      transactions.sumAmountsBeforeDateByBalance.mockResolvedValue({
+        all: 94000n,
+        reconciled: 100000n,
+        nonPending: 94000n,
+      });
+      transactions.findAllByAccountUnpaginated.mockResolvedValue([]);
+      budgets.findAllByPeriod.mockResolvedValue([]);
+
+      const stats = await useCase.execute('acc-1', 'per-1');
+
+      expect(stats.realBankBalance).toBe('100000');
+      expect(stats.upcomingBalance).toBe('94000');
+      expect(stats.forecastBalance).toBe('94000');
+      expect(stats.reportsTotal).toBe('-6000');
+    });
+
+    it('A3 : une facture pending ancienne n’est ni en banque ni à venir, mais dans le prévu', async () => {
+      exampleA();
+      transactions.sumAmountsBeforeDateByBalance.mockResolvedValue({
+        all: 91000n,
+        reconciled: 100000n,
+        nonPending: 100000n,
+      });
+      transactions.findAllByAccountUnpaginated.mockResolvedValue([]);
+      budgets.findAllByPeriod.mockResolvedValue([]);
+
+      const stats = await useCase.execute('acc-1', 'per-1');
+
+      expect(stats.realBankBalance).toBe('100000');
+      expect(stats.upcomingBalance).toBe('100000');
+      expect(stats.forecastBalance).toBe('91000');
+      expect(stats.reportsTotal).toBe('-9000');
+    });
+
+    it('F : prime +300 pointée datée après la fin d’une période active : En banque 3 200, À venir 3 100, prévu 1 750', async () => {
+      exampleA();
+      const txs =
+        (await transactions.findAllByAccountUnpaginated()) as Transaction[];
+      transactions.findAllByAccountUnpaginated.mockResolvedValue([
+        ...txs,
+        at('2026-04-02', 30000, 'prime', { reconciled: true }),
+      ]);
+
+      const stats = await useCase.execute('acc-1', 'per-1');
+
+      expect(stats).toMatchObject({
+        realBankBalance: '320000',
+        upcomingBalance: '310000',
+        forecastBalance: '175000',
+        arrivedAfterEnd: '-30000',
+      });
+      expect(sevenLines(stats)).toBe(stats.forecastBalance);
+    });
+
+    it('F3 : un revenu non pointé après la fin reste ignoré partout', async () => {
+      exampleA();
+      const txs =
+        (await transactions.findAllByAccountUnpaginated()) as Transaction[];
+      transactions.findAllByAccountUnpaginated.mockResolvedValue([
+        ...txs,
+        at('2026-04-02', 30000, 'prime', { pending: true }),
+        at('2026-04-03', 12000, 'prime'),
+      ]);
+
+      const stats = await useCase.execute('acc-1', 'per-1');
+
+      expect(stats).toMatchObject({
+        realBankBalance: '290000',
+        upcomingBalance: '280000',
+        forecastBalance: '175000',
+        arrivedAfterEnd: '0',
+      });
+    });
+
+    it('F4 : une dépense pointée après la fin est déjà dans la fenêtre (pas de tardif)', async () => {
+      exampleA();
+      const txs =
+        (await transactions.findAllByAccountUnpaginated()) as Transaction[];
+      transactions.findAllByAccountUnpaginated.mockResolvedValue([
+        ...txs,
+        at('2026-04-02', -5000, null, { reconciled: true }),
+      ]);
+
+      const stats = await useCase.execute('acc-1', 'per-1');
+
+      expect(stats.arrivedAfterEnd).toBe('0');
+      expect(stats.realBankBalance).toBe('285000');
+      expect(stats.forecastBalance).toBe('170000');
+      expect(sevenLines(stats)).toBe(stats.forecastBalance);
+    });
+
+    it('F2 : période fermée, la prime pointée datée après sa fin n’est pas chargée ni comptée', async () => {
+      exampleA();
+      periods.findById.mockResolvedValue(period.deactivate());
+      const txs =
+        (await transactions.findAllByAccountUnpaginated()) as Transaction[];
+      transactions.findAllByAccountUnpaginated.mockResolvedValue([
+        ...txs,
+        at('2026-04-02', 30000, 'prime', { reconciled: true }),
+      ]);
+
+      const stats = await useCase.execute('acc-1', 'per-1');
+
+      expect(stats.arrivedAfterEnd).toBe('0');
+      expect(stats.realBankBalance).toBe('290000');
+      expect(stats.forecastBalance).toBe('175000');
+    });
+
+    it('G : salaire pointé -50 / budget 2 000 : revenus attendus 2 000, égalité tenue', async () => {
+      exampleA();
+      transactions.findAllByAccountUnpaginated.mockResolvedValue([
+        at('2026-03-05', -5000, 'salaire', { reconciled: true }),
+      ]);
+      budgets.findAllByPeriod.mockResolvedValue([b('salaire', 200000)]);
+
+      const stats = await useCase.execute('acc-1', 'per-1');
+
+      expect(stats.expectedIncome).toBe('200000');
+      // 1050 + (2000 - 50)
+      expect(stats.forecastBalance).toBe('300000');
+      expect(sevenLines(stats)).toBe(stats.forecastBalance);
+    });
+
+    it('B : un dépassement n’est plus masqué par un budget non consommé (stats)', async () => {
+      exampleA();
+      transactions.sumAmountsBeforeDateByBalance.mockResolvedValue(starts(0));
+      transactions.findAllByAccountUnpaginated.mockResolvedValue([
+        at('2026-03-05', -50000, 'courses', { reconciled: true }),
+      ]);
+      budgets.findAllByPeriod.mockResolvedValue([
+        b('courses', 30000),
+        b('loyer', 80000),
+      ]);
+
+      const stats = await useCase.execute('acc-1', 'per-1');
+
+      expect(stats.forecastBalance).toBe('-130000');
+      expect(sevenLines(stats)).toBe(stats.forecastBalance);
+    });
+
+    it('R1 : une panne de la fonction de départs fait échouer les stats (jamais un départ à 0)', async () => {
+      transactions.sumAmountsBeforeDateByBalance.mockRejectedValue(
+        new Error('rpc down'),
+      );
+
+      await expect(useCase.execute('acc-1', 'per-1')).rejects.toThrow(
+        'rpc down',
+      );
     });
   });
 

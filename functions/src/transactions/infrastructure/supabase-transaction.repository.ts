@@ -5,6 +5,7 @@ import { toTransactionPayload } from './transaction-payload';
 import {
   TransactionRepository,
   FindAllTransactionsOptions,
+  BalanceStarts,
   PaginatedResult,
 } from '../domain/transaction.repository.interface';
 import { WindowPeriod } from '../../reporting/domain/period-window';
@@ -224,6 +225,36 @@ export class SupabaseTransactionRepository implements TransactionRepository {
 
     const dataValue = response.data as string | number | null;
     return BigInt(dataValue || 0);
+  }
+
+  async sumAmountsBeforeDateByBalance(
+    accountId: string,
+    date: Date,
+  ): Promise<BalanceStarts> {
+    const response = await this.supabase.rpc(
+      'sum_transactions_before_date_by_balance',
+      {
+        p_account_id: accountId,
+        p_date: date.toISOString().split('T')[0],
+      },
+    );
+
+    if (response.error) throw new Error(response.error.message);
+
+    const rows = response.data as Array<{
+      all_total: string | number;
+      reconciled_total: string | number;
+      non_pending_total: string | number;
+    }> | null;
+    // Une ligne attendue (COALESCE côté SQL) : une réponse vide est une panne, pas un départ à 0.
+    if (!Array.isArray(rows) || rows.length !== 1)
+      throw new Error('sum_transactions_before_date_by_balance: empty answer');
+    const [row] = rows;
+    return {
+      all: BigInt(row.all_total),
+      reconciled: BigInt(row.reconciled_total),
+      nonPending: BigInt(row.non_pending_total),
+    };
   }
 
   async findAllByPeriod(periodId: string): Promise<Transaction[]> {

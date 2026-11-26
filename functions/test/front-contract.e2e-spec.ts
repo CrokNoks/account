@@ -3,6 +3,7 @@ import request from 'supertest';
 import { App } from 'supertest/types';
 import { auth, createE2EApp, Mocks, USER } from './e2e-app';
 import { Account } from '../src/accounts/domain/account.entity';
+import { Period } from '../src/periods/domain/period.entity';
 import { RecurringTransaction } from '../src/recurring/domain/recurring-transaction.entity';
 
 // Requêtes envoyées par le front (voir frontend/src/shared/api/api-contract.test.tsx).
@@ -32,6 +33,11 @@ describe('Front/back contract (e2e)', () => {
     mocks.transactions.sumAmountByAccountBeforeDate.mockResolvedValue(
       BigInt(0),
     );
+    mocks.transactions.sumAmountsBeforeDateByBalance.mockResolvedValue({
+      all: BigInt(0),
+      reconciled: BigInt(0),
+      nonPending: BigInt(0),
+    });
     mocks.recurring.findAllByAccount.mockResolvedValue([]);
     mocks.transactions.findAllByAccountUnpaginated.mockResolvedValue([]);
   });
@@ -250,6 +256,58 @@ describe('Front/back contract (e2e)', () => {
         .query({ categoryId: CAT, startPeriodId: P1, endPeriodId: P2 })
         .set(auth())
         .expect(404);
+    });
+  });
+
+  describe('period stats', () => {
+    const accountId = '00000000-0000-4000-8000-000000000101';
+    const periodId = '00000000-0000-4000-8000-000000000041';
+
+    beforeEach(() => {
+      mocks.periods.findById.mockResolvedValue(
+        Period.create({
+          id: periodId,
+          accountId,
+          startDate: new Date('2026-03-01'),
+          endDate: new Date('2026-03-31'),
+          isActive: true,
+        }),
+      );
+      mocks.categories.findAllByAccount.mockResolvedValue([]);
+      mocks.budgets.findAllByPeriod.mockResolvedValue([]);
+    });
+
+    it('exposes the seven lines of the composition and the three starts (reports, arrived after the end)', async () => {
+      mocks.transactions.sumAmountsBeforeDateByBalance.mockResolvedValue({
+        all: BigInt(105000),
+        reconciled: BigInt(120000),
+        nonPending: BigInt(114000),
+      });
+
+      const res = await http()
+        .get(`/${accountId}/periods/${periodId}/reporting/stats`)
+        .set(auth())
+        .expect(200);
+
+      expect(res.body).toMatchObject({
+        startBalance: '105000',
+        realBankBalance: '120000',
+        upcomingBalance: '114000',
+        forecastBalance: '105000',
+        reportsTotal: '-15000',
+        arrivedAfterEnd: '0',
+      });
+    });
+
+    it('answers 5xx, never a start at 0, when the starts function fails', async () => {
+      mocks.transactions.sumAmountsBeforeDateByBalance.mockRejectedValue(
+        new Error('rpc down'),
+      );
+
+      await http()
+        .get(`/${accountId}/periods/${periodId}/reporting/stats`)
+        .set(auth())
+        .expect(500);
     });
   });
 

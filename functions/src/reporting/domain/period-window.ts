@@ -43,6 +43,29 @@ export function periodLoadEndDate(period: WindowPeriod): Date | undefined {
   return period.endDate ?? undefined;
 }
 
+export interface LateIncomeTransaction extends WindowTransaction {
+  reconciled: boolean;
+}
+
+/**
+ * Revenu pointé daté après la fin d'une période active : hors de la fenêtre (donc hors du
+ * prévu), mais déjà dans la banque, donc compté dans « En banque » / « À venir » et annulé
+ * dans la composition (« Arrivé après la fin »). Une dépense tardive est déjà dans la
+ * fenêtre ; un revenu non pointé tardif reste ignoré partout ; une période fermée n'en a pas.
+ */
+export function isLateReconciledIncome(
+  t: LateIncomeTransaction,
+  period: WindowPeriod,
+): boolean {
+  return (
+    period.isActive &&
+    period.endDate !== null &&
+    t.date > period.endDate &&
+    t.reconciled &&
+    t.amount > 0n
+  );
+}
+
 export function filterPeriodWindow<T extends WindowTransaction>(
   transactions: T[],
   period: WindowPeriod,

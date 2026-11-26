@@ -67,7 +67,7 @@ describe('SimulatePeriodForecastUseCase', () => {
   let accounts: { findById: jest.Mock };
   let periods: { findById: jest.Mock };
   let transactions: {
-    sumAmountByAccountBeforeDate: jest.Mock;
+    sumAmountsBeforeDateByBalance: jest.Mock;
     findAllByAccountUnpaginated: jest.Mock;
   };
   let budgets: {
@@ -94,7 +94,11 @@ describe('SimulatePeriodForecastUseCase', () => {
     };
     periods = { findById: jest.fn().mockResolvedValue(period) };
     transactions = {
-      sumAmountByAccountBeforeDate: jest.fn().mockResolvedValue(BigInt(0)),
+      sumAmountsBeforeDateByBalance: jest.fn().mockResolvedValue({
+        all: BigInt(0),
+        reconciled: BigInt(0),
+        nonPending: BigInt(0),
+      }),
       findAllByAccountUnpaginated: jest
         .fn()
         .mockResolvedValue([
@@ -229,15 +233,34 @@ describe('SimulatePeriodForecastUseCase', () => {
     expect(result.expensesEffect).toBe('0');
   });
 
-  describe('effect of the change', () => {
-    // Départ 100000 ; réel dépenses : A -50000, B -100000, Z -7000 = 157000.
-    it('lowering A under the real: planned changes, no effect (CA3)', async () => {
-      // enregistré : A 80000 + B 30000 = 110000 < 157000 ; simulé : 20000 + 30000 = 50000
+  describe('effect of the change (sums by category, CA5, CA8)', () => {
+    // Départ 100000 ; réel dépenses : A -50000, B -100000, Z -7000 (Z sans budget, 7000 retenus).
+    // Enregistré : A 80000, B 30000 -> retenus 80000 + 100000 + 7000 = 187000.
+    it('lowering A under the real: only the part above the real has an effect', async () => {
+      // simulé : A 20000 -> retenu 50000 (le réel), B 30000 -> 100000 : 157000
+      const r = await run([body('A', 20000), body('B', 30000)]);
+      expect(r.plannedExpenses).toBe('50000');
+      expect(r.expensesEffect).toBe('30000');
+      expect(r.incomeEffect).toBe('0');
+      expect(r.delta).toBe('30000');
+    });
+
+    it('S1 : lowering a budget already under the real has no effect (« Sans effet » côté dépenses)', async () => {
+      budgets.findAllByPeriod.mockResolvedValue([
+        saved('A', 40000),
+        saved('B', 30000),
+      ]);
       const r = await run([body('A', 20000), body('B', 30000)]);
       expect(r.plannedExpenses).toBe('50000');
       expect(r.expensesEffect).toBe('0');
-      expect(r.incomeEffect).toBe('0');
       expect(r.delta).toBe('0');
+    });
+
+    it('S2 : the same budgets as the saved ones give no delta and no effect', async () => {
+      const r = await run([body('A', 80000), body('B', 30000)]);
+      expect(r.delta).toBe('0');
+      expect(r.incomeEffect).toBe('0');
+      expect(r.expensesEffect).toBe('0');
     });
 
     it('a high budget on B keeps an effect', async () => {
@@ -245,16 +268,16 @@ describe('SimulatePeriodForecastUseCase', () => {
         saved('A', 80000),
         saved('B', 100000),
       ]);
-      // enregistré 180000 ; simulé 120000 : le réel (157000) plafonne
+      // enregistré 80000 + 100000 + 7000 ; simulé 50000 + 100000 + 7000
       const r = await run([body('A', 20000), body('B', 100000)]);
-      expect(r.expensesEffect).toBe('23000');
-      expect(r.delta).toBe('23000');
+      expect(r.expensesEffect).toBe('30000');
+      expect(r.delta).toBe('30000');
     });
 
     it('crossing the real gives a partial effect', async () => {
       const r = await run([body('A', 130000), body('B', 30000)]);
-      // simulé 160000 vs réel 157000 : -3000 par rapport à 157000
-      expect(r.expensesEffect).toBe('-3000');
+      // simulé 130000 + 100000 + 7000 = 237000 contre 187000
+      expect(r.expensesEffect).toBe('-50000');
     });
 
     it('income side', async () => {
@@ -277,6 +300,33 @@ describe('SimulatePeriodForecastUseCase', () => {
       expect(BigInt(r.forecastBalance) - BigInt(r.savedForecastBalance)).toBe(
         BigInt(r.delta),
       );
+    });
+
+    it('S3 : the invariant holds on a grid of budget lists', async () => {
+      const amounts = [0, 20000, -60000, 300000];
+      for (const a of amounts)
+        for (const bb of amounts)
+          for (const i of amounts) {
+            const r = await run([body('A', a), body('B', bb), body('I', i)]);
+            expect(BigInt(r.delta)).toBe(
+              BigInt(r.incomeEffect) + BigInt(r.expensesEffect),
+            );
+            expect(
+              BigInt(r.forecastBalance) - BigInt(r.savedForecastBalance),
+            ).toBe(BigInt(r.delta));
+          }
+    });
+
+    it('S4 : the simulated forecast equals the stats once the same budgets are saved (stats + simulation, same inputs)', async () => {
+      const list = [body('A', 20000), body('B', 30000), body('I', 250000)];
+      const simulated = await run(list);
+      budgets.findAllByPeriod.mockResolvedValue([
+        saved('A', 20000),
+        saved('B', 30000),
+        saved('I', 250000),
+      ]);
+      const after = await stats.execute('acc-1', 'per-1');
+      expect(simulated.forecastBalance).toBe(after.forecastBalance);
     });
   });
 
@@ -362,7 +412,11 @@ describe('SimulatePeriodForecastUseCase : fenêtre de période (factures réserv
       ),
     };
     const transactions = {
-      sumAmountByAccountBeforeDate: jest.fn().mockResolvedValue(BigInt(0)),
+      sumAmountsBeforeDateByBalance: jest.fn().mockResolvedValue({
+        all: BigInt(0),
+        reconciled: BigInt(0),
+        nonPending: BigInt(0),
+      }),
       findAllByAccountUnpaginated: jest.fn(
         (_: string, o?: { startDate?: Date; endDate?: Date }) =>
           Promise.resolve(

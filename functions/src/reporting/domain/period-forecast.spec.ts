@@ -130,32 +130,199 @@ describe('computePeriodForecast', () => {
     });
   });
 
-  describe('effect of a change of budgets (CA3)', () => {
-    // A réel -50000, B réel -100000 : réel total 150000.
+  describe('effect of a change of budgets, by category (CA5, CA8)', () => {
+    // A réel -50000, B réel -100000.
     const real = { A: -50000, B: -100000 };
 
-    it('lowering a budget below the real changes plannedExpenses but not the forecast', () => {
-      const saved = computePeriodForecast(input(real, { A: 80000, B: 30000 }));
+    it('lowering a budget that is already below the real changes nothing', () => {
+      const saved = computePeriodForecast(input(real, { A: 40000, B: 30000 }));
       const sim = computePeriodForecast(input(real, { A: 20000, B: 30000 }));
-      expect(saved.plannedExpenses).toBe(B(110000));
-      expect(sim.plannedExpenses).toBe(B(50000));
       expect(sim.maxAbsExpenses).toBe(saved.maxAbsExpenses);
       expect(sim.forecastBalance).toBe(saved.forecastBalance);
     });
 
-    it('the same change with a high budget on B has an effect', () => {
-      const saved = computePeriodForecast(input(real, { A: 80000, B: 100000 }));
-      const sim = computePeriodForecast(input(real, { A: 20000, B: 100000 }));
-      expect(saved.maxAbsExpenses).toBe(B(180000));
-      expect(sim.maxAbsExpenses).toBe(B(150000));
+    it('lowering a budget above the real has an effect, even if another category exceeds its budget', () => {
+      // Avant (max sur le total) : B dépassée masquait la baisse de A.
+      const saved = computePeriodForecast(input(real, { A: 80000, B: 30000 }));
+      const sim = computePeriodForecast(input(real, { A: 20000, B: 30000 }));
+      expect(saved.maxAbsExpenses).toBe(B(180000)); // 80000 + 100000
+      expect(sim.maxAbsExpenses).toBe(B(150000)); // 50000 + 100000
       expect(sim.forecastBalance - saved.forecastBalance).toBe(B(30000));
     });
 
     it('crossing the real gives a partial effect', () => {
       const saved = computePeriodForecast(input(real, { A: 80000, B: 30000 }));
       const sim = computePeriodForecast(input(real, { A: 130000, B: 30000 }));
-      expect(sim.maxAbsExpenses).toBe(B(160000));
-      expect(sim.forecastBalance - saved.forecastBalance).toBe(B(-10000));
+      expect(sim.maxAbsExpenses).toBe(B(230000));
+      expect(sim.forecastBalance - saved.forecastBalance).toBe(B(-50000));
+    });
+  });
+
+  describe('max by category, expenses (CA5, examples B, D, E)', () => {
+    it('B: an overrun is no longer hidden by an unspent budget', () => {
+      // courses -500/300, loyer 0/800 (en centimes x100)
+      const r = computePeriodForecast(
+        input({ A: -50000 }, { A: 30000, B: 80000 }),
+      );
+      expect(r.maxAbsExpenses).toBe(B(130000));
+      expect(r.forecastBalance).toBe(B(100000 - 130000));
+    });
+
+    it('D: a negative budget counts as its absolute value, with the real above or below', () => {
+      expect(
+        computePeriodForecast(input({ A: -25000 }, { A: -20000 }))
+          .maxAbsExpenses,
+      ).toBe(B(25000));
+      expect(
+        computePeriodForecast(input({ A: -15000 }, { A: -20000 }))
+          .maxAbsExpenses,
+      ).toBe(B(20000));
+    });
+
+    it('E: a refund keeps the budget whole and adds on top, per category', () => {
+      // courses -500/300, loyer 0/800, loisirs +50/200 (loisirs = S, épargne côté dépenses)
+      const r = computePeriodForecast(
+        input({ A: -50000, S: 5000 }, { A: 30000, B: 80000, S: 20000 }),
+      );
+      expect(r.maxAbsExpenses).toBe(B(150000));
+      expect(r.refundSurplus).toBe(B(5000));
+      expect(r.forecastBalance).toBe(B(100000 - 150000 + 5000));
+    });
+
+    it('E2: a refund without budget still adds to the forecast', () => {
+      const r = computePeriodForecast(input({ A: 5000 }, {}));
+      expect(r.maxAbsExpenses).toBe(B(0));
+      expect(r.refundSurplus).toBe(B(5000));
+    });
+
+    it('savings -80 / 50 counts on the expense side, a transfer 100 / 0 on the income side (H2)', () => {
+      const r = computePeriodForecast(
+        input({ S: -8000, T: 10000 }, { S: 5000 }),
+      );
+      expect(r.maxAbsExpenses).toBe(B(8000));
+      expect(r.maxIncome).toBe(B(10000));
+    });
+
+    it('H1: a category without transaction nor budget changes nothing', () => {
+      const r = computePeriodForecast(input({ A: 0 }, { A: 0, I: 0 }));
+      expect(r.maxAbsExpenses).toBe(B(0));
+      expect(r.maxIncome).toBe(B(0));
+      expect(r.budgetRemaining).toBe(B(0));
+      expect(r.expectedIncome).toBe(B(0));
+    });
+
+    it('H3: a budget on a category absent from the list is ignored', () => {
+      const r = computePeriodForecast(input({}, { UNKNOWN: 90000 }));
+      expect(r.forecastBalance).toBe(B(100000));
+      expect(r.plannedExpenses).toBe(B(0));
+    });
+  });
+
+  describe('max by category, income (CA6, examples C, G)', () => {
+    const two = [
+      ...cats,
+      { id: 'I2', type: CategoryType.INCOME },
+      { id: 'I3', type: CategoryType.INCOME },
+    ];
+
+    it('C: salary 2000/2000, bonus 0/300, freelance 400/0 give 2700 retained and 300 expected', () => {
+      const r = computePeriodForecast(
+        input(
+          { I: 200000, I3: 40000 },
+          { I: 200000, I2: 30000 },
+          { categories: two },
+        ),
+      );
+      expect(r.maxIncome).toBe(B(270000));
+      expect(r.expectedIncome).toBe(B(30000));
+      expect(r.forecastBalance).toBe(B(100000 + 270000));
+    });
+
+    it('G: a negative real keeps the budget whole and deducts the negative (retained 1950, expected 2000)', () => {
+      const r = computePeriodForecast(input({ I: -5000 }, { I: 200000 }));
+      expect(r.maxIncome).toBe(B(195000));
+      expect(r.expectedIncome).toBe(B(200000));
+    });
+
+    it('G2: with the bonus 0/300 in addition, retained 2250', () => {
+      const r = computePeriodForecast(
+        input({ I: -5000 }, { I: 200000, I2: 30000 }, { categories: two }),
+      );
+      expect(r.maxIncome).toBe(B(225000));
+    });
+
+    it('Virement CJ : a transfer with a negative real is an outgoing transfer, budget ignored (retained = real, expected 0)', () => {
+      const r = computePeriodForecast(input({ T: -203248 }, { T: 203248 }));
+      expect(r.maxIncome).toBe(B(-203248));
+      expect(r.expectedIncome).toBe(B(0));
+      expect(r.forecastBalance).toBe(B(100000 - 203248));
+    });
+
+    it('a transfer with a positive real keeps max(real, |budget|)', () => {
+      expect(
+        computePeriodForecast(input({ T: 10000 }, { T: 20000 })).maxIncome,
+      ).toBe(B(20000));
+    });
+
+    it('a negative real without budget stays negative (retained = real)', () => {
+      const r = computePeriodForecast(input({ I: -5000 }, {}));
+      expect(r.maxIncome).toBe(B(-5000));
+      expect(r.expectedIncome).toBe(B(0));
+    });
+
+    it('an income budget stored negative counts as its absolute value', () => {
+      expect(
+        computePeriodForecast(input({ I: 100000 }, { I: -150000 })).maxIncome,
+      ).toBe(B(150000));
+    });
+  });
+
+  describe('budget remaining and expected income, by category (CA7)', () => {
+    it('C1: the remaining budget is the sum of the leftovers per category, not of the total', () => {
+      // A dépasse (-500/300), B intact (0/800) : reste = -(0 + 800)
+      const r = computePeriodForecast(
+        input({ A: -50000 }, { A: 30000, B: 80000 }),
+      );
+      expect(r.budgetRemaining).toBe(B(-80000));
+    });
+
+    it('a refund does not enter the remaining budget (the budget stays whole)', () => {
+      const r = computePeriodForecast(input({ A: 5000 }, { A: 30000 }));
+      expect(r.budgetRemaining).toBe(B(-30000));
+    });
+  });
+
+  describe('invariant : forecast = start + window total + expected - remaining (grille)', () => {
+    const grid = [-60000, -5000, 0, 3000, 40000];
+    const budgetsGrid = [0, 2000, -30000, 50000];
+    it('holds on every combination of real and budget per category', () => {
+      let count = 0;
+      for (const rA of grid)
+        for (const rB of grid)
+          for (const rI of grid)
+            for (const rT of grid)
+              for (const bA of budgetsGrid)
+                for (const bI of budgetsGrid) {
+                  const real = { A: rA, B: rB, I: rI, T: rT };
+                  const r = computePeriodForecast(
+                    input(
+                      real,
+                      { A: bA, B: bA, I: bI, T: bI },
+                      {
+                        uncategorized: B(-700),
+                      },
+                    ),
+                  );
+                  const windowTotal = B(rA + rB + rI + rT - 700);
+                  expect(r.forecastBalance).toBe(
+                    B(100000) +
+                      windowTotal +
+                      r.expectedIncome +
+                      r.budgetRemaining,
+                  );
+                  count++;
+                }
+      expect(count).toBe(5 * 5 * 5 * 5 * 4 * 4);
     });
   });
 });

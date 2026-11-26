@@ -1,11 +1,17 @@
 /**
  * Composition du prévu (écran Aujourd'hui). Fonction pure, centimes entiers.
  *
- * Le prévu (`forecastBalance`) reste calculé par `get-period-stats` ; ces
- * lignes sont calculées à côté, indépendamment, et un test vérifie que
- *   banque + CB + factures + budget restant + revenus attendus = prévu.
+ * Le prévu (`forecastBalance`) est calculé par `computePeriodForecast` ; les lignes
+ * « budget restant » et « revenus attendus » viennent de ce même calcul (sommes par
+ * catégorie, une seule règle). Égalité au centime, testée :
+ *   banque + CB + factures + reports + arrivé après la fin
+ *     + budget restant + revenus attendus = prévu
+ *
+ * Pourquoi elle tient : banque = départ pointé + pointées de la fenêtre + tardif ;
+ * CB + factures = non pointées de la fenêtre ; reports = départ complet - départ pointé ;
+ * arrivé après la fin = -tardif. La somme vaut donc départ complet + total de la fenêtre,
+ * et le prévu = départ complet + total de la fenêtre + attendu - reste (par catégorie).
  */
-import { expenseRule } from './period-forecast';
 
 export interface CompositionTransaction {
   amount: bigint;
@@ -14,12 +20,16 @@ export interface CompositionTransaction {
 }
 
 export interface CompositionInput {
+  /** Transactions de la fenêtre de la période (le revenu tardif n'y est pas). */
   transactions: CompositionTransaction[];
-  /** Totaux par type de catégorie (déjà calculés par get-period-stats). */
-  realIncome: bigint;
-  plannedIncome: bigint;
-  realExpenses: bigint;
-  plannedExpenses: bigint;
+  /** Départ complet - départ pointé : CB non pointées et factures `pending` avant le début (signé). */
+  reportsTotal: bigint;
+  /** Revenus pointés datés après la fin d'une période active (>= 0). */
+  lateReconciledIncome: bigint;
+  /** `budgetRemaining` de `computePeriodForecast` : négatif ou nul. */
+  budgetRemaining: bigint;
+  /** `expectedIncome` de `computePeriodForecast` : positif ou nul. */
+  expectedIncome: bigint;
 }
 
 export interface ForecastComposition {
@@ -28,13 +38,13 @@ export interface ForecastComposition {
   cardCount: number;
   /** `pending` non rapprochées : signées. */
   billsTotal: bigint;
-  /** -(max(dépensé, |prévu|) - dépensé) : négatif ou nul (un remboursement net n'y entre pas). */
+  /** CB non pointées et factures `pending` datées avant le début de la période : signé. */
+  reportsTotal: bigint;
+  /** -(revenus pointés après la fin) : négatif ou nul. Annule ce que « En banque » compte et que le prévu ignore. */
+  arrivedAfterEnd: bigint;
   budgetRemaining: bigint;
-  /** max(réel, prévu) - réel : positif ou nul. */
   expectedIncome: bigint;
 }
-
-const abs = (n: bigint): bigint => (n < 0n ? -n : n);
 
 export function computeForecastComposition(
   input: CompositionInput,
@@ -52,16 +62,46 @@ export function computeForecastComposition(
     }
   }
 
-  const { spent, maxExpenses } = expenseRule(
-    input.realExpenses,
-    input.plannedExpenses,
-  );
-  const budgetRemaining = -(maxExpenses - spent);
+  return {
+    cardTotal,
+    cardCount,
+    billsTotal,
+    reportsTotal: input.reportsTotal,
+    arrivedAfterEnd: -input.lateReconciledIncome,
+    budgetRemaining: input.budgetRemaining,
+    expectedIncome: input.expectedIncome,
+  };
+}
 
-  const plannedIncome = abs(input.plannedIncome);
-  const maxIncome =
-    input.realIncome > plannedIncome ? input.realIncome : plannedIncome;
-  const expectedIncome = maxIncome - input.realIncome;
+export interface BankBalancesInput {
+  /** Solde initial + pointées datées avant le début. */
+  startReconciled: bigint;
+  /** Solde initial + non `pending` datées avant le début. */
+  startNonPending: bigint;
+  /** Transactions de la fenêtre de la période. */
+  transactions: CompositionTransaction[];
+  /** Revenus pointés datés après la fin d'une période active. */
+  lateReconciledIncome: bigint;
+}
 
-  return { cardTotal, cardCount, billsTotal, budgetRemaining, expectedIncome };
+/**
+ * « En banque » (pointées seules) et « À venir » (non `pending`), chacun avec son départ.
+ * Un revenu pointé tardif est dans les deux (une transaction pointée n'est jamais `pending`).
+ */
+export function computeBankBalances(input: BankBalancesInput): {
+  realBankBalance: bigint;
+  upcomingBalance: bigint;
+} {
+  let reconciled = 0n;
+  let nonPending = 0n;
+  for (const t of input.transactions) {
+    if (t.reconciled) reconciled += t.amount;
+    if (!t.pending) nonPending += t.amount;
+  }
+  return {
+    realBankBalance:
+      input.startReconciled + reconciled + input.lateReconciledIncome,
+    upcomingBalance:
+      input.startNonPending + nonPending + input.lateReconciledIncome,
+  };
 }

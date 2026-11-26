@@ -99,6 +99,55 @@ describe('SupabaseTransactionRepository sumAmountByAccountBeforeDate', () => {
   });
 });
 
+describe('SupabaseTransactionRepository sumAmountsBeforeDateByBalance', () => {
+  const row = {
+    all_total: '105000',
+    reconciled_total: 120000,
+    non_pending_total: '114000',
+  };
+
+  it('returns the three sums as bigint from the one row of the rpc', async () => {
+    const rpc = jest.fn().mockResolvedValue({ data: [row], error: null });
+    const repository = new SupabaseTransactionRepository({
+      rpc,
+    } as unknown as SupabaseClient);
+
+    await expect(
+      repository.sumAmountsBeforeDateByBalance('acc-1', new Date('2026-03-01')),
+    ).resolves.toEqual({
+      all: BigInt(105000),
+      reconciled: BigInt(120000),
+      nonPending: BigInt(114000),
+    });
+    expect(rpc).toHaveBeenCalledWith(
+      'sum_transactions_before_date_by_balance',
+      {
+        p_account_id: 'acc-1',
+        p_date: '2026-03-01',
+      },
+    );
+  });
+
+  it('throws when the rpc fails instead of returning a wrong 0 start', async () => {
+    const { repository } = repoWith({ message: 'rpc down' });
+
+    await expect(
+      repository.sumAmountsBeforeDateByBalance('acc-1', new Date('2026-03-01')),
+    ).rejects.toThrow('rpc down');
+  });
+
+  it.each([[null], [[]]])('throws on an empty answer (%j)', async (data) => {
+    const rpc = jest.fn().mockResolvedValue({ data, error: null });
+    const repository = new SupabaseTransactionRepository({
+      rpc,
+    } as unknown as SupabaseClient);
+
+    await expect(
+      repository.sumAmountsBeforeDateByBalance('acc-1', new Date('2026-03-01')),
+    ).rejects.toThrow();
+  });
+});
+
 describe('SupabaseTransactionRepository atomic writes', () => {
   describe('saveTransfer', () => {
     it('calls create_transfer once with both sides and writes nothing else', async () => {

@@ -1,0 +1,517 @@
+# Soldes et prévu justes (lot 2) : départs séparés, revenu pointé après la fin, max par catégorie, composition à 7 termes, CA9.
+# Lancement (Supabase local + back local) :
+#   npx httpyac send --all functions/http/soldes-et-prevu-justes.http --var port=<port du back local> --var anon=<ANON_KEY de `supabase status`>
+# (la clé vient de la ligne de commande, jamais du fichier). Utilisateurs, comptes, catégories et transactions sont jetables,
+# créés par le fichier ; rien n'est supprimé à la fin (base locale uniquement).
+# Compte A = exemple A de la spec (centimes) : solde initial 0, période active 01/10 -> 31/10/2026 (fin passée),
+#   avant le début : salaire +200000 pointé, loyer -80000 pointé, CB -6000 non pointée, facture -9000 pending ;
+#   dans la période : salaire +200000 pointé, courses -30000 pointée, restaurant -4000 non pointée, loyer -80000 pending ;
+#   budgets : salaire 200000, courses 40000, restaurant 10000, loyer 80000.
+@baseUrl = http://localhost:{{port}}
+@authUrl = http://127.0.0.1:54321/auth/v1
+
+### Alice (propriétaire jetable)
+# @name alice
+POST {{authUrl}}/signup
+apikey: {{anon}}
+Content-Type: application/json
+
+{ "email": "soldes-alice-{{$timestamp}}@example.com", "password": "Password123!" }
+
+?? status == 200
+
+### Bob (autre utilisateur connecté, sans accès au compte A)
+# @name bob
+POST {{authUrl}}/signup
+apikey: {{anon}}
+Content-Type: application/json
+
+{ "email": "soldes-bob-{{$timestamp}}@example.com", "password": "Password123!" }
+
+?? status == 200
+
+### Compte A
+# @name accA
+POST {{baseUrl}}/accounts
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "name": "soldes-A-{{$timestamp}}", "initialBalance": "0" }
+
+?? status == 201
+
+### Catégorie Salaire
+# @name salaire
+POST {{baseUrl}}/{{accA.id}}/categories
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "name": "Salaire", "color": "#112233", "type": "income" }
+
+?? status == 201
+
+### Catégorie Prime
+# @name prime
+POST {{baseUrl}}/{{accA.id}}/categories
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "name": "Prime", "color": "#223344", "type": "income" }
+
+?? status == 201
+
+### Catégorie Courses
+# @name courses
+POST {{baseUrl}}/{{accA.id}}/categories
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "name": "Courses", "color": "#334455", "type": "expense" }
+
+?? status == 201
+
+### Catégorie Restaurant
+# @name resto
+POST {{baseUrl}}/{{accA.id}}/categories
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "name": "Restaurant", "color": "#445566", "type": "expense" }
+
+?? status == 201
+
+### Catégorie Loyer
+# @name loyer
+POST {{baseUrl}}/{{accA.id}}/categories
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "name": "Loyer", "color": "#556677", "type": "expense" }
+
+?? status == 201
+
+### Période active 01/10 -> 31/10 avec les budgets de l'exemple A
+# @name perA
+POST {{baseUrl}}/{{accA.id}}/periods
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "startDate": "2026-10-01", "endDate": "2026-10-31", "budgets": [
+  { "categoryId": "{{salaire.id}}", "amountAllocated": "200000" },
+  { "categoryId": "{{courses.id}}", "amountAllocated": "40000" },
+  { "categoryId": "{{resto.id}}", "amountAllocated": "10000" },
+  { "categoryId": "{{loyer.id}}", "amountAllocated": "80000" } ] }
+
+?? status == 201
+
+### Avant la période : salaire +2000 pointé
+POST {{baseUrl}}/{{accA.id}}/transactions
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "categoryId": "{{salaire.id}}", "date": "2026-09-05", "description": "avant salaire", "amount": "200000", "reconciled": true }
+
+?? status == 201
+
+### Avant la période : loyer -800 pointé
+POST {{baseUrl}}/{{accA.id}}/transactions
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "categoryId": "{{loyer.id}}", "date": "2026-09-06", "description": "avant loyer", "amount": "-80000", "reconciled": true }
+
+?? status == 201
+
+### Avant la période : CB -60 non pointée (report)
+POST {{baseUrl}}/{{accA.id}}/transactions
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "categoryId": "{{resto.id}}", "date": "2026-09-20", "description": "avant cb", "amount": "-6000" }
+
+?? status == 201
+
+### Avant la période : facture électricité -90 pending (report)
+POST {{baseUrl}}/{{accA.id}}/transactions
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "date": "2026-09-25", "description": "avant facture électricité", "amount": "-9000", "pending": true }
+
+?? status == 201
+
+### Période : salaire +2000 pointé
+POST {{baseUrl}}/{{accA.id}}/transactions
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "categoryId": "{{salaire.id}}", "date": "2026-10-05", "description": "salaire", "amount": "200000", "reconciled": true }
+
+?? status == 201
+
+### Période : courses -300 pointée
+POST {{baseUrl}}/{{accA.id}}/transactions
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "categoryId": "{{courses.id}}", "date": "2026-10-10", "description": "courses", "amount": "-30000", "reconciled": true }
+
+?? status == 201
+
+### Période : restaurant -40 non pointée (CB)
+POST {{baseUrl}}/{{accA.id}}/transactions
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "categoryId": "{{resto.id}}", "date": "2026-10-12", "description": "restaurant", "amount": "-4000" }
+
+?? status == 201
+
+### Période : loyer -800 pending (facture)
+POST {{baseUrl}}/{{accA.id}}/transactions
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "categoryId": "{{loyer.id}}", "date": "2026-10-20", "description": "loyer", "amount": "-80000", "pending": true }
+
+?? status == 201
+
+### CA1-CA3, CA7 (exemple A) : En banque 2900, À venir 2800, prévu 1750, reports -150, composition = prévu
+# @name statsA
+GET {{baseUrl}}/{{accA.id}}/periods/{{perA.id}}/reporting/stats
+Authorization: Bearer {{alice.access_token}}
+
+?? status == 200
+?? js response.parsedBody.startBalance == 105000
+?? js response.parsedBody.realBankBalance == 290000
+?? js response.parsedBody.upcomingBalance == 280000
+?? js response.parsedBody.forecastBalance == 175000
+?? js response.parsedBody.cardTotal == -4000
+?? js response.parsedBody.cardCount == 1
+?? js response.parsedBody.billsTotal == -80000
+?? js response.parsedBody.reportsTotal == -15000
+?? js response.parsedBody.arrivedAfterEnd == 0
+?? js response.parsedBody.budgetRemaining == -16000
+?? js response.parsedBody.expectedIncome == 0
+?? js Number(BigInt(response.parsedBody.realBankBalance) + BigInt(response.parsedBody.cardTotal) + BigInt(response.parsedBody.billsTotal) + BigInt(response.parsedBody.reportsTotal) + BigInt(response.parsedBody.arrivedAfterEnd) + BigInt(response.parsedBody.budgetRemaining) + BigInt(response.parsedBody.expectedIncome) - BigInt(response.parsedBody.forecastBalance)) == 0
+
+### CA8 : l'évolution suit En banque (2900) ; son forecastBalance (départ complet + toute la fenêtre = 1050 + 860 = 1910) ne change pas
+GET {{baseUrl}}/{{accA.id}}/reporting/evolution
+Authorization: Bearer {{alice.access_token}}
+
+?? status == 200
+?? js response.parsedBody[0].realBankBalance == 290000
+?? js response.parsedBody[0].forecastBalance == 191000
+
+### CA8 : la simulation avec les budgets enregistrés donne le même prévu et aucun effet
+POST {{baseUrl}}/{{accA.id}}/periods/{{perA.id}}/reporting/forecast-simulation
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "budgets": [
+  { "categoryId": "{{salaire.id}}", "amountAllocated": "200000" },
+  { "categoryId": "{{courses.id}}", "amountAllocated": "40000" },
+  { "categoryId": "{{resto.id}}", "amountAllocated": "10000" },
+  { "categoryId": "{{loyer.id}}", "amountAllocated": "80000" } ] }
+
+?? status == 200
+?? js response.parsedBody.forecastBalance == 175000
+?? js response.parsedBody.delta == 0
+?? js response.parsedBody.incomeEffect == 0
+?? js response.parsedBody.expensesEffect == 0
+
+### CA5 (S1) : baisser le budget Courses (400 -> 200) alors que 300 sont dépensés : prévu +100 (le dépassement n'est plus masqué par Loyer ou Restaurant)
+POST {{baseUrl}}/{{accA.id}}/periods/{{perA.id}}/reporting/forecast-simulation
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "budgets": [
+  { "categoryId": "{{salaire.id}}", "amountAllocated": "200000" },
+  { "categoryId": "{{courses.id}}", "amountAllocated": "20000" },
+  { "categoryId": "{{resto.id}}", "amountAllocated": "10000" },
+  { "categoryId": "{{loyer.id}}", "amountAllocated": "80000" } ] }
+
+?? status == 200
+?? js response.parsedBody.expensesEffect == 10000
+?? js response.parsedBody.delta == 10000
+
+### Un autre utilisateur connecté : 404, aucun solde
+GET {{baseUrl}}/{{accA.id}}/periods/{{perA.id}}/reporting/stats
+Authorization: Bearer {{bob.access_token}}
+
+?? status == 404
+
+### Anonyme : 401
+GET {{baseUrl}}/{{accA.id}}/periods/{{perA.id}}/reporting/stats
+
+?? status == 401
+
+### CA4 (exemple F) : prime +300 pointée datée après la fin (02/11)
+POST {{baseUrl}}/{{accA.id}}/transactions
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "categoryId": "{{prime.id}}", "date": "2026-11-02", "description": "prime", "amount": "30000", "reconciled": true }
+
+?? status == 201
+
+### CA4 : En banque 3200, À venir 3100, prévu inchangé 1750, arrivé après la fin -300, composition = prévu
+GET {{baseUrl}}/{{accA.id}}/periods/{{perA.id}}/reporting/stats
+Authorization: Bearer {{alice.access_token}}
+
+?? status == 200
+?? js response.parsedBody.realBankBalance == 320000
+?? js response.parsedBody.upcomingBalance == 310000
+?? js response.parsedBody.forecastBalance == 175000
+?? js response.parsedBody.arrivedAfterEnd == -30000
+?? js Number(BigInt(response.parsedBody.realBankBalance) + BigInt(response.parsedBody.cardTotal) + BigInt(response.parsedBody.billsTotal) + BigInt(response.parsedBody.reportsTotal) + BigInt(response.parsedBody.arrivedAfterEnd) + BigInt(response.parsedBody.budgetRemaining) + BigInt(response.parsedBody.expectedIncome) - BigInt(response.parsedBody.forecastBalance)) == 0
+
+### CA4 : l'évolution compte aussi la prime (3200) ; son forecastBalance ne la compte pas (1910)
+GET {{baseUrl}}/{{accA.id}}/reporting/evolution
+Authorization: Bearer {{alice.access_token}}
+
+?? status == 200
+?? js response.parsedBody[0].realBankBalance == 320000
+?? js response.parsedBody[0].forecastBalance == 191000
+
+### CA4 (F3) : un revenu non pointé daté après la fin (paie pending 05/11) reste ignoré partout
+POST {{baseUrl}}/{{accA.id}}/transactions
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "categoryId": "{{prime.id}}", "date": "2026-11-05", "description": "prochaine paie", "amount": "12000", "pending": true }
+
+?? status == 201
+
+###
+GET {{baseUrl}}/{{accA.id}}/periods/{{perA.id}}/reporting/stats
+Authorization: Bearer {{alice.access_token}}
+
+?? status == 200
+?? js response.parsedBody.realBankBalance == 320000
+?? js response.parsedBody.upcomingBalance == 310000
+?? js response.parsedBody.forecastBalance == 175000
+
+### CA9 : créer une transaction pointée ET pending : 400
+POST {{baseUrl}}/{{accA.id}}/transactions
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "date": "2026-10-15", "description": "ca9 deux à vrai", "amount": "-100", "reconciled": true, "pending": true }
+
+?? status == 400
+
+### CA9 : une facture pending créée seule reste acceptée
+# @name facture
+POST {{baseUrl}}/{{accA.id}}/transactions
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "date": "2026-10-15", "description": "ca9 facture", "amount": "-100", "pending": true }
+
+?? status == 201
+?? js response.parsedBody.pending == true
+?? js response.parsedBody.reconciled == false
+
+### CA9 : modifier avec reconciled et pending à vrai dans le corps : 400
+PATCH {{baseUrl}}/{{accA.id}}/transactions/{{facture.id}}
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "reconciled": true, "pending": true }
+
+?? status == 400
+
+### CA9 : pointer la facture retire pending
+PATCH {{baseUrl}}/{{accA.id}}/transactions/{{facture.id}}
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "reconciled": true }
+
+?? status == 200
+?? js response.parsedBody.reconciled == true
+?? js response.parsedBody.pending == false
+
+### CA9 : pending: true sur une pointée : 400
+PATCH {{baseUrl}}/{{accA.id}}/transactions/{{facture.id}}
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "pending": true }
+
+?? status == 400
+
+### CA9 : dépointer et remettre en facture dans le même corps : accepté
+PATCH {{baseUrl}}/{{accA.id}}/transactions/{{facture.id}}
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "reconciled": false, "pending": true }
+
+?? status == 200
+?? js response.parsedBody.reconciled == false
+?? js response.parsedBody.pending == true
+
+### CA9 (lot) : une ligne invalide sur trois, tout est refusé et rien n'est écrit
+POST {{baseUrl}}/{{accA.id}}/transactions/bulk
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "transactions": [
+  { "date": "2026-10-16", "description": "ca9 lot ok 1", "amount": "-100" },
+  { "date": "2026-10-16", "description": "ca9 lot ko", "amount": "-100", "reconciled": true, "pending": true },
+  { "date": "2026-10-16", "description": "ca9 lot ok 2", "amount": "-100" } ] }
+
+?? status == 400
+
+###
+GET {{baseUrl}}/{{accA.id}}/transactions?search=ca9 lot
+Authorization: Bearer {{alice.access_token}}
+
+?? status == 200
+?? js response.parsedBody.meta.total == 0
+
+### CA9 (lot de modification) : une pointée créée pour le lot
+# @name pointee
+POST {{baseUrl}}/{{accA.id}}/transactions
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "date": "2026-10-17", "description": "ca9 pointee", "amount": "-100", "reconciled": true }
+
+?? status == 201
+
+### CA9 (lot de modification) : pending: true sur un lot dont une ligne est pointée : 400, rien n'est écrit
+PATCH {{baseUrl}}/{{accA.id}}/transactions/bulk
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "ids": ["{{facture.id}}", "{{pointee.id}}"], "data": { "pending": true } }
+
+?? status == 400
+
+### CA9 (lot de modification) : la facture, elle, n'a pas bougé (toujours en facture, jamais pointée)
+GET {{baseUrl}}/{{accA.id}}/transactions?ids={{facture.id}}
+Authorization: Bearer {{alice.access_token}}
+
+?? status == 200
+?? js response.parsedBody.data[0].pending == true
+?? js response.parsedBody.data[0].reconciled == false
+
+### CA9 (lot de modification) : pointer le lot (facture + pointée) retire pending, 200
+PATCH {{baseUrl}}/{{accA.id}}/transactions/bulk
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "ids": ["{{facture.id}}", "{{pointee.id}}"], "data": { "reconciled": true } }
+
+?? status == 200
+
+### Compte G (exemple G) : salaire budget 2000, réel -50 pointé
+# @name accG
+POST {{baseUrl}}/accounts
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "name": "soldes-G-{{$timestamp}}", "initialBalance": "0" }
+
+?? status == 201
+
+###
+# @name salaireG
+POST {{baseUrl}}/{{accG.id}}/categories
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "name": "Salaire", "color": "#112233", "type": "income" }
+
+?? status == 201
+
+###
+# @name perG
+POST {{baseUrl}}/{{accG.id}}/periods
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "startDate": "2026-10-01", "endDate": "2026-10-31", "budgets": [ { "categoryId": "{{salaireG.id}}", "amountAllocated": "200000" } ] }
+
+?? status == 201
+
+###
+POST {{baseUrl}}/{{accG.id}}/transactions
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "categoryId": "{{salaireG.id}}", "date": "2026-10-05", "description": "correction salaire", "amount": "-5000", "reconciled": true }
+
+?? status == 201
+
+### CA6 (G) : revenus attendus 2000, prévu = 2000 - 50 = 1950, composition = prévu
+GET {{baseUrl}}/{{accG.id}}/periods/{{perG.id}}/reporting/stats
+Authorization: Bearer {{alice.access_token}}
+
+?? status == 200
+?? js response.parsedBody.expectedIncome == 200000
+?? js response.parsedBody.forecastBalance == 195000
+?? js response.parsedBody.realBankBalance == -5000
+?? js Number(BigInt(response.parsedBody.realBankBalance) + BigInt(response.parsedBody.cardTotal) + BigInt(response.parsedBody.billsTotal) + BigInt(response.parsedBody.reportsTotal) + BigInt(response.parsedBody.arrivedAfterEnd) + BigInt(response.parsedBody.budgetRemaining) + BigInt(response.parsedBody.expectedIncome) - BigInt(response.parsedBody.forecastBalance)) == 0
+
+### Compte B (exemple B) : courses -500 / budget 300, loyer 0 / budget 800 : prévu -1300 (avant : -1100)
+# @name accB
+POST {{baseUrl}}/accounts
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "name": "soldes-B-{{$timestamp}}", "initialBalance": "0" }
+
+?? status == 201
+
+###
+# @name coursesB
+POST {{baseUrl}}/{{accB.id}}/categories
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "name": "Courses", "color": "#334455", "type": "expense" }
+
+?? status == 201
+
+###
+# @name loyerB
+POST {{baseUrl}}/{{accB.id}}/categories
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "name": "Loyer", "color": "#556677", "type": "expense" }
+
+?? status == 201
+
+###
+# @name perB
+POST {{baseUrl}}/{{accB.id}}/periods
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "startDate": "2026-10-01", "endDate": "2026-10-31", "budgets": [
+  { "categoryId": "{{coursesB.id}}", "amountAllocated": "30000" },
+  { "categoryId": "{{loyerB.id}}", "amountAllocated": "80000" } ] }
+
+?? status == 201
+
+###
+POST {{baseUrl}}/{{accB.id}}/transactions
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "categoryId": "{{coursesB.id}}", "date": "2026-10-05", "description": "courses", "amount": "-50000", "reconciled": true }
+
+?? status == 201
+
+### CA5 : prévu = 0 - (500 + 800) = -1300
+GET {{baseUrl}}/{{accB.id}}/periods/{{perB.id}}/reporting/stats
+Authorization: Bearer {{alice.access_token}}
+
+?? status == 200
+?? js response.parsedBody.forecastBalance == -130000
+?? js response.parsedBody.budgetRemaining == -80000

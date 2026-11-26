@@ -228,3 +228,124 @@ describe('GetEvolutionUseCase : fenêtre de période (factures réservées)', ()
     expect(novPoint.forecastBalance).toBe('85000');
   });
 });
+
+describe('GetEvolutionUseCase : départs séparés et revenu tardif (CA8)', () => {
+  const at = (
+    date: string,
+    amount: number,
+    categoryId: string | null,
+    flags: { reconciled?: boolean; pending?: boolean } = {},
+  ) =>
+    Transaction.create({
+      accountId: 'acc-1',
+      categoryId,
+      date: new Date(date),
+      description: 'tx',
+      amount: BigInt(amount),
+      reconciled: flags.reconciled ?? false,
+      pending: flags.pending ?? false,
+    });
+
+  const run = async (list: Transaction[], periodsList: Period[]) =>
+    new GetEvolutionUseCase(
+      {
+        findById: jest.fn().mockResolvedValue(
+          new Account({
+            id: 'acc-1',
+            name: 'Courant',
+            ownerId: 'u-1',
+            initialBalance: BigInt(0),
+          }),
+        ),
+      } as unknown as AccountRepository,
+      {
+        findAllByAccount: jest.fn().mockResolvedValue(periodsList),
+      } as unknown as PeriodRepository,
+      {
+        findAllByAccountUnpaginated: jest.fn().mockResolvedValue(list),
+      } as unknown as TransactionRepository,
+      {
+        findAllByAccount: jest
+          .fn()
+          .mockResolvedValue([
+            category('salaire', CategoryType.INCOME),
+            category('courses', CategoryType.EXPENSE),
+          ]),
+      } as unknown as CategoryRepository,
+    ).execute('acc-1');
+
+  const p1 = Period.create({
+    id: 'p1',
+    accountId: 'acc-1',
+    startDate: new Date('2026-02-01'),
+    endDate: new Date('2026-02-28'),
+    isActive: false,
+  });
+  const p2 = Period.create({
+    id: 'p2',
+    accountId: 'acc-1',
+    startDate: new Date('2026-03-01'),
+    endDate: new Date('2026-03-31'),
+    isActive: true,
+  });
+
+  // Exemple A (centimes) : avant P2 : salaire +2000 pointé, loyer -800 pointé, CB -60, facture -90 pending.
+  const exampleA = () => [
+    at('2026-02-01', 200000, 'salaire', { reconciled: true }),
+    at('2026-02-02', -80000, 'courses', { reconciled: true }),
+    at('2026-02-20', -6000, 'courses'),
+    at('2026-02-25', -9000, 'courses', { pending: true }),
+    at('2026-03-05', 200000, 'salaire', { reconciled: true }),
+    at('2026-03-10', -30000, 'courses', { reconciled: true }),
+    at('2026-03-12', -4000, 'courses'),
+    at('2026-03-20', -80000, 'courses', { pending: true }),
+  ];
+
+  it('E1 : exemple A, realBankBalance de P2 = 2 900 (pointées seules), forecastBalance inchangé', async () => {
+    const [, point2] = await run(exampleA(), [p2, p1]);
+
+    expect(point2.realBankBalance).toBe('290000');
+    // départ complet 1050 + toute la fenêtre (2000 - 300 - 40 - 800)
+    expect(point2.forecastBalance).toBe(
+      String(105000 + 200000 - 30000 - 4000 - 80000),
+    );
+  });
+
+  it('E2 : exemple F, la prime pointée datée après la fin est dans realBankBalance (3 200), pas dans forecastBalance', async () => {
+    const [, point2] = await run(
+      [...exampleA(), at('2026-04-02', 30000, 'salaire', { reconciled: true })],
+      [p2, p1],
+    );
+
+    expect(point2.realBankBalance).toBe('320000');
+    expect(point2.forecastBalance).toBe(
+      String(105000 + 200000 - 30000 - 4000 - 80000),
+    );
+    // le revenu tardif n'entre pas dans les revenus de la période (fenêtre inchangée)
+    expect(point2.realIncome).toBe('200000');
+  });
+
+  it('E3 : période fermée, la CB non pointée avant le début n’entre pas dans le départ de la banque', async () => {
+    const [point1, point2] = await run(
+      [
+        at('2026-01-10', 100000, 'salaire', { reconciled: true }),
+        at('2026-01-20', -6000, 'courses'),
+        at('2026-02-10', 50000, 'salaire', { reconciled: true }),
+      ],
+      [p2, p1],
+    );
+
+    expect(point1.realBankBalance).toBe('150000'); // 1000 + 500, la CB -60 est ignorée
+    expect(point1.forecastBalance).toBe('144000'); // départ complet 940 + 500
+    expect(point2.realBankBalance).toBe('150000');
+  });
+
+  it('un revenu non pointé daté après la fin reste ignoré', async () => {
+    const [, point2] = await run(
+      [...exampleA(), at('2026-04-02', 30000, 'salaire', { pending: true })],
+      [p2, p1],
+    );
+
+    expect(point2.realBankBalance).toBe('290000');
+  });
+});
