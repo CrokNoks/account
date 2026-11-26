@@ -142,6 +142,28 @@ describe('ApplyPeriodSwitchService', () => {
     expect(periods.applyPeriodSwitches).not.toHaveBeenCalled();
   });
 
+  it('transmits the end the active period had before the closure (memory of the switch)', async () => {
+    periods.findAllByAccount.mockResolvedValue([
+      Period.create({
+        id: 'p-active',
+        accountId: ACC,
+        startDate: d('2026-10-25'),
+        endDate: d('2026-11-30'),
+        isActive: true,
+      }),
+    ]);
+
+    await service.process({
+      accountId: ACC,
+      mode: 'create',
+      transactions: [tx('t1', { date: d('2026-11-25') })],
+    });
+
+    const [, , switches] = lastWrite();
+    expect(iso(switches[0].closeEnd)).toBe('2026-11-24');
+    expect(iso(switches[0].closedPrevEnd!)).toBe('2026-11-30');
+  });
+
   it('switches on a salary created today or in the past: one atomic call with closure, opening, default budgets and the transaction', async () => {
     const salary = tx('t1', { date: d('2026-11-28') });
 
@@ -157,6 +179,8 @@ describe('ApplyPeriodSwitchService', () => {
     expect(switches).toHaveLength(1);
     expect(iso(switches[0].closeEnd)).toBe('2026-11-27');
     expect(switches[0].closedId).toBe('p-active');
+    // mémoire de bascule : l'active n'avait pas de fin
+    expect(switches[0].closedPrevEnd).toBeNull();
     expect(iso(switches[0].opened.startDate)).toBe('2026-11-28');
     expect(iso(switches[0].opened.endDate!)).toBe('2026-12-27');
     // montants par défaut du compte, un montant à 0 n'est pas écrit

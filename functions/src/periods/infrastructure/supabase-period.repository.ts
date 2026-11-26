@@ -154,6 +154,7 @@ export class SupabasePeriodRepository implements PeriodRepository {
       p_switches: switches.map((s) => ({
         closed_id: s.closedId,
         close_end: day(s.closeEnd),
+        closed_prev_end: s.closedPrevEnd ? day(s.closedPrevEnd) : null,
         opened: {
           id: s.opened.id,
           account_id: s.opened.accountId,

@@ -231,6 +231,7 @@ describe('SupabasePeriodRepository.applyPeriodSwitches', () => {
   const sw = {
     closedId: 'p-old',
     closeEnd: new Date('2026-11-27'),
+    closedPrevEnd: new Date('2026-12-05') as Date | null,
     opened,
     budgets: [budget],
   };
@@ -267,6 +268,7 @@ describe('SupabasePeriodRepository.applyPeriodSwitches', () => {
         {
           closed_id: 'p-old',
           close_end: '2026-11-27',
+          closed_prev_end: '2026-12-05',
           opened: expect.objectContaining({
             id: 'p-new',
             account_id: 'acc-1',
@@ -281,6 +283,22 @@ describe('SupabasePeriodRepository.applyPeriodSwitches', () => {
       p_remove_pending_ids: ['pending-1'],
       p_update: true,
     });
+  });
+
+  it('always sends closed_prev_end, null when the closed period had no end (key present, not absent)', async () => {
+    const { repository, rpc } = repoReturning({ switched: true });
+
+    await repository.applyPeriodSwitches(
+      'acc-1',
+      'p-old',
+      [{ ...sw, closedPrevEnd: null }],
+      [],
+      [],
+    );
+
+    const payload = (rpc.mock.calls[0] as [string, { p_switches: object[] }])[1]
+      .p_switches[0];
+    expect(payload).toHaveProperty('closed_prev_end', null);
   });
 
   it('defaults to create mode (p_update false)', async () => {

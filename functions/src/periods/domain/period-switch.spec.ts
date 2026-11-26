@@ -124,6 +124,7 @@ describe('planPeriodSwitches', () => {
         id: 'p-active',
         start: d('2026-10-01'),
         end: d('2026-11-27'),
+        prevEnd: null,
       });
       expect(sw.opened.start).toEqual(d('2026-11-28'));
     });
@@ -372,6 +373,69 @@ describe('planPeriodSwitches', () => {
       expect(periodIdOnDate(result.windows, d('2026-12-27'))).toBe('p-new-1');
       expect(periodIdOnDate(result.windows, d('2026-12-28'))).toBeNull();
       expect(periodIdOnDate(result.windows, d('2026-09-30'))).toBeNull();
+    });
+  });
+
+  describe("mémoire de bascule : fin d'avant de la période close", () => {
+    it('keeps the real end of the active period (30 Nov) although the close ends it on the 24th', () => {
+      const result = plan({
+        active: {
+          id: 'p-active',
+          start: d('2026-10-25'),
+          end: d('2026-11-30'),
+        },
+        triggers: [trigger('2026-11-25')],
+      });
+      const [sw] = result.switches;
+      expect(iso(sw.closed.end)).toBe('2026-11-24');
+      expect(iso(sw.closed.prevEnd!)).toBe('2026-11-30');
+    });
+
+    it('is null when the active period had no end', () => {
+      const result = plan({
+        active: { id: 'p-active', start: d('2026-10-25'), end: null },
+        triggers: [trigger('2026-11-25')],
+      });
+      expect(result.switches[0].closed.prevEnd).toBeNull();
+    });
+
+    it('in a chain, keeps each closed period planned end from BEFORE the next switch rewrites it', () => {
+      const result = plan({
+        active: {
+          id: 'p-active',
+          start: d('2026-08-28'),
+          end: d('2026-09-15'),
+        },
+        recurring: [salary(28)],
+        triggers: [
+          trigger('2026-09-28', { id: 'tx-1' }),
+          trigger('2026-10-28', { id: 'tx-2' }),
+          trigger('2026-11-28', { id: 'tx-3' }),
+        ],
+      });
+      const [a, b, c] = result.switches;
+      // la première : la fin réelle de l'active
+      expect(iso(a.closed.prevEnd!)).toBe('2026-09-15');
+      // B et C : leur fin planifiée à l'ouverture (veille de la paie suivante, règle A)
+      expect(iso(b.closed.prevEnd!)).toBe('2026-10-27');
+      expect(iso(c.closed.prevEnd!)).toBe('2026-11-27');
+      // la fin écrite de B est celle de la veille de C : identique ici, mais elle vient de la réécriture
+      expect(iso(b.closed.end)).toBe('2026-10-27');
+    });
+
+    it('in a chain with a short planned end, keeps the planned end and not the rewritten one', () => {
+      // sans paie récurrente : la période ouverte dure un mois (28/09 -> 27/10) alors que
+      // la déclencheuse suivante (15/10) la clôt le 14/10
+      const result = plan({
+        active: { id: 'p-active', start: d('2026-08-28'), end: null },
+        triggers: [
+          trigger('2026-09-28', { id: 'tx-1' }),
+          trigger('2026-10-15', { id: 'tx-2' }),
+        ],
+      });
+      const [, b] = result.switches;
+      expect(iso(b.closed.end)).toBe('2026-10-14');
+      expect(iso(b.closed.prevEnd!)).toBe('2026-10-27');
     });
   });
 

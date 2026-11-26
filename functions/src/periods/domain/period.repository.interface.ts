@@ -7,6 +7,8 @@ export interface PeriodSwitchWrite {
   closedId: string;
   /** Nouvelle fin de la période close (la veille de la déclencheuse). */
   closeEnd: Date;
+  /** Fin qu'avait la période close avant la clôture (mémoire de bascule ; null = aucune). */
+  closedPrevEnd: Date | null;
   opened: Period;
   budgets: BudgetInstance[];
 }

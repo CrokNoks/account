@@ -92,7 +92,8 @@ export interface SwitchTrigger {
 export interface PlanInput {
   triggerCategoryId: string;
   triggers: SwitchTrigger[];
-  active: { id: string; start: Date } | null;
+  /** `end` : la fin de l'active avant toute clôture (absente = aucune). */
+  active: { id: string; start: Date; end?: Date | null } | null;
   /** Aujourd'hui, date calendaire du fuseau métier. */
   today: Date;
   recurring: SwitchRecurring[];
@@ -124,7 +125,13 @@ export interface PeriodWindow {
 
 export interface PlannedSwitch {
   triggerId: string;
-  closed: PeriodWindow;
+  /**
+   * `end` : la fin écrite à la clôture (veille de la déclencheuse). `prevEnd` : la fin qu'avait
+   * la période AVANT cette clôture (mémoire de bascule, null = aucune) : la fin réelle de l'active
+   * pour la première bascule, la fin planifiée à l'ouverture pour une période ouverte par le lot
+   * (avant que la bascule suivante ne la réécrive).
+   */
+  closed: PeriodWindow & { prevEnd: Date | null };
   opened: PeriodWindow;
   injected: PlannedOccurrence[];
   nextPaie: PlannedOccurrence | null;
@@ -340,6 +347,8 @@ function simulate(input: PlanInput, pass: Pass): PeriodSwitchPlan {
   // Transactions de récurrentes connues : celles de la base puis celles planifiées.
   const known: ExistingRecurringTx[] = [...input.existing];
   let simulated = input.active;
+  // Fin de la période simulée telle qu'elle est AVANT sa clôture (mémoire de bascule).
+  let simulatedEnd: Date | null = input.active?.end ?? null;
 
   for (const t of sorted) {
     const gap = simulated ? daysBetween(simulated.start, t.date) : null;
@@ -465,13 +474,19 @@ function simulate(input: PlanInput, pass: Pass): PeriodSwitchPlan {
     const opened: PeriodWindow = { id: newId(), start: newStart, end: newEnd };
     switches.push({
       triggerId: t.id,
-      closed: { id: simulated.id, start: simulated.start, end: closeEnd },
+      closed: {
+        id: simulated.id,
+        start: simulated.start,
+        end: closeEnd,
+        prevEnd: simulatedEnd,
+      },
       opened,
       injected,
       nextPaie,
     });
     known.push(...injectedAsKnown(injected));
     simulated = { id: opened.id, start: newStart };
+    simulatedEnd = newEnd;
   }
 
   // Seule la dernière bascule d'un lot crée la prochaine paie.

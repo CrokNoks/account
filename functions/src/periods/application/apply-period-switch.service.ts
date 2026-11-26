@@ -127,7 +127,9 @@ export class ApplyPeriodSwitchService {
     const base = {
       triggerCategoryId: triggerCategory.id,
       triggers,
-      active: active ? { id: active.id, start: active.startDate } : null,
+      active: active
+        ? { id: active.id, start: active.startDate, end: active.endDate }
+        : null,
       today,
       newId: randomUUID,
     };
@@ -242,6 +244,7 @@ export class ApplyPeriodSwitchService {
       return {
         closedId: sw.closed.id,
         closeEnd: sw.closed.end,
+        closedPrevEnd: sw.closed.prevEnd,
         opened,
         budgets: templates
           .filter((t) => t.amount !== 0n)
