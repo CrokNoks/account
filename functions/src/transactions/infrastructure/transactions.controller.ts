@@ -594,6 +594,7 @@ export class TransactionsController {
       dto.reconciled,
       dto.pending,
       existing.pending,
+      existing.reconciled,
     );
 
     // Le DTO transformé porte toutes ses clés (undefined si absentes) :

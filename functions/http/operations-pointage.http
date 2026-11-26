@@ -86,17 +86,14 @@ Content-Type: application/json
 ?? js response.parsedBody.reconciled == true
 ?? js response.parsedBody.pending == false
 
-### Pending rapprochée (vrai, vrai) : créée avec les deux
-# @name pendingRapprochee
+### (vrai, vrai) refusé depuis CA9 : 400, rien n'est créé
 POST {{api}}/{{courantAcc.id}}/transactions
 Authorization: Bearer {{aliceLogin.access_token}}
 Content-Type: application/json
 
 {"date":"2026-10-15T00:00:00.000Z","amount":"-4567","description":"{{tag}} pendingrapprochee","reconciled":true,"pending":true}
 
-?? status == 201
-?? js response.parsedBody.reconciled == true
-?? js response.parsedBody.pending == true
+?? status == 400
 
 ### Filtre « À pointer » : seulement la CB
 GET {{api}}/{{courantAcc.id}}/transactions?search={{tag}}&reconciled=false&pending=false
@@ -107,37 +104,36 @@ Authorization: Bearer {{aliceLogin.access_token}}
 ?? body contains "{{tag}} cb"
 ?? js response.body.includes(tag + ' facture') == false
 
-### Filtre « Factures à venir » : la facture, pas la pending rapprochée
+### Filtre « Factures à venir » : la facture seule
 GET {{api}}/{{courantAcc.id}}/transactions?search={{tag}}&reconciled=false&pending=true
 Authorization: Bearer {{aliceLogin.access_token}}
 
 ?? status == 200
 ?? js response.parsedBody.meta.total == 1
 ?? body contains "{{tag}} facture"
-?? js response.body.includes('pendingrapprochee') == false
 
-### Filtre « Pointées » (pending non envoyé) : les deux pointées, dont la pending rapprochée
+### Filtre « Pointées » (pending non envoyé) : la pointée seule
 GET {{api}}/{{courantAcc.id}}/transactions?search={{tag}}&reconciled=true
 Authorization: Bearer {{aliceLogin.access_token}}
 
 ?? status == 200
-?? js response.parsedBody.meta.total == 2
+?? js response.parsedBody.meta.total == 1
 ?? body contains "{{tag}} pointee"
-?? body contains "{{tag}} pendingrapprochee"
+?? js response.body.includes('pendingrapprochee') == false
 
-### pending=true seul : facture + pending rapprochée
+### pending=true seul : la facture
 GET {{api}}/{{courantAcc.id}}/transactions?search={{tag}}&pending=true
 Authorization: Bearer {{aliceLogin.access_token}}
 
 ?? status == 200
-?? js response.parsedBody.meta.total == 2
+?? js response.parsedBody.meta.total == 1
 
-### Sans filtre d'état : les 4
+### Sans filtre d'état : les 3
 GET {{api}}/{{courantAcc.id}}/transactions?search={{tag}}
 Authorization: Bearer {{aliceLogin.access_token}}
 
 ?? status == 200
-?? js response.parsedBody.meta.total == 4
+?? js response.parsedBody.meta.total == 3
 
 ### pending=maybe est refusé
 GET {{api}}/{{courantAcc.id}}/transactions?pending=maybe

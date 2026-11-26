@@ -55,7 +55,12 @@ export class BulkUpdateTransactionsUseCase {
         tagIds: data.tagIds !== undefined ? data.tagIds : tx.tagIds,
         reconciled:
           data.reconciled !== undefined ? data.reconciled : tx.reconciled,
-        pending: resolvePending(data.reconciled, data.pending, tx.pending),
+        pending: resolvePending(
+          data.reconciled,
+          data.pending,
+          tx.pending,
+          tx.reconciled,
+        ),
       });
       if (isLeavingPending(tx.pending, updated.pending)) {
         leavingPendingIds.add(tx.id);

@@ -176,32 +176,67 @@ describe('BulkUpdateTransactionsUseCase', () => {
     expect(t1.pending).toBe(false);
   });
 
-  it('resets pending when reconciling even if pending: true is also provided', async () => {
+  it('P5 : refuses reconciled and pending both true in the body, writes nothing', async () => {
     repository.findAllByAccountUnpaginated.mockResolvedValue([
       tx('t1', { pending: true }),
     ]);
 
-    await useCase.execute({
-      accountId: 'acc-1',
-      ids: ['t1'],
-      data: { reconciled: true, pending: true },
-    });
-
-    expect(saved()[0].pending).toBe(false);
+    await expect(
+      useCase.execute({
+        accountId: 'acc-1',
+        ids: ['t1'],
+        data: { reconciled: true, pending: true },
+      }),
+    ).rejects.toThrow(DomainValidationError);
+    expect(repository.updateMany).not.toHaveBeenCalled();
+    expect(periodSwitch.process).not.toHaveBeenCalled();
   });
 
-  it('keeps pending when un-reconciling without providing it', async () => {
+  it('P3 : refuses pending: true on a reconciled transaction', async () => {
     repository.findAllByAccountUnpaginated.mockResolvedValue([
-      tx('t1', { pending: true, reconciled: true }),
+      tx('t1', { reconciled: true }),
+    ]);
+
+    await expect(
+      useCase.execute({
+        accountId: 'acc-1',
+        ids: ['t1'],
+        data: { pending: true },
+      }),
+    ).rejects.toThrow(DomainValidationError);
+    expect(repository.updateMany).not.toHaveBeenCalled();
+  });
+
+  it('P6 : un-reconciling and setting pending in the same body is allowed', async () => {
+    repository.findAllByAccountUnpaginated.mockResolvedValue([
+      tx('t1', { reconciled: true }),
     ]);
 
     await useCase.execute({
       accountId: 'acc-1',
       ids: ['t1'],
-      data: { reconciled: false },
+      data: { reconciled: false, pending: true },
     });
 
-    expect(saved()[0].pending).toBe(true);
+    expect(saved()[0]).toMatchObject({ reconciled: false, pending: true });
+  });
+
+  it('P7 : one invalid line out of three makes the whole batch fail, nothing is written', async () => {
+    repository.findAllByAccountUnpaginated.mockResolvedValue([
+      tx('t1'),
+      tx('t2', { reconciled: true }),
+      tx('t3'),
+    ]);
+
+    await expect(
+      useCase.execute({
+        accountId: 'acc-1',
+        ids: ['t1', 't2', 't3'],
+        data: { pending: true },
+      }),
+    ).rejects.toThrow(DomainValidationError);
+    expect(repository.updateMany).not.toHaveBeenCalled();
+    expect(periodSwitch.process).not.toHaveBeenCalled();
   });
 
   it('modifies every target in one atomic call', async () => {

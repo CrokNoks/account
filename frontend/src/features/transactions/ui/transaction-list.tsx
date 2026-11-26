@@ -561,6 +561,7 @@ function EditTransactionDialog({ transaction, open, onOpenChange }: { transactio
               amount: centsToInputString(BigInt(transaction.amount), locale),
               pending: transaction.pending,
             }}
+            reconciled={transaction.reconciled}
             onSubmit={handleSubmit}
             isPending={isPending}
             submitLabel={tc('save')}

@@ -74,3 +74,38 @@ describe('TransactionForm labels', () => {
     expect(screen.getByLabelText('form.destination_account')).toHaveTextContent('form.select_destination');
   });
 });
+
+describe('TransactionForm pending field on a reconciled transaction (CA9)', () => {
+  it('greys out the upcoming-bill checkbox and never sends pending: true', async () => {
+    const { default: userEvent } = await import('@testing-library/user-event');
+    const user = userEvent.setup();
+    const onSubmit = vi.fn();
+    render(
+      <TransactionForm
+        accountId="acc-1"
+        reconciled
+        initialValues={{ description: 'Courses', amount: '-12,5', pending: true }}
+        onSubmit={onSubmit}
+        isPending={false}
+        submitLabel="ok"
+      />,
+    );
+
+    const checkbox = screen.getByLabelText('fields.pending');
+    expect((checkbox as HTMLInputElement).disabled).toBe(true);
+    expect((checkbox as HTMLInputElement).checked).toBe(false);
+    expect(screen.getByText('form.pending_unavailable_reconciled')).toBeTruthy();
+
+    await user.click(screen.getByRole('button', { name: /^ok/ }));
+    expect(onSubmit.mock.calls[0][0].pending).toBe(false);
+  });
+
+  it('leaves the checkbox usable on a transaction that is not reconciled', () => {
+    render(
+      <TransactionForm accountId="acc-1" onSubmit={vi.fn()} isPending={false} submitLabel="ok" />,
+    );
+
+    const checkbox = screen.getByLabelText('fields.pending');
+    expect(checkbox.hasAttribute('disabled')).toBe(false);
+  });
+});

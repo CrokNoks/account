@@ -1,4 +1,5 @@
 import { DomainValidationError } from '../../shared/domain/errors';
+import { assertNotReconciledAndPending } from './pending-rule';
 
 export interface TransactionProps {
   id: string;
@@ -81,6 +82,8 @@ export class Transaction {
       updatedAt?: Date;
     },
   ): Transaction {
+    // Garde à la création seulement : le constructeur relit aussi d'anciennes lignes.
+    assertNotReconciledAndPending(props.reconciled, props.pending);
     const now = new Date();
     return new Transaction({
       ...props,

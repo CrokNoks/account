@@ -631,6 +631,113 @@ describe('Transactions routes (e2e)', () => {
     });
   });
 
+  describe('reconciled and pending never together (CA9)', () => {
+    const ACC = '00000000-0000-4000-8000-000000000101';
+    const ID = '00000000-0000-4000-8000-000000000016';
+    const ID2 = '00000000-0000-4000-8000-000000000017';
+    const line = { date: '2026-03-01', description: 'A', amount: '-100' };
+
+    it('P1 POST answers 400 without any write when reconciled and pending are both true', async () => {
+      await http()
+        .post(`/${ACC}/transactions`)
+        .set(auth())
+        .send({ ...line, reconciled: true, pending: true })
+        .expect(400);
+
+      expect(mocks.transactions.save).not.toHaveBeenCalled();
+    });
+
+    it('P2 POST still creates a pending transaction that is not reconciled', async () => {
+      const res = await http()
+        .post(`/${ACC}/transactions`)
+        .set(auth())
+        .send({ ...line, pending: true })
+        .expect(201);
+
+      expect(res.body).toMatchObject({ pending: true, reconciled: false });
+    });
+
+    it('P7 POST /bulk (import) answers 400 and writes nothing when one line is both', async () => {
+      await http()
+        .post(`/${ACC}/transactions/bulk`)
+        .set(auth())
+        .send({
+          transactions: [
+            line,
+            { ...line, reconciled: true, pending: true },
+            line,
+          ],
+        })
+        .expect(400);
+
+      expect(mocks.transactions.saveMany).not.toHaveBeenCalled();
+      expect(mocks.transactions.save).not.toHaveBeenCalled();
+    });
+
+    it('P5 PATCH answers 400 when the body sets both to true', async () => {
+      await http()
+        .patch(`/${ACC}/transactions/${ID}`)
+        .set(auth())
+        .send({ reconciled: true, pending: true })
+        .expect(400);
+
+      expect(mocks.transactions.save).not.toHaveBeenCalled();
+    });
+
+    it('P3 PATCH answers 400 for pending: true on a reconciled transaction', async () => {
+      mocks.transactions.findById.mockResolvedValue(
+        tx(ID, { reconciled: true }),
+      );
+
+      await http()
+        .patch(`/${ACC}/transactions/${ID}`)
+        .set(auth())
+        .send({ pending: true })
+        .expect(400);
+
+      expect(mocks.transactions.save).not.toHaveBeenCalled();
+    });
+
+    it('P6 PATCH un-reconciling and setting pending in the same body is accepted', async () => {
+      mocks.transactions.findById.mockResolvedValue(
+        tx(ID, { reconciled: true }),
+      );
+
+      const res = await http()
+        .patch(`/${ACC}/transactions/${ID}`)
+        .set(auth())
+        .send({ reconciled: false, pending: true })
+        .expect(200);
+
+      expect(res.body).toMatchObject({ reconciled: false, pending: true });
+    });
+
+    it('P7 PATCH /bulk answers 400 and writes nothing when one target is reconciled', async () => {
+      mocks.transactions.findAllByAccountUnpaginated.mockResolvedValue([
+        tx(ID),
+        tx(ID2, { reconciled: true }),
+      ]);
+
+      await http()
+        .patch(`/${ACC}/transactions/bulk`)
+        .set(auth())
+        .send({ ids: [ID, ID2], data: { pending: true } })
+        .expect(400);
+
+      expect(mocks.transactions.updateMany).not.toHaveBeenCalled();
+    });
+
+    it('P5 PATCH /bulk answers 400 when data sets both to true', async () => {
+      await http()
+        .patch(`/${ACC}/transactions/bulk`)
+        .set(auth())
+        .send({ ids: [ID], data: { reconciled: true, pending: true } })
+        .expect(400);
+
+      expect(mocks.transactions.updateMany).not.toHaveBeenCalled();
+    });
+  });
+
   describe('bulk routes', () => {
     it('PATCH /bulk updates the requested transactions of the account', async () => {
       await http()

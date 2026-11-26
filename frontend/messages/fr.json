@@ -350,7 +350,8 @@
       "destination_account": "Compte de destination",
       "select_destination": "Sélectionner le compte de destination...",
       "no_other_account": "Aucun autre compte disponible",
-      "excluded_from_forecast": "Exclu du solde à venir"
+      "excluded_from_forecast": "Exclu du solde à venir",
+      "pending_unavailable_reconciled": "Indisponible : la transaction est déjà pointée"
     },
     "transfer_created": "Virement « {description} » créé",
     "transaction_added": "Opération « {description} » ajoutée",

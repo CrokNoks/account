@@ -108,6 +108,21 @@ describe('BulkCreateTransactionsUseCase', () => {
     expect(tx.categoryId).toBe('cat-manual');
   });
 
+  it('P7 : refuses the whole import, before any write, when one line is both reconciled and pending', async () => {
+    await expect(
+      useCase.execute({
+        accountId: 'acc-1',
+        transactions: [
+          line(),
+          line({ reconciled: true, pending: true }),
+          line({ description: 'SNCF' }),
+        ],
+      }),
+    ).rejects.toBeInstanceOf(DomainValidationError);
+    expect(repository.saveMany).not.toHaveBeenCalled();
+    expect(periodSwitch.process).not.toHaveBeenCalled();
+  });
+
   it('defaults reconciled and pending to false', async () => {
     const {
       transactions: [tx],

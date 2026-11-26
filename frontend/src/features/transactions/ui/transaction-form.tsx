@@ -33,6 +33,8 @@ interface TransactionFormProps {
   accountId: string | null;
   initialValues?: Partial<TransactionFormValues>;
   onSubmit: (values: TransactionFormValues) => void;
+  /** Transaction déjà pointée : jamais « facture à venir » en même temps (la case est grisée). */
+  reconciled?: boolean;
   isPending: boolean;
   submitLabel: string;
   mode?: 'standard' | 'transfer';
@@ -45,6 +47,7 @@ export function TransactionForm({
   accountId,
   initialValues,
   onSubmit,
+  reconciled = false,
   isPending,
   submitLabel,
   mode = 'standard',
@@ -69,7 +72,8 @@ export function TransactionForm({
   const [tagIds, setTagIds] = useState<string[]>(initialValues?.tagIds || []);
   const [amount, setAmount] = useState(initialValues?.amount || '');
   const [direction, setDirection] = useState<'expense' | 'income'>(initialValues?.direction || 'expense');
-  const [pending, setPending] = useState(initialValues?.pending || false);
+  // Une transaction pointée n'est jamais en attente (le back la refuse en 400).
+  const [pending, setPending] = useState(!reconciled && (initialValues?.pending || false));
   const [destinationAccountId, setDestinationAccountId] = useState(initialValues?.destinationAccountId || '');
 
   const predictionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -168,12 +172,15 @@ export function TransactionForm({
       <Checkbox 
         id="pending-field" 
         checked={pending} 
+        disabled={reconciled}
         onCheckedChange={(checked) => setPending(!!checked)} 
       />
-      <label htmlFor="pending-field" className="text-sm font-medium cursor-pointer select-none flex-1">
+      <label htmlFor="pending-field" className={cn('text-sm font-medium select-none flex-1', reconciled ? 'text-muted-foreground' : 'cursor-pointer')}>
         {t('fields.pending')}
       </label>
-      <p className="text-[10px] max-lg:text-xs text-muted-foreground">{t('form.excluded_from_forecast')}</p>
+      <p className="text-[10px] max-lg:text-xs text-muted-foreground">
+        {reconciled ? t('form.pending_unavailable_reconciled') : t('form.excluded_from_forecast')}
+      </p>
     </div>
   );
 

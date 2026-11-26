@@ -63,6 +63,35 @@ describe('CreateTransactionUseCase', () => {
     expect(repository.save).toHaveBeenCalled();
   });
 
+  it('P1 : refuses a transaction both reconciled and pending, writes nothing', async () => {
+    await expect(
+      useCase.execute({
+        accountId: 'acc-1',
+        categoryId: null,
+        date: new Date(),
+        description: 'Facture',
+        amount: BigInt(-9000),
+        reconciled: true,
+        pending: true,
+      }),
+    ).rejects.toBeInstanceOf(DomainValidationError);
+    expect(repository.save).not.toHaveBeenCalled();
+    expect(periodSwitch.process).not.toHaveBeenCalled();
+  });
+
+  it('P2 : accepts a pending transaction that is not reconciled (facture, récurrente)', async () => {
+    const { transaction } = await useCase.execute({
+      accountId: 'acc-1',
+      categoryId: null,
+      date: new Date(),
+      description: 'Facture',
+      amount: BigInt(-9000),
+      pending: true,
+    });
+
+    expect(transaction).toMatchObject({ pending: true, reconciled: false });
+  });
+
   it('refuses references of another account without saving', async () => {
     refs.ensureReferences.mockRejectedValue(
       new DomainValidationError('Category does not belong to this account'),
