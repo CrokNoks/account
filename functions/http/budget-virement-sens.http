@@ -1,0 +1,504 @@
+# Sens d'un budget de virement (spec budget-virement-sens) : un virement sortant (budget négatif) se compte comme une dépense,
+# un virement entrant (budget positif) comme un revenu.
+# Lancement (Supabase local + back local) :
+#   npx httpyac send --all functions/http/budget-virement-sens.http --var port=<port du back local> --var anon=<clé publishable de `supabase status`>
+# (la clé vient de la ligne de commande, jamais du fichier). Utilisateurs, comptes, catégories et transactions sont jetables,
+# créés par le fichier ; rien n'est supprimé à la fin (base locale uniquement, jamais le projet lié).
+# Montants en centimes. CJ = « Virement CJ » (sortant, -2 032,48 €), Salaire = « Salaire Lucas » (entrant, +2 032,48 €).
+# Dans chaque période, « prévu - départ » = forecastBalance - startBalance (le départ ne dépend pas des budgets).
+# Non couvert ici : l'écran Budgets (scénario Playwright jetable, voir le résumé du cycle).
+@baseUrl = http://localhost:{{port}}
+@authUrl = http://127.0.0.1:54321/auth/v1
+
+{{
+  const paris = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Paris', year: 'numeric', month: '2-digit', day: '2-digit' });
+  const base = new Date(paris.format(new Date()) + 'T00:00:00Z');
+  exports.day = (offset) => new Date(base.getTime() + offset * 86400000).toISOString().slice(0, 10);
+  exports.dm60 = exports.day(-60);
+  exports.dm10 = exports.day(-10);
+  exports.dp30 = exports.day(30);
+  exports.sum7 = (s) => (BigInt(s.realBankBalance) + BigInt(s.cardTotal) + BigInt(s.billsTotal) + BigInt(s.reportsTotal) + BigInt(s.arrivedAfterEnd) + BigInt(s.budgetRemaining) + BigInt(s.expectedIncome) - BigInt(s.forecastBalance)).toString();
+  exports.ahead = (s) => (BigInt(s.forecastBalance) - BigInt(s.startBalance)).toString();
+}}
+
+### Alice (propriétaire jetable)
+# @name alice
+POST {{authUrl}}/signup
+apikey: {{anon}}
+Content-Type: application/json
+
+{ "email": "sens-alice-{{$timestamp}}@example.com", "password": "Password123!" }
+
+?? status == 200
+
+### Bob (autre utilisateur connecté, sans accès au compte)
+# @name bob
+POST {{authUrl}}/signup
+apikey: {{anon}}
+Content-Type: application/json
+
+{ "email": "sens-bob-{{$timestamp}}@example.com", "password": "Password123!" }
+
+?? status == 200
+
+### Compte
+# @name acc
+POST {{baseUrl}}/accounts
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "name": "sens-{{$timestamp}}", "initialBalance": "0" }
+
+?? status == 201
+
+### Catégorie Virement CJ (virement)
+# @name cj
+POST {{baseUrl}}/{{acc.id}}/categories
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "name": "Virement CJ", "color": "#112233", "type": "transfer" }
+
+?? status == 201
+
+### Catégorie Salaire Lucas (virement)
+# @name sal
+POST {{baseUrl}}/{{acc.id}}/categories
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "name": "Salaire Lucas", "color": "#112244", "type": "transfer" }
+
+?? status == 201
+
+### Catégorie Courses (dépense)
+# @name cou
+POST {{baseUrl}}/{{acc.id}}/categories
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "name": "Courses", "color": "#112255", "type": "expense" }
+
+?? status == 201
+
+### M1 (cas de la prod) : CJ budgété -4 064,96 mais un seul virement parti (-2 032,48), Salaire arrivé
+# @name m1
+POST {{baseUrl}}/{{acc.id}}/periods
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "startDate": "2026-01-01", "endDate": "2026-01-31", "budgets": [
+  { "categoryId": "{{cj.id}}", "amountAllocated": "-406496" },
+  { "categoryId": "{{sal.id}}", "amountAllocated": "203248" } ] }
+
+?? status == 201
+
+### M2 : CJ non parti (-2 032,48), Salaire pas arrivé, Courses 500,00
+# @name m2
+POST {{baseUrl}}/{{acc.id}}/periods
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "startDate": "2026-02-01", "endDate": "2026-02-28", "budgets": [
+  { "categoryId": "{{cj.id}}", "amountAllocated": "-203248" },
+  { "categoryId": "{{sal.id}}", "amountAllocated": "203248" },
+  { "categoryId": "{{cou.id}}", "amountAllocated": "50000" } ] }
+
+?? status == 201
+
+### M3 : CJ parti en partie (-1 000,00 sur -2 032,48)
+# @name m3
+POST {{baseUrl}}/{{acc.id}}/periods
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "startDate": "2026-03-01", "endDate": "2026-03-31", "budgets": [
+  { "categoryId": "{{cj.id}}", "amountAllocated": "-203248" } ] }
+
+?? status == 201
+
+### M4 : CJ parti en entier (-2 032,48), CJ budgété -2 032,48
+# @name m4
+POST {{baseUrl}}/{{acc.id}}/periods
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "startDate": "2026-04-01", "endDate": "2026-04-30", "budgets": [
+  { "categoryId": "{{cj.id}}", "amountAllocated": "-203248" } ] }
+
+?? status == 201
+
+### M5 : CJ parti plus que prévu (-2 100,00) ; Salaire +2 032,48 qui revient négatif (-50,00, décision 1)
+# @name m5
+POST {{baseUrl}}/{{acc.id}}/periods
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "startDate": "2026-05-01", "endDate": "2026-05-31", "budgets": [
+  { "categoryId": "{{cj.id}}", "amountAllocated": "-203248" },
+  { "categoryId": "{{sal.id}}", "amountAllocated": "203248" } ] }
+
+?? status == 201
+
+### M6 : CJ sans budget mais avec des sorties (-500,00) : sens par le réel, comme avant
+# @name m6
+POST {{baseUrl}}/{{acc.id}}/periods
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "startDate": "2026-06-01", "endDate": "2026-06-30", "budgets": [] }
+
+?? status == 201
+
+### Opérations M1 : CJ -2 032,48 pointé, Salaire +2 032,48 pointé
+POST {{baseUrl}}/{{acc.id}}/transactions
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "categoryId": "{{cj.id}}", "date": "2026-01-05", "description": "cj", "amount": "-203248", "reconciled": true }
+
+###
+POST {{baseUrl}}/{{acc.id}}/transactions
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "categoryId": "{{sal.id}}", "date": "2026-01-06", "description": "sal", "amount": "203248", "reconciled": true }
+
+### Opération M3 : CJ -1 000,00 pointé
+POST {{baseUrl}}/{{acc.id}}/transactions
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "categoryId": "{{cj.id}}", "date": "2026-03-05", "description": "cj", "amount": "-100000", "reconciled": true }
+
+### Opération M4 : CJ -2 032,48 pointé
+POST {{baseUrl}}/{{acc.id}}/transactions
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "categoryId": "{{cj.id}}", "date": "2026-04-05", "description": "cj", "amount": "-203248", "reconciled": true }
+
+### Opérations M5 : CJ -2 100,00, Salaire -50,00
+POST {{baseUrl}}/{{acc.id}}/transactions
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "categoryId": "{{cj.id}}", "date": "2026-05-05", "description": "cj", "amount": "-210000", "reconciled": true }
+
+###
+POST {{baseUrl}}/{{acc.id}}/transactions
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "categoryId": "{{sal.id}}", "date": "2026-05-06", "description": "sal", "amount": "-5000", "reconciled": true }
+
+### Opération M6 : CJ -500,00
+POST {{baseUrl}}/{{acc.id}}/transactions
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "categoryId": "{{cj.id}}", "date": "2026-06-05", "description": "cj", "amount": "-50000", "reconciled": true }
+
+### CA1/CA3 M1 (prod) : prévu - départ = -2 032,48 (avant : 0, écart -2 032,48) ; composition = prévu
+# @name s1
+GET {{baseUrl}}/{{acc.id}}/periods/{{m1.id}}/reporting/stats
+Authorization: Bearer {{alice.access_token}}
+
+?? status == 200
+?? js ahead(response.parsedBody) == -203248
+?? js response.parsedBody.plannedIncome == 203248
+?? js response.parsedBody.plannedExpenses == 406496
+?? js response.parsedBody.plannedExpensesExTransfers == 0
+?? js response.parsedBody.budgetRemaining == -203248
+?? js sum7(response.parsedBody) == 0
+
+### CA1/CA3/CA5 M2 : CJ non parti : prévu - départ = -500,00 (avant : +3 564,96) ; revenus prévus sans CJ, total budgété avec
+# @name s2
+GET {{baseUrl}}/{{acc.id}}/periods/{{m2.id}}/reporting/stats
+Authorization: Bearer {{alice.access_token}}
+
+?? status == 200
+?? js ahead(response.parsedBody) == -50000
+?? js response.parsedBody.plannedIncome == 203248
+?? js response.parsedBody.plannedExpenses == 253248
+?? js response.parsedBody.plannedExpensesExTransfers == 50000
+?? js response.parsedBody.budgetRemaining == -253248
+?? js response.parsedBody.expectedIncome == 203248
+?? js sum7(response.parsedBody) == 0
+
+### CA1/CA3 M3 : CJ parti en partie : le reste dû reste dans le prévu (-2 032,48), budget restant -1 032,48
+GET {{baseUrl}}/{{acc.id}}/periods/{{m3.id}}/reporting/stats
+Authorization: Bearer {{alice.access_token}}
+
+?? status == 200
+?? js ahead(response.parsedBody) == -203248
+?? js response.parsedBody.budgetRemaining == -103248
+?? js sum7(response.parsedBody) == 0
+
+### CA1 M4 : CJ parti en entier : même prévu qu'avant (-2 032,48)
+GET {{baseUrl}}/{{acc.id}}/periods/{{m4.id}}/reporting/stats
+Authorization: Bearer {{alice.access_token}}
+
+?? status == 200
+?? js ahead(response.parsedBody) == -203248
+?? js response.parsedBody.budgetRemaining == 0
+?? js sum7(response.parsedBody) == 0
+
+### CA1/décision 1 M5 : CJ parti plus que prévu (-2 100,00) et Salaire négatif (-50,00, budget ignoré) : -2 150,00
+GET {{baseUrl}}/{{acc.id}}/periods/{{m5.id}}/reporting/stats
+Authorization: Bearer {{alice.access_token}}
+
+?? status == 200
+?? js ahead(response.parsedBody) == -215000
+?? js sum7(response.parsedBody) == 0
+
+### M6 : CJ sans budget, réel -500,00 : -500,00, rien dans les totaux prévus
+GET {{baseUrl}}/{{acc.id}}/periods/{{m6.id}}/reporting/stats
+Authorization: Bearer {{alice.access_token}}
+
+?? status == 200
+?? js ahead(response.parsedBody) == -50000
+?? js response.parsedBody.plannedIncome == 0
+?? js response.parsedBody.plannedExpenses == 0
+?? js sum7(response.parsedBody) == 0
+
+### CA6 M2 : répartition : CJ sortant (reste 2 032,48, 0 %), Salaire entrant
+GET {{baseUrl}}/{{acc.id}}/periods/{{m2.id}}/reporting/budget-breakdown
+Authorization: Bearer {{alice.access_token}}
+
+?? status == 200
+?? js response.parsedBody.transfers.find(t => t.name == 'Virement CJ').direction == outgoing
+?? js response.parsedBody.transfers.find(t => t.name == 'Virement CJ').remaining == 203248
+?? js response.parsedBody.transfers.find(t => t.name == 'Virement CJ').budget == -203248
+?? js response.parsedBody.transfers.find(t => t.name == 'Salaire Lucas').direction == incoming
+?? js response.parsedBody.expenses[0].direction == undefined
+
+### CA6 M5 : CJ dépassé (réel -2 100,00) : reste -67,52, 103 %
+GET {{baseUrl}}/{{acc.id}}/periods/{{m5.id}}/reporting/budget-breakdown
+Authorization: Bearer {{alice.access_token}}
+
+?? status == 200
+?? js response.parsedBody.transfers.find(t => t.name == 'Virement CJ').remaining == -6752
+?? js response.parsedBody.transfers.find(t => t.name == 'Virement CJ').percentage == 103
+
+### CA6 M6 : sans budget avec des sorties : sortant ; Salaire sans budget ni opération : entrant
+GET {{baseUrl}}/{{acc.id}}/periods/{{m6.id}}/reporting/budget-breakdown
+Authorization: Bearer {{alice.access_token}}
+
+?? status == 200
+?? js response.parsedBody.transfers.find(t => t.name == 'Virement CJ').direction == outgoing
+?? js response.parsedBody.transfers.find(t => t.name == 'Salaire Lucas').direction == incoming
+
+### CA4 M2 : la simulation des budgets enregistrés (CJ négatif) donne le même prévu que les stats, delta 0
+POST {{baseUrl}}/{{acc.id}}/periods/{{m2.id}}/reporting/forecast-simulation
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "budgets": [
+  { "categoryId": "{{cj.id}}", "amountAllocated": "-203248" },
+  { "categoryId": "{{sal.id}}", "amountAllocated": "203248" },
+  { "categoryId": "{{cou.id}}", "amountAllocated": "50000" } ] }
+
+?? status == 200
+?? js response.parsedBody.forecastBalance == {{s2.forecastBalance}}
+?? js response.parsedBody.plannedIncome == 203248
+?? js response.parsedBody.plannedExpenses == 253248
+?? js response.parsedBody.delta == 0
+?? js response.parsedBody.incomeEffect == 0
+?? js response.parsedBody.expensesEffect == 0
+
+### CA4 M2 : modifier CJ -2 032,48 en -2 100,00 agit sur le côté dépenses seulement (-67,52)
+POST {{baseUrl}}/{{acc.id}}/periods/{{m2.id}}/reporting/forecast-simulation
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "budgets": [
+  { "categoryId": "{{cj.id}}", "amountAllocated": "-210000" },
+  { "categoryId": "{{sal.id}}", "amountAllocated": "203248" },
+  { "categoryId": "{{cou.id}}", "amountAllocated": "50000" } ] }
+
+?? status == 200
+?? js response.parsedBody.expensesEffect == -6752
+?? js response.parsedBody.incomeEffect == 0
+?? js response.parsedBody.delta == -6752
+
+### CA4 M2 : modifier Salaire +2 032,48 en +2 500,00 agit sur le côté revenus seulement (+467,52)
+POST {{baseUrl}}/{{acc.id}}/periods/{{m2.id}}/reporting/forecast-simulation
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "budgets": [
+  { "categoryId": "{{cj.id}}", "amountAllocated": "-203248" },
+  { "categoryId": "{{sal.id}}", "amountAllocated": "250000" },
+  { "categoryId": "{{cou.id}}", "amountAllocated": "50000" } ] }
+
+?? status == 200
+?? js response.parsedBody.incomeEffect == 46752
+?? js response.parsedBody.expensesEffect == 0
+
+### CA7 : l'enregistrement garde le signe envoyé (CJ -2 100,00) et le prévu suit
+PUT {{baseUrl}}/{{acc.id}}/periods/{{m2.id}}/budgets
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "budgets": [
+  { "categoryId": "{{cj.id}}", "amountAllocated": "-210000" },
+  { "categoryId": "{{sal.id}}", "amountAllocated": "203248" },
+  { "categoryId": "{{cou.id}}", "amountAllocated": "50000" } ],
+  "expectedBudgets": [
+  { "categoryId": "{{cj.id}}", "amountAllocated": "-203248" },
+  { "categoryId": "{{sal.id}}", "amountAllocated": "203248" },
+  { "categoryId": "{{cou.id}}", "amountAllocated": "50000" } ] }
+
+?? status == 200
+?? js response.parsedBody.find(b => b.categoryId == cj.id).amountAllocated == -210000
+
+### CA7 : relu : CJ est toujours négatif, et le prévu a baissé de 67,52 (-567,52)
+GET {{baseUrl}}/{{acc.id}}/periods/{{m2.id}}/reporting/stats
+Authorization: Bearer {{alice.access_token}}
+
+?? status == 200
+?? js ahead(response.parsedBody) == -56752
+?? js response.parsedBody.plannedExpenses == 260000
+
+### CA8 : montants par défaut : CJ -2 032,48 enregistré tel quel
+PUT {{baseUrl}}/{{acc.id}}/budget-templates
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "items": [
+  { "categoryId": "{{cj.id}}", "amount": "-203248" },
+  { "categoryId": "{{sal.id}}", "amount": "203248" },
+  { "categoryId": "{{cou.id}}", "amount": "30000" } ] }
+
+?? status == 204
+
+### CA8 : /budgets/fixed : direction par virement, signe gardé, aucune direction hors virement
+GET {{baseUrl}}/{{acc.id}}/budget-templates
+Authorization: Bearer {{alice.access_token}}
+
+?? status == 200
+?? js response.parsedBody.find(l => l.name == 'Virement CJ').direction == outgoing
+?? js response.parsedBody.find(l => l.name == 'Virement CJ').amount == -203248
+?? js response.parsedBody.find(l => l.name == 'Salaire Lucas').direction == incoming
+?? js response.parsedBody.find(l => l.name == 'Courses').direction == undefined
+
+### CA8 : brouillon de période : défaut CJ proposé tel quel avec son sens
+GET {{baseUrl}}/{{acc.id}}/periods/draft-init
+Authorization: Bearer {{alice.access_token}}
+
+?? status == 200
+?? js response.parsedBody.categoriesWithStats.find(c => c.name == 'Virement CJ').direction == outgoing
+?? js response.parsedBody.categoriesWithStats.find(c => c.name == 'Virement CJ').defaultAllocated == -203248
+?? js response.parsedBody.categoriesWithStats.find(c => c.name == 'Salaire Lucas').direction == incoming
+?? js response.parsedBody.categoriesWithStats.find(c => c.name == 'Courses').direction == undefined
+
+### Un autre utilisateur connecté (Bob) : 404 sur les stats
+GET {{baseUrl}}/{{acc.id}}/periods/{{m2.id}}/reporting/stats
+Authorization: Bearer {{bob.access_token}}
+
+?? status == 404
+
+### Bob : 404 sur la simulation
+POST {{baseUrl}}/{{acc.id}}/periods/{{m2.id}}/reporting/forecast-simulation
+Authorization: Bearer {{bob.access_token}}
+Content-Type: application/json
+
+{ "budgets": [ { "categoryId": "{{cj.id}}", "amountAllocated": "-1" } ] }
+
+?? status == 404
+
+### Anonyme : 401 sur la répartition
+GET {{baseUrl}}/{{acc.id}}/periods/{{m2.id}}/reporting/budget-breakdown
+
+?? status == 401
+
+# ======================================================================
+# CA8 : la bascule du déclencheur copie les défauts avec leur signe
+# ======================================================================
+
+### Compte de la bascule
+# @name accB
+POST {{baseUrl}}/accounts
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "name": "sens-bascule-{{$timestamp}}", "initialBalance": "0" }
+
+?? status == 201
+
+### Paie (déclencheur)
+# @name paieB
+POST {{baseUrl}}/{{accB.id}}/categories
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "name": "Paie", "color": "#22aa55", "type": "income" }
+
+?? status == 201
+
+### Virement CJ du compte de la bascule
+# @name cjB
+POST {{baseUrl}}/{{accB.id}}/categories
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "name": "Virement CJ", "color": "#112233", "type": "transfer" }
+
+?? status == 201
+
+### Défaut CJ -2 032,48
+PUT {{baseUrl}}/{{accB.id}}/budget-templates
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "items": [ { "categoryId": "{{cjB.id}}", "amount": "-203248" } ] }
+
+?? status == 204
+
+### Période active commencée il y a 60 jours
+# @name perB
+POST {{baseUrl}}/{{accB.id}}/periods
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "startDate": "{{dm60}}", "endDate": "{{dp30}}", "budgets": [] }
+
+?? status == 201
+
+### Paie marquée comme déclencheur
+PATCH {{baseUrl}}/{{accB.id}}/categories/{{paieB.id}}
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "isPeriodTrigger": true }
+
+?? status == 200
+
+### Paie d'il y a 10 jours : la bascule crée la période
+# @name switchB
+POST {{baseUrl}}/{{accB.id}}/transactions
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "categoryId": "{{paieB.id}}", "date": "{{dm10}}", "description": "Paie bascule", "amount": "200000" }
+
+?? status == 201
+?? js response.parsedBody.periodSwitch.count == 1
+
+### CA8 : la nouvelle période a CJ à -2 032,48 (signe gardé) ; le prévu baisse de 2 032,48
+GET {{baseUrl}}/{{accB.id}}/periods/{{switchB.periodSwitch.opened.id}}/budgets
+Authorization: Bearer {{alice.access_token}}
+
+?? status == 200
+?? js response.parsedBody.find(b => b.categoryId == cjB.id).amountAllocated == -203248
+
+###
+# @name statsB
+GET {{baseUrl}}/{{accB.id}}/periods/{{switchB.periodSwitch.opened.id}}/reporting/stats
+Authorization: Bearer {{alice.access_token}}
+
+?? status == 200
+?? js response.parsedBody.plannedIncome == 0
+?? js response.parsedBody.plannedExpenses == 203248
+?? js response.parsedBody.budgetRemaining == -203248

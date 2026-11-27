@@ -15,7 +15,7 @@ const breakdown = {
   ],
   income: [{ categoryId: 'i1', name: 'Salaire', real: '260000', budget: '250000', remaining: '-10000', percentage: 104 }],
   savings: [{ categoryId: 's1', name: 'Livret', real: '-9000', budget: '10000', remaining: '1000', percentage: 90 }],
-  transfers: [],
+  transfers: [] as unknown[],
 };
 const stats = { forecastBalance: '123456', plannedIncome: '250000', plannedExpenses: '70000' };
 const periods = [
@@ -389,6 +389,128 @@ describe('BudgetsScreen', () => {
       expect(screen.getAllByTestId('row-error')).toHaveLength(2);
       expect(simCalls[simCalls.length - 1].enabled).toBe(false);
       expect((screen.getByText('Enregistrer') as HTMLButtonElement).disabled).toBe(true);
+    });
+  });
+
+  describe('virements : le sens vient du back (direction)', () => {
+    const cj = { categoryId: 't1', name: 'Virement CJ', real: '0', budget: '-203248', remaining: '203248', percentage: 0, direction: 'outgoing' };
+    const sal = { categoryId: 't2', name: 'Salaire Lucas', real: '0', budget: '203300', remaining: '203300', percentage: 0, direction: 'incoming' };
+    const vide = { categoryId: 't3', name: 'Virement vide', real: '0', budget: '0', remaining: '0', percentage: 0, direction: 'incoming' };
+    const cjSansBudget = { categoryId: 't4', name: 'CJ sorties', real: '-203248', budget: '0', remaining: '-203248', percentage: 0, direction: 'outgoing' };
+    const savedBefore = [...saved];
+    const statsBefore = { ...stats };
+
+    const withTransfers = (lines: unknown[], extraSaved: Array<{ id: string; categoryId: string; amountAllocated: string }>) => {
+      breakdown.transfers = lines;
+      saved.push(...extraSaved);
+    };
+    afterEach(() => {
+      breakdown.transfers = [];
+      saved.splice(0, saved.length, ...savedBefore);
+      Object.assign(stats, statsBefore);
+    });
+
+    it('CA6 : un virement sortant est dans « Dépenses » (avec Reste), un entrant et un virement vide dans « Revenus »', () => {
+      withTransfers([cj, sal, vide], [
+        { id: 'b5', categoryId: 't1', amountAllocated: '-203248' },
+        { id: 'b6', categoryId: 't2', amountAllocated: '203300' },
+      ]);
+      renderScreen();
+      const spending = screen.getByRole('table', { name: 'Dépenses' });
+      const income = screen.getByRole('table', { name: 'Revenus' });
+      expect(within(spending).getByText('Virement CJ')).toBeTruthy();
+      expect(nbsp(within(spending).getByText('Virement CJ').closest('tr')!.textContent!)).toContain('2 032,48 € restants');
+      expect(within(income).queryByText('Virement CJ')).toBeNull();
+      expect(within(income).getByText('Salaire Lucas')).toBeTruthy();
+      expect(within(income).getByText('Virement vide')).toBeTruthy();
+      expect(within(income).getAllByRole('columnheader').map((h) => h.textContent)).not.toContain('Reste');
+    });
+
+    it('CA6 : un virement sortant dépassé affiche un dépassement, comme une dépense', () => {
+      withTransfers([{ ...cj, real: '-210000', remaining: '-6752', percentage: 103 }], [
+        { id: 'b5', categoryId: 't1', amountAllocated: '-203248' },
+      ]);
+      renderScreen();
+      const row = screen.getByText('Virement CJ').closest('tr')!;
+      expect(nbsp(within(row).getByTestId('over-budget').textContent!)).toContain('67,52 €');
+    });
+
+    it('CA7 : CJ budgété -2032,48, 2100,00 tapé : -2100,00 envoyé (et simulé), le reste de la liste inchangé', async () => {
+      withTransfers([cj], [{ id: 'b5', categoryId: 't1', amountAllocated: '-203248' }]);
+      renderScreen();
+      expect(field('Virement CJ').value).toBe('2032,48');
+      type('Virement CJ', '2100,00');
+      expect(simCalls[simCalls.length - 1].budgets).toContainEqual({ categoryId: 't1', amountAllocated: '-210000' });
+      await act(async () => {
+        fireEvent.click(screen.getByText('Enregistrer'));
+      });
+      const arg = saveMock.mock.calls[0][0];
+      expect(arg.data.budgets).toContainEqual({ categoryId: 't1', amountAllocated: '-210000' });
+      expect(arg.data.expectedBudgets).toContainEqual({ categoryId: 't1', amountAllocated: '-203248' });
+    });
+
+    it('CA7 : CJ sans budget mais avec des sorties (sens par le réel), 2100,00 : -2100,00', async () => {
+      withTransfers([cjSansBudget], []);
+      renderScreen();
+      type('CJ sorties', '2100,00');
+      await act(async () => {
+        fireEvent.click(screen.getByText('Enregistrer'));
+      });
+      expect(saveMock.mock.calls[0][0].data.budgets).toContainEqual({ categoryId: 't4', amountAllocated: '-210000' });
+    });
+
+    it('CA7 : un virement sans budget ni opération, 500,00 : +500,00', async () => {
+      withTransfers([vide], []);
+      renderScreen();
+      type('Virement vide', '500,00');
+      await act(async () => {
+        fireEvent.click(screen.getByText('Enregistrer'));
+      });
+      expect(saveMock.mock.calls[0][0].data.budgets).toContainEqual({ categoryId: 't3', amountAllocated: '50000' });
+    });
+
+    it('CA7 : retaper la valeur affichée de CJ n\'est pas un changement', () => {
+      withTransfers([cj], [{ id: 'b5', categoryId: 't1', amountAllocated: '-203248' }]);
+      renderScreen();
+      type('Virement CJ', '2032,48');
+      expect(screen.queryByText('Enregistrer')).toBeNull();
+    });
+
+    it('CA7 : un montant négatif tapé est accepté pour un virement, refusé pour une dépense', async () => {
+      withTransfers([vide], []);
+      renderScreen();
+      type('Virement vide', '-500');
+      expect(screen.queryByTestId('row-error')).toBeNull();
+      await act(async () => {
+        fireEvent.click(screen.getByText('Enregistrer'));
+      });
+      expect(saveMock.mock.calls[0][0].data.budgets).toContainEqual({ categoryId: 't3', amountAllocated: '-50000' });
+      cleanup();
+      renderScreen();
+      type('Courses', '-5');
+      expect(screen.getAllByTestId('row-error')).toHaveLength(1);
+    });
+
+    it('CA5 : les cartes reprennent les totaux du back (Revenus prévus sans CJ, Total budgété avec CJ, Non réparti = différence)', () => {
+      withTransfers([cj, sal], [
+        { id: 'b5', categoryId: 't1', amountAllocated: '-203248' },
+        { id: 'b6', categoryId: 't2', amountAllocated: '203300' },
+      ]);
+      Object.assign(stats, { plannedIncome: '203300', plannedExpenses: '253248' });
+      renderScreen();
+      const text = nbsp(document.body.textContent!);
+      expect(text).toContain('2 033,00 €');
+      expect(text).toContain('2 532,48 €');
+      expect(nbsp(screen.getByTestId('unallocated-figure').textContent!)).toBe('-499,48 €');
+    });
+
+    it('CA4 : modifier CJ agit sur le côté dépenses pour « Sans effet »', () => {
+      withTransfers([cj], [{ id: 'b5', categoryId: 't1', amountAllocated: '-203248' }]);
+      Object.assign(stats, { plannedIncome: '250000', plannedExpenses: '253248' });
+      simState.data = { ...simResult, delta: '0', incomeEffect: '0', expensesEffect: '0', plannedIncome: '250000', plannedExpenses: '103248' };
+      renderScreen();
+      type('Virement CJ', '1000,00');
+      expect(screen.getByTestId('no-effect')).toBeTruthy();
     });
   });
 

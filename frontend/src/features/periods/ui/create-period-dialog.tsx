@@ -19,7 +19,7 @@ import { usePeriodDraft } from '../api/use-period-draft';
 import { useCreatePeriod } from '../api/use-create-period';
 import { Plus, Calculator } from 'lucide-react';
 import { useFormatCurrency } from '@/shared/lib/use-format-currency';
-import { buildBudgets, displayValue, draftErrors, type Drafts, type SavedBudget } from '@/features/budgets/model/budget-draft';
+import { buildBudgets, directionsOf, displayValue, draftErrors, type Drafts, type SavedBudget } from '@/features/budgets/model/budget-draft';
 import { useLocale, useTranslations } from 'next-intl';
 import { toast } from 'sonner';
 import { isAxiosError } from 'axios';
@@ -47,6 +47,8 @@ export function CreatePeriodDialog() {
     () => (draft?.categoriesWithStats ?? []).map((c) => ({ categoryId: c.categoryId, amountAllocated: c.defaultAllocated })),
     [draft],
   );
+  // Sens des virements, tel que calculé par le back (jamais recalculé ici).
+  const directions = useMemo(() => directionsOf(draft?.categoriesWithStats ?? []), [draft]);
   const [injectRecurring, setInjectRecurring] = useState(true);
 
   // Sync internal state when draft changes OR when dialog opens
@@ -70,7 +72,7 @@ export function CreatePeriodDialog() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!activeAccountId) return;
-    const errors = Object.values(draftErrors(reference, drafts));
+    const errors = Object.values(draftErrors(reference, drafts, directions));
     if (errors.length > 0) {
       toast.error(errors.includes('unreadable') ? tc('invalid_amount') : tb('negative_amount'));
       return;
@@ -80,7 +82,7 @@ export function CreatePeriodDialog() {
       accountId: activeAccountId,
       startDate,
       endDate,
-      budgets: buildBudgets(reference, drafts),
+      budgets: buildBudgets(reference, drafts, directions),
       injectRecurring,
     }, {
       onSuccess: () => setOpen(false),

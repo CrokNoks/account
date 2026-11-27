@@ -26,6 +26,7 @@ import {
   SavedBudget,
   buildBudgets,
   changedDrafts,
+  directionsOf,
   displayValue,
   draftErrors,
 } from '../model/budget-draft';
@@ -83,11 +84,16 @@ export function BudgetsScreen() {
     () => frozen ?? (savedBudgets ?? NO_BUDGETS).map((b) => ({ categoryId: b.categoryId, amountAllocated: b.amountAllocated })),
     [frozen, savedBudgets],
   );
+  // Sens des virements, tel que calculé par le back (jamais recalculé ici) ; absent d'un back plus ancien : entrant.
+  const directions = useMemo(
+    () => directionsOf((breakdown?.transfers ?? []).map((l) => ({ categoryId: l.categoryId, direction: l.direction ?? 'incoming' }))),
+    [breakdown],
+  );
   const changed = useMemo(() => changedDrafts(reference, drafts), [reference, drafts]);
-  const errors = useMemo(() => draftErrors(reference, drafts), [reference, drafts]);
+  const errors = useMemo(() => draftErrors(reference, drafts, directions), [reference, drafts, directions]);
   const dirty = Object.keys(changed).length > 0;
   const hasErrors = Object.keys(errors).length > 0;
-  const full = useMemo(() => buildBudgets(reference, drafts), [reference, drafts]);
+  const full = useMemo(() => buildBudgets(reference, drafts, directions), [reference, drafts, directions]);
 
   const simulation = useForecastSimulation({
     accountId: activeAccountId,
@@ -202,6 +208,7 @@ export function BudgetsScreen() {
   };
 
   // « Sans effet » : le total prévu du côté change mais le prévu ne bouge pas (le réel est plus haut).
+  // Un virement est rangé du côté de son sens (`isIncome`) : modifier CJ agit sur le côté dépenses.
   const touches = (income: boolean) => lines.some((l) => l.isIncome === income && l.line.categoryId in changed);
   const noEffect =
     !!sim &&
@@ -221,7 +228,7 @@ export function BudgetsScreen() {
   const spendingRows = lines.filter((row) => !row.isRevenue);
   const revenueRows = lines.filter((row) => row.isRevenue);
 
-  // Une ligne de budget : la colonne « Reste » n'existe que pour les dépenses, épargne et virements (pas pour les revenus).
+  // Une ligne de budget : la colonne « Reste » n'existe que pour les dépenses, l'épargne et les virements sortants (pas pour les revenus).
   const renderRow = ({ line, isIncome }: BudgetRow, withRemaining: boolean) => {
     const over = isIncome ? BigInt(0) : overrunAmount(line);
     const id = line.categoryId;

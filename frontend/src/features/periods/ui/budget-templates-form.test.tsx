@@ -12,6 +12,8 @@ vi.mock('sonner', () => ({ toast: { error: vi.fn(), success: vi.fn() } }));
 const lines = [
   { categoryId: 'c1', name: 'Loyer', amount: '-80000', isProposal: false },
   { categoryId: 'c2', name: 'Abonnements', amount: '1250', isProposal: true },
+  { categoryId: 'c3', name: 'Virement CJ', amount: '-203248', isProposal: false, direction: 'outgoing' },
+  { categoryId: 'c4', name: 'Salaire', amount: '0', isProposal: false, direction: 'incoming' },
 ];
 vi.mock('../api/use-budget-templates', () => ({
   useBudgetTemplates: () => ({ data: lines, isLoading: false }),
@@ -32,7 +34,10 @@ function renderForm() {
 }
 
 describe('BudgetTemplatesForm', () => {
-  beforeEach(() => save.mockClear());
+  beforeEach(() => {
+    save.mockClear();
+    vi.mocked(toast.error).mockClear();
+  });
 
   it('shows every category and flags the unsaved proposal', () => {
     renderForm();
@@ -46,7 +51,7 @@ describe('BudgetTemplatesForm', () => {
     renderForm();
 
     const values = screen.getAllByRole('textbox').map((i) => (i as HTMLInputElement).value);
-    expect(values).toEqual(['800,00', '12,50']);
+    expect(values).toEqual(['800,00', '12,50', '2032,48', '']);
   });
 
   it('saves all lines at once, in cents', () => {
@@ -60,6 +65,8 @@ describe('BudgetTemplatesForm', () => {
       items: [
         { categoryId: 'c1', amount: '-80000' },
         { categoryId: 'c2', amount: '1250' },
+        { categoryId: 'c3', amount: '-203248' },
+        { categoryId: 'c4', amount: '0' },
       ],
     });
   });
@@ -73,7 +80,31 @@ describe('BudgetTemplatesForm', () => {
     expect(save.mock.calls[0][0].items).toEqual([
       { categoryId: 'c1', amount: '90000' },
       { categoryId: 'c2', amount: '1250' },
+      { categoryId: 'c3', amount: '-203248' },
+      { categoryId: 'c4', amount: '0' },
     ]);
+  });
+
+  it('virement sortant : le défaut modifié garde son sens (2100,00 tapé : -2100,00), un montant négatif tapé est accepté', () => {
+    renderForm();
+    const inputs = screen.getAllByRole('textbox');
+    fireEvent.change(inputs[2], { target: { value: '2100,00' } });
+    fireEvent.change(inputs[3], { target: { value: '-50' } });
+    fireEvent.click(screen.getByRole('button', { name: /enregistrer/i }));
+
+    expect(toast.error).not.toHaveBeenCalled();
+    expect(save.mock.calls[0][0].items.slice(2)).toEqual([
+      { categoryId: 'c3', amount: '-210000' },
+      { categoryId: 'c4', amount: '-5000' },
+    ]);
+  });
+
+  it('virement entrant sans défaut : un montant positif reste positif', () => {
+    renderForm();
+    fireEvent.change(screen.getAllByRole('textbox')[3], { target: { value: '500,00' } });
+    fireEvent.click(screen.getByRole('button', { name: /enregistrer/i }));
+
+    expect(save.mock.calls[0][0].items[3]).toEqual({ categoryId: 'c4', amount: '50000' });
   });
 
   it('refuses a newly typed negative amount, as the Budgets screen does', () => {

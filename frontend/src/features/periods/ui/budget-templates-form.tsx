@@ -6,7 +6,7 @@ import { useLocale, useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import { AmountInput } from '@/components/ui/amount-input';
 import { useAccountStore } from '@/features/accounts/model/use-account-store';
-import { buildBudgets, displayValue, draftErrors, type Drafts, type SavedBudget } from '@/features/budgets/model/budget-draft';
+import { buildBudgets, directionsOf, displayValue, draftErrors, type Drafts, type SavedBudget } from '@/features/budgets/model/budget-draft';
 import { useBudgetTemplates } from '../api/use-budget-templates';
 import { useSaveBudgetTemplates } from '../api/use-save-budget-templates';
 
@@ -25,6 +25,9 @@ export function BudgetTemplatesForm() {
     [lines],
   );
 
+  // Sens des virements, tel que calculé par le back (jamais recalculé ici).
+  const directions = useMemo(() => directionsOf(lines ?? []), [lines]);
+
   // Relu à chaque rechargement : une catégorie ajoutée/supprimée apparaît/disparaît.
   useEffect(() => {
     if (!lines) return;
@@ -35,7 +38,7 @@ export function BudgetTemplatesForm() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!activeAccountId || !lines) return;
-    const errors = Object.values(draftErrors(reference, drafts));
+    const errors = Object.values(draftErrors(reference, drafts, directions));
     if (errors.length > 0) {
       toast.error(errors.includes('unreadable') ? tc('invalid_amount') : tb('negative_amount'));
       return;
@@ -43,7 +46,7 @@ export function BudgetTemplatesForm() {
     save(
       {
         accountId: activeAccountId,
-        items: buildBudgets(reference, drafts).map((b) => ({ categoryId: b.categoryId, amount: b.amountAllocated })),
+        items: buildBudgets(reference, drafts, directions).map((b) => ({ categoryId: b.categoryId, amount: b.amountAllocated })),
       },
       {
         onSuccess: () => toast.success(t('saved')),

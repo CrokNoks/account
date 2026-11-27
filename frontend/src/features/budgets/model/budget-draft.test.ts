@@ -5,7 +5,10 @@ import {
   draftErrors,
   displayValue,
   hasChanges,
+  directionsOf,
 } from './budget-draft';
+
+const NONE = {};
 
 const reference = [
   { categoryId: 'a', amountAllocated: '40000' },
@@ -35,17 +38,17 @@ describe('changedDrafts', () => {
 
 describe('draftErrors', () => {
   it('flags unreadable and negative new values, not an untouched negative budget', () => {
-    expect(draftErrors(reference, { a: 'abc', c: '-5', b: '-80' })).toEqual({ a: 'unreadable', c: 'negative' });
+    expect(draftErrors(reference, { a: 'abc', c: '-5', b: '-80' }, NONE)).toEqual({ a: 'unreadable', c: 'negative' });
   });
 
   it('an empty field is valid (0)', () => {
-    expect(draftErrors(reference, { a: '' })).toEqual({});
+    expect(draftErrors(reference, { a: '' }, NONE)).toEqual({});
   });
 });
 
 describe('buildBudgets', () => {
   it('sends the complete list: untouched budgets, even negative, are sent as they were read', () => {
-    expect(buildBudgets(reference, { c: '300,50' })).toEqual([
+    expect(buildBudgets(reference, { c: '300,50' }, NONE)).toEqual([
       { categoryId: 'a', amountAllocated: '40000' },
       { categoryId: 'b', amountAllocated: '-8000' },
       { categoryId: 'c', amountAllocated: '30050' },
@@ -53,7 +56,7 @@ describe('buildBudgets', () => {
   });
 
   it('adds a budget for a category that had none, and sends 0 for an emptied field', () => {
-    expect(buildBudgets(reference, { z: '12', a: '' })).toEqual([
+    expect(buildBudgets(reference, { z: '12', a: '' }, NONE)).toEqual([
       { categoryId: 'a', amountAllocated: '0' },
       { categoryId: 'b', amountAllocated: '-8000' },
       { categoryId: 'c', amountAllocated: '25000' },
@@ -62,7 +65,7 @@ describe('buildBudgets', () => {
   });
 
   it('ignores a draft that came back to the saved amount', () => {
-    expect(buildBudgets(reference, { a: '400' })).toEqual(reference);
+    expect(buildBudgets(reference, { a: '400' }, NONE)).toEqual(reference);
   });
 });
 
@@ -88,8 +91,8 @@ describe('displayValue', () => {
     for (const locale of ['fr', 'en']) {
       const drafts = Object.fromEntries(reference.map((b) => [b.categoryId, displayValue(reference, {}, b.categoryId, locale)]));
       expect(changedDrafts(reference, drafts)).toEqual({});
-      expect(draftErrors(reference, drafts)).toEqual({});
-      expect(buildBudgets(reference, drafts)).toEqual(reference);
+      expect(draftErrors(reference, drafts, NONE)).toEqual({});
+      expect(buildBudgets(reference, drafts, NONE)).toEqual(reference);
     }
   });
 });
@@ -97,8 +100,8 @@ describe('displayValue', () => {
 describe('negative stored budget', () => {
   it('typing a new amount saves it positive; the other negative budgets stay as read', () => {
     const two = [...reference, { categoryId: 'd', amountAllocated: '-500' }];
-    expect(draftErrors(two, { b: '95,50' })).toEqual({});
-    expect(buildBudgets(two, { b: '95,50' })).toEqual([
+    expect(draftErrors(two, { b: '95,50' }, NONE)).toEqual({});
+    expect(buildBudgets(two, { b: '95,50' }, NONE)).toEqual([
       { categoryId: 'a', amountAllocated: '40000' },
       { categoryId: 'b', amountAllocated: '9550' },
       { categoryId: 'c', amountAllocated: '25000' },
@@ -107,6 +110,79 @@ describe('negative stored budget', () => {
   });
 
   it('a new negative typed amount is still refused', () => {
-    expect(draftErrors(reference, { b: '-95' })).toEqual({ b: 'negative' });
+    expect(draftErrors(reference, { b: '-95' }, NONE)).toEqual({ b: 'negative' });
+  });
+});
+
+// Saisie qui garde le sens d'un virement : `directions` vient du back (jamais recalculé ici).
+describe('sens d\'un virement', () => {
+  const cj = { categoryId: 'cj', amountAllocated: '-203248' };
+  const sal = { categoryId: 'sal', amountAllocated: '203300' };
+  const dir = { cj: 'outgoing', sal: 'incoming', vide: 'incoming', cjSansBudget: 'outgoing' } as const;
+  const ref = [cj, sal, { categoryId: 'a', amountAllocated: '40000' }];
+
+  const saved = (drafts: Record<string, string>, reference = ref) => {
+    const list = buildBudgets(reference, drafts, dir);
+    return Object.fromEntries(list.map((b) => [b.categoryId, b.amountAllocated]));
+  };
+
+  it('CJ budgété -2032,48, 2100,00 tapé : enregistré -2100,00', () => {
+    expect(saved({ cj: '2100,00' }).cj).toBe('-210000');
+  });
+
+  it('CJ sans budget cette période mais avec des sorties (sens par le réel), 2100,00 : -2100,00', () => {
+    expect(saved({ cjSansBudget: '2100,00' }, ref).cjSansBudget).toBe('-210000');
+  });
+
+  it('CJ budget remis à 0 puis 2100,00 ressaisi : -2100,00 (le réel négatif donne le sens)', () => {
+    const zero = [{ categoryId: 'cj', amountAllocated: '0' }];
+    expect(saved({ cj: '2100,00' }, zero).cj).toBe('-210000');
+  });
+
+  it('virement sans budget ni opération, 500,00 : +500,00', () => {
+    expect(saved({ vide: '500,00' }).vide).toBe('50000');
+  });
+
+  it('CJ, retaper la valeur affichée (2032,48) : pas un changement, budget renvoyé tel quel', () => {
+    const shown = displayValue(ref, {}, 'cj', 'fr');
+    expect(shown).toBe('2032,48');
+    expect(changedDrafts(ref, { cj: shown })).toEqual({});
+    expect(saved({ cj: shown }).cj).toBe('-203248');
+  });
+
+  it('un montant négatif tapé est accepté pour un virement et en fait un sortant', () => {
+    expect(draftErrors(ref, { cj: '-500', vide: '-500' }, dir)).toEqual({});
+    expect(saved({ cj: '-500' }).cj).toBe('-50000');
+    expect(saved({ vide: '-500' }).vide).toBe('-50000');
+  });
+
+  it('Salaire +2033,00, -100 tapé : accepté, devient sortant', () => {
+    expect(draftErrors(ref, { sal: '-100' }, dir)).toEqual({});
+    expect(saved({ sal: '-100' }).sal).toBe('-10000');
+  });
+
+  it('une catégorie qui n\'est pas un virement refuse toujours le négatif', () => {
+    expect(draftErrors(ref, { a: '-500' }, dir)).toEqual({ a: 'negative' });
+  });
+
+  it('Salaire entrant, 2500,00 tapé : reste positif', () => {
+    expect(saved({ sal: '2500,00' }).sal).toBe('250000');
+  });
+
+  it('CJ champ vidé : 0', () => {
+    expect(saved({ cj: '' }).cj).toBe('0');
+  });
+
+  it('une saisie illisible reste une erreur, même sur un virement', () => {
+    expect(draftErrors(ref, { cj: 'abc' }, dir)).toEqual({ cj: 'unreadable' });
+  });
+
+  it('directionsOf : ne garde que les lignes qui portent un sens', () => {
+    expect(
+      directionsOf([
+        { categoryId: 'cj', direction: 'outgoing' },
+        { categoryId: 'a' },
+      ]),
+    ).toEqual({ cj: 'outgoing' });
   });
 });
