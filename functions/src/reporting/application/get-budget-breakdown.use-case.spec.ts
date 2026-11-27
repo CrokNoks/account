@@ -178,6 +178,68 @@ describe('GetBudgetBreakdownUseCase', () => {
     expect(transfers[0].remaining).toBe('6000');
   });
 
+  describe("sens d'un virement (direction)", () => {
+    it('CJ -2032,48 non parti : sortant, reste 2032,48, 0 %', async () => {
+      budgets.findAllByPeriod.mockResolvedValue([budget('virement', -203248)]);
+      transactions.findAllByAccountUnpaginated.mockResolvedValue([]);
+      const { transfers } = await useCase.execute('acc-1', 'per-1');
+      expect(transfers[0]).toMatchObject({
+        direction: 'outgoing',
+        real: '0',
+        budget: '-203248',
+        remaining: '203248',
+        percentage: 0,
+      });
+    });
+
+    it('CJ parti plus que prévu (-2100,00) : dépassement -67,52, comme une dépense', async () => {
+      budgets.findAllByPeriod.mockResolvedValue([budget('virement', -203248)]);
+      transactions.findAllByAccountUnpaginated.mockResolvedValue([
+        tx(-210000, 'virement'),
+      ]);
+      const { transfers } = await useCase.execute('acc-1', 'per-1');
+      expect(transfers[0]).toMatchObject({
+        direction: 'outgoing',
+        remaining: '-6752',
+        percentage: 103,
+      });
+    });
+
+    it('Salaire +2033,00 arrivé : entrant, reste 0', async () => {
+      budgets.findAllByPeriod.mockResolvedValue([budget('virement', 203300)]);
+      transactions.findAllByAccountUnpaginated.mockResolvedValue([
+        tx(203300, 'virement'),
+      ]);
+      const { transfers } = await useCase.execute('acc-1', 'per-1');
+      expect(transfers[0]).toMatchObject({
+        direction: 'incoming',
+        remaining: '0',
+        percentage: 100,
+      });
+    });
+
+    it('sans budget, réel négatif : sortant ; sans budget ni opération : entrant', async () => {
+      budgets.findAllByPeriod.mockResolvedValue([]);
+      transactions.findAllByAccountUnpaginated.mockResolvedValue([
+        tx(-50000, 'virement'),
+      ]);
+      expect(
+        (await useCase.execute('acc-1', 'per-1')).transfers[0].direction,
+      ).toBe('outgoing');
+      transactions.findAllByAccountUnpaginated.mockResolvedValue([]);
+      expect(
+        (await useCase.execute('acc-1', 'per-1')).transfers[0].direction,
+      ).toBe('incoming');
+    });
+
+    it('seules les catégories de virement portent direction', async () => {
+      const r = await useCase.execute('acc-1', 'per-1');
+      expect(r.income[0].direction).toBeUndefined();
+      expect(r.expenses[0].direction).toBeUndefined();
+      expect(r.savings[0].direction).toBeUndefined();
+    });
+  });
+
   // Des budgets de dépenses sont enregistrés en négatif (même signe que le réel).
   it('reports no overrun when an expense equals its negative budget', async () => {
     budgets.findAllByPeriod.mockResolvedValue([

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { BudgetBreakdownResponse, BudgetCategoryBreakdown } from '@/features/reporting/model/types';
-import { sortBudgetLines } from './sort-budget-lines';
+import { sortBudgetLines, sortBudgetRows } from './sort-budget-lines';
 
 const line = (name: string, real: string, budget: string): BudgetCategoryBreakdown => ({
   categoryId: name,
@@ -80,5 +80,44 @@ describe('sortBudgetLines', () => {
       transfers: [line('Virement', '0', '0')],
     });
     expect(names(result)).toEqual(['A', 'Salaire', 'Virement']);
+  });
+});
+
+describe('sens d\'un virement (CA6)', () => {
+  const transfer = (name: string, real: string, budget: string, direction?: 'outgoing' | 'incoming') => ({
+    ...line(name, real, budget),
+    ...(direction ? { direction } : {}),
+  });
+
+  it('un virement sortant se classe avec les dépenses, par consommation ; un entrant va dans les revenus, par nom', () => {
+    const rows = sortBudgetRows({
+      income: [line('Prime', '0', '0')],
+      expenses: [line('Courses', '-2000', '10000'), line('Loisirs', '-9000', '10000')],
+      savings: [],
+      transfers: [
+        transfer('Salaire Lucas', '203300', '203300', 'incoming'),
+        transfer('Virement CJ', '-100000', '-203248', 'outgoing'),
+        transfer('Vide', '0', '0', 'incoming'),
+      ],
+    });
+    expect(rows.map((r) => r.line.name)).toEqual(['Loisirs', 'Virement CJ', 'Courses', 'Prime', 'Salaire Lucas', 'Vide']);
+    const flags = Object.fromEntries(rows.map((r) => [r.line.name, [r.isIncome, r.isRevenue]]));
+    expect(flags['Virement CJ']).toEqual([false, false]); // dépense : colonne Reste, dépassement possible
+    expect(flags['Salaire Lucas']).toEqual([true, true]); // revenu : Réel et Budget, sans Reste
+    expect(flags['Vide']).toEqual([true, true]);
+  });
+
+  it('un virement sortant sans budget avec du réel passe devant, comme une dépense sans budget', () => {
+    const rows = sortBudgetRows({
+      ...empty,
+      expenses: [line('A', '-2000', '10000')],
+      transfers: [transfer('Virement CJ', '-50000', '0', 'outgoing')],
+    });
+    expect(rows.map((r) => r.line.name)).toEqual(['Virement CJ', 'A']);
+  });
+
+  it('un virement sans direction (back plus ancien) est lu comme entrant', () => {
+    const rows = sortBudgetRows({ ...empty, transfers: [transfer('Virement', '0', '5000')] });
+    expect(rows[0]).toMatchObject({ isIncome: true, isRevenue: true });
   });
 });

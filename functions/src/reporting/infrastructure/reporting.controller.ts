@@ -239,6 +239,8 @@ class BudgetCategoryBreakdownDto implements BudgetCategoryBreakdown {
   @ApiProperty() budget: string;
   @ApiProperty() remaining: string;
   @ApiProperty() percentage: number;
+  @ApiProperty({ enum: ['outgoing', 'incoming'], required: false })
+  direction?: 'outgoing' | 'incoming';
 }
 
 class BudgetBreakdownResponseDto implements BudgetBreakdownResponse {

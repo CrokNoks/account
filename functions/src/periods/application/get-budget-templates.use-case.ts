@@ -4,6 +4,11 @@ import { ForbiddenError } from '../../shared/domain/errors';
 import { BudgetRepository } from '../../budgets/domain/budget.repository.interface';
 import { CategoryRepository } from '../../categories/domain/category.repository.interface';
 import { RecurringTransactionRepository } from '../../recurring/domain/recurring-transaction.repository.interface';
+import { CategoryType } from '../../categories/domain/category.entity';
+import {
+  transferDirection,
+  type TransferDirection,
+} from '../../reporting/domain/transfer-direction';
 import { proposedAmountForConfigScreen } from '../../budgets/domain/proposed-amount';
 
 export interface BudgetTemplateView {
@@ -11,6 +16,8 @@ export interface BudgetTemplateView {
   name: string;
   amount: string;
   isProposal: boolean;
+  /** Sens, pour les catégories de virement seulement : signe du montant proposé (sans budget, entrant). */
+  direction?: TransferDirection;
 }
 
 /**
@@ -49,6 +56,9 @@ export class GetBudgetTemplatesUseCase {
         name: cat.name,
         amount: proposed.toString(),
         isProposal: (amount === undefined || amount === 0n) && proposed !== 0n,
+        ...(cat.type === CategoryType.TRANSFER
+          ? { direction: transferDirection(proposed, 0n) }
+          : {}),
       };
     });
   }

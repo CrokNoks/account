@@ -67,7 +67,7 @@ describe('GetPeriodDraftUseCase', () => {
   function givenAccount(opts: {
     templates?: Array<{ categoryId: string; amount: bigint }>;
     stats?: unknown[];
-    categories?: Array<{ id: string; name: string }>;
+    categories?: Array<{ id: string; name: string; type?: string }>;
   }) {
     (periodRepo.findLastByAccount as jest.Mock).mockResolvedValue(null);
     (budgetRepo.findTemplatesByAccount as jest.Mock).mockResolvedValue(
@@ -130,6 +130,57 @@ describe('GetPeriodDraftUseCase', () => {
     const result = await useCase.execute('acc-1');
 
     expect(result.categoriesWithStats[0].defaultAllocated).toBe('0');
+  });
+
+  describe("sens d'un virement (direction)", () => {
+    const transfer = { id: 'cj', name: 'Virement CJ', type: 'transfer' };
+
+    it('défaut CJ -2032,48 : sortant, proposé tel quel avec son signe', async () => {
+      givenAccount({
+        categories: [transfer],
+        templates: [{ categoryId: 'cj', amount: -203248n }],
+      });
+      const c = (await useCase.execute('acc-1')).categoriesWithStats[0];
+      expect(c.direction).toBe('outgoing');
+      expect(c.defaultAllocated).toBe('-203248');
+    });
+
+    it('défaut positif : entrant', async () => {
+      givenAccount({
+        categories: [transfer],
+        templates: [{ categoryId: 'cj', amount: 203300n }],
+      });
+      expect(
+        (await useCase.execute('acc-1')).categoriesWithStats[0].direction,
+      ).toBe('incoming');
+    });
+
+    it('sans défaut : le signe de la moyenne du réel historique', async () => {
+      givenAccount({
+        categories: [transfer],
+        stats: [{ ...stat, categoryId: 'cj', avgReal: -203248n }],
+      });
+      expect(
+        (await useCase.execute('acc-1')).categoriesWithStats[0].direction,
+      ).toBe('outgoing');
+    });
+
+    it('sans défaut ni historique : entrant', async () => {
+      givenAccount({ categories: [transfer] });
+      expect(
+        (await useCase.execute('acc-1')).categoriesWithStats[0].direction,
+      ).toBe('incoming');
+    });
+
+    it("une catégorie qui n'est pas un virement n'a pas de direction", async () => {
+      givenAccount({
+        categories: [{ id: 'cat-1', name: 'Food', type: 'expense' }],
+        templates: [{ categoryId: 'cat-1', amount: -8000n }],
+      });
+      expect(
+        (await useCase.execute('acc-1')).categoriesWithStats[0].direction,
+      ).toBeUndefined();
+    });
   });
 
   it('keeps a negative configured amount', async () => {

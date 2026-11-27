@@ -4,6 +4,8 @@ export interface ReportingStats {
   plannedIncome: string;
   realExpenses: string;
   plannedExpenses: string;
+  /** Σ |budget| des dépenses et de l'épargne, sans les virements (rythme de dépense). Absent d'un back plus ancien : `plannedExpenses` en tenait lieu. */
+  plannedExpensesExTransfers?: string;
   realBankBalance: string;
   upcomingBalance: string;
   forecastBalance: string;
@@ -54,6 +56,8 @@ export interface BudgetCategoryBreakdown {
   remaining: string;
   percentage: number;
   color?: string;
+  /** Virements seulement : sens calculé par le back. Absent d'un back plus ancien : lu comme entrant. */
+  direction?: 'outgoing' | 'incoming';
 }
 
 export interface BudgetBreakdownResponse {

@@ -6,13 +6,17 @@ import en from '../../../../messages/en.json';
 import { SpendingPace } from './spending-pace';
 import { paceChartData, paceTicks, paceTooltipAmount, paceYMax } from '../model/pace-chart';
 
-const state = vi.hoisted(() => ({ pace: undefined as unknown, planned: '241000' as string | undefined }));
+const state = vi.hoisted(() => ({
+  pace: undefined as unknown,
+  planned: '241000' as string | undefined,
+  exTransfers: undefined as string | undefined,
+}));
 
 vi.mock('@/features/accounts/model/use-account-store', () => ({
   useAccountStore: () => ({ activeAccountId: 'a1', activePeriodId: 'p1' }),
 }));
 vi.mock('../api/use-reporting-stats', () => ({
-  useReportingStats: () => ({ isLoading: false, data: state.planned === undefined ? undefined : { plannedExpenses: state.planned } }),
+  useReportingStats: () => ({ isLoading: false, data: state.planned === undefined ? undefined : { plannedExpenses: state.planned, plannedExpensesExTransfers: state.exTransfers } }),
 }));
 vi.mock('../api/use-spending-pace', () => ({
   useSpendingPace: () => ({ isLoading: false, data: state.pace }),
@@ -40,6 +44,7 @@ describe('Rythme de dépense', () => {
   beforeEach(() => {
     state.pace = undefined;
     state.planned = '241000';
+    state.exTransfers = undefined;
   });
 
   it('dit « de plus » quand la période dépense plus que la précédente au même jour', () => {
@@ -86,6 +91,14 @@ describe('Rythme de dépense', () => {
 
     it('affiche « Budget {Total budgété} » quand il y a un budget', () => {
       state.pace = twoPeriods();
+      show();
+      expect(text(screen.getByTestId('pace-budget'))).toBe('Budget2410,00€');
+    });
+
+    it('la ligne Budget garde sa valeur hors virements (CA9) : CJ budgété ne la change pas', () => {
+      state.pace = twoPeriods();
+      state.planned = '444248'; // Total budgété avec CJ -2032,48
+      state.exTransfers = '241000';
       show();
       expect(text(screen.getByTestId('pace-budget'))).toBe('Budget2410,00€');
     });

@@ -2,6 +2,11 @@ import { Injectable, Logger } from '@nestjs/common';
 import { PeriodRepository } from '../domain/period.repository.interface';
 import { BudgetRepository } from '../../budgets/domain/budget.repository.interface';
 import { CategoryRepository } from '../../categories/domain/category.repository.interface';
+import { CategoryType } from '../../categories/domain/category.entity';
+import {
+  transferDirection,
+  type TransferDirection,
+} from '../../reporting/domain/transfer-direction';
 import { proposedAmountForPeriod } from '../../budgets/domain/proposed-amount';
 import {
   addDaysDateOnly,
@@ -19,6 +24,8 @@ export interface PeriodDraft {
     maxReal: string;
     avgReal: string;
     defaultAllocated: string;
+    /** Sens, pour les catégories de virement seulement : signe du montant par défaut, à défaut de la moyenne du réel, à défaut entrant. */
+    direction?: TransferDirection;
   }>;
 }
 
@@ -72,6 +79,9 @@ export class GetPeriodDraftUseCase {
         maxReal: max.toString(),
         avgReal: avg.toString(),
         defaultAllocated: defaultAllocated.toString(),
+        ...(cat.type === CategoryType.TRANSFER
+          ? { direction: transferDirection(defaultAllocated, avg) }
+          : {}),
       };
     });
 

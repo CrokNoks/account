@@ -52,6 +52,29 @@ describe('GetBudgetTemplatesUseCase', () => {
     ]);
   });
 
+  it('virements : direction donnée par le signe du montant proposé (défaut ou somme des récurrentes)', async () => {
+    categoryRepo.findAllByAccount.mockResolvedValue([
+      { id: 'cj', name: 'Virement CJ', type: 'transfer' },
+      { id: 'sal', name: 'Salaire', type: 'transfer' },
+      { id: 'vide', name: 'Vide', type: 'transfer' },
+      { id: 'dep', name: 'Courses', type: 'expense' },
+    ]);
+    budgetRepo.findTemplatesByAccount.mockResolvedValue([
+      { categoryId: 'cj', amount: -203248n },
+      { categoryId: 'dep', amount: -5000n },
+    ]);
+    recurringRepo.findAllByAccount.mockResolvedValue([rec('sal', 203300n)]);
+
+    const result = await useCase.execute('acc-1');
+
+    expect(result.map((r) => [r.categoryId, r.amount, r.direction])).toEqual([
+      ['cj', '-203248', 'outgoing'],
+      ['sal', '203300', 'incoming'],
+      ['vide', '0', 'incoming'],
+      ['dep', '-5000', undefined],
+    ]);
+  });
+
   it('writes nothing (read only)', async () => {
     await useCase.execute('acc-1');
     expect(Object.keys(budgetRepo)).toEqual(['findTemplatesByAccount']);

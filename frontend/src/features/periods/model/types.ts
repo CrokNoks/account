@@ -43,6 +43,8 @@ export interface PeriodDraft {
     minReal: string;
     maxReal: string;
     avgReal: string;
+    /** Virements seulement : sens calculé par le back. */
+    direction?: 'outgoing' | 'incoming';
   }>;
 }
 
@@ -92,6 +94,8 @@ export interface BudgetTemplateLine {
   name: string;
   amount: string;
   isProposal: boolean;
+  /** Virements seulement : sens calculé par le back. */
+  direction?: 'outgoing' | 'incoming';
 }
 
 export interface SaveBudgetTemplatesData {

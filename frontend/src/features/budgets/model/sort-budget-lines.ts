@@ -38,24 +38,28 @@ function compareConsumption(a: BudgetCategoryBreakdown, b: BudgetCategoryBreakdo
   return byName(a, b);
 }
 
-/** Liste unique de l'écran Budgets : dépenses et épargne par consommation, puis revenus, puis virements. */
+/** Liste unique de l'écran Budgets : dépenses, épargne et virements sortants par consommation, puis revenus et virements entrants par nom. */
 export function sortBudgetLines(breakdown: BudgetBreakdownResponse): BudgetCategoryBreakdown[] {
   return sortBudgetRows(breakdown).map((row) => row.line);
 }
 
 export interface BudgetRow {
   line: BudgetCategoryBreakdown;
-  /** Revenu ou virement : un restant négatif y est un surplus, pas un dépassement. */
+  /** Revenu ou virement entrant : un restant négatif y est un surplus, pas un dépassement. */
   isIncome: boolean;
-  /** Catégorie de revenu (affichée dans la section « Revenus ») ; false pour un virement. */
+  /** Ligne de la section « Revenus » (revenu ou virement entrant) : colonnes Réel et Budget, sans « Reste ». */
   isRevenue: boolean;
 }
 
+/** Sens d'un virement, calculé par le back (jamais ici) ; absent d'un back plus ancien : entrant. */
+const isOutgoing = (line: BudgetCategoryBreakdown) => line.direction === 'outgoing';
+
 export function sortBudgetRows(breakdown: BudgetBreakdownResponse): BudgetRow[] {
-  const spending = [...breakdown.expenses, ...breakdown.savings].sort(compareConsumption);
+  const outgoing = breakdown.transfers.filter(isOutgoing);
+  const incoming = breakdown.transfers.filter((line) => !isOutgoing(line));
+  const spending = [...breakdown.expenses, ...breakdown.savings, ...outgoing].sort(compareConsumption);
   return [
     ...spending.map((line) => ({ line, isIncome: false, isRevenue: false })),
-    ...[...breakdown.income].sort(byName).map((line) => ({ line, isIncome: true, isRevenue: true })),
-    ...[...breakdown.transfers].sort(byName).map((line) => ({ line, isIncome: true, isRevenue: false })),
+    ...[...breakdown.income, ...incoming].sort(byName).map((line) => ({ line, isIncome: true, isRevenue: true })),
   ];
 }

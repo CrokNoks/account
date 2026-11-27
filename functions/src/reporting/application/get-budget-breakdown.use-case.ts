@@ -7,6 +7,10 @@ import { CategoryType } from '../../categories/domain/category.entity';
 import { ensureBelongsToAccount } from '../../shared/domain/account-ownership';
 import { roundedPercentage } from '../../shared/domain/percentage';
 import { filterPeriodWindow, periodLoadEndDate } from '../domain/period-window';
+import {
+  transferDirection,
+  type TransferDirection,
+} from '../domain/transfer-direction';
 
 export interface BudgetCategoryBreakdown {
   categoryId: string;
@@ -15,6 +19,8 @@ export interface BudgetCategoryBreakdown {
   budget: string;
   remaining: string;
   percentage: number;
+  /** Sens, pour les catégories de type virement seulement (calculé ici, le front ne le recalcule pas). */
+  direction?: TransferDirection;
 }
 
 export interface BudgetBreakdownResponse {
@@ -79,17 +85,23 @@ export class GetBudgetBreakdownUseCase {
       // Le budget est enregistré avec l'un ou l'autre signe (les dépenses sont
       // parfois en négatif) : on compare toujours à sa valeur absolue.
       const limit = budget < BigInt(0) ? -budget : budget;
-      // Dépenses et épargne : réel négatif => |budget| + réel.
-      // Revenus et virements (comptés comme des revenus, cf. docs/reporting.md) :
-      // réel positif => reste à percevoir = |budget| - réel.
-      const remaining =
-        cat.type === CategoryType.INCOME || cat.type === CategoryType.TRANSFER
-          ? limit - real
-          : limit + real;
+      // Un virement sortant se lit comme une dépense, un virement entrant comme un revenu.
+      const direction =
+        cat.type === CategoryType.TRANSFER
+          ? transferDirection(budget, real)
+          : undefined;
+      const asExpense =
+        cat.type === CategoryType.EXPENSE ||
+        cat.type === CategoryType.SAVINGS ||
+        direction === 'outgoing';
+      // Dépenses, épargne, virements sortants : réel négatif => |budget| + réel.
+      // Revenus et virements entrants : réel positif => reste à percevoir = |budget| - réel.
+      const remaining = asExpense ? limit + real : limit - real;
       let percentage = 0;
       if (limit !== BigInt(0)) {
         percentage = roundedPercentage(real, limit);
-        if (cat.type === CategoryType.EXPENSE) percentage = 0 - percentage; // invert for expenses
+        if (cat.type === CategoryType.EXPENSE || direction === 'outgoing')
+          percentage = 0 - percentage; // invert for expenses
       }
 
       const item: BudgetCategoryBreakdown = {
@@ -99,6 +111,7 @@ export class GetBudgetBreakdownUseCase {
         budget: budget.toString(),
         remaining: remaining.toString(),
         percentage,
+        ...(direction ? { direction } : {}),
       };
 
       if (cat.type === CategoryType.INCOME) result.income.push(item);

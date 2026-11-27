@@ -28,8 +28,10 @@ export function SpendingPace() {
   const zero = BigInt(0);
   const hasPrevious = pace.previousPeriodId !== null;
   const data = paceChartData(pace.points);
-  // Ligne « Budget » : Total budgété de la période (même chiffre que l'écran Budgets) ; absente sans budget.
-  const budget = stats && BigInt(stats.plannedExpenses) > zero ? stats.plannedExpenses : null;
+  // Ligne « Budget » : budget des dépenses et de l'épargne, hors virements (le rythme ne compte pas les virements) ;
+  // absente sans budget. Un back plus ancien n'a pas le champ : `plannedExpenses` ne contenait pas les virements.
+  const spendingBudget = stats ? (stats.plannedExpensesExTransfers ?? stats.plannedExpenses) : undefined;
+  const budget = spendingBudget !== undefined && BigInt(spendingBudget) > zero ? spendingBudget : null;
   const budgetLabel = budget === null ? null : `${t('pace_budget')} ${formatCurrency(budget)}`;
   const dateOf = (day: number) => {
     const date = data.find((p) => p.day === day)?.date;
