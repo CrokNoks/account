@@ -751,14 +751,6 @@ describe('planPeriodSwitches', () => {
       });
       expect(result.removedPendingIds).toEqual([]);
     });
-
-    it('keeps ids of opened periods stable', () => {
-      const result = run(
-        [pendingBill('p1', '2026-11-12')],
-        [line('l1', '2026-11-12')],
-      );
-      expect(result.switches[0].opened.id).toBe(result.windows[1].id);
-    });
   });
 
   describe('échéance d’origine (règle c)', () => {

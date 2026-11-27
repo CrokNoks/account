@@ -147,8 +147,6 @@ export interface SkippedTrigger {
 export interface PeriodSwitchPlan {
   switches: PlannedSwitch[];
   skipped: SkippedTrigger[];
-  /** Fenêtres contiguës de l'ancienne active et des périodes ouvertes (fins définitives). */
-  windows: PeriodWindow[];
   /** Import avec bascule : `pending` récurrentes à supprimer (équivalent déjà importé). */
   removedPendingIds: string[];
   /** Import avec bascule : récurrentes encore `pending` datées dans la période close. */
@@ -483,19 +481,9 @@ function simulate(input: PlanInput, pass: Pass): PeriodSwitchPlan {
   // Seule la dernière bascule d'un lot crée la prochaine paie.
   for (const sw of switches.slice(0, -1)) sw.nextPaie = null;
 
-  const windows: PeriodWindow[] = [];
-  if (switches.length > 0 && input.active) {
-    windows.push({
-      id: input.active.id,
-      start: input.active.start,
-      end: switches[0].closed.end,
-    });
-    windows.push(...switches.map((s) => s.opened));
-  }
   return {
     switches,
     skipped,
-    windows,
     removedPendingIds: [],
     remainingPending: 0,
   };
