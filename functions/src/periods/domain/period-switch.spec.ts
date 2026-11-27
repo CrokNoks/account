@@ -4,7 +4,6 @@ import {
   PlanInput,
   SwitchRecurring,
   SwitchTrigger,
-  periodIdOnDate,
   findTriggerSalary,
   planPeriodSwitches,
 } from './period-switch';
@@ -365,17 +364,6 @@ describe('planPeriodSwitches', () => {
     });
   });
 
-  describe('windows and period ids', () => {
-    it('gives each date the period that contains it, the old active one included', () => {
-      const result = plan({ triggers: [trigger('2026-11-28')] });
-      expect(periodIdOnDate(result.windows, d('2026-11-27'))).toBe('p-active');
-      expect(periodIdOnDate(result.windows, d('2026-11-28'))).toBe('p-new-1');
-      expect(periodIdOnDate(result.windows, d('2026-12-27'))).toBe('p-new-1');
-      expect(periodIdOnDate(result.windows, d('2026-12-28'))).toBeNull();
-      expect(periodIdOnDate(result.windows, d('2026-09-30'))).toBeNull();
-    });
-  });
-
   describe("mémoire de bascule : fin d'avant de la période close", () => {
     it('keeps the real end of the active period (30 Nov) although the close ends it on the 24th', () => {
       const result = plan({
@@ -466,9 +454,6 @@ describe('planPeriodSwitches', () => {
         '2026-11-27',
         '2026-12-27',
       ]);
-      expect(periodIdOnDate(result.windows, d('2026-10-28'))).toBe(
-        result.switches[1].opened.id,
-      );
     });
 
     it('only the last switch of the batch creates the next salary', () => {

@@ -187,9 +187,7 @@ describe('ApplyPeriodSwitchService', () => {
     expect(
       switches[0].budgets.map((b) => [b.categoryId, b.amountAllocated]),
     ).toEqual([[BILLS, -30000n]]);
-    expect(written.find((t) => t.id === 't1')?.periodId).toBe(
-      switches[0].opened.id,
-    );
+    expect(written.find((t) => t.id === 't1')?.periodId).toBeUndefined();
     expect(result.written).toBe(true);
     expect(result.periodSwitch).toMatchObject({
       closed: { endDate: '2026-11-27' },
@@ -352,7 +350,7 @@ describe('ApplyPeriodSwitchService', () => {
       expect(next.map((t) => iso(t.date))).toEqual(['2026-12-28']);
     });
 
-    it('update mode: only the salary taken out gets the new period, other lines of the batch keep theirs', async () => {
+    it('update mode: no line gets a period id: the dates decide', async () => {
       const result = await service.process({
         accountId: ACC,
         mode: 'update',
@@ -361,18 +359,14 @@ describe('ApplyPeriodSwitchService', () => {
           tx('b1', {
             categoryId: BILLS,
             date: d('2026-12-05'),
-            periodId: 'p-other',
           }),
           tx('b2', { categoryId: BILLS, date: d('2026-12-06') }),
         ],
         leavingPendingIds: new Set(['t1']),
       });
 
-      const [, , switches, written] = lastWrite();
-      const opened = switches[0].opened.id;
-      expect(written.find((t) => t.id === 't1')!.periodId).toBe(opened);
-      expect(written.find((t) => t.id === 'b1')!.periodId).toBe('p-other');
-      expect(written.find((t) => t.id === 'b2')!.periodId).toBeUndefined();
+      const [, , , written] = lastWrite();
+      expect(written.every((t) => t.periodId === undefined)).toBe(true);
       expect(result.periodSwitch).not.toBeNull();
     });
 
@@ -496,11 +490,7 @@ describe('ApplyPeriodSwitchService', () => {
         '2026-10-28',
         '2026-11-28',
       ]);
-      const periodOf = (id: string) =>
-        written.find((t) => t.id === id)?.periodId;
-      expect(periodOf('t1')).toBe(switches[0].opened.id);
-      expect(periodOf('t2')).toBe(switches[1].opened.id);
-      expect(periodOf('t3')).toBe(switches[2].opened.id);
+      expect(written.every((t) => t.periodId === undefined)).toBe(true);
       expect(result.periodSwitch?.count).toBe(3);
       // seule la dernière bascule crée la prochaine paie en pending
       const pendingSalaries = generated.filter(

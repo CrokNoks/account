@@ -5,7 +5,6 @@ import { extractPeriodSwitch } from '../model/period-switch';
 export interface CreateTransactionCommand {
   accountId: string;
   categoryId: string | null;
-  periodId?: string | null;
   date: string;
   description: string;
   amount: string;

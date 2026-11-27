@@ -13,7 +13,6 @@ import {
   PeriodSwitchPlan,
   SWITCH_THRESHOLD_DAYS,
   planPeriodSwitches,
-  periodIdOnDate,
 } from '../domain/period-switch';
 import {
   startOfMonthDateOnly,
@@ -281,26 +280,11 @@ export class ApplyPeriodSwitchService {
         },
       });
     const generated = plan.switches.flatMap((sw) => [
-      ...sw.injected.map((o) =>
-        asRecurring(o).update({
-          periodId: periodIdOnDate(plan.windows, o.date) ?? sw.opened.id,
-        }),
-      ),
-      // Hors fenêtre par ses dates (lendemain de la fin) mais rattachée à la période ouverte.
-      ...(sw.nextPaie
-        ? [asRecurring(sw.nextPaie).update({ periodId: sw.opened.id })]
-        : []),
+      ...sw.injected.map((o) => asRecurring(o)),
+      ...(sw.nextPaie ? [asRecurring(sw.nextPaie)] : []),
     ]);
-    // Création et import : lignes nouvelles, rattachées à la période de leur date. Modification :
-    // seules les paies sorties du pending changent de période ; les autres lignes du lot gardent
-    // la leur (le rattachement par date, côté SQL, reprend ce qui concerne la nouvelle période).
-    const lines = transactions.map((tx) => {
-      if (mode === 'update' && !candidates.some((c) => c.id === tx.id)) {
-        return tx;
-      }
-      const periodId = periodIdOnDate(plan.windows, tx.date);
-      return periodId ? tx.update({ periodId }) : tx;
-    });
+    // Le rattachement à une période se déduit des dates : les lignes sont écrites telles quelles.
+    const lines = transactions;
 
     // Les lignes générées sont passées à part : si la bascule est perdue, seules celles
     // de la requête sont écrites (sinon double compte avec celles du gagnant).

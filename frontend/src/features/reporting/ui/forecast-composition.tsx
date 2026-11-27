@@ -16,7 +16,6 @@ const segmentColor: Record<CompositionSegment['key'], string> = {
   card: 'bg-amber-500',
   bills: 'bg-sky-500',
   reports: 'bg-rose-400',
-  arrived: 'bg-emerald-500',
   budget: 'bg-slate-400',
 };
 

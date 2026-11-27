@@ -7,7 +7,7 @@ import { TransactionTable } from './transaction-table';
 import { TransactionMobileList } from './transaction-mobile-list';
 
 const tx = (id: string, reconciled: boolean, pending: boolean) => ({
-  id, accountId: 'a', categoryId: null, periodId: null, date: '2026-11-02', description: `ligne ${id}`,
+  id, accountId: 'a', categoryId: null, date: '2026-11-02', description: `ligne ${id}`,
   amount: '-1000', reconciled, pending, notes: null, metadata: null, tagIds: [], createdAt: '', updatedAt: '',
 });
 const rows = [tx('cb', false, false), tx('fa', false, true), tx('ok', true, false), tx('pr', true, true)];

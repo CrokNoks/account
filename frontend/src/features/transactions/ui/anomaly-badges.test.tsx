@@ -7,7 +7,7 @@ import { AnomalyBadges } from './anomaly-badges';
 import { TransactionTable } from './transaction-table';
 
 const tx = (id: string) => ({
-  id, accountId: 'a', categoryId: null, periodId: null, date: '2026-11-02', description: `ligne ${id}`,
+  id, accountId: 'a', categoryId: null, date: '2026-11-02', description: `ligne ${id}`,
   amount: '-1000', reconciled: false, pending: false, notes: null, metadata: null, tagIds: [],
   createdAt: '', updatedAt: '',
 });

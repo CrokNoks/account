@@ -224,15 +224,6 @@ function monthKey(date: Date): string {
   return toDateOnly(date).slice(0, 7);
 }
 
-/** Id de la période dont la fenêtre contient `date`, sinon null. */
-export function periodIdOnDate(
-  windows: PeriodWindow[],
-  date: Date,
-): string | null {
-  const found = windows.find((w) => date >= w.start && date <= w.end);
-  return found ? found.id : null;
-}
-
 interface Pass {
   newId: () => string;
   /** Index de la dernière bascule (import) : les autres n'injectent rien. */

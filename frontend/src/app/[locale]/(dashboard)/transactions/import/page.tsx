@@ -5,7 +5,6 @@ import Papa from 'papaparse';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { useAccountStore } from '@/features/accounts/model/use-account-store';
-import { usePeriods } from '@/features/budgets/api/use-periods';
 import { useBulkCreateTransactions } from '@/features/transactions/api/use-bulk-create-transactions';
 import { usePeriodSwitchNotice } from '@/features/transactions/model/use-period-switch-notice';
 import { Loader2, ArrowRight, ArrowLeft, CheckCircle2 } from 'lucide-react';
@@ -41,7 +40,6 @@ export default function ImportTransactionsPage() {
   const t = useTranslations('Import');
   const router = useRouter();
   const { activeAccountId } = useAccountStore();
-  const { data: periods } = usePeriods(activeAccountId);
   const { mutate: bulkCreate, isPending } = useBulkCreateTransactions();
   const notifyPeriodSwitch = usePeriodSwitchNotice();
   
@@ -71,7 +69,6 @@ export default function ImportTransactionsPage() {
   // One id per import run (analysis of a file) : an answer of an older run, or of another account, is dropped.
   const sessionRef = useRef(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const activePeriod = periods?.find(p => p.isActive);
 
   // Marks and rows belong to the account they were read for: changing account starts over.
   useEffect(() => {
@@ -279,7 +276,6 @@ export default function ImportTransactionsPage() {
       description: item.description,
       amount: toCents(item.amount),
       categoryId: item.categoryId || null,
-      periodId: activePeriod?.id || null,
       reconciled: true,
     }));
 

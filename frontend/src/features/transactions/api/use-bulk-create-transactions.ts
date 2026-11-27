@@ -6,7 +6,6 @@ export interface BulkCreateTransactionsData {
   accountId: string;
   transactions: Array<{
     categoryId: string | null;
-    periodId?: string | null;
     date: string;
     description: string;
     amount: string;

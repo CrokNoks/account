@@ -20,14 +20,6 @@ vi.mock('@/shared/api/api-client', () => ({ apiClient: { get: vi.fn(), post: vi.
 vi.mock('@/features/categories/api/use-categories', () => ({
   useCategories: () => ({ data: [] }),
 }));
-vi.mock('@/features/budgets/api/use-periods', () => ({
-  usePeriods: () => ({
-    data: [
-      { id: 'per-old', isActive: false },
-      { id: 'per-1', isActive: true },
-    ],
-  }),
-}));
 vi.mock('@/features/transactions/api/use-bulk-create-transactions', () => ({
   useBulkCreateTransactions: () => ({ mutate: bulkCreate, isPending: false }),
 }));
@@ -37,7 +29,6 @@ type ImportedLine = {
   description: string;
   amount: string;
   categoryId: string | null;
-  periodId: string | null;
   reconciled: boolean;
 };
 
@@ -123,7 +114,6 @@ describe('CSV import page', () => {
         description: 'CB CARREFOUR',
         amount: '-4250',
         categoryId: null,
-        periodId: 'per-1',
         reconciled: true,
       },
       expect.objectContaining({ date: '2026-03-02', amount: '250000' }),

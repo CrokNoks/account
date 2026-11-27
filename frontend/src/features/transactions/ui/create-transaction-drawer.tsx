@@ -9,7 +9,6 @@ import {
 } from "@/components/ui/sheet";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAccountStore } from '@/features/accounts/model/use-account-store';
-import { usePeriods } from '@/features/budgets/api/use-periods';
 import { useCreateTransaction } from '../api/use-create-transaction';
 import { useCreateTransfer } from '../api/use-create-transfer';
 import { useUiStore } from '@/shared/model/use-ui-store';
@@ -27,7 +26,6 @@ export function CreateTransactionDrawer() {
   const tc = useTranslations('Common');
   const { activeAccountId } = useAccountStore();
   const { isCreateTransactionDrawerOpen, setCreateTransactionDrawerOpen } = useUiStore();
-  const { data: periods } = usePeriods(activeAccountId);
   const { mutate: createTransaction, isPending: isCreatingTransaction } = useCreateTransaction();
   const notifyPeriodSwitch = usePeriodSwitchNotice();
   const { mutate: createTransfer, isPending: isCreatingTransfer } = useCreateTransfer();
@@ -41,7 +39,6 @@ export function CreateTransactionDrawer() {
   // Verrou synchrone : isPending n'est vrai qu'au rendu suivant, deux appuis rapprochés passeraient.
   const submitLock = useRef(false);
 
-  const activePeriod = periods?.find(p => p.isActive);
 
   const handleOpenChange = (open: boolean) => {
     setCreateTransactionDrawerOpen(open);
@@ -100,7 +97,6 @@ export function CreateTransactionDrawer() {
         description: values.description,
         categoryId: values.categoryId || null,
         amount,
-        periodId: activePeriod?.id,
         pending: values.pending,
         tagIds: values.tagIds,
       }, {

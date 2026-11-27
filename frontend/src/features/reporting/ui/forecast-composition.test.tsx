@@ -18,7 +18,6 @@ const base = {
   cardCount: 1,
   billsTotal: '-8000',
   reportsTotal: '0',
-  arrivedAfterEnd: '0',
   budgetRemaining: '-7000',
   expectedIncome: '0',
 };
@@ -95,34 +94,32 @@ describe('Composition du prévu', () => {
     expect(screen.getByTestId('composition-lines')).toBeTruthy();
   });
 
-  it('affiche les reports et l\'arrivé après la fin dans la barre quand ils ne sont pas nuls', () => {
-    state.stats = { ...base, realBankBalance: '320000', reportsTotal: '-15000', arrivedAfterEnd: '-30000', forecastBalance: '255000' };
+  it('affiche les reports dans la barre quand ils ne sont pas nuls', () => {
+    state.stats = { ...base, realBankBalance: '320000', reportsTotal: '-15000', forecastBalance: '285000' };
     show();
 
     const bar = screen.getByTestId('composition-bar');
     expect(text(within(bar).getByText('Reports').closest('li')!)).toContain('150,00');
-    expect(text(within(bar).getByText('Arrivé après la fin').closest('li')!)).toContain('300,00');
     expect(screen.getByTestId('segment-reports')).toBeTruthy();
-    expect(screen.getByTestId('segment-arrived')).toBeTruthy();
+    expect(screen.queryByText('Arrivé après la fin')).toBeNull();
   });
 
-  it('masque les lignes reports et arrivé après la fin quand elles valent 0', () => {
+  it('masque la ligne reports quand elle vaut 0', () => {
     state.stats = { ...base, expectedIncome: '50000', forecastBalance: '320000' };
     show();
 
     const lines = screen.getByTestId('composition-lines');
     expect(within(lines).queryByTestId('line-reports')).toBeNull();
-    expect(within(lines).queryByTestId('line-arrived')).toBeNull();
   });
 
-  it('passe en lignes signées quand les reports sont positifs, avec les deux lignes', () => {
-    state.stats = { ...base, reportsTotal: '20000', arrivedAfterEnd: '-30000', expectedIncome: '30000', forecastBalance: '305000' };
+  it('passe en lignes signées quand les reports sont positifs', () => {
+    state.stats = { ...base, reportsTotal: '20000', expectedIncome: '30000', forecastBalance: '335000' };
     show();
 
     const lines = screen.getByTestId('composition-lines');
     expect(screen.queryByTestId('composition-bar')).toBeNull();
     expect(text(within(lines).getByTestId('line-reports'))).toContain('200,00');
-    expect(text(within(lines).getByTestId('line-arrived'))).toContain('-300,00');
+    expect(within(lines).queryByTestId('line-arrived')).toBeNull();
   });
 
   it('est traduit en anglais', () => {

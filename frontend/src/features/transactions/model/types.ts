@@ -2,7 +2,6 @@ export interface Transaction {
   id: string;
   accountId: string;
   categoryId: string | null;
-  periodId: string | null;
   date: string;
   description: string;
   amount: string;
