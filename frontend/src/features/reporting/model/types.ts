@@ -19,6 +19,8 @@ export interface ReportingStats {
   /** -(revenus pointés après la fin d'une période active) : négatif ou nul. */
   arrivedAfterEnd?: string;
   budgetRemaining: string;
+  /** Reste par catégorie du « budget restant » (centimes, positif), tel que fourni par le back. Absent d'un back plus ancien. */
+  budgetRemainingDetail?: { categoryId: string; name: string; remaining: string }[];
   expectedIncome: string;
 }
 

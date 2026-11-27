@@ -79,6 +79,7 @@
     "composition_reports": "Reports",
     "composition_arrived": "Arrivé après la fin",
     "composition_budget": "Budget restant",
+    "composition_budget_detail": "Budget restant par catégorie",
     "composition_income": "Revenus attendus",
     "composition_forecast": "Prévu",
     "pace_title": "Rythme de dépense",

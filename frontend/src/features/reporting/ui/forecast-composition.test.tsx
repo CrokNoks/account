@@ -1,4 +1,4 @@
-import { cleanup, render, screen, within } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { NextIntlClientProvider } from 'next-intl';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import fr from '../../../../messages/fr.json';
@@ -143,5 +143,74 @@ describe('Composition du prévu', () => {
     const lines = text(screen.getByTestId('composition-lines'));
     expect(lines).toContain('90071992547409,95€');
     expect(lines).toContain('90071992547409,93€');
+  });
+
+  describe('détail du budget restant', () => {
+    const detail = [
+      { categoryId: 'c1', name: 'Courses', remaining: '4000' },
+      { categoryId: 'c2', name: 'Loisirs', remaining: '3000' },
+    ];
+
+    it('masque le détail par défaut puis le déplie et le replie au toucher (barre)', () => {
+      state.stats = { ...base, budgetRemainingDetail: detail };
+      show();
+
+      expect(screen.queryByTestId('budget-detail')).toBeNull();
+      fireEvent.click(screen.getByTestId('budget-toggle'));
+      const panel = screen.getByTestId('budget-detail');
+      expect(within(panel).getAllByRole('listitem').map((li) => text(li))).toEqual(['Courses40,00€', 'Loisirs30,00€']);
+      fireEvent.click(screen.getByTestId('budget-toggle'));
+      expect(screen.queryByTestId('budget-detail')).toBeNull();
+    });
+
+    it('marche en lignes signées', () => {
+      state.stats = { ...base, expectedIncome: '50000', forecastBalance: '320000', budgetRemainingDetail: detail };
+      show();
+
+      fireEvent.click(within(screen.getByTestId('line-budget')).getByTestId('budget-toggle'));
+      expect(text(screen.getByTestId('budget-detail'))).toContain('Courses40,00€');
+    });
+
+    it('est réservé au mobile : volet et bouton neutralisés dès lg', () => {
+      state.stats = { ...base, budgetRemainingDetail: detail };
+      show();
+
+      fireEvent.click(screen.getByTestId('budget-toggle'));
+      const toggle = screen.getByTestId('budget-toggle');
+      expect(toggle.className.split(' ')).toContain('lg:hidden');
+      // Sur bureau : ligne simple, sans bouton ni aria-expanded.
+      const desktop = screen.getByTestId('budget-row-desktop');
+      expect(desktop.className.split(' ')).toContain('max-lg:hidden');
+      expect(desktop.closest('button')).toBeNull();
+      expect(desktop.querySelector('[aria-expanded]')).toBeNull();
+      expect(desktop.hasAttribute('aria-expanded')).toBe(false);
+      expect(screen.getByTestId('budget-detail').className.split(' ')).toContain('lg:hidden');
+    });
+
+    it('n\'est pas cliquable avec un budget restant à 0', () => {
+      state.stats = { ...base, budgetRemaining: '0', forecastBalance: '277000', budgetRemainingDetail: detail };
+      show();
+
+      expect(screen.queryByTestId('budget-toggle')).toBeNull();
+    });
+
+    it('n\'est pas cliquable sans détail ou avec un détail vide', () => {
+      show();
+      expect(screen.queryByTestId('budget-toggle')).toBeNull();
+      cleanup();
+      state.stats = { ...base, budgetRemainingDetail: [] };
+      show();
+      expect(screen.queryByTestId('budget-toggle')).toBeNull();
+    });
+
+    it('affiche la liste telle quelle, sans tri ni filtre, et traduite en anglais', () => {
+      state.stats = { ...base, budgetRemainingDetail: [detail[1], detail[0]] };
+      show('en');
+
+      fireEvent.click(screen.getByTestId('budget-toggle'));
+      const panel = screen.getByTestId('budget-detail');
+      expect(within(panel).getAllByRole('listitem').map((li) => li.textContent)).toEqual([expect.stringContaining('Loisirs'), expect.stringContaining('Courses')]);
+      expect(panel.getAttribute('aria-label')).toBe('Remaining budget by category');
+    });
   });
 });

@@ -7,6 +7,8 @@ import { useReportingStats } from '../api/use-reporting-stats';
 import { compositionView, CompositionRow, CompositionSegment } from '../model/forecast-composition';
 import { useTranslations } from 'next-intl';
 import { cn } from '@/lib/utils';
+import { useState, type ReactNode } from 'react';
+import type { ReportingStats } from '../model/types';
 
 const segmentColor: Record<CompositionSegment['key'], string> = {
   forecast: 'bg-primary',
@@ -16,6 +18,63 @@ const segmentColor: Record<CompositionSegment['key'], string> = {
   arrived: 'bg-emerald-500',
   budget: 'bg-slate-400',
 };
+
+/**
+ * Ligne « Budget restant » : sur mobile, cliquable (volet par catégorie) si le budget restant n'est pas nul et si le back
+ * fournit un détail non vide. Sur bureau (`lg:`), ni clic ni volet. La liste est affichée telle quelle (aucun calcul).
+ */
+function BudgetLine({
+  detail,
+  active,
+  className,
+  testId,
+  children,
+}: {
+  detail: ReportingStats['budgetRemainingDetail'];
+  active: boolean;
+  className?: string;
+  testId?: string;
+  children: ReactNode;
+}) {
+  const t = useTranslations('Dashboard');
+  const formatCurrency = useFormatCurrency();
+  const [open, setOpen] = useState(false);
+  const expandable = active && !!detail && detail.length > 0;
+  const rowClass = cn('flex items-center justify-between gap-2 max-lg:min-h-12', className);
+  if (!expandable) {
+    return (
+      <li data-testid={testId} className={rowClass}>
+        {children}
+      </li>
+    );
+  }
+  return (
+    <li data-testid={testId}>
+      <button
+        type="button"
+        data-testid="budget-toggle"
+        aria-expanded={open}
+        onClick={() => setOpen((o) => !o)}
+        className={cn(rowClass, 'w-full text-left lg:hidden')}
+      >
+        {children}
+      </button>
+      <div data-testid="budget-row-desktop" className={cn(rowClass, 'max-lg:hidden')}>
+        {children}
+      </div>
+      {open && (
+        <ul data-testid="budget-detail" aria-label={t('composition_budget_detail')} className="space-y-1 pb-1 pl-4 text-sm text-muted-foreground lg:hidden">
+          {detail.map((d) => (
+            <li key={d.categoryId} className="flex items-center justify-between gap-2 min-h-8">
+              <span>{d.name}</span>
+              <span className="tabular-nums">{formatCurrency(BigInt(d.remaining))}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </li>
+  );
+}
 
 /**
  * Composition du prévu (sans carte propre : elle vit dans le bloc hero de `BalanceBar`) : en banque + CB non pointées + factures à venir + reports + arrivé après la fin
@@ -55,29 +114,31 @@ export function ForecastComposition() {
             </div>
             <ul className="grid grid-cols-1 lg:grid-cols-2 gap-x-4 gap-y-1 text-sm">
               {view.segments.map((s) => (
-                <li key={s.key} className="flex items-center justify-between gap-2 max-lg:min-h-12">
+                <BudgetLine key={s.key} detail={stats.budgetRemainingDetail} active={s.key === 'budget' && s.amount !== BigInt(0)}>
                   <span className="flex items-center gap-2 min-w-0">
                     <span className={cn('h-2 w-2 shrink-0 rounded-full', segmentColor[s.key])} />
                     <span className="lg:truncate">{label(s.key)}</span>
                   </span>
                   <span className="font-bold tabular-nums">{formatCurrency(s.amount)}</span>
-                </li>
+                </BudgetLine>
               ))}
             </ul>
           </div>
         ) : (
           <ul data-testid="composition-lines" className="space-y-1 text-sm">
             {view.rows.map((row) => (
-              <li
+              <BudgetLine
                 key={row.key}
-                data-testid={`line-${row.key}`}
-                className={cn('flex items-center justify-between gap-2 max-lg:min-h-12', row.key === 'forecast' && 'border-t pt-1 font-black')}
+                testId={`line-${row.key}`}
+                detail={stats.budgetRemainingDetail}
+                active={row.key === 'budget' && row.amount !== BigInt(0)}
+                className={cn(row.key === 'forecast' && 'border-t pt-1 font-black')}
               >
                 <span>{label(row.key)}</span>
                 <span className={cn('font-bold tabular-nums', present(row.amount, 'balance').className)}>
                   {present(row.amount, 'balance').text}
                 </span>
-              </li>
+              </BudgetLine>
             ))}
           </ul>
         )}
