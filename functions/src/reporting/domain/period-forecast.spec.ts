@@ -292,6 +292,119 @@ describe('computePeriodForecast', () => {
     });
   });
 
+  describe("sens d'un virement : tableau de la conception (euros en centimes, départ 0)", () => {
+    // CJ = virement sortant (budget négatif), Salaire = entrant (budget positif).
+    const tcats = [
+      { id: 'CJ', type: CategoryType.TRANSFER },
+      { id: 'SAL', type: CategoryType.TRANSFER },
+      { id: 'DEP', type: CategoryType.EXPENSE },
+    ];
+    const run = (
+      real: Record<string, number>,
+      budgets: Record<string, number>,
+    ) =>
+      computePeriodForecast({
+        startBalance: B(0),
+        categories: tcats,
+        realByCategory: new Map(
+          Object.entries(real).map(([k, v]) => [k, B(v)]),
+        ),
+        uncategorized: B(0),
+        budgets: Object.entries(budgets).map(([categoryId, amount]) => ({
+          categoryId,
+          amount: B(amount),
+        })),
+      });
+
+    // [libellé, réel, budgets, prévu attendu]
+    const rows: Array<
+      [string, Record<string, number>, Record<string, number>, number]
+    > = [
+      ['1 CJ non parti (CA1)', {}, { CJ: -203248 }, -203248],
+      ['2 CJ parti en entier', { CJ: -203248 }, { CJ: -203248 }, -203248],
+      [
+        '3 CJ parti en partie : le reste est dû',
+        { CJ: -100000 },
+        { CJ: -203248 },
+        -203248,
+      ],
+      ['4 CJ parti plus que prévu', { CJ: -210000 }, { CJ: -203248 }, -210000],
+      ['5 Salaire pas arrivé (CA2)', {}, { SAL: 203300 }, 203300],
+      ['6 Salaire arrivé', { SAL: 203300 }, { SAL: 203300 }, 203300],
+      [
+        '7 Salaire qui revient négatif : budget ignoré (décision 1)',
+        { SAL: -5000 },
+        { SAL: 203300 },
+        -5000,
+      ],
+      ['8 sans budget, réel -500', { CJ: -50000 }, {}, -50000],
+      ['9 budget remis à 0, réel -500', { CJ: -50000 }, { CJ: 0 }, -50000],
+      [
+        '10 CJ sortant à réel positif : remboursement',
+        { CJ: 30000 },
+        { CJ: -203248 },
+        -173248,
+      ],
+      ['11 ni budget ni opération', {}, {}, 0],
+      [
+        '12 mélange CJ -2032,48 + Salaire 2033,00 + dépense 500 (réel 0)',
+        {},
+        { CJ: -203248, SAL: 203300, DEP: 50000 },
+        -49948,
+      ],
+    ];
+
+    it.each(rows)('%s', (_label, real, budgets, expected) => {
+      const f = run(real, budgets);
+      expect(f.forecastBalance).toBe(B(expected));
+
+      // Égalité de la composition au centime (CA3) :
+      // départ + total de la fenêtre + revenus attendus + budget restant = prévu.
+      const windowTotal = Object.values(real).reduce((a, v) => a + B(v), B(0));
+      expect(f.forecastBalance).toBe(
+        B(0) + windowTotal + f.expectedIncome + f.budgetRemaining,
+      );
+    });
+
+    it('CJ non parti : le prévu baisse de 2032,48 par rapport au même compte sans budget CJ', () => {
+      const sans = run({}, { DEP: 50000 });
+      const avec = run({}, { CJ: -203248, DEP: 50000 });
+      expect(avec.forecastBalance - sans.forecastBalance).toBe(B(-203248));
+    });
+
+    it('CJ non parti : classé dans budgetRemaining, plus dans expectedIncome (CA3)', () => {
+      const f = run({}, { CJ: -203248 });
+      expect(f.budgetRemaining).toBe(B(-203248));
+      expect(f.expectedIncome).toBe(B(0));
+    });
+
+    it('CJ parti en partie : le reste dû (1032,48) est dans budgetRemaining', () => {
+      const f = run({ CJ: -100000 }, { CJ: -203248 });
+      expect(f.budgetRemaining).toBe(B(-103248));
+      expect(f.expectedIncome).toBe(B(0));
+    });
+
+    it('Salaire pas arrivé : revenu attendu, rien dans le budget restant', () => {
+      const f = run({}, { SAL: 203300 });
+      expect(f.expectedIncome).toBe(B(203300));
+      expect(f.budgetRemaining).toBe(B(0));
+    });
+
+    it('12 : totaux par sens et dépenses hors virements (CA5, CA9)', () => {
+      const f = run({}, { CJ: -203248, SAL: 203300, DEP: 50000 });
+      expect(f.plannedIncome).toBe(B(203300));
+      expect(f.plannedExpenses).toBe(B(253248));
+      expect(f.plannedExpensesExTransfers).toBe(B(50000));
+    });
+
+    it('un virement sans budget ne change aucun total prévu', () => {
+      const f = run({ CJ: -50000, SAL: 10000 }, {});
+      expect(f.plannedIncome).toBe(B(0));
+      expect(f.plannedExpenses).toBe(B(0));
+      expect(f.plannedExpensesExTransfers).toBe(B(0));
+    });
+  });
+
   describe('invariant : forecast = start + window total + expected - remaining (grille)', () => {
     const grid = [-60000, -5000, 0, 3000, 40000];
     const budgetsGrid = [0, 2000, -30000, 50000];

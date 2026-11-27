@@ -322,6 +322,49 @@ describe('égalité de la composition (CA7)', () => {
     expect(r.total).toBe(r.forecast.forecastBalance);
   });
 
+  describe("sens d'un virement : CJ sortant (budget négatif), Salaire entrant (CA3)", () => {
+    const sc = (window: Tx[], budgets: Record<string, number>): Scenario => ({
+      initial: 0,
+      before: [],
+      window,
+      late: [],
+      budgets,
+    });
+
+    it('CJ -2032,48 non parti : dans le budget restant, pas dans les revenus attendus ; égalité au centime', () => {
+      const r = evaluate(sc([], { virement: -203248 }));
+      expect(r.composition.budgetRemaining).toBe(-203248n);
+      expect(r.composition.expectedIncome).toBe(0n);
+      expect(r.forecast.forecastBalance).toBe(-203248n);
+      expect(r.total).toBe(r.forecast.forecastBalance);
+    });
+
+    it('CJ parti en partie (-1000,00) : le reste dû (1032,48) est dans le budget restant', () => {
+      const r = evaluate(
+        sc([{ amount: -100000, categoryId: 'virement', reconciled: true }], {
+          virement: -203248,
+        }),
+      );
+      expect(r.composition.budgetRemaining).toBe(-103248n);
+      expect(r.composition.expectedIncome).toBe(0n);
+      expect(r.forecast.forecastBalance).toBe(-203248n);
+      expect(r.total).toBe(r.forecast.forecastBalance);
+    });
+
+    it("Salaire +2033,00 arrivé, CJ non parti : égalité tenue, rien d'attendu côté revenus", () => {
+      const r = evaluate(
+        sc([{ amount: 203300, categoryId: 'salaire', reconciled: true }], {
+          salaire: 203300,
+          virement: -203248,
+        }),
+      );
+      expect(r.composition.expectedIncome).toBe(0n);
+      expect(r.composition.budgetRemaining).toBe(-203248n);
+      expect(r.forecast.forecastBalance).toBe(52n);
+      expect(r.total).toBe(r.forecast.forecastBalance);
+    });
+  });
+
   it('C1 : le budget restant est la somme des restes par catégorie', () => {
     const sc: Scenario = {
       initial: 0,
@@ -379,6 +422,7 @@ describe('égalité de la composition (CA7)', () => {
       {},
       { courses: 5000, loyer: -8000, salaire: 20000, prime: 3000 },
       { courses: 100, salaire: 100, virement: 30000 },
+      { courses: 100, virement: -30000 },
     ];
     let n = 0;
     for (const st of states)
@@ -398,6 +442,6 @@ describe('égalité de la composition (CA7)', () => {
             expect(r.total).toBe(r.forecast.forecastBalance);
             n++;
           }
-    expect(n).toBe(3 * 5 * 5 * 3);
+    expect(n).toBe(3 * 5 * 5 * 4);
   });
 });

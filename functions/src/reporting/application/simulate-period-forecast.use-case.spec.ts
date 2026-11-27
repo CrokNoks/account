@@ -202,6 +202,20 @@ describe('SimulatePeriodForecastUseCase', () => {
           ['S', 40000],
         ],
       ],
+      [
+        'outgoing transfer budget (negative) next to an income',
+        [
+          ['T', -203248],
+          ['I', 200000],
+        ],
+      ],
+      [
+        'outgoing transfer budget and a savings budget',
+        [
+          ['T', -203248],
+          ['S', 40000],
+        ],
+      ],
       ['empty list', []],
     ];
 
@@ -300,6 +314,62 @@ describe('SimulatePeriodForecastUseCase', () => {
       expect(BigInt(r.forecastBalance) - BigInt(r.savedForecastBalance)).toBe(
         BigInt(r.delta),
       );
+    });
+
+    describe("sens d'un virement (CA4)", () => {
+      it('modifier CJ -2032,48 en -2100,00 agit sur le côté dépenses seulement', async () => {
+        budgets.findAllByPeriod.mockResolvedValue([saved('T', -203248)]);
+        const r = await run([body('T', -210000)]);
+        expect(r.expensesEffect).toBe('-6752');
+        expect(r.incomeEffect).toBe('0');
+        expect(r.delta).toBe('-6752');
+      });
+
+      it('CJ modifié à -1000,00 alors que -1500,00 sont partis : « Sans effet » des deux côtés', async () => {
+        transactions.findAllByAccountUnpaginated.mockResolvedValue([
+          tx(-150000, 'T'),
+        ]);
+        budgets.findAllByPeriod.mockResolvedValue([saved('T', -203248)]);
+        const r = await run([body('T', -100000)]);
+        // enregistré : retenu 203248 ; simulé : retenu 150000 (le réel) -> la baisse a un effet de 53248
+        expect(r.incomeEffect).toBe('0');
+        expect(r.expensesEffect).toBe('53248');
+      });
+
+      it('CJ déjà parti au-delà des deux budgets : aucun effet', async () => {
+        transactions.findAllByAccountUnpaginated.mockResolvedValue([
+          tx(-250000, 'T'),
+        ]);
+        budgets.findAllByPeriod.mockResolvedValue([saved('T', -203248)]);
+        const r = await run([body('T', -100000)]);
+        expect(r.incomeEffect).toBe('0');
+        expect(r.expensesEffect).toBe('0');
+        expect(r.delta).toBe('0');
+      });
+
+      it('Salaire +2033,00 -> +2500,00 : effet côté revenus seulement', async () => {
+        budgets.findAllByPeriod.mockResolvedValue([saved('T', 203300)]);
+        const r = await run([body('T', 250000)]);
+        expect(r.incomeEffect).toBe('46700');
+        expect(r.expensesEffect).toBe('0');
+      });
+
+      it('la simulation des budgets enregistrés (CJ négatif) = les stats : prévu, revenus et dépenses prévus', async () => {
+        const list = [
+          saved('T', -203248),
+          saved('I', 150000),
+          saved('A', 80000),
+        ];
+        budgets.findAllByPeriod.mockResolvedValue(list);
+        const r = await run(
+          list.map((b) => body(b.categoryId, Number(b.amountAllocated))),
+        );
+        const s = await stats.execute('acc-1', 'per-1');
+        expect(r.forecastBalance).toBe(s.forecastBalance);
+        expect(r.plannedIncome).toBe(s.plannedIncome);
+        expect(r.plannedExpenses).toBe(s.plannedExpenses);
+        expect(r.delta).toBe('0');
+      });
     });
 
     it('S3 : the invariant holds on a grid of budget lists', async () => {

@@ -258,6 +258,7 @@ class PeriodStatsResponseDto implements PeriodStatsResponse {
   @ApiProperty() plannedIncome: string;
   @ApiProperty() realExpenses: string;
   @ApiProperty() plannedExpenses: string;
+  @ApiProperty() plannedExpensesExTransfers: string;
   @ApiProperty() realBankBalance: string;
   @ApiProperty() upcomingBalance: string;
   @ApiProperty() forecastBalance: string;

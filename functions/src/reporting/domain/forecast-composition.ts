@@ -3,7 +3,8 @@
  *
  * Le prévu (`forecastBalance`) est calculé par `computePeriodForecast` ; les lignes
  * « budget restant » et « revenus attendus » viennent de ce même calcul (sommes par
- * catégorie, une seule règle). Égalité au centime, testée :
+ * catégorie, une seule règle). Un virement sortant (budget négatif) compte dans le budget
+ * restant comme une dépense, un virement entrant dans les revenus attendus. Égalité au centime, testée :
  *   banque + CB + factures + reports + arrivé après la fin
  *     + budget restant + revenus attendus = prévu
  *

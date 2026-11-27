@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { AccountRepository } from '../../accounts/domain/account.repository.interface';
 import { PeriodRepository } from '../../periods/domain/period.repository.interface';
 import { TransactionRepository } from '../../transactions/domain/transaction.repository.interface';
@@ -17,6 +17,8 @@ export interface PeriodStatsResponse {
   plannedIncome: string;
   realExpenses: string;
   plannedExpenses: string;
+  /** Σ |budget| des dépenses et de l'épargne, sans les virements : base du rythme de dépense. */
+  plannedExpensesExTransfers: string;
   realBankBalance: string;
   upcomingBalance: string;
   forecastBalance: string;
@@ -34,6 +36,8 @@ export interface PeriodStatsResponse {
 
 @Injectable()
 export class GetPeriodStatsUseCase {
+  private readonly logger = new Logger(GetPeriodStatsUseCase.name);
+
   constructor(
     private readonly accountRepository: AccountRepository,
     private readonly periodRepository: PeriodRepository,
@@ -73,9 +77,11 @@ export class GetPeriodStatsUseCase {
       plannedIncome,
       realExpenses,
       plannedExpenses,
+      plannedExpensesExTransfers,
       budgetRemaining,
       expectedIncome,
       forecastBalance,
+      transferDirections,
     } = computePeriodForecast({
       startBalance,
       categories,
@@ -86,6 +92,17 @@ export class GetPeriodStatsUseCase {
         amount: b.amountAllocated,
       })),
     });
+
+    // Sens d'un virement déduit du réel ou par défaut (pas du budget) : trace pour la mesure, sans montant.
+    for (const d of transferDirections) {
+      if (d.source === 'budget') continue;
+      this.logger.debug({
+        event: 'transfer_direction',
+        categoryId: d.categoryId,
+        direction: d.direction,
+        source: d.source,
+      });
+    }
 
     // En banque : départ pointé + pointées de la période + revenu pointé tardif.
     // À venir : départ non pending + non pending de la période + revenu pointé tardif.
@@ -110,6 +127,7 @@ export class GetPeriodStatsUseCase {
       plannedIncome: plannedIncome.toString(),
       realExpenses: realExpenses.toString(),
       plannedExpenses: plannedExpenses.toString(),
+      plannedExpensesExTransfers: plannedExpensesExTransfers.toString(),
       realBankBalance: realBankBalance.toString(),
       upcomingBalance: upcomingBalance.toString(),
       forecastBalance: forecastBalance.toString(),

@@ -1,4 +1,9 @@
 import { CategoryType } from '../../categories/domain/category.entity';
+import {
+  transferDirection,
+  transferDirectionSource,
+  type TransferDirection,
+} from './transfer-direction';
 
 /**
  * Règle du prévu de fin de période (docs/reporting.md, « Solde prévisionnel »),
@@ -13,9 +18,11 @@ import { CategoryType } from '../../categories/domain/category.entity';
  *
  *   Dépenses et épargne (`expenseRule`) : dépensé = max(0, -réel),
  *     retenu = max(dépensé, |budget|), remboursement = max(0, réel).
- *   Revenus et virements (`incomeRule`) : réel >= 0 : retenu = max(réel, |budget|) ;
+ *   Revenus et virements entrants (`incomeRule`) : réel >= 0 : retenu = max(réel, |budget|) ;
  *     revenu à réel < 0 : retenu = |budget| + réel (miroir du remboursement) ;
- *     virement à réel < 0 (sortant, déjà passé) : retenu = réel, budget ignoré.
+ *     virement entrant à réel < 0 : retenu = réel, budget ignoré.
+ *   Virements sortants (sens : `transferDirection`, budget négatif ou, sans budget, réel négatif) :
+ *     `expenseRule`, comme une dépense. Un virement sortant non parti baisse le prévu et ne le relève jamais.
  */
 export interface PeriodForecastInput {
   startBalance: bigint;
@@ -30,18 +37,28 @@ export interface PeriodForecastInput {
 
 export interface PeriodForecast {
   realIncome: bigint;
+  /** Σ |budget| des revenus et des virements entrants. */
   plannedIncome: bigint;
   realExpenses: bigint;
+  /** Σ |budget| des dépenses, de l'épargne et des virements sortants. */
   plannedExpenses: bigint;
+  /** Σ |budget| des seules dépenses et épargne : base du rythme de dépense (hors virements). */
+  plannedExpensesExTransfers: bigint;
   maxIncome: bigint;
   maxAbsExpenses: bigint;
-  /** Σ des remboursements par catégorie de dépense (réel net positif). */
+  /** Σ des remboursements par catégorie de dépense ou de virement sortant (réel net positif). */
   refundSurplus: bigint;
-  /** Σ -(retenu - dépensé) par catégorie de dépense : négatif ou nul. */
+  /** Σ -(retenu - dépensé) par catégorie de dépense ou de virement sortant : négatif ou nul. */
   budgetRemaining: bigint;
-  /** Σ (retenu - réel) par catégorie de revenu : positif ou nul. */
+  /** Σ (retenu - réel) par catégorie de revenu ou de virement entrant : positif ou nul. */
   expectedIncome: bigint;
   forecastBalance: bigint;
+  /** Sens retenu pour chaque catégorie de virement et son origine (pour les logs). */
+  transferDirections: Array<{
+    categoryId: string;
+    direction: TransferDirection;
+    source: 'budget' | 'real' | 'default';
+  }>;
 }
 
 const ZERO = BigInt(0);
@@ -96,34 +113,58 @@ export function computePeriodForecast(
   let realExpenses = ZERO;
   let plannedIncome = ZERO;
   let plannedExpenses = ZERO;
+  let plannedExpensesExTransfers = ZERO;
   let maxIncome = ZERO;
   let maxAbsExpenses = ZERO;
   let refundSurplus = ZERO;
   let budgetRemaining = ZERO;
   let expectedIncome = ZERO;
+  const transferDirections: PeriodForecast['transferDirections'] = [];
 
   for (const cat of input.categories) {
     const catReal = input.realByCategory.get(cat.id) ?? ZERO;
     const budget = input.budgets.find((b) => b.categoryId === cat.id);
-    // Signe du budget non imposé : toujours en valeur absolue.
-    const catBudget = abs(budget?.amount ?? ZERO);
+    const signedBudget = budget?.amount ?? ZERO;
+    // Le montant de calcul est toujours la valeur absolue ; seul le sens d'un virement lit le signe.
+    const catBudget = abs(signedBudget);
+    const isTransfer = cat.type === CategoryType.TRANSFER;
+    const isIncome = cat.type === CategoryType.INCOME;
 
-    const isIncome =
-      cat.type === CategoryType.INCOME || cat.type === CategoryType.TRANSFER;
+    // Un virement sortant se calcule comme une dépense, un virement entrant comme un revenu.
+    const direction = isTransfer
+      ? transferDirection(signedBudget, catReal)
+      : null;
+    const outgoing = direction === 'outgoing';
+    if (direction) {
+      transferDirections.push({
+        categoryId: cat.id,
+        direction,
+        source: transferDirectionSource(signedBudget, catReal),
+      });
+    }
 
-    if (isIncome) {
+    if (isIncome || (isTransfer && !outgoing)) {
       realIncome += catReal;
       plannedIncome += catBudget;
-      const { retained, expected } = incomeRule(
-        catReal,
-        catBudget,
-        cat.type === CategoryType.TRANSFER,
-      );
+      const { retained, expected } = incomeRule(catReal, catBudget, isTransfer);
       maxIncome += retained;
       expectedIncome += expected;
+    } else if (outgoing) {
+      // Les totaux bruts gardent les virements côté revenus (aucun écran ne les lit).
+      realIncome += catReal;
+      plannedExpenses += catBudget;
+      const {
+        spent,
+        maxExpenses,
+        refundSurplus: refund,
+      } = expenseRule(catReal, catBudget);
+      maxAbsExpenses += maxExpenses;
+      refundSurplus += refund;
+      budgetRemaining -= maxExpenses - spent;
     } else {
       realExpenses += catReal;
       plannedExpenses += catBudget;
+      plannedExpensesExTransfers += catBudget;
       const {
         spent,
         maxExpenses,
@@ -147,11 +188,13 @@ export function computePeriodForecast(
     plannedIncome,
     realExpenses,
     plannedExpenses,
+    plannedExpensesExTransfers,
     maxIncome,
     maxAbsExpenses,
     refundSurplus,
     budgetRemaining,
     expectedIncome,
     forecastBalance,
+    transferDirections,
   };
 }

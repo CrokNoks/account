@@ -237,8 +237,10 @@ describe('GetPeriodStatsUseCase', () => {
 
     const stats = await useCase.execute('acc-1', 'per-1');
 
-    expect(stats.plannedExpenses).toBe('70000');
-    expect(stats.plannedIncome).toBe('260000');
+    // Un virement à budget négatif est sortant : rangé avec les dépenses (sens du virement, docs/reporting.md).
+    expect(stats.plannedExpenses).toBe('80000');
+    expect(stats.plannedIncome).toBe('250000');
+    expect(stats.plannedExpensesExTransfers).toBe('70000');
   });
 
   it('adds uncategorized transactions (pending included) to max(real, planned) when planned exceeds real', async () => {
@@ -284,6 +286,7 @@ describe('GetPeriodStatsUseCase', () => {
       plannedIncome: '0',
       realExpenses: '0',
       plannedExpenses: '0',
+      plannedExpensesExTransfers: '0',
       realBankBalance: '120000',
       upcomingBalance: '120000',
       forecastBalance: '120000',
@@ -294,6 +297,58 @@ describe('GetPeriodStatsUseCase', () => {
       arrivedAfterEnd: '0',
       budgetRemaining: '0',
       expectedIncome: '0',
+    });
+  });
+
+  describe("sens d'un virement (budget négatif = sortant)", () => {
+    const b = (categoryId: string, amount: number) =>
+      BudgetInstance.create({
+        periodId: 'per-1',
+        categoryId,
+        amountAllocated: BigInt(amount),
+      });
+    const setup = (txs: Transaction[], budgetList: BudgetInstance[]) => {
+      transactions.sumAmountsBeforeDateByBalance.mockResolvedValue(starts(0));
+      transactions.findAllByAccountUnpaginated.mockResolvedValue(txs);
+      budgets.findAllByPeriod.mockResolvedValue(budgetList);
+      categories.findAllByAccount.mockResolvedValue([
+        category('D', CategoryType.EXPENSE),
+        category('CJ', CategoryType.TRANSFER),
+        category('SAL', CategoryType.TRANSFER),
+      ]);
+    };
+
+    it('CJ -2032,48 non parti : le prévu baisse, Revenus prévus ne le compte plus, Total budgété le compte', async () => {
+      setup([], [b('CJ', -203248), b('SAL', 203300), b('D', 50000)]);
+      const s = await useCase.execute('acc-1', 'per-1');
+      // départ 100000 + (-2032,48 + 2033,00 - 500,00)
+      expect(s.forecastBalance).toBe('50052');
+      expect(s.plannedIncome).toBe('203300');
+      expect(s.plannedExpenses).toBe('253248');
+      expect(s.plannedExpensesExTransfers).toBe('50000');
+      expect(s.budgetRemaining).toBe('-253248');
+      expect(s.expectedIncome).toBe('203300');
+    });
+
+    it('la composition tient au centime : CJ parti en partie, Salaire arrivé', async () => {
+      setup(
+        [
+          tx(-100000, 'CJ', { reconciled: true }),
+          tx(203300, 'SAL', { reconciled: true }),
+        ],
+        [b('CJ', -203248), b('SAL', 203300)],
+      );
+      const s = await useCase.execute('acc-1', 'per-1');
+      expect(s.forecastBalance).toBe('100052');
+      const sum =
+        BigInt(s.realBankBalance) +
+        BigInt(s.cardTotal) +
+        BigInt(s.billsTotal) +
+        BigInt(s.reportsTotal) +
+        BigInt(s.arrivedAfterEnd) +
+        BigInt(s.budgetRemaining) +
+        BigInt(s.expectedIncome);
+      expect(sum.toString()).toBe(s.forecastBalance);
     });
   });
 
