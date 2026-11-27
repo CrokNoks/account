@@ -1,4 +1,6 @@
 -- Déclencheur de période : set_period_trigger_category et apply_period_switches.
+-- Rattachement par les dates (spec rattachement-par-dates) : plus de period_id sur les transactions ; une clé
+-- `period_id` envoyée par un ancien back dans le JSON est ignorée (le helper `tx` l'envoie exprès).
 -- Lancement (Supabase local uniquement) : npm run test:sql
 --   ou psql postgresql://postgres:postgres@127.0.0.1:54322/postgres -v ON_ERROR_STOP=1 -f supabase/tests/period_trigger_test.sql
 -- La migration 20261125100000_period_trigger.sql doit être appliquée (supabase start / migration up) ;
@@ -24,11 +26,11 @@ INSERT INTO public.categories (id, name, account_id) VALUES
   ('cccccccc-0000-4000-8000-0000000000f2', 'Prime', 'bbbbbbbb-0000-4000-8000-0000000000f1'),
   ('cccccccc-0000-4000-8000-0000000000f3', 'Autre compte', 'bbbbbbbb-0000-4000-8000-0000000000f2');
 
--- Période active du 1er oct. au 31 oct. ; une transaction déjà saisie le 5 nov. (rattachée à l'active)
+-- Période active du 1er oct. au 31 oct. ; une transaction déjà saisie le 5 nov. (dans la fenêtre de l'active)
 INSERT INTO public.periods (id, account_id, start_date, end_date, is_active) VALUES
   ('dddddddd-0000-4000-8000-0000000000f1', 'bbbbbbbb-0000-4000-8000-0000000000f1', '2026-10-01', '2026-10-31', true);
-INSERT INTO public.transactions (id, account_id, category_id, period_id, date, description, amount, pending) VALUES
-  ('eeeeeeee-0000-4000-8000-0000000000f1', 'bbbbbbbb-0000-4000-8000-0000000000f1', NULL, 'dddddddd-0000-4000-8000-0000000000f1', '2026-11-05', 'Déjà saisie', -1000, false);
+INSERT INTO public.transactions (id, account_id, category_id, date, description, amount, pending) VALUES
+  ('eeeeeeee-0000-4000-8000-0000000000f1', 'bbbbbbbb-0000-4000-8000-0000000000f1', NULL, '2026-11-05', 'Déjà saisie', -1000, false);
 
 -- Aides
 CREATE FUNCTION pg_temp.acc() RETURNS uuid LANGUAGE sql AS $$ SELECT 'bbbbbbbb-0000-4000-8000-0000000000f1'::uuid $$;
@@ -56,6 +58,10 @@ BEGIN
 EXCEPTION WHEN OTHERS THEN
   RETURN SQLSTATE;
 END $$;
+-- La transaction est-elle dans la fenêtre de la période (helper de la suppression, une seule règle) ?
+CREATE FUNCTION pg_temp.inwin(p_tx uuid, p_period uuid) RETURNS boolean LANGUAGE sql AS $$
+  SELECT EXISTS (SELECT 1 FROM public.transactions t, public.period_window_bounds(p_period) b
+                 WHERE t.id = p_tx AND t.date >= b.lo AND (b.hi IS NULL OR t.date <= b.hi)) $$;
 CREATE FUNCTION pg_temp.actives() RETURNS text LANGUAGE sql AS $$
   SELECT COALESCE(string_agg(id::text, ','), '') FROM public.periods WHERE account_id = pg_temp.acc() AND is_active $$;
 
@@ -79,7 +85,7 @@ BEGIN
   ASSERT (SELECT bool_and(NOT is_period_trigger) FROM public.categories WHERE account_id = pg_temp.acc()), 'plus rien de marqué après retrait';
 END $$;
 
--- 2. Bascule réussie : clôture, ouverture, budget, transaction, rattachement de la déjà saisie
+-- 2. Bascule réussie : clôture, ouverture, budget, transaction ; aucun rattachement écrit
 DO $$
 DECLARE r jsonb;
 BEGIN
@@ -88,26 +94,31 @@ BEGIN
     jsonb_build_array(pg_temp.tx('eeeeeeee-0000-4000-8000-0000000000f2', '2026-11-28', 'dddddddd-0000-4000-8000-0000000000f2')),
     jsonb_build_array(pg_temp.tx('eeeeeeee-0000-4000-8000-0000000000a1', '2026-12-05', 'dddddddd-0000-4000-8000-0000000000f2', 'Générée')));
   ASSERT r = '{"switched": true, "removed": 0}'::jsonb, 'bascule : ' || r::text;
-  ASSERT (SELECT period_id FROM public.transactions WHERE id = 'eeeeeeee-0000-4000-8000-0000000000a1') = 'dddddddd-0000-4000-8000-0000000000f2', 'générée écrite avec la bascule';
+  ASSERT (SELECT date FROM public.transactions WHERE id = 'eeeeeeee-0000-4000-8000-0000000000a1') = '2026-12-05', 'générée écrite avec la bascule';
+  ASSERT pg_temp.inwin('eeeeeeee-0000-4000-8000-0000000000a1', 'dddddddd-0000-4000-8000-0000000000f2'), 'générée dans la fenêtre de la nouvelle (par sa date)';
   ASSERT pg_temp.actives() = 'dddddddd-0000-4000-8000-0000000000f2', 'une seule active : la nouvelle';
   ASSERT (SELECT end_date FROM public.periods WHERE id = pg_temp.active()) = '2026-11-27', 'ancienne close la veille';
   ASSERT NOT (SELECT is_active FROM public.periods WHERE id = pg_temp.active()), 'ancienne inactive';
   ASSERT (SELECT count(*) FROM public.budget_instances WHERE period_id = 'dddddddd-0000-4000-8000-0000000000f2') = 1, 'budget par défaut posé';
-  ASSERT (SELECT period_id FROM public.transactions WHERE id = 'eeeeeeee-0000-4000-8000-0000000000f2') = 'dddddddd-0000-4000-8000-0000000000f2', 'déclencheuse dans la nouvelle';
-  -- la transaction du 5 nov. (avant le 28) reste dans l'ancienne : rattachement par date >= début seulement
-  ASSERT (SELECT period_id FROM public.transactions WHERE id = 'eeeeeeee-0000-4000-8000-0000000000f1') = pg_temp.active(), 'antérieure au début : inchangée';
+  ASSERT pg_temp.inwin('eeeeeeee-0000-4000-8000-0000000000f2', 'dddddddd-0000-4000-8000-0000000000f2'), 'déclencheuse dans la nouvelle';
+  -- la transaction du 5 nov. (avant le 28) reste dans la fenêtre de l'ancienne, pas dans celle de la nouvelle
+  ASSERT pg_temp.inwin('eeeeeeee-0000-4000-8000-0000000000f1', pg_temp.active()), 'antérieure au début : dans l''ancienne';
+  ASSERT NOT pg_temp.inwin('eeeeeeee-0000-4000-8000-0000000000f1', 'dddddddd-0000-4000-8000-0000000000f2'), 'antérieure au début : pas dans la nouvelle';
+  ASSERT (SELECT date FROM public.transactions WHERE id = 'eeeeeeee-0000-4000-8000-0000000000f1') = '2026-11-05', 'date inchangée';
 END $$;
 
--- 3. Rattachement : une transaction datée après le début est reprise par la nouvelle période, une seule fois
-INSERT INTO public.transactions (id, account_id, category_id, period_id, date, description, amount) VALUES
-  ('eeeeeeee-0000-4000-8000-0000000000f3', pg_temp.acc(), NULL, 'dddddddd-0000-4000-8000-0000000000f2', '2026-12-02', 'Dans la nouvelle', -500);
+-- 3. Fenêtres : une transaction datée après le début de la nouvelle période est dans la sienne, une seule fois
+INSERT INTO public.transactions (id, account_id, category_id, date, description, amount) VALUES
+  ('eeeeeeee-0000-4000-8000-0000000000f3', pg_temp.acc(), NULL, '2026-12-02', 'Dans la nouvelle', -500);
 DO $$
 BEGIN
   -- seconde bascule (>= 15 jours plus tard) : la fin de la précédente est réécrite, la transaction suit sa date
   PERFORM public.apply_period_switches(pg_temp.acc(), 'dddddddd-0000-4000-8000-0000000000f2',
     jsonb_build_array(pg_temp.sw('dddddddd-0000-4000-8000-0000000000f2', '2026-12-01', 'dddddddd-0000-4000-8000-0000000000f3', '2026-12-02', '2027-01-01')),
     jsonb_build_array(pg_temp.tx('eeeeeeee-0000-4000-8000-0000000000f4', '2026-12-02', 'dddddddd-0000-4000-8000-0000000000f3')));
-  ASSERT (SELECT period_id FROM public.transactions WHERE id = 'eeeeeeee-0000-4000-8000-0000000000f3') = 'dddddddd-0000-4000-8000-0000000000f3', 'déjà saisie reprise par la nouvelle';
+  ASSERT pg_temp.inwin('eeeeeeee-0000-4000-8000-0000000000f3', 'dddddddd-0000-4000-8000-0000000000f3'), 'déjà saisie dans la fenêtre de la nouvelle (par sa date)';
+  ASSERT NOT pg_temp.inwin('eeeeeeee-0000-4000-8000-0000000000f3', 'dddddddd-0000-4000-8000-0000000000f2'), 'et plus dans celle de la précédente (fermée au 01/12)';
+  ASSERT (SELECT date FROM public.transactions WHERE id = 'eeeeeeee-0000-4000-8000-0000000000f3') = '2026-12-02', 'aucun déplacement : date inchangée';
   ASSERT (SELECT count(*) FROM public.transactions WHERE description = 'Dans la nouvelle') = 1, 'comptée une seule fois';
   ASSERT pg_temp.actives() = 'dddddddd-0000-4000-8000-0000000000f3', 'toujours une seule active';
 END $$;
@@ -149,16 +160,17 @@ BEGIN
   ASSERT NOT EXISTS (SELECT 1 FROM public.transactions WHERE id = 'eeeeeeee-0000-4000-8000-0000000000a2'), 'bascule perdue : aucune ligne générée écrite (pas de double compte)';
   ASSERT NOT EXISTS (SELECT 1 FROM public.periods WHERE id = 'dddddddd-0000-4000-8000-0000000000fa'), 'aucune période créée';
   ASSERT pg_temp.actives() = 'dddddddd-0000-4000-8000-0000000000f3', 'une seule active';
-  ASSERT (SELECT period_id FROM public.transactions WHERE id = 'eeeeeeee-0000-4000-8000-0000000000f6') = 'dddddddd-0000-4000-8000-0000000000f3',
-    'ligne enregistrée sans bascule, rattachée à l''active par le trigger';
+  ASSERT (SELECT date FROM public.transactions WHERE id = 'eeeeeeee-0000-4000-8000-0000000000f6') = '2027-01-10',
+    'ligne enregistrée sans bascule (clé period_id d''un ancien back ignorée)';
+  ASSERT pg_temp.inwin('eeeeeeee-0000-4000-8000-0000000000f6', 'dddddddd-0000-4000-8000-0000000000f3'), 'dans la fenêtre de l''active par sa date';
 END $$;
 
 -- 6 bis. Nettoyage de l'import : suppression des pending demandées, dans la même transaction
-INSERT INTO public.transactions (id, account_id, category_id, period_id, date, description, amount, pending) VALUES
-  ('eeeeeeee-0000-4000-8000-0000000000c1', pg_temp.acc(), NULL, 'dddddddd-0000-4000-8000-0000000000f3', '2027-01-02', 'Pending à supprimer', -500, true),
-  ('eeeeeeee-0000-4000-8000-0000000000c2', pg_temp.acc(), NULL, 'dddddddd-0000-4000-8000-0000000000f3', '2027-01-03', 'Déjà pointée', -500, false),
-  ('eeeeeeee-0000-4000-8000-0000000000c3', 'bbbbbbbb-0000-4000-8000-0000000000f2', NULL, NULL, '2027-01-03', 'Autre compte', -500, true),
-  ('eeeeeeee-0000-4000-8000-0000000000c4', pg_temp.acc(), NULL, 'dddddddd-0000-4000-8000-0000000000f3', '2027-01-04', 'Pending gardée', -500, true);
+INSERT INTO public.transactions (id, account_id, category_id, date, description, amount, pending) VALUES
+  ('eeeeeeee-0000-4000-8000-0000000000c1', pg_temp.acc(), NULL, '2027-01-02', 'Pending à supprimer', -500, true),
+  ('eeeeeeee-0000-4000-8000-0000000000c2', pg_temp.acc(), NULL, '2027-01-03', 'Déjà pointée', -500, false),
+  ('eeeeeeee-0000-4000-8000-0000000000c3', 'bbbbbbbb-0000-4000-8000-0000000000f2', NULL, '2027-01-03', 'Autre compte', -500, true),
+  ('eeeeeeee-0000-4000-8000-0000000000c4', pg_temp.acc(), NULL, '2027-01-04', 'Pending gardée', -500, true);
 -- Échec (budget en doublon) : rien n'est supprimé
 DO $$
 BEGIN
@@ -229,7 +241,7 @@ END $$;
 -- La suite repart de l'active d'avant
 DELETE FROM public.periods WHERE id = 'dddddddd-0000-4000-8000-0000000000fd';
 UPDATE public.periods SET is_active = TRUE, end_date = '2027-01-01' WHERE id = 'dddddddd-0000-4000-8000-0000000000f3';
-UPDATE public.transactions SET description = 'Dans la nouvelle', period_id = 'dddddddd-0000-4000-8000-0000000000f3' WHERE id = 'eeeeeeee-0000-4000-8000-0000000000f3';
+UPDATE public.transactions SET description = 'Dans la nouvelle' WHERE id = 'eeeeeeee-0000-4000-8000-0000000000f3';
 
 -- 7. Lecture seule : 42501, rien n'est modifié
 SET LOCAL ROLE authenticated;

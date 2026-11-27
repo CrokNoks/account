@@ -1,0 +1,516 @@
+@api = http://localhost:{{port}}
+@supabase = http://127.0.0.1:54321/auth/v1
+
+# Rattachement des transactions à la période par les dates seulement (spec rattachement-par-dates). Supabase local uniquement.
+# Lancement : npx httpyac send --all http/rattachement-par-dates.http --var port=<port du back local> --var anon=<clé publishable de `supabase status`>
+# (la clé vient de la ligne de commande, jamais du fichier). Utilisateurs, comptes, catégories et périodes sont jetables,
+# créés par le fichier ; rien n'est supprimé à la fin. Les dates du scénario 2 sont relatives à « aujourd'hui » (Europe/Paris).
+# Scénarios : 1 = CA2/CA4 (revenu pointé daté après la fin d'une période active : composition = prévu, liste Opérations,
+#   rythme CA6) ; 2 = CA1 (période fermée, redater une transaction) ; 3 = CA3/CA7/CA8 (prochaine paie exclue, aperçu,
+#   suppression, annulation de bascule) ; acteurs : Alice (propriétaire), Bob (connecté, étranger au compte), anonyme.
+# Non couvert ici (deux appels simultanés) : supabase/tests/delete_period_test.sql.
+
+{{
+  const paris = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Paris', year: 'numeric', month: '2-digit', day: '2-digit' });
+  const base = new Date(paris.format(new Date()) + 'T00:00:00Z');
+  exports.day = (offset) => new Date(base.getTime() + offset * 86400000).toISOString().slice(0, 10);
+  exports.dom = (offset) => Number(exports.day(offset).slice(8, 10));
+  exports.dm60 = exports.day(-60);
+  exports.dm10 = exports.day(-10);
+  exports.dm9 = exports.day(-9);
+  exports.dp1 = exports.day(1);
+  exports.dp19 = exports.day(19);
+  exports.dp20 = exports.day(20);
+  exports.dp30 = exports.day(30);
+  exports.domPay = exports.dom(20);
+  exports.domAssurance = exports.dom(2);
+  exports.domLoyer = exports.dom(8);
+  exports.domAbo = exports.dom(12);
+}}
+
+### Alice (propriétaire jetable)
+# @name alice
+POST {{supabase}}/signup
+apikey: {{anon}}
+Content-Type: application/json
+
+{ "email": "rpd-alice-{{$timestamp}}@example.com", "password": "Password123!" }
+
+?? status == 200
+
+### Bob (autre utilisateur connecté, sans accès aux comptes d'Alice)
+# @name bob
+POST {{supabase}}/signup
+apikey: {{anon}}
+Content-Type: application/json
+
+{ "email": "rpd-bob-{{$timestamp}}@example.com", "password": "Password123!" }
+
+?? status == 200
+
+# ======================================================================
+# Scénario 1 : revenu pointé daté après la fin d'une période active (CA2, CA4, CA6)
+# Compte à 1 000,00 ; avant le 01/10 : prime +200,00 pointée, facture -50,00 pending ;
+# période active 01/10 -> 31/10 (fin dépassée) : CB -30,00, facture pending -80,00, courses pointée -10,00,
+# prime pointée +2 000,00 datée du 03/11 (après la fin) ; budgets courses 200,00, prime 2 500,00.
+# ======================================================================
+
+### Compte 1
+# @name acc1
+POST {{api}}/accounts
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "name": "rpd1-{{$timestamp}}", "initialBalance": "100000" }
+
+?? status == 201
+
+### Catégorie Prime (revenu, non déclencheuse)
+# @name prime1
+POST {{api}}/{{acc1.id}}/categories
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "name": "Prime", "color": "#112233", "type": "income" }
+
+?? status == 201
+
+### Catégorie Courses
+# @name courses1
+POST {{api}}/{{acc1.id}}/categories
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "name": "Courses", "color": "#334455", "type": "expense" }
+
+?? status == 201
+
+### Période active 01/10 -> 31/10 avec budgets
+# @name per1
+POST {{api}}/{{acc1.id}}/periods
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "startDate": "2026-10-01", "endDate": "2026-10-31", "budgets": [
+  { "categoryId": "{{courses1.id}}", "amountAllocated": "20000" },
+  { "categoryId": "{{prime1.id}}", "amountAllocated": "250000" } ] }
+
+?? status == 201
+
+### Avant la période : prime +200,00 pointée
+POST {{api}}/{{acc1.id}}/transactions
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "categoryId": "{{prime1.id}}", "date": "2026-09-10", "description": "avant prime", "amount": "20000", "reconciled": true }
+
+?? status == 201
+
+### Avant la période : facture -50,00 pending
+POST {{api}}/{{acc1.id}}/transactions
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "categoryId": "{{courses1.id}}", "date": "2026-09-20", "description": "avant facture", "amount": "-5000", "pending": true }
+
+?? status == 201
+
+### Dans la période : CB -30,00 non pointée
+POST {{api}}/{{acc1.id}}/transactions
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "categoryId": "{{courses1.id}}", "date": "2026-10-10", "description": "CB", "amount": "-3000" }
+
+?? status == 201
+
+### Dans la période : facture -80,00 pending
+POST {{api}}/{{acc1.id}}/transactions
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "categoryId": "{{courses1.id}}", "date": "2026-10-12", "description": "facture", "amount": "-8000", "pending": true }
+
+?? status == 201
+
+### Dans la période : courses -10,00 pointée
+POST {{api}}/{{acc1.id}}/transactions
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "categoryId": "{{courses1.id}}", "date": "2026-10-15", "description": "pointée", "amount": "-1000", "reconciled": true }
+
+?? status == 201
+
+### La réponse de création n'a plus de periodId (champ retiré) ; un front en cache qui l'envoie encore n'est pas refusé
+# @name late1
+POST {{api}}/{{acc1.id}}/transactions
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "categoryId": "{{prime1.id}}", "date": "2026-11-03", "description": "prime tardive", "amount": "200000", "reconciled": true, "periodId": "{{per1.id}}" }
+
+?? status == 201
+?? js response.parsedBody.periodId == undefined
+
+### CA4 : En banque, À venir, prévu comptent le revenu tardif ; composition à 6 lignes = prévu ; plus d'arrivedAfterEnd
+# @name stats1
+GET {{api}}/{{acc1.id}}/periods/{{per1.id}}/reporting/stats
+Authorization: Bearer {{alice.access_token}}
+
+?? status == 200
+?? js response.parsedBody.realBankBalance == 319000
+?? js response.parsedBody.upcomingBalance == 316000
+?? js response.parsedBody.cardTotal == -3000
+?? js response.parsedBody.billsTotal == -8000
+?? js response.parsedBody.reportsTotal == -5000
+?? js response.parsedBody.budgetRemaining == -8000
+?? js response.parsedBody.expectedIncome == 50000
+?? js response.parsedBody.forecastBalance == 345000
+?? js response.parsedBody.arrivedAfterEnd == undefined
+?? js Number(response.parsedBody.realBankBalance) + Number(response.parsedBody.cardTotal) + Number(response.parsedBody.billsTotal) + Number(response.parsedBody.reportsTotal) + Number(response.parsedBody.budgetRemaining) + Number(response.parsedBody.expectedIncome) - Number(response.parsedBody.forecastBalance) == 0
+
+### Liste Opérations de la période = les lignes du prévu : 4 lignes de la fenêtre, revenu tardif compris, rien d'avant le début
+GET {{api}}/{{acc1.id}}/transactions?periodId={{per1.id}}&limit=100
+Authorization: Bearer {{alice.access_token}}
+
+?? status == 200
+?? js response.parsedBody.meta.total == 4
+?? js response.parsedBody.data.some(t => t.description == 'prime tardive') == true
+?? js response.parsedBody.data.some(t => t.description == 'avant prime') == false
+?? js response.parsedBody.data.every(t => t.periodId == undefined) == true
+
+### CA5 : le détail d'un tag d'une période active compte les transactions taguées datées après la fin (étiquette créée puis posée)
+# @name tag1
+POST {{api}}/{{acc1.id}}/tags
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "name": "voyage", "color": "#aa5500" }
+
+?? status == 201
+
+###
+POST {{api}}/{{acc1.id}}/transactions
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "categoryId": "{{courses1.id}}", "date": "2026-11-05", "description": "billet taggé", "amount": "-7000", "tagIds": ["{{tag1.id}}"] }
+
+?? status == 201
+
+###
+GET {{api}}/{{acc1.id}}/reporting/tags/{{tag1.id}}?periodId={{per1.id}}
+Authorization: Bearer {{alice.access_token}}
+
+?? status == 200
+?? js response.parsedBody.summary.transactionCount == 1
+?? js response.parsedBody.summary.totalAmount == -7000
+
+### CA6 : rythme de dépense d'une période active dont la fin est dépassée : la courbe va jusqu'à aujourd'hui, avec la dépense du 05/11
+# (cumul 110,00 = CB 30 + pointée 10 + billet du 05/11 70 ; les factures pending ne comptent pas dans le rythme)
+GET {{api}}/{{acc1.id}}/periods/{{per1.id}}/reporting/spending-pace
+Authorization: Bearer {{alice.access_token}}
+
+?? status == 200
+?? js response.parsedBody.points.length > 31
+?? js response.parsedBody.points[response.parsedBody.points.length - 1].cumulative == 11000
+
+### Bob (connecté, étranger au compte) : stats refusées
+GET {{api}}/{{acc1.id}}/periods/{{per1.id}}/reporting/stats
+Authorization: Bearer {{bob.access_token}}
+
+?? status >= 403
+
+### Bob : liste Opérations refusée
+GET {{api}}/{{acc1.id}}/transactions?periodId={{per1.id}}&limit=100
+Authorization: Bearer {{bob.access_token}}
+
+?? status >= 403
+
+### Anonyme : stats refusées
+GET {{api}}/{{acc1.id}}/periods/{{per1.id}}/reporting/stats
+
+?? status == 401
+
+# ======================================================================
+# Scénario 2 : période fermée (CA1) : redater une transaction change les chiffres au rechargement
+# ======================================================================
+
+### Compte 2
+# @name acc2
+POST {{api}}/accounts
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "name": "rpd2-{{$timestamp}}", "initialBalance": "0" }
+
+?? status == 201
+
+### Catégorie Courses
+# @name courses2
+POST {{api}}/{{acc2.id}}/categories
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "name": "Courses", "color": "#334455", "type": "expense" }
+
+?? status == 201
+
+### Période 1 (août)
+# @name p21
+POST {{api}}/{{acc2.id}}/periods
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "startDate": "2026-08-01", "endDate": "2026-08-31", "budgets": [] }
+
+?? status == 201
+
+### Période 2 (septembre) : close la précédente (elle devient fermée)
+# @name p22
+POST {{api}}/{{acc2.id}}/periods
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "startDate": "2026-09-01", "endDate": "2026-09-30", "budgets": [] }
+
+?? status == 201
+
+### Une dépense de -12,00 datée du 20/08 : dans la fermée
+# @name t2
+POST {{api}}/{{acc2.id}}/transactions
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "categoryId": "{{courses2.id}}", "date": "2026-08-20", "description": "août", "amount": "-1200" }
+
+?? status == 201
+
+###
+GET {{api}}/{{acc2.id}}/periods/{{p21.id}}/reporting/stats
+Authorization: Bearer {{alice.access_token}}
+
+?? status == 200
+?? js response.parsedBody.forecastBalance == -1200
+?? js response.parsedBody.cardTotal == -1200
+
+### On la redate au 05/09 : elle quitte la fermée sans autre action
+PATCH {{api}}/{{acc2.id}}/transactions/{{t2.id}}
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "date": "2026-09-05" }
+
+?? status == 200
+
+###
+GET {{api}}/{{acc2.id}}/periods/{{p21.id}}/reporting/stats
+Authorization: Bearer {{alice.access_token}}
+
+?? status == 200
+?? js response.parsedBody.forecastBalance == 0
+
+###
+GET {{api}}/{{acc2.id}}/periods/{{p22.id}}/reporting/stats
+Authorization: Bearer {{alice.access_token}}
+
+?? status == 200
+?? js response.parsedBody.forecastBalance == -1200
+
+### Liste Opérations de la fermée : vide ; de la suivante : la ligne
+GET {{api}}/{{acc2.id}}/transactions?periodId={{p21.id}}&limit=100
+Authorization: Bearer {{alice.access_token}}
+
+?? status == 200
+?? js response.parsedBody.meta.total == 0
+
+###
+GET {{api}}/{{acc2.id}}/transactions?periodId={{p22.id}}&limit=100
+Authorization: Bearer {{alice.access_token}}
+
+?? status == 200
+?? js response.parsedBody.meta.total == 1
+
+# ======================================================================
+# Scénario 3 : prochaine paie exclue, aperçu, suppression, annulation de bascule (CA3, CA7, CA8)
+# ======================================================================
+
+### Compte 3
+# @name acc3
+POST {{api}}/accounts
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "name": "rpd3-{{$timestamp}}", "initialBalance": "0" }
+
+?? status == 201
+
+### Catégorie Salaire (déclencheuse)
+# @name sal3
+POST {{api}}/{{acc3.id}}/categories
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "name": "Salaire", "color": "#22aa55", "type": "income" }
+
+?? status == 201
+
+### Catégorie Charges
+# @name bills3
+POST {{api}}/{{acc3.id}}/categories
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "name": "Charges", "color": "#aa2255", "type": "expense" }
+
+?? status == 201
+
+###
+PATCH {{api}}/{{acc3.id}}/categories/{{sal3.id}}
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "isPeriodTrigger": true }
+
+?? status == 200
+
+### Période d'avant : commencée il y a 60 jours, finit dans 30 jours (la « fin d'avant » à retrouver)
+# @name per3
+POST {{api}}/{{acc3.id}}/periods
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "startDate": "{{dm60}}", "endDate": "{{dp30}}", "budgets": [] }
+
+?? status == 201
+
+### Récurrente paie (prochaine occurrence dans 20 jours : la « prochaine paie »)
+POST {{api}}/{{acc3.id}}/recurring
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "categoryId": "{{sal3.id}}", "description": "Salaire", "amount": "280000", "dayOfMonth": {{domPay}} }
+
+?? status == 201
+
+### Récurrente assurance
+POST {{api}}/{{acc3.id}}/recurring
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "categoryId": "{{bills3.id}}", "description": "Assurance", "amount": "-4200", "dayOfMonth": {{domAssurance}} }
+
+?? status == 201
+
+### Récurrente loyer
+POST {{api}}/{{acc3.id}}/recurring
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "categoryId": "{{bills3.id}}", "description": "Loyer", "amount": "-75000", "dayOfMonth": {{domLoyer}} }
+
+?? status == 201
+
+### Récurrente abonnement
+POST {{api}}/{{acc3.id}}/recurring
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "categoryId": "{{bills3.id}}", "description": "Abonnement", "amount": "-1599", "dayOfMonth": {{domAbo}} }
+
+?? status == 201
+
+### Saisie de 18,50 datée d'il y a 9 jours
+# @name saisie3
+POST {{api}}/{{acc3.id}}/transactions
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "categoryId": "{{bills3.id}}", "date": "{{dm9}}", "description": "Saisie", "amount": "-1850" }
+
+?? status == 201
+
+### Pending saisie à la main (sans source récurrente) : doit rester
+POST {{api}}/{{acc3.id}}/transactions
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "categoryId": "{{bills3.id}}", "date": "{{dp1}}", "description": "Facture à la main", "amount": "-1000", "pending": true }
+
+?? status == 201
+
+### La bascule par erreur : paie de 2 800,00 datée d'il y a 10 jours
+# @name switch3
+POST {{api}}/{{acc3.id}}/transactions
+Authorization: Bearer {{alice.access_token}}
+Content-Type: application/json
+
+{ "categoryId": "{{sal3.id}}", "date": "{{dm10}}", "description": "Paie par erreur", "amount": "280000" }
+
+?? status == 201
+?? js response.parsedBody.periodSwitch.closed.id == {{per3.id}}
+?? js response.parsedBody.periodSwitch.opened.endDate == {{dp19}}
+
+### CA3 : liste Opérations de la période ouverte : la prochaine paie (pending, recurringId, datée après la fin) n'y est pas ; paie déclenchante, saisie, pending à la main et 3 récurrentes y sont
+GET {{api}}/{{acc3.id}}/transactions?periodId={{switch3.periodSwitch.opened.id}}&limit=100
+Authorization: Bearer {{alice.access_token}}
+
+?? status == 200
+?? js response.parsedBody.meta.total == 6
+?? js response.parsedBody.data.some(t => t.date.slice(0, 10) == dp20) == false
+?? js response.parsedBody.data.some(t => t.description == 'Saisie') == true
+
+### CA3 : le prévu ne compte pas la prochaine paie (la somme des lignes de la liste = ce que le prévu ajoute au départ)
+GET {{api}}/{{acc3.id}}/periods/{{switch3.periodSwitch.opened.id}}/reporting/stats
+Authorization: Bearer {{alice.access_token}}
+
+?? status == 200
+?? js response.parsedBody.billsTotal == -81799
+?? js response.parsedBody.cardTotal == 278150
+?? js response.parsedBody.arrivedAfterEnd == undefined
+
+### CA7 : l'aperçu annonce 4 supprimées (3 récurrentes + la prochaine paie, choisies par leurs dates), 3 conservées
+# @name preview3
+GET {{api}}/{{acc3.id}}/periods/{{switch3.periodSwitch.opened.id}}/deletion-preview
+Authorization: Bearer {{alice.access_token}}
+
+?? status == 200
+?? js response.parsedBody.removedPending == 4
+?? js response.parsedBody.keptTransactions == 3
+?? js response.parsedBody.reopen.periodId == {{per3.id}}
+
+### Bob : aperçu et suppression refusés (compte étranger)
+DELETE {{api}}/{{acc3.id}}/periods/{{switch3.periodSwitch.opened.id}}
+Authorization: Bearer {{bob.access_token}}
+
+?? status >= 403
+
+### Anonyme : suppression refusée
+DELETE {{api}}/{{acc3.id}}/periods/{{switch3.periodSwitch.opened.id}}
+
+?? status == 401
+
+### CA8 : Alice annule la bascule
+DELETE {{api}}/{{acc3.id}}/periods/{{switch3.periodSwitch.opened.id}}
+Authorization: Bearer {{alice.access_token}}
+
+?? status == 204
+
+### CA8 : l'ancienne période est rouverte avec sa fin d'avant
+GET {{api}}/{{acc3.id}}/periods/{{per3.id}}
+Authorization: Bearer {{alice.access_token}}
+
+?? status == 200
+?? js response.parsedBody.isActive == true
+?? js response.parsedBody.endDate.slice(0, 10) == {{dp30}}
+
+### CA8 : les 3 conservées apparaissent dans la période rouverte par leurs dates, dates inchangées ; plus aucune pending récurrente
+GET {{api}}/{{acc3.id}}/transactions?periodId={{per3.id}}&limit=100
+Authorization: Bearer {{alice.access_token}}
+
+?? status == 200
+?? js response.parsedBody.meta.total == 3
+?? js response.parsedBody.data.some(t => t.description == 'Paie par erreur' && t.date.slice(0, 10) == dm10) == true
+?? js response.parsedBody.data.some(t => t.description == 'Saisie' && t.date.slice(0, 10) == dm9) == true
+?? js response.parsedBody.data.filter(t => t.pending && t.metadata && t.metadata.source == 'recurring').length == 0

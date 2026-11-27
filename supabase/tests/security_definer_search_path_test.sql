@@ -53,8 +53,8 @@ INSERT INTO public.account_shares (account_id, user_id, permission) VALUES
   ('bbbbbbbb-0000-4000-8000-0000000000d1', 'aaaaaaaa-0000-4000-8000-0000000000d3', 'write');
 INSERT INTO public.periods (id, account_id, start_date, end_date, is_active) VALUES
   ('dddddddd-0000-4000-8000-0000000000d1', 'bbbbbbbb-0000-4000-8000-0000000000d1', '2026-10-01', '2026-10-31', true);
-INSERT INTO public.transactions (id, account_id, period_id, date, description, amount, pending) VALUES
-  ('eeeeeeee-0000-4000-8000-0000000000d1', 'bbbbbbbb-0000-4000-8000-0000000000d1', 'dddddddd-0000-4000-8000-0000000000d1', '2026-10-05', 'Courses', -1000, false);
+INSERT INTO public.transactions (id, account_id, date, description, amount, pending) VALUES
+  ('eeeeeeee-0000-4000-8000-0000000000d1', 'bbbbbbbb-0000-4000-8000-0000000000d1', '2026-10-05', 'Courses', -1000, false);
 
 -- Insertion d'un compte en tant qu'utilisateur connecté : auto_assign_user_id remplit user_id
 SET LOCAL request.jwt.claims = '{"sub":"aaaaaaaa-0000-4000-8000-0000000000d4","role":"authenticated"}';
@@ -120,11 +120,12 @@ END $$;
 DO $$
 DECLARE v timestamptz; before_ts timestamptz;
 BEGIN
-  -- assign_period_id : transaction sans period_id rattachée à la période active
+  -- period_window_bounds : la fenêtre de la période active (début, pas de borne haute), par les dates
+  ASSERT (SELECT lo FROM public.period_window_bounds('dddddddd-0000-4000-8000-0000000000d1')) = '2026-10-01'
+     AND (SELECT hi FROM public.period_window_bounds('dddddddd-0000-4000-8000-0000000000d1')) IS NULL,
+    'period_window_bounds : fenêtre de la période active inattendue';
   INSERT INTO public.transactions (id, account_id, date, description, amount, pending) VALUES
     ('eeeeeeee-0000-4000-8000-0000000000d2', 'bbbbbbbb-0000-4000-8000-0000000000d1', '2026-10-06', 'Sans période', -500, false);
-  ASSERT (SELECT period_id FROM public.transactions WHERE id = 'eeeeeeee-0000-4000-8000-0000000000d2') = 'dddddddd-0000-4000-8000-0000000000d1',
-    'assign_period_id : période active non attribuée';
   -- handle_updated_at
   UPDATE public.transactions SET updated_at = '2000-01-01' WHERE id = 'eeeeeeee-0000-4000-8000-0000000000d2';
   UPDATE public.transactions SET description = 'Modifiée' WHERE id = 'eeeeeeee-0000-4000-8000-0000000000d2';
