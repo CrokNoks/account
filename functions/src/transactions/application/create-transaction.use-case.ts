@@ -10,7 +10,6 @@ import {
 export interface CreateTransactionCommand {
   accountId: string;
   categoryId: string | null;
-  periodId?: string | null;
   date: Date;
   description: string;
   amount: bigint;
@@ -43,7 +42,6 @@ export class CreateTransactionUseCase {
     const transaction = Transaction.create({
       accountId: command.accountId,
       categoryId: command.categoryId,
-      periodId: command.periodId,
       date: command.date,
       description: command.description,
       amount: command.amount,

@@ -19,7 +19,6 @@ const fixtures = {
   transactions: (accountId: string) => ({
     ...base(accountId),
     categoryId: '00000000-0000-4000-8000-000000000012',
-    periodId: null,
     date: now,
     description: 'tx',
     amount: BigInt(-100),

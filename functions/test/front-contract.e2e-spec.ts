@@ -295,7 +295,6 @@ describe('Front/back contract (e2e)', () => {
         upcomingBalance: '114000',
         forecastBalance: '105000',
         reportsTotal: '-15000',
-        arrivedAfterEnd: '0',
       });
     });
 

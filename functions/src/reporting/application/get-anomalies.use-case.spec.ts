@@ -3,6 +3,7 @@ import { GetAnomaliesUseCase } from './get-anomalies.use-case';
 import { TransactionRepository } from '../../transactions/domain/transaction.repository.interface';
 import { PeriodRepository } from '../../periods/domain/period.repository.interface';
 import { Transaction } from '../../transactions/domain/transaction.entity';
+import { CategoryRepository } from '../../categories/domain/category.repository.interface';
 import { subMonths } from 'date-fns';
 
 describe('GetAnomaliesUseCase', () => {
@@ -30,6 +31,10 @@ describe('GetAnomaliesUseCase', () => {
           useValue: {
             findById: jest.fn(),
           },
+        },
+        {
+          provide: CategoryRepository,
+          useValue: { findAllByAccount: jest.fn().mockResolvedValue([]) },
         },
       ],
     }).compile();
@@ -402,6 +407,11 @@ describe('GetAnomaliesUseCase : fenêtre de période (factures réservées)', ()
           ...period,
         }),
       } as unknown as PeriodRepository,
+      {
+        findAllByAccount: jest
+          .fn()
+          .mockResolvedValue([{ id: 'paie', isPeriodTrigger: true }]),
+      } as unknown as CategoryRepository,
     );
     return { useCase, repo };
   };

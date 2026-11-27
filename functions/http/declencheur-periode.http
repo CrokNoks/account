@@ -248,7 +248,7 @@ Content-Type: application/json
 ?? js response.parsedBody.periodSwitch.closed.endDate == {{dm11}}
 ?? js response.parsedBody.periodSwitch.opened.startDate == {{dm10}}
 ?? js response.parsedBody.periodSwitch.count == 1
-?? js response.parsedBody.periodId == {{switch1.periodSwitch.opened.id}}
+?? js response.parsedBody.periodId == undefined
 
 ### CA2 : une seule période active, la nouvelle ; l'ancienne est close la veille
 GET {{api}}/{{acc1.id}}/periods
@@ -273,13 +273,13 @@ Authorization: Bearer {{alice.access_token}}
 ?? js response.parsedBody.isActive == false
 ?? js response.parsedBody.endDate.slice(0, 10) == {{dm11}}
 
-### CA2 : la dépense saisie après le début de la nouvelle période lui est rattachée, comptée une fois
+### CA2 : la dépense saisie après le début de la nouvelle période est comptée une fois (par sa date, plus de periodId)
 GET {{api}}/{{acc1.id}}/transactions?search=Saisie avant la bascule
 Authorization: Bearer {{alice.access_token}}
 
 ?? status == 200
 ?? js response.parsedBody.data.length == 1
-?? js response.parsedBody.data[0].periodId == {{switch1.periodSwitch.opened.id}}
+?? js response.parsedBody.data[0].periodId == undefined
 
 ### CA4 : une nouvelle paie à moins de 15 jours du début de la période ouverte : enregistrée sans bascule
 POST {{api}}/{{acc1.id}}/transactions
@@ -361,7 +361,7 @@ Content-Type: application/json
 
 ?? status == 201
 ?? js JSON.stringify(response.parsedBody).includes('periodSwitch') == false
-?? js response.parsedBody.periodId == {{per2.id}}
+?? js response.parsedBody.periodId == undefined
 
 ### CA4 : la période est toujours la seule active, inchangée
 GET {{api}}/{{acc2.id}}/periods
@@ -577,12 +577,12 @@ Authorization: Bearer {{alice.access_token}}
 ?? js response.parsedBody.length == 4
 ?? js response.parsedBody.filter(p => p.isActive).length == 1
 
-### Chaque paie est dans la période qui contient sa date (trois périodes différentes)
+### Trois paies à trois dates différentes (chacune dans la fenêtre de sa période, par sa date)
 GET {{api}}/{{acc4.id}}/transactions?categoryId={{sal4.id}}
 Authorization: Bearer {{alice.access_token}}
 
 ?? status == 200
-?? js new Set(response.parsedBody.data.map(t => t.periodId)).size == 3
+?? js new Set(response.parsedBody.data.map(t => t.date)).size == 3
 
 # ======================================================================
 # Compte 5 : lecture seule (CA5)

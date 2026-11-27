@@ -5,7 +5,6 @@ export interface TransactionProps {
   id: string;
   accountId: string;
   categoryId: string | null;
-  periodId?: string | null;
   date: Date;
   description: string;
   amount: bigint;
@@ -22,7 +21,6 @@ export class Transaction {
   public readonly id: string;
   public readonly accountId: string;
   public readonly categoryId: string | null;
-  public readonly periodId?: string | null;
   public readonly date: Date;
   public readonly description: string;
   public readonly amount: bigint;
@@ -38,7 +36,6 @@ export class Transaction {
     this.id = props.id;
     this.accountId = props.accountId;
     this.categoryId = props.categoryId;
-    this.periodId = props.periodId;
     this.date = props.date;
     this.description = props.description;
     this.amount = props.amount;

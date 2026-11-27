@@ -5,10 +5,7 @@ import { TransactionRepository } from '../../transactions/domain/transaction.rep
 import { CategoryRepository } from '../../categories/domain/category.repository.interface';
 import { CategoryType } from '../../categories/domain/category.entity';
 import { NotFoundError } from '../../shared/domain/errors';
-import {
-  filterPeriodWindow,
-  isLateReconciledIncome,
-} from '../domain/period-window';
+import { filterPeriodWindow, toWindowPeriod } from '../domain/period-window';
 
 export interface EvolutionDataPoint {
   periodId: string;
@@ -77,7 +74,10 @@ export class GetEvolutionUseCase {
       // Même fenêtre que le prévu (domain/period-window). Le départ ci-dessus
       // ne prend que les dates avant le début : une dépense n'est comptée
       // qu'une fois (dans sa fenêtre, ou dans le départ de la suivante).
-      const periodTransactions = filterPeriodWindow(allTransactions, period);
+      const periodTransactions = filterPeriodWindow(
+        allTransactions,
+        toWindowPeriod(period, categories),
+      );
 
       const realByCategory = new Map<string, bigint>();
       for (const t of periodTransactions) {
@@ -110,13 +110,7 @@ export class GetEvolutionUseCase {
       const reconciledInPeriod = periodTransactions
         .filter((t) => t.reconciled)
         .reduce((sum, t) => sum + t.amount, BigInt(0));
-      // Revenu pointé daté après la fin d'une période active : déjà en banque,
-      // hors fenêtre du prévu (même prédicat que les stats).
-      const lateReconciledIncome = allTransactions
-        .filter((t) => isLateReconciledIncome(t, period))
-        .reduce((sum, t) => sum + t.amount, BigInt(0));
-      const realBankBalance =
-        startReconciled + reconciledInPeriod + lateReconciledIncome;
+      const realBankBalance = startReconciled + reconciledInPeriod;
 
       const allInPeriod = periodTransactions.reduce(
         (sum, t) => sum + t.amount,

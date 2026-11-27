@@ -58,7 +58,12 @@ import { rejectNullFields } from '../../shared/infrastructure/reject-null-fields
 import { Type, Transform } from 'class-transformer';
 import { PeriodRepository } from '../../periods/domain/period.repository.interface';
 import { Inject } from '@nestjs/common';
-import { WindowPeriod } from '../../reporting/domain/period-window';
+import { CategoryRepository } from '../../categories/domain/category.repository.interface';
+import { IgnoredLegacyField } from '../../accounts/infrastructure/ignored-legacy-field.decorator';
+import {
+  toWindowPeriod,
+  WindowPeriod,
+} from '../../reporting/domain/period-window';
 import { parseCents } from '../../shared/domain/cents';
 import { IsCents } from '../../shared/infrastructure/is-cents.decorator';
 import { IsCalendarDate } from '../../shared/infrastructure/is-calendar-date.decorator';
@@ -79,10 +84,8 @@ export class CreateTransactionDto {
   @ApiProperty({ description: 'Category ID', required: false, nullable: true })
   categoryId: string | null;
 
-  @IsOptional()
-  @IsUUID()
-  @ApiProperty({ description: 'Period ID', required: false, nullable: true })
-  periodId?: string | null;
+  // Retiré (la période se déduit des dates) mais encore envoyé par un front en cache : accepté puis ignoré.
+  @IgnoredLegacyField() periodId?: unknown;
 
   @IsCalendarDate()
   @ApiProperty({ description: 'Transaction date' })
@@ -276,9 +279,6 @@ export class TransactionResponseDto {
   @ApiProperty({ nullable: true })
   categoryId: string | null;
 
-  @ApiProperty({ nullable: true })
-  periodId: string | null;
-
   @ApiProperty()
   date: string;
 
@@ -464,6 +464,8 @@ export class TransactionsController {
     private readonly transactionRepository: TransactionRepository,
     @Inject(PeriodRepository)
     private readonly periodRepository: PeriodRepository,
+    @Inject(CategoryRepository)
+    private readonly categoryRepository: CategoryRepository,
     private readonly references: AccountReferencesService,
     private readonly periodSwitch: ApplyPeriodSwitchService,
   ) {}
@@ -522,13 +524,12 @@ export class TransactionsController {
         'Period',
       );
       // startDate/endDate saisis restreignent la fenêtre de la période (ET,
-      // jamais un élargissement) ; sa fenêtre (dépenses réservées comprises)
-      // est appliquée par le dépôt, pas une borne de fin.
-      periodWindow = {
-        startDate: period.startDate,
-        endDate: period.endDate,
-        isActive: period.isActive,
-      };
+      // jamais un élargissement) ; sa fenêtre (la même que le prévu, prochaine
+      // paie exclue) est appliquée par le dépôt, pas une borne de fin.
+      periodWindow = toWindowPeriod(
+        period,
+        await this.categoryRepository.findAllByAccount(accountId),
+      );
     }
 
     const result = await this.getTransactionsByAccountUseCase.execute(
@@ -618,7 +619,6 @@ export class TransactionsController {
     await this.references.ensureReferences(accountId, {
       categoryId: dto.categoryId,
       tagIds: dto.tagIds,
-      periodId: dto.periodId,
     });
 
     // Pointer sort de l'attente (règle partagée avec la modification en lot)
@@ -759,7 +759,6 @@ export class TransactionsController {
       id: t.id,
       accountId: t.accountId,
       categoryId: t.categoryId || null,
-      periodId: t.periodId || null,
       date: t.date.toISOString(),
       description: t.description,
       amount: t.amount.toString(),

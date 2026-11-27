@@ -7,7 +7,11 @@ import { CategoryType } from '../../categories/domain/category.entity';
 import { ensureBelongsToAccount } from '../../shared/domain/account-ownership';
 import { roundedPercentage } from '../../shared/domain/percentage';
 import { expenseRule } from '../domain/period-forecast';
-import { filterPeriodWindow, periodLoadEndDate } from '../domain/period-window';
+import {
+  filterPeriodWindow,
+  periodLoadEndDate,
+  toWindowPeriod,
+} from '../domain/period-window';
 import {
   transferDirection,
   type TransferDirection,
@@ -60,7 +64,7 @@ export class GetBudgetBreakdownUseCase {
         startDate: period.startDate,
         endDate: periodLoadEndDate(period),
       }),
-      period,
+      toWindowPeriod(period, categories),
     );
 
     const realByCategory = new Map<string, bigint>();

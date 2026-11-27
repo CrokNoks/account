@@ -1,4 +1,4 @@
-# Soldes et prévu justes (lot 2) : départs séparés, revenu pointé après la fin, max par catégorie, composition à 7 termes, CA9.
+# Soldes et prévu justes (lot 2) : départs séparés, revenu pointé après la fin, max par catégorie, composition à 6 termes, CA9.
 # Lancement (Supabase local + back local) :
 #   npx httpyac send --all functions/http/soldes-et-prevu-justes.http --var port=<port du back local> --var anon=<ANON_KEY de `supabase status`>
 # (la clé vient de la ligne de commande, jamais du fichier). Utilisateurs, comptes, catégories et transactions sont jetables,
@@ -190,10 +190,10 @@ Authorization: Bearer {{alice.access_token}}
 ?? js response.parsedBody.cardCount == 1
 ?? js response.parsedBody.billsTotal == -80000
 ?? js response.parsedBody.reportsTotal == -15000
-?? js response.parsedBody.arrivedAfterEnd == 0
+?? js response.parsedBody.arrivedAfterEnd == undefined
 ?? js response.parsedBody.budgetRemaining == -16000
 ?? js response.parsedBody.expectedIncome == 0
-?? js Number(BigInt(response.parsedBody.realBankBalance) + BigInt(response.parsedBody.cardTotal) + BigInt(response.parsedBody.billsTotal) + BigInt(response.parsedBody.reportsTotal) + BigInt(response.parsedBody.arrivedAfterEnd) + BigInt(response.parsedBody.budgetRemaining) + BigInt(response.parsedBody.expectedIncome) - BigInt(response.parsedBody.forecastBalance)) == 0
+?? js Number(BigInt(response.parsedBody.realBankBalance) + BigInt(response.parsedBody.cardTotal) + BigInt(response.parsedBody.billsTotal) + BigInt(response.parsedBody.reportsTotal) + BigInt(response.parsedBody.budgetRemaining) + BigInt(response.parsedBody.expectedIncome) - BigInt(response.parsedBody.forecastBalance)) == 0
 
 ### CA8 : l'évolution suit En banque (2900) ; son forecastBalance (départ complet + toute la fenêtre = 1050 + 860 = 1910) ne change pas
 GET {{baseUrl}}/{{accA.id}}/reporting/evolution
@@ -255,26 +255,26 @@ Content-Type: application/json
 
 ?? status == 201
 
-### CA4 : En banque 3200, À venir 3100, prévu inchangé 1750, arrivé après la fin -300, composition = prévu
+### CA4 : la prime pointée datée après la fin est dans la fenêtre : En banque 3200, À venir 3100, prévu 2050, plus de ligne « arrivé après la fin », composition = prévu
 GET {{baseUrl}}/{{accA.id}}/periods/{{perA.id}}/reporting/stats
 Authorization: Bearer {{alice.access_token}}
 
 ?? status == 200
 ?? js response.parsedBody.realBankBalance == 320000
 ?? js response.parsedBody.upcomingBalance == 310000
-?? js response.parsedBody.forecastBalance == 175000
-?? js response.parsedBody.arrivedAfterEnd == -30000
-?? js Number(BigInt(response.parsedBody.realBankBalance) + BigInt(response.parsedBody.cardTotal) + BigInt(response.parsedBody.billsTotal) + BigInt(response.parsedBody.reportsTotal) + BigInt(response.parsedBody.arrivedAfterEnd) + BigInt(response.parsedBody.budgetRemaining) + BigInt(response.parsedBody.expectedIncome) - BigInt(response.parsedBody.forecastBalance)) == 0
+?? js response.parsedBody.forecastBalance == 205000
+?? js response.parsedBody.arrivedAfterEnd == undefined
+?? js Number(BigInt(response.parsedBody.realBankBalance) + BigInt(response.parsedBody.cardTotal) + BigInt(response.parsedBody.billsTotal) + BigInt(response.parsedBody.reportsTotal) + BigInt(response.parsedBody.budgetRemaining) + BigInt(response.parsedBody.expectedIncome) - BigInt(response.parsedBody.forecastBalance)) == 0
 
-### CA4 : l'évolution compte aussi la prime (3200) ; son forecastBalance ne la compte pas (1910)
+### CA4 : l'évolution compte aussi la prime : En banque 3200 et forecastBalance 2210 (même fenêtre que le prévu)
 GET {{baseUrl}}/{{accA.id}}/reporting/evolution
 Authorization: Bearer {{alice.access_token}}
 
 ?? status == 200
 ?? js response.parsedBody[0].realBankBalance == 320000
-?? js response.parsedBody[0].forecastBalance == 191000
+?? js response.parsedBody[0].forecastBalance == 221000
 
-### CA4 (F3) : un revenu non pointé daté après la fin (paie pending 05/11) reste ignoré partout
+### CA2 (F3) : un revenu non pointé daté après la fin (pending 05/11) compte désormais dans le prévu, pas en banque ni à venir
 POST {{baseUrl}}/{{accA.id}}/transactions
 Authorization: Bearer {{alice.access_token}}
 Content-Type: application/json
@@ -290,7 +290,7 @@ Authorization: Bearer {{alice.access_token}}
 ?? status == 200
 ?? js response.parsedBody.realBankBalance == 320000
 ?? js response.parsedBody.upcomingBalance == 310000
-?? js response.parsedBody.forecastBalance == 175000
+?? js response.parsedBody.forecastBalance == 217000
 
 ### CA9 : créer une transaction pointée ET pending : 400
 POST {{baseUrl}}/{{accA.id}}/transactions
@@ -455,7 +455,7 @@ Authorization: Bearer {{alice.access_token}}
 ?? js response.parsedBody.expectedIncome == 200000
 ?? js response.parsedBody.forecastBalance == 195000
 ?? js response.parsedBody.realBankBalance == -5000
-?? js Number(BigInt(response.parsedBody.realBankBalance) + BigInt(response.parsedBody.cardTotal) + BigInt(response.parsedBody.billsTotal) + BigInt(response.parsedBody.reportsTotal) + BigInt(response.parsedBody.arrivedAfterEnd) + BigInt(response.parsedBody.budgetRemaining) + BigInt(response.parsedBody.expectedIncome) - BigInt(response.parsedBody.forecastBalance)) == 0
+?? js Number(BigInt(response.parsedBody.realBankBalance) + BigInt(response.parsedBody.cardTotal) + BigInt(response.parsedBody.billsTotal) + BigInt(response.parsedBody.reportsTotal) + BigInt(response.parsedBody.budgetRemaining) + BigInt(response.parsedBody.expectedIncome) - BigInt(response.parsedBody.forecastBalance)) == 0
 
 ### Compte B (exemple B) : courses -500 / budget 300, loyer 0 / budget 800 : prévu -1300 (avant : -1100)
 # @name accB

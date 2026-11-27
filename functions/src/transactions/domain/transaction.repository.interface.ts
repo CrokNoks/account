@@ -43,7 +43,6 @@ export abstract class TransactionRepository {
     accountId: string,
     options?: FindAllTransactionsOptions,
   ): Promise<Transaction[]>;
-  abstract findAllByPeriod(periodId: string): Promise<Transaction[]>;
   abstract findById(id: string): Promise<Transaction | null>;
   /**
    * Lignes (avec leurs tags) d'un compte portant ce `metadata.transferId`, lues
@@ -53,7 +52,7 @@ export abstract class TransactionRepository {
     transferId: string,
     accountId: string,
   ): Promise<Transaction[]>;
-  /** Renvoie la ligne telle qu'enregistrée (periodId posé par le trigger inclus). */
+  /** Renvoie la ligne telle qu'enregistrée. */
   abstract save(transaction: Transaction): Promise<Transaction>;
   /**
    * Enregistre le débit et le crédit d'un virement dans une seule transaction

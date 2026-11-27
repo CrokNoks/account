@@ -536,7 +536,7 @@ describe('SimulatePeriodForecastUseCase : fenêtre de période (factures réserv
     });
 
     expect(s.realExpenses).toBe('-62000');
-    expect(s.realIncome).toBe('0');
+    expect(s.realIncome).toBe('90000');
     expect(r.forecastBalance).toBe(s.forecastBalance);
     expect(r.realExpenses).toBe(s.realExpenses);
     expect(r.realIncome).toBe(s.realIncome);

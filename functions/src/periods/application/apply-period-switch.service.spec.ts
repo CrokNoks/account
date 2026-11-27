@@ -173,7 +173,7 @@ describe('ApplyPeriodSwitchService', () => {
       transactions: [salary],
     });
 
-    const [accountId, expectedActive, switches, written] = lastWrite();
+    const [accountId, expectedActive, switches] = lastWrite();
     expect(accountId).toBe(ACC);
     expect(expectedActive).toBe('p-active');
     expect(switches).toHaveLength(1);
@@ -187,7 +187,6 @@ describe('ApplyPeriodSwitchService', () => {
     expect(
       switches[0].budgets.map((b) => [b.categoryId, b.amountAllocated]),
     ).toEqual([[BILLS, -30000n]]);
-    expect(written.find((t) => t.id === 't1')?.periodId).toBeUndefined();
     expect(result.written).toBe(true);
     expect(result.periodSwitch).toMatchObject({
       closed: { endDate: '2026-11-27' },
@@ -365,8 +364,6 @@ describe('ApplyPeriodSwitchService', () => {
         leavingPendingIds: new Set(['t1']),
       });
 
-      const [, , , written] = lastWrite();
-      expect(written.every((t) => t.periodId === undefined)).toBe(true);
       expect(result.periodSwitch).not.toBeNull();
     });
 
@@ -484,13 +481,12 @@ describe('ApplyPeriodSwitchService', () => {
       });
 
       expect(periods.applyPeriodSwitches).toHaveBeenCalledTimes(1);
-      const [, , switches, written, generated] = lastWrite();
+      const [, , switches, , generated] = lastWrite();
       expect(switches.map((s) => iso(s.opened.startDate))).toEqual([
         '2026-09-28',
         '2026-10-28',
         '2026-11-28',
       ]);
-      expect(written.every((t) => t.periodId === undefined)).toBe(true);
       expect(result.periodSwitch?.count).toBe(3);
       // seule la dernière bascule crée la prochaine paie en pending
       const pendingSalaries = generated.filter(

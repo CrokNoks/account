@@ -19,7 +19,6 @@ const totals = (o: Partial<Record<string, number>> = {}) => ({
   budgetRemaining: BigInt(o.budgetRemaining ?? 0),
   expectedIncome: BigInt(o.expectedIncome ?? 0),
   reportsTotal: BigInt(o.reportsTotal ?? 0),
-  lateReconciledIncome: BigInt(o.lateReconciledIncome ?? 0),
 });
 
 describe('computeForecastComposition', () => {
@@ -40,18 +39,13 @@ describe('computeForecastComposition', () => {
     expect(r.expectedIncome).toBe(50000n);
   });
 
-  it('reports : repris signés du départ ; arrivé après la fin = -revenu tardif', () => {
+  it('reports : repris signés du départ ; plus de ligne « arrivé après la fin » (CA4)', () => {
     const r = computeForecastComposition({
       transactions: [],
-      ...totals({ reportsTotal: -15000, lateReconciledIncome: 30000 }),
+      ...totals({ reportsTotal: -15000 }),
     });
     expect(r.reportsTotal).toBe(-15000n);
-    expect(r.arrivedAfterEnd).toBe(-30000n);
-  });
-
-  it('pas de revenu tardif : arrivé après la fin vaut 0 (jamais -0)', () => {
-    const r = computeForecastComposition({ transactions: [], ...totals() });
-    expect(r.arrivedAfterEnd).toBe(0n);
+    expect(r).not.toHaveProperty('arrivedAfterEnd');
   });
 
   it('reports positif (facture de revenu avant le début) : gardé signé (C2)', () => {
@@ -98,7 +92,6 @@ describe('computeForecastComposition', () => {
       cardCount: 0,
       billsTotal: 0n,
       reportsTotal: 0n,
-      arrivedAfterEnd: 0n,
       budgetRemaining: 0n,
       expectedIncome: 0n,
     });
@@ -106,7 +99,7 @@ describe('computeForecastComposition', () => {
 });
 
 describe('computeBankBalances', () => {
-  it('En banque = départ pointé + pointées de la fenêtre + revenu tardif', () => {
+  it('En banque = départ pointé + pointées de la fenêtre', () => {
     const r = computeBankBalances({
       startReconciled: 120000n,
       startNonPending: 114000n,
@@ -115,12 +108,11 @@ describe('computeBankBalances', () => {
         t(-5000, {}),
         t(-8000, { pending: true }),
       ],
-      lateReconciledIncome: 30000n,
     });
-    expect(r.realBankBalance).toBe(350000n);
+    expect(r.realBankBalance).toBe(320000n);
   });
 
-  it('À venir = départ non pending + non pending de la fenêtre + revenu tardif', () => {
+  it('À venir = départ non pending + non pending de la fenêtre', () => {
     const r = computeBankBalances({
       startReconciled: 120000n,
       startNonPending: 114000n,
@@ -129,14 +121,13 @@ describe('computeBankBalances', () => {
         t(-5000, {}),
         t(-8000, { pending: true }),
       ],
-      lateReconciledIncome: 30000n,
     });
-    expect(r.upcomingBalance).toBe(114000n + 200000n - 5000n + 30000n);
+    expect(r.upcomingBalance).toBe(114000n + 200000n - 5000n);
   });
 });
 
 /**
- * Règle critique (CA7) : banque + CB + factures + reports + arrivé après la fin
+ * Règle critique (CA7) : banque + CB + factures + reports
  * + budget restant + revenus attendus = prévu, au centime. La composition est
  * recalculée ici comme les stats le font, à partir des mêmes briques.
  */
@@ -162,8 +153,6 @@ describe('égalité de la composition (CA7)', () => {
     before: Tx[];
     /** Dans la fenêtre. */
     window: Tx[];
-    /** Revenus pointés datés après la fin (période active). */
-    late: Tx[];
     budgets: Record<string, number>;
   }
 
@@ -176,7 +165,6 @@ describe('égalité de la composition (CA7)', () => {
     const startAll = BigInt(sc.initial) + sum(sc.before);
     const startRec = BigInt(sc.initial) + sum(sc.before, rec);
     const startNonPending = BigInt(sc.initial) + sum(sc.before, nonPending);
-    const lateReconciledIncome = sum(sc.late);
 
     const realByCategory = new Map<string, bigint>();
     let uncategorized = 0n;
@@ -206,7 +194,6 @@ describe('égalité de la composition (CA7)', () => {
     const composition = computeForecastComposition({
       transactions: windowTx,
       reportsTotal: startAll - startRec,
-      lateReconciledIncome,
       budgetRemaining: forecast.budgetRemaining,
       expectedIncome: forecast.expectedIncome,
     });
@@ -214,14 +201,12 @@ describe('égalité de la composition (CA7)', () => {
       startReconciled: startRec,
       startNonPending,
       transactions: windowTx,
-      lateReconciledIncome,
     });
     const total =
       bank.realBankBalance +
       composition.cardTotal +
       composition.billsTotal +
       composition.reportsTotal +
-      composition.arrivedAfterEnd +
       composition.budgetRemaining +
       composition.expectedIncome;
     return { forecast, composition, bank, total };
@@ -242,33 +227,56 @@ describe('égalité de la composition (CA7)', () => {
       { amount: -4000, categoryId: 'resto' },
       { amount: -80000, categoryId: 'loyer', pending: true },
     ],
-    late: [],
     budgets: { salaire: 200000, courses: 40000, resto: 10000, loyer: 80000 },
   });
 
-  it('A : 2 900 - 40 - 800 - 150 + 0 - 160 + 0 = 1 750', () => {
+  it('A : 2 900 - 40 - 800 - 150 - 160 + 0 = 1 750', () => {
     const r = evaluate(exampleA());
     expect(r.bank.realBankBalance).toBe(290000n);
     expect(r.bank.upcomingBalance).toBe(280000n);
     expect(r.composition.cardTotal).toBe(-4000n);
     expect(r.composition.billsTotal).toBe(-80000n);
     expect(r.composition.reportsTotal).toBe(-15000n);
-    expect(r.composition.arrivedAfterEnd).toBe(0n);
     expect(r.composition.budgetRemaining).toBe(-16000n);
     expect(r.composition.expectedIncome).toBe(0n);
     expect(r.forecast.forecastBalance).toBe(175000n);
     expect(r.total).toBe(r.forecast.forecastBalance);
   });
 
-  it('F : prime +300 pointée après la fin : 3 200 - 40 - 800 - 150 - 300 - 160 + 0 = 1 750', () => {
+  it('F : revenu pointé daté après la fin = dans la fenêtre : banque et prévu le comptent, égalité tenue', () => {
     const sc = exampleA();
-    sc.late = [{ amount: 30000, categoryId: 'prime', reconciled: true }];
+    sc.window.push({ amount: 30000, categoryId: 'prime', reconciled: true });
     const r = evaluate(sc);
     expect(r.bank.realBankBalance).toBe(320000n);
     expect(r.bank.upcomingBalance).toBe(310000n);
-    expect(r.composition.arrivedAfterEnd).toBe(-30000n);
-    expect(r.forecast.forecastBalance).toBe(175000n); // prévu inchangé
+    expect(r.forecast.forecastBalance).toBe(205000n);
     expect(r.total).toBe(r.forecast.forecastBalance);
+  });
+
+  it('cas chiffré CA4 : salaire pointé +2 000 daté après la fin, composition = prévu (3 450)', () => {
+    const sc: Scenario = {
+      initial: 100000,
+      before: [
+        { amount: 20000, categoryId: 'salaire', reconciled: true },
+        { amount: -5000, categoryId: 'loyer', pending: true },
+      ],
+      window: [
+        { amount: -3000, categoryId: 'courses' },
+        { amount: -8000, categoryId: 'courses', pending: true },
+        { amount: -1000, categoryId: 'courses', reconciled: true },
+        { amount: 200000, categoryId: 'salaire', reconciled: true },
+      ],
+      budgets: { courses: 20000, salaire: 250000 },
+    };
+    const r = evaluate(sc);
+    expect(r.bank.realBankBalance).toBe(319000n);
+    expect(r.composition.cardTotal).toBe(-3000n);
+    expect(r.composition.billsTotal).toBe(-8000n);
+    expect(r.composition.reportsTotal).toBe(-5000n);
+    expect(r.composition.budgetRemaining).toBe(-8000n);
+    expect(r.composition.expectedIncome).toBe(50000n);
+    expect(r.forecast.forecastBalance).toBe(345000n);
+    expect(r.total).toBe(345000n);
   });
 
   it('G : salaire -50 / budget 2 000 (revenus attendus 2 000, égalité tenue)', () => {
@@ -291,7 +299,6 @@ describe('égalité de la composition (CA7)', () => {
         { amount: 200000, categoryId: 'salaire', reconciled: true },
         { amount: 40000, categoryId: 'virement' }, // freelance non budgété
       ],
-      late: [],
       budgets: {
         courses: 30000,
         loyer: 80000,
@@ -313,7 +320,6 @@ describe('égalité de la composition (CA7)', () => {
         { amount: -203248, categoryId: 'virement', reconciled: true },
         { amount: 540103, categoryId: 'salaire', reconciled: true },
       ],
-      late: [],
       budgets: { virement: 203248 },
     };
     const r = evaluate(sc);
@@ -327,7 +333,6 @@ describe('égalité de la composition (CA7)', () => {
       initial: 0,
       before: [],
       window,
-      late: [],
       budgets,
     });
 
@@ -370,7 +375,6 @@ describe('égalité de la composition (CA7)', () => {
       initial: 0,
       before: [],
       window: [{ amount: -50000, categoryId: 'courses', reconciled: true }],
-      late: [],
       budgets: { courses: 30000, loyer: 80000 },
     };
     const r = evaluate(sc);
@@ -383,7 +387,6 @@ describe('égalité de la composition (CA7)', () => {
       initial: 0,
       before: [{ amount: 20000, categoryId: 'salaire', pending: true }],
       window: [],
-      late: [],
       budgets: {},
     };
     const r = evaluate(sc);
@@ -396,7 +399,6 @@ describe('égalité de la composition (CA7)', () => {
       initial: 12345,
       before: [],
       window: [],
-      late: [],
       budgets: {},
     });
     expect(r.bank.realBankBalance).toBe(12345n);
@@ -404,7 +406,7 @@ describe('égalité de la composition (CA7)', () => {
     expect(r.total).toBe(12345n);
   });
 
-  it('C4 : grille déterministe (états x signes x catégories) : somme des 7 lignes = prévu', () => {
+  it('C4 : grille déterministe (états x signes x catégories) : somme des 6 lignes = prévu', () => {
     const states: Array<Pick<Tx, 'reconciled' | 'pending'>> = [
       { reconciled: true },
       {},
@@ -429,14 +431,19 @@ describe('égalité de la composition (CA7)', () => {
       for (const amount of amounts)
         for (const c of cs)
           for (const budgets of budgetSets) {
-            // la même transaction avant le début, dans la fenêtre, et un tardif pointé
+            // la même transaction avant le début, dans la fenêtre, et un pointé tardif
             const tx: Tx = { amount, categoryId: c, ...st };
             const r = evaluate({
               initial: 4200,
               before: [tx, { ...tx, amount: -amount }],
-              window: [tx, { amount: -1234, categoryId: 'courses' }],
-              late:
-                amount > 0 ? [{ amount, categoryId: c, reconciled: true }] : [],
+              window: [
+                tx,
+                { amount: -1234, categoryId: 'courses' },
+                // revenu pointé daté après la fin : dans la fenêtre
+                ...(amount > 0
+                  ? [{ amount, categoryId: c, reconciled: true }]
+                  : []),
+              ],
               budgets,
             });
             expect(r.total).toBe(r.forecast.forecastBalance);

@@ -29,7 +29,6 @@ export interface PeriodStatsResponse {
   /** CB non pointées et factures `pending` datées avant le début (signé). */
   reportsTotal: string;
   /** -(revenus pointés après la fin d'une période active) : négatif ou nul. */
-  arrivedAfterEnd: string;
   budgetRemaining: string;
   expectedIncome: string;
   /**
@@ -65,7 +64,6 @@ export class GetPeriodStatsUseCase {
       startReconciled,
       startNonPending,
       reportsTotal,
-      lateReconciledIncome,
       periodTransactions,
       realByCategory,
       uncategorized,
@@ -135,19 +133,17 @@ export class GetPeriodStatsUseCase {
       this.logger.warn({ event: 'budget_remaining_detail_mismatch', periodId });
     }
 
-    // En banque : départ pointé + pointées de la période + revenu pointé tardif.
-    // À venir : départ non pending + non pending de la période + revenu pointé tardif.
+    // En banque : départ pointé + pointées de la fenêtre.
+    // À venir : départ non pending + non pending de la fenêtre.
     const { realBankBalance, upcomingBalance } = computeBankBalances({
       startReconciled,
       startNonPending,
       transactions: periodTransactions,
-      lateReconciledIncome,
     });
 
     const composition = computeForecastComposition({
       transactions: periodTransactions,
       reportsTotal,
-      lateReconciledIncome,
       budgetRemaining,
       expectedIncome,
     });
@@ -166,7 +162,6 @@ export class GetPeriodStatsUseCase {
       cardCount: composition.cardCount,
       billsTotal: composition.billsTotal.toString(),
       reportsTotal: composition.reportsTotal.toString(),
-      arrivedAfterEnd: composition.arrivedAfterEnd.toString(),
       budgetRemaining: composition.budgetRemaining.toString(),
       expectedIncome: composition.expectedIncome.toString(),
       budgetRemainingDetail: detail.map((l) => ({

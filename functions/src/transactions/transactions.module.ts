@@ -13,6 +13,7 @@ import { UpdateTransferUseCase } from './application/update-transfer.use-case';
 import { TransferWriteAccessService } from './application/transfer-write-access.service';
 import { TransactionsController } from './infrastructure/transactions.controller';
 import { AccountReferencesModule } from '../shared/account-references.module';
+import { CategoriesModule } from '../categories/categories.module';
 import { AccountsModule } from '../accounts/accounts.module';
 import { PeriodsModule } from '../periods/periods.module';
 import { SmartRulesModule } from '../smart-rules/smart-rules.module';
@@ -23,6 +24,7 @@ import { SmartRulesModule } from '../smart-rules/smart-rules.module';
     forwardRef(() => PeriodsModule),
     SmartRulesModule,
     AccountsModule,
+    CategoriesModule,
     AccountReferencesModule,
   ],
   controllers: [TransactionsController],

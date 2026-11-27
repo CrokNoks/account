@@ -364,14 +364,14 @@ describe('GetBudgetBreakdownUseCase : fenêtre de période (factures réservées
       isActive,
     });
 
-  it('active period: counts the expense dated after the end, not the later income', async () => {
+  it('active period: counts the expense and the income dated after the end (CA2)', async () => {
     const r = await build(nov(true)).execute('acc-1', 'per-1');
 
     expect(r.expenses[0]).toMatchObject({
       real: '-42000',
       remaining: '-2000',
     });
-    expect(r.income[0].real).toBe('0');
+    expect(r.income[0].real).toBe('50000');
   });
 
   it('closed period: keeps its end date as upper bound', async () => {

@@ -36,6 +36,7 @@ describe('GetTagDetailsUseCase', () => {
     accountId: 'acc-1',
     startDate: new Date('2026-03-01'),
     endDate: new Date('2026-03-31'),
+    isActive: false,
   });
 
   let transactions: { findAllByAccountUnpaginated: jest.Mock };
@@ -155,6 +156,57 @@ describe('GetTagDetailsUseCase', () => {
       'acc-1',
       { startDate: period.startDate, endDate: period.endDate },
     );
+  });
+
+  describe('active period (CA5)', () => {
+    const active = Period.create({
+      id: 'per-1',
+      accountId: 'acc-1',
+      startDate: new Date('2026-03-01'),
+      endDate: new Date('2026-03-31'),
+      isActive: true,
+    });
+    const paie = Transaction.create({
+      id: 'next-paie',
+      accountId: 'acc-1',
+      categoryId: 'paie',
+      date: new Date('2026-04-01'),
+      description: 'paie',
+      amount: BigInt(250000),
+      reconciled: false,
+      pending: true,
+      tagIds: ['vacances'],
+      metadata: { recurringId: 'rec-1' },
+    });
+
+    it('loads without upper bound and counts tagged transactions dated after the end, except the next paie', async () => {
+      periods.findById.mockResolvedValue(active);
+      categories.findAllByAccount.mockResolvedValue([
+        new Category({
+          id: 'paie',
+          name: 'Paie',
+          color: '#000000',
+          type: CategoryType.INCOME,
+          isPeriodTrigger: true,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        }),
+      ]);
+      transactions.findAllByAccountUnpaginated.mockResolvedValue([
+        tx('in', '2026-03-10', -1000, 'resto'),
+        tx('after', '2026-04-05', -2000, 'resto'),
+        paie,
+      ]);
+
+      const { summary } = await useCase.execute('acc-1', 'vacances', 'per-1');
+
+      expect(transactions.findAllByAccountUnpaginated).toHaveBeenCalledWith(
+        'acc-1',
+        { startDate: active.startDate, endDate: undefined },
+      );
+      expect(summary.transactionCount).toBe(2);
+      expect(summary.totalAmount).toBe('-3000');
+    });
   });
 
   it('rejects an unknown tag', async () => {

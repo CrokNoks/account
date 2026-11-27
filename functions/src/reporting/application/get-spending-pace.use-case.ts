@@ -7,6 +7,7 @@ import { Period } from '../../periods/domain/period.entity';
 import { NotFoundError } from '../../shared/domain/errors';
 import { addDaysDateOnly, todayDateOnly } from '../../shared/domain/date-only';
 import { buildSpendingPace, PaceWindow } from '../domain/spending-pace';
+import { filterPeriodWindow, toWindowPeriod } from '../domain/period-window';
 
 export interface SpendingPacePoint {
   day: number;
@@ -54,22 +55,24 @@ export class GetSpendingPaceUseCase {
     ]);
     const categoryTypes = new Map(categories.map((c) => [c.id, c.type]));
 
-    // Période active ou sans fin : jusqu'à aujourd'hui ; fermée : sa fin.
-    const last =
-      period.isActive || !period.endDate
-        ? earliest(period.endDate ?? today, today)
-        : period.endDate;
+    // Période active ou sans fin : jusqu'à aujourd'hui (sa fin n'est qu'indicative,
+    // même fenêtre que le prévu) ; fermée : sa fin.
+    const last = period.isActive || !period.endDate ? today : period.endDate;
     // Période future (non active comprise) : rien à tracer, la courbe n'a pas commencé.
     const days =
       period.startDate > today ? 0 : daysBetween(period.startDate, last);
 
     const previousPeriod = this.findPrevious(period, allPeriods);
 
+    const window = toWindowPeriod(period, categories);
     const transactions =
       days > 0
-        ? await this.transactionRepository.findAllByAccountUnpaginated(
-            accountId,
-            { startDate: period.startDate, endDate: last },
+        ? filterPeriodWindow(
+            await this.transactionRepository.findAllByAccountUnpaginated(
+              accountId,
+              { startDate: period.startDate, endDate: last },
+            ),
+            window,
           )
         : [];
 

@@ -42,7 +42,6 @@ const tx = (
   Transaction.create({
     accountId: 'acc-1',
     categoryId,
-    periodId,
     date: new Date(date),
     description: 'tx',
     amount: BigInt(amount),

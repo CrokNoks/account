@@ -185,6 +185,25 @@ describe('GetSpendingPaceUseCase', () => {
     expect(r.points[9].previousCumulative).toBe('0');
   });
 
+  it('CA6 : période active dont la fin est dépassée : la courbe continue jusqu’à aujourd’hui avec les nouvelles dépenses', async () => {
+    const t = new Date('2026-12-05');
+    txByStart['2026-11-01'] = [
+      tx(-1500, 'dep', '2026-11-03'),
+      tx(-700, 'dep', '2026-12-02'),
+    ];
+
+    const r = await useCase.execute('acc-1', 'nov', t);
+
+    expect(r.points).toHaveLength(35);
+    expect(r.points[34]).toMatchObject({
+      date: '2026-12-05',
+      cumulative: '2200',
+    });
+    const calls = transactions.findAllByAccountUnpaginated.mock
+      .calls as unknown[][];
+    expect(calls[0][1]).toEqual({ startDate: nov.startDate, endDate: t });
+  });
+
   it('période active sans fin : jusqu’à aujourd’hui', async () => {
     periodsList = [period('open', '2026-11-01', null, true), oct];
     const r = await useCase.execute('acc-1', 'open', today);

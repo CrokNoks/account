@@ -148,7 +148,6 @@ describe('planTransferUpdate', () => {
       reconciled: true,
       notes: 'ma note',
       tagIds: ['t1'],
-      periodId: 'p-b',
     });
 
     const planned = planTransferUpdate(other, modified);
@@ -158,7 +157,6 @@ describe('planTransferUpdate', () => {
     expect(planned.reconciled).toBe(true);
     expect(planned.notes).toBe('ma note');
     expect(planned.tagIds).toEqual(['t1']);
-    expect(planned.periodId).toBe('p-b');
     expect(planned.accountId).toBe('B');
     expect(planned.amount + modified.amount).toBe(BigInt(0));
   });

@@ -10,7 +10,6 @@ export function toTransactionPayload(transaction: Transaction) {
     id: transaction.id,
     account_id: transaction.accountId,
     category_id: transaction.categoryId,
-    period_id: transaction.periodId,
     date: transaction.date.toISOString().split('T')[0],
     description: transaction.description,
     amount: transaction.amount.toString(),

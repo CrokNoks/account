@@ -288,6 +288,10 @@ describe('Transactions routes (e2e)', () => {
         endDate: new Date('2026-11-30'),
         isActive: true,
       });
+      mocks.categories.findAllByAccount.mockResolvedValue([
+        { id: 'cat-paie', isPeriodTrigger: true },
+        { id: 'cat-autre', isPeriodTrigger: false },
+      ]);
 
       await http()
         .get('/00000000-0000-4000-8000-000000000101/transactions')
@@ -308,6 +312,7 @@ describe('Transactions routes (e2e)', () => {
             startDate: new Date('2026-11-01'),
             endDate: new Date('2026-11-30'),
             isActive: true,
+            triggerCategoryId: 'cat-paie',
           },
         }),
       );
@@ -960,7 +965,6 @@ describe('Transactions routes (e2e)', () => {
       tx(id, {
         accountId,
         categoryId: null,
-        periodId: `period-${accountId}`,
         date: new Date('2026-11-20T00:00:00.000Z'),
         amount: BigInt(amount),
         metadata: {
@@ -1010,7 +1014,7 @@ describe('Transactions routes (e2e)', () => {
       expect(mocks.transactions.save).not.toHaveBeenCalled();
     });
 
-    it('PATCH date gives the same date to the other side and keeps both periods', async () => {
+    it('PATCH date gives the same date to the other side', async () => {
       await http()
         .patch(`/${A}/transactions/${OUT}`)
         .set(auth())
@@ -1023,10 +1027,6 @@ describe('Transactions routes (e2e)', () => {
       expect(lines.map((l) => l.date.toISOString().slice(0, 10))).toEqual([
         '2026-11-22',
         '2026-11-22',
-      ]);
-      expect(lines.map((l) => l.periodId)).toEqual([
-        `period-${A}`,
-        `period-${B}`,
       ]);
       expect(mocks.periods.findByAccount).not.toHaveBeenCalled();
     });
@@ -1342,7 +1342,7 @@ describe('Transactions routes (e2e)', () => {
         count: 1,
         dateChanged: false,
       });
-      expect(body(res).periodId).toBe(switches[0].opened.id);
+      expect(body(res)).not.toHaveProperty('periodId');
     });
 
     it('POST a salary under 15 days after the start of the active period: saved as before, no periodSwitch', async () => {

@@ -195,7 +195,7 @@ describe('GetEvolutionUseCase : fenêtre de période (factures réservées)', ()
     isActive: true,
   });
 
-  it('active period: counts the expense dated after the end (forecast and real expenses), not the later income', async () => {
+  it('active period: counts what is dated after the end, expense or income (CA2)', async () => {
     const [, novPoint] = await run(
       [
         tx('2026-11-10', -30000, 'courses', true),
@@ -207,8 +207,8 @@ describe('GetEvolutionUseCase : fenêtre de période (factures réservées)', ()
 
     expect(novPoint).toMatchObject({
       realExpenses: '-42000',
-      realIncome: '0',
-      forecastBalance: '58000',
+      realIncome: '50000',
+      forecastBalance: '108000',
       realBankBalance: '70000',
     });
   });
@@ -311,7 +311,7 @@ describe('GetEvolutionUseCase : départs séparés et revenu tardif (CA8)', () =
     );
   });
 
-  it('E2 : exemple F, la prime pointée datée après la fin est dans realBankBalance (3 200), pas dans forecastBalance', async () => {
+  it('E2 : exemple F, la prime pointée datée après la fin est dans la fenêtre : realBankBalance 3 200 et forecastBalance', async () => {
     const [, point2] = await run(
       [...exampleA(), at('2026-04-02', 30000, 'salaire', { reconciled: true })],
       [p2, p1],
@@ -319,10 +319,9 @@ describe('GetEvolutionUseCase : départs séparés et revenu tardif (CA8)', () =
 
     expect(point2.realBankBalance).toBe('320000');
     expect(point2.forecastBalance).toBe(
-      String(105000 + 200000 - 30000 - 4000 - 80000),
+      String(105000 + 200000 + 30000 - 30000 - 4000 - 80000),
     );
-    // le revenu tardif n'entre pas dans les revenus de la période (fenêtre inchangée)
-    expect(point2.realIncome).toBe('200000');
+    expect(point2.realIncome).toBe('230000');
   });
 
   it('E3 : période fermée, la CB non pointée avant le début n’entre pas dans le départ de la banque', async () => {

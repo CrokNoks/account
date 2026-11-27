@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { TransactionRepository } from '../../transactions/domain/transaction.repository.interface';
 import { PeriodRepository } from '../../periods/domain/period.repository.interface';
+import { CategoryRepository } from '../../categories/domain/category.repository.interface';
 import { Transaction } from '../../transactions/domain/transaction.entity';
 import {
   addMonthsDateOnly,
@@ -13,6 +14,7 @@ import { ensureBelongsToAccount } from '../../shared/domain/account-ownership';
 import {
   isInPeriodWindow,
   periodLoadEndDate,
+  toWindowPeriod,
   WindowPeriod,
 } from '../domain/period-window';
 
@@ -30,12 +32,13 @@ export class GetAnomaliesUseCase {
   constructor(
     private readonly transactionRepository: TransactionRepository,
     private readonly periodRepository: PeriodRepository,
+    private readonly categoryRepository: CategoryRepository,
   ) {}
 
   async execute(accountId: string, periodId?: string): Promise<Anomaly[]> {
     let targetStartDate: Date;
-    // Fenêtre d'analyse : celle du prévu pour les dépenses ; les revenus
-    // restent bornés à la fin, ou à aujourd'hui sans fin.
+    // Fenêtre d'analyse : celle du prévu (domain/period-window). Sans période,
+    // le mois en cours jusqu'à aujourd'hui.
     let window: WindowPeriod;
 
     if (periodId) {
@@ -45,15 +48,19 @@ export class GetAnomaliesUseCase {
         'Period',
       );
       targetStartDate = period.startDate;
-      window = {
-        startDate: period.startDate,
-        endDate: period.endDate || todayDateOnly(),
-        isActive: period.isActive,
-      };
+      window = toWindowPeriod(
+        period,
+        await this.categoryRepository.findAllByAccount(accountId),
+      );
     } else {
       const today = todayDateOnly();
       targetStartDate = startOfMonthDateOnly(today);
-      window = { startDate: targetStartDate, endDate: today, isActive: false };
+      window = {
+        startDate: targetStartDate,
+        endDate: today,
+        isActive: false,
+        triggerCategoryId: null,
+      };
     }
 
     const historyStartDate = addMonthsDateOnly(targetStartDate, -6);

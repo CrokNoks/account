@@ -8,9 +8,13 @@ import {
 import { BudgetInstance } from '../../budgets/domain/budget-instance.entity';
 import { Transaction } from '../../transactions/domain/transaction.entity';
 import {
+  filterPeriodWindow,
   isInPeriodWindow,
-  isLateReconciledIncome,
+  isNextPaie,
   periodLoadEndDate,
+  toWindowPeriod,
+  WindowPeriod,
+  WindowTransaction,
 } from './period-window';
 
 const category = (id: string, type: CategoryType) =>
@@ -115,7 +119,6 @@ const run = async (
       BigInt(s.cardTotal) +
       BigInt(s.billsTotal) +
       BigInt(s.reportsTotal) +
-      BigInt(s.arrivedAfterEnd) +
       BigInt(s.budgetRemaining) +
       BigInt(s.expectedIncome),
     forecastAbs: BigInt(s.forecastBalance),
@@ -257,23 +260,24 @@ describe('fenêtre de période : table de la règle critique (15 cas)', () => {
     },
     {
       n: 9,
-      label: 'active avec fin, revenu +12 000 le 05/12 : non compté',
+      label:
+        'active avec fin, revenu non pointé +12 000 le 05/12 : compté (CA2)',
       period: active,
       t: () => tx('2026-12-05', 12000, { categoryId: 'salaire' }),
-      forecast: 0n,
+      forecast: 12000n,
       bank: 0n,
-      upcoming: 0n,
+      upcoming: 12000n,
       bills: 0n,
-      card: 0n,
-      cardCount: 0,
+      card: 12000n,
+      cardCount: 1,
     },
     {
       n: 10,
       label:
-        'active avec fin, revenu pointé +12 000 sur une dépense le 05/12 : tardif, en banque et à venir, pas au prévu',
+        'active avec fin, revenu pointé +12 000 le 05/12 : dans la fenêtre, en banque, à venir et au prévu',
       period: active,
       t: () => tx('2026-12-05', 12000, { reconciled: true }),
-      forecast: 0n,
+      forecast: 12000n,
       bank: 12000n,
       upcoming: 12000n,
       bills: 0n,
@@ -331,11 +335,11 @@ describe('fenêtre de période : table de la règle critique (15 cas)', () => {
     {
       n: 15,
       label:
-        'active avec fin, salaire pointé +12 000 le 05/12 : tardif (exemple F)',
+        'active avec fin, salaire pointé +12 000 le 05/12 : dans la fenêtre (exemple F)',
       period: active,
       t: () =>
         tx('2026-12-05', 12000, { categoryId: 'salaire', reconciled: true }),
-      forecast: 0n,
+      forecast: 12000n,
       bank: 12000n,
       upcoming: 12000n,
       bills: 0n,
@@ -392,86 +396,193 @@ describe('fenêtre de période : table de la règle critique (15 cas)', () => {
   });
 });
 
-describe('isInPeriodWindow / periodLoadEndDate', () => {
-  const p = (endDate: string | null, isActive: boolean) => ({
+describe('isInPeriodWindow : table de cas de la conception', () => {
+  const T = 'paie';
+  const P = (
+    o: Partial<WindowPeriod> & { closed?: boolean } = {},
+  ): WindowPeriod => ({
     startDate: d('2026-11-01'),
-    endDate: endDate ? d(endDate) : null,
-    isActive,
+    endDate: d('2026-11-30'),
+    isActive: !o.closed,
+    triggerCategoryId: T,
+    ...o,
   });
-  const t = (date: string, amount: bigint) => ({ date: d(date), amount });
-
-  it.each([
-    ['avant le début', t('2026-10-31', -1n), p('2026-11-30', true), false],
-    ['jour du début', t('2026-11-01', -1n), p('2026-11-30', false), true],
-    [
-      'jour de la fin, revenu',
-      t('2026-11-30', 1n),
-      p('2026-11-30', true),
-      true,
-    ],
-    [
-      'dépense après la fin, active',
-      t('2026-12-01', -1n),
-      p('2026-11-30', true),
-      true,
-    ],
-    [
-      'dépense après la fin, fermée',
-      t('2026-12-01', -1n),
-      p('2026-11-30', false),
-      false,
-    ],
-    [
-      'montant nul après la fin, active',
-      t('2026-12-01', 0n),
-      p('2026-11-30', true),
-      false,
-    ],
-    [
-      'revenu après la fin, active',
-      t('2026-12-01', 1n),
-      p('2026-11-30', true),
-      false,
-    ],
-    ['sans fin, revenu tardif', t('2030-01-01', 1n), p(null, true), true],
-  ])('%s', (_l, tr, period, expected) => {
-    expect(isInPeriodWindow(tr, period)).toBe(expected);
-  });
-
-  it('charge sans borne haute une période active, avec la fin sinon', () => {
-    expect(periodLoadEndDate(p('2026-11-30', true))).toBeUndefined();
-    expect(periodLoadEndDate(p('2026-11-30', false))).toEqual(d('2026-11-30'));
-    expect(periodLoadEndDate(p(null, false))).toBeUndefined();
-  });
-});
-
-describe('isLateReconciledIncome (CA4)', () => {
-  const late = (
+  const W = (
     date: string,
-    amount: bigint,
-    reconciled: boolean,
-    period = active(),
-  ) => isLateReconciledIncome({ date: d(date), amount, reconciled }, period);
+    o: Partial<WindowTransaction> = {},
+  ): WindowTransaction => ({
+    date: d(date),
+    pending: false,
+    categoryId: 'courses',
+    metadata: {},
+    ...o,
+  });
+  const paie = (date: string, o: Partial<WindowTransaction> = {}) =>
+    W(date, {
+      pending: true,
+      categoryId: T,
+      metadata: { recurringId: 'rec-1' },
+      ...o,
+    });
 
-  it('F : revenu pointé après la fin d’une période active', () => {
-    expect(late('2026-12-02', 30000n, true)).toBe(true);
+  it.each<[string, () => WindowTransaction, () => WindowPeriod, boolean]>([
+    [
+      'fermée, date = début',
+      () => W('2026-11-01'),
+      () => P({ closed: true }),
+      true,
+    ],
+    [
+      'fermée, date = fin',
+      () => W('2026-11-30'),
+      () => P({ closed: true }),
+      true,
+    ],
+    [
+      'fermée, veille du début',
+      () => W('2026-10-31'),
+      () => P({ closed: true }),
+      false,
+    ],
+    [
+      'fermée, lendemain de la fin',
+      () => W('2026-12-01'),
+      () => P({ closed: true }),
+      false,
+    ],
+    [
+      'fermée, revenu pointé après la fin',
+      () => W('2026-12-05', { categoryId: 'revenus' }),
+      () => P({ closed: true }),
+      false,
+    ],
+    ['active, dépense après la fin', () => W('2026-12-05'), () => P(), true],
+    [
+      'active, revenu non pointé après la fin (sans catégorie déclencheuse)',
+      () => W('2026-12-05', { categoryId: 'revenus' }),
+      () => P(),
+      true,
+    ],
+    [
+      'active, revenu pointé après la fin',
+      () => W('2026-12-05', { categoryId: 'revenus' }),
+      () => P(),
+      true,
+    ],
+    [
+      'active, paie pending + recurringId à fin + 1',
+      () => paie('2026-12-01'),
+      () => P(),
+      false,
+    ],
+    ['active, même paie à la fin', () => paie('2026-11-30'), () => P(), true],
+    [
+      'active, paie pending dans la période',
+      () => paie('2026-11-15'),
+      () => P(),
+      true,
+    ],
+    [
+      'active, paie pointée après la fin',
+      () => paie('2026-12-05', { pending: false }),
+      () => P(),
+      true,
+    ],
+    [
+      'active, paie pending sans recurringId après la fin',
+      () => paie('2026-12-05', { metadata: {} }),
+      () => P(),
+      true,
+    ],
+    [
+      'active, paie pending avec recurringId vide',
+      () => paie('2026-12-05', { metadata: { recurringId: '' } }),
+      () => P(),
+      true,
+    ],
+    [
+      'active, pending + recurringId d’une autre catégorie après la fin',
+      () => paie('2026-12-05', { categoryId: 'loyer' }),
+      () => P(),
+      true,
+    ],
+    [
+      'active sans fin, paie pending + recurringId à J+60',
+      () => paie('2027-01-29'),
+      () => P({ endDate: null }),
+      true,
+    ],
+    [
+      'active sans catégorie déclencheuse, paie pending après la fin',
+      () => paie('2026-12-05'),
+      () => P({ triggerCategoryId: null }),
+      true,
+    ],
+    ['active, date < début', () => W('2026-10-31'), () => P(), false],
+    [
+      'fermée sans fin : tout ce qui suit le début compte (comportement gardé, documenté)',
+      () => W('2027-01-10'),
+      () => P({ closed: true, endDate: null }),
+      true,
+    ],
+  ])('%s', (_l, t, period, expected) => {
+    expect(isInPeriodWindow(t(), period())).toBe(expected);
   });
-  it('F3 : revenu non pointé après la fin : ignoré', () => {
-    expect(late('2026-12-02', 30000n, false)).toBe(false);
+
+  it('isNextPaie : pas de condition sur le montant ni sur le pointage, période fermée jamais', () => {
+    expect(isNextPaie(paie('2026-12-01'), P())).toBe(true);
+    expect(isNextPaie(paie('2026-12-01'), P({ closed: true }))).toBe(false);
+    expect(isNextPaie(paie('2026-12-01', { pending: false }), P())).toBe(false);
   });
-  it('F4 : dépense pointée après la fin : déjà dans la fenêtre, pas un tardif', () => {
-    expect(late('2026-12-02', -5000n, true)).toBe(false);
+
+  it('filterPeriodWindow sur 3 périodes consécutives fermées : chaque transaction dans une seule', () => {
+    const periods: WindowPeriod[] = [
+      P({ closed: true, startDate: d('2026-09-01'), endDate: d('2026-09-30') }),
+      P({ closed: true, startDate: d('2026-10-01'), endDate: d('2026-10-31') }),
+      P({ closed: true, startDate: d('2026-11-01'), endDate: d('2026-11-30') }),
+    ];
+    const txs = [
+      '2026-09-01',
+      '2026-09-30',
+      '2026-10-01',
+      '2026-10-31',
+      '2026-11-01',
+      '2026-11-30',
+    ].map((x) => W(x));
+    const counts = txs.map(
+      (t) => periods.filter((p) => filterPeriodWindow([t], p).length).length,
+    );
+    expect(counts).toEqual([1, 1, 1, 1, 1, 1]);
   });
-  it('un montant à 0 n’est pas un revenu', () => {
-    expect(late('2026-12-02', 0n, true)).toBe(false);
+
+  it('periodLoadEndDate : active sans borne haute, fermée avec sa fin, fermée sans fin sans borne', () => {
+    expect(periodLoadEndDate(P())).toBeUndefined();
+    expect(periodLoadEndDate(P({ closed: true }))).toEqual(d('2026-11-30'));
+    expect(
+      periodLoadEndDate(P({ closed: true, endDate: null })),
+    ).toBeUndefined();
   });
-  it('le jour de la fin : dans la fenêtre, pas un tardif', () => {
-    expect(late('2026-11-30', 30000n, true)).toBe(false);
-  });
-  it('F2 : période fermée : jamais de tardif', () => {
-    expect(late('2026-12-02', 30000n, true, closed())).toBe(false);
-  });
-  it('F5 : période active sans fin : jamais de tardif', () => {
-    expect(late('2027-03-02', 30000n, true, active(null))).toBe(false);
+
+  it('toWindowPeriod prend la catégorie déclencheuse du compte', () => {
+    const cats = [
+      category('courses', CategoryType.EXPENSE),
+      new Category({
+        id: 'paie',
+        name: 'paie',
+        color: '#000000',
+        type: CategoryType.INCOME,
+        isPeriodTrigger: true,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      }),
+    ];
+    const per = Period.create({
+      accountId: 'acc-1',
+      startDate: d('2026-11-01'),
+      endDate: d('2026-11-30'),
+      isActive: true,
+    });
+    expect(toWindowPeriod(per, cats).triggerCategoryId).toBe('paie');
+    expect(toWindowPeriod(per, cats.slice(0, 1)).triggerCategoryId).toBeNull();
   });
 });

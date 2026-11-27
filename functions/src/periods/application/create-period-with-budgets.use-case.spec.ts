@@ -112,7 +112,6 @@ describe('CreatePeriodWithBudgetsUseCase', () => {
       { id: string },
       unknown,
       Array<{
-        periodId: string;
         pending: boolean;
         amount: bigint;
         metadata: object;
@@ -121,7 +120,6 @@ describe('CreatePeriodWithBudgetsUseCase', () => {
     expect(period).toBe(result.period);
     expect(transactions).toHaveLength(1);
     expect(transactions[0]).toMatchObject({
-      periodId: result.period.id,
       pending: true,
       amount: BigInt(-50000),
       metadata: { source: 'recurring' },

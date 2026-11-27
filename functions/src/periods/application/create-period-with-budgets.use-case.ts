@@ -82,7 +82,6 @@ export class CreatePeriodWithBudgetsUseCase {
               description: rec.description,
               amount: rec.amount,
               date: transactionDate,
-              periodId: period.id,
               reconciled: false,
               pending: true,
               metadata: {

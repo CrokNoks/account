@@ -7,8 +7,8 @@ import { Transaction } from '../../transactions/domain/transaction.entity';
 import { NotFoundError } from '../../shared/domain/errors';
 import {
   filterPeriodWindow,
-  isLateReconciledIncome,
   periodLoadEndDate,
+  toWindowPeriod,
 } from '../domain/period-window';
 
 export interface PeriodForecastSources {
@@ -28,8 +28,6 @@ export interface LoadedPeriodForecastInput {
   startNonPending: bigint;
   /** Départ complet - départ pointé : CB non pointées et factures `pending` avant le début (signé). */
   reportsTotal: bigint;
-  /** Revenus pointés datés après la fin d'une période active (hors fenêtre, donc hors prévu). */
-  lateReconciledIncome: bigint;
   periodTransactions: Transaction[];
   /** Réel par catégorie (tous types, pending comprises). */
   realByCategory: Map<string, bigint>;
@@ -68,16 +66,14 @@ export async function loadPeriodForecastInput(
   const reportsTotal = starts.all - starts.reconciled;
 
   // Fenêtre unique (domain/period-window) : période active = pas de borne haute
-  // au chargement, le revenu tardif est écarté par le filtre.
+  // au chargement, la prochaine paie est écartée par le filtre.
+  const window = toWindowPeriod(period, categories);
   const loaded =
     await sources.transactionRepository.findAllByAccountUnpaginated(accountId, {
       startDate: period.startDate,
       endDate: periodLoadEndDate(period),
     });
-  const periodTransactions = filterPeriodWindow(loaded, period);
-  const lateReconciledIncome = loaded
-    .filter((t) => isLateReconciledIncome(t, period))
-    .reduce((sum, t) => sum + t.amount, BigInt(0));
+  const periodTransactions = filterPeriodWindow(loaded, window);
 
   const realByCategory = new Map<string, bigint>();
   let uncategorized = BigInt(0);
@@ -96,7 +92,6 @@ export async function loadPeriodForecastInput(
     startReconciled,
     startNonPending,
     reportsTotal,
-    lateReconciledIncome,
     periodTransactions,
     realByCategory,
     uncategorized,

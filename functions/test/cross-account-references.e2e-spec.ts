@@ -322,7 +322,7 @@ describe('Cross-account references (e2e)', () => {
     }
   });
 
-  describe('periodId of a transaction', () => {
+  describe('legacy periodId of a transaction (ignored, the period is deduced from the dates)', () => {
     const periodRoutes: Array<{
       name: string;
       method: 'post' | 'patch';
@@ -355,39 +355,21 @@ describe('Cross-account references (e2e)', () => {
       },
     ];
 
-    beforeEach(() => {
-      mocks.periods.findById.mockImplementation((id: string) =>
-        Promise.resolve(
-          id === '00000000-0000-4000-8000-000000000009'
-            ? { id, accountId: '00000000-0000-4000-8000-000000000101' }
-            : id === '00000000-0000-4000-8000-000000000010'
-              ? { id, accountId: '00000000-0000-4000-8000-000000000102' }
-              : null,
-        ),
-      );
-    });
-
     describe.each(periodRoutes)('$name', (r) => {
       const send = (periodId: string | null) =>
         http()[r.method](r.url).set(auth()).send(r.body(periodId));
 
-      it('accepts a period of the account, or no period', async () => {
-        await send('00000000-0000-4000-8000-000000000009').expect(r.okStatus);
-        await send(null).expect(r.okStatus);
-      });
-
       it.each([
         ['a period of another account', '00000000-0000-4000-8000-000000000010'],
         ['an unknown period', '00000000-0000-4000-8000-000000000011'],
-      ])('answers 400 without writing for %s', async (_label, periodId) => {
-        const res = await send(periodId).expect(400);
-        expect((res.body as { message: string }).message).toBe(
-          'Period does not belong to this account',
-        );
-        expect(mocks.transactions.save).not.toHaveBeenCalled();
-        expect(mocks.transactions.saveMany).not.toHaveBeenCalled();
-        expect(mocks.transactions.updateMany).not.toHaveBeenCalled();
-      });
+        ['no period', null],
+      ])(
+        'accepts and ignores the legacy periodId (%s)',
+        async (_label, periodId) => {
+          await send(periodId).expect(r.okStatus);
+          expect(mocks.periods.findById).not.toHaveBeenCalled();
+        },
+      );
     });
   });
 

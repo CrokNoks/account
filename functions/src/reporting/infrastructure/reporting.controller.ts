@@ -274,7 +274,6 @@ class PeriodStatsResponseDto implements PeriodStatsResponse {
   @ApiProperty() cardCount: number;
   @ApiProperty() billsTotal: string;
   @ApiProperty() reportsTotal: string;
-  @ApiProperty() arrivedAfterEnd: string;
   @ApiProperty() budgetRemaining: string;
   @ApiProperty() expectedIncome: string;
   @ApiProperty({ type: [BudgetRemainingDetailLineDto] })

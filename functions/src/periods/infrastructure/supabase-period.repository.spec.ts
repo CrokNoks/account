@@ -25,7 +25,6 @@ const transaction = Transaction.create({
   date: new Date('2026-03-05'),
   description: 'Loyer',
   amount: BigInt(-50000),
-  periodId: period.id,
   reconciled: false,
   pending: true,
   metadata: { source: 'recurring' },
@@ -87,7 +86,6 @@ describe('SupabasePeriodRepository.createWithBudgets', () => {
     expect(params.p_transactions).toEqual([
       expect.objectContaining({
         id: transaction.id,
-        period_id: period.id,
         amount: '-50000',
         pending: true,
         tag_ids: [],

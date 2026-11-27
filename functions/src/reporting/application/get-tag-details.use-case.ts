@@ -6,6 +6,12 @@ import { CategoryRepository } from '../../categories/domain/category.repository.
 import { NotFoundError } from '../../shared/domain/errors';
 import { ensureBelongsToAccount } from '../../shared/domain/account-ownership';
 import { roundedPercentage } from '../../shared/domain/percentage';
+import {
+  filterPeriodWindow,
+  periodLoadEndDate,
+  toWindowPeriod,
+  WindowPeriod,
+} from '../domain/period-window';
 
 export interface TagSummary {
   tagId: string;
@@ -53,8 +59,12 @@ export class GetTagDetailsUseCase {
     if (!tag || tag.accountId !== accountId)
       throw new NotFoundError('Tag not found');
 
+    const categories =
+      await this.categoryRepository.findAllByAccount(accountId);
+
     let startDate: Date | undefined;
     let endDate: Date | undefined;
+    let window: WindowPeriod | undefined;
 
     if (periodId) {
       const period = ensureBelongsToAccount(
@@ -63,7 +73,8 @@ export class GetTagDetailsUseCase {
         'Period',
       );
       startDate = period.startDate;
-      endDate = period.endDate || undefined;
+      endDate = periodLoadEndDate(period);
+      window = toWindowPeriod(period, categories);
     }
 
     const allTransactions =
@@ -71,12 +82,11 @@ export class GetTagDetailsUseCase {
         startDate,
         endDate,
       });
-    const tagTransactions = allTransactions.filter((t) =>
-      t.tagIds?.includes(tagId),
-    );
-
-    const categories =
-      await this.categoryRepository.findAllByAccount(accountId);
+    // Même fenêtre que le prévu (domain/period-window), puis le filtre par tag.
+    const inWindow = window
+      ? filterPeriodWindow(allTransactions, window)
+      : allTransactions;
+    const tagTransactions = inWindow.filter((t) => t.tagIds?.includes(tagId));
 
     // Calculate Summary
     const totalAmount = tagTransactions.reduce(

@@ -14,12 +14,13 @@ import {
 import { BudgetInstance } from '../../budgets/domain/budget-instance.entity';
 import { Transaction } from '../../transactions/domain/transaction.entity';
 
-const category = (id: string, type: CategoryType) =>
+const category = (id: string, type: CategoryType, isPeriodTrigger = false) =>
   new Category({
     id,
     name: id,
     color: '#000000',
     type,
+    isPeriodTrigger,
     createdAt: new Date(),
     updatedAt: new Date(),
   });
@@ -295,7 +296,6 @@ describe('GetPeriodStatsUseCase', () => {
       cardCount: 0,
       billsTotal: '0',
       reportsTotal: '0',
-      arrivedAfterEnd: '0',
       budgetRemaining: '0',
       expectedIncome: '0',
       budgetRemainingDetail: [],
@@ -347,7 +347,6 @@ describe('GetPeriodStatsUseCase', () => {
         BigInt(s.cardTotal) +
         BigInt(s.billsTotal) +
         BigInt(s.reportsTotal) +
-        BigInt(s.arrivedAfterEnd) +
         BigInt(s.budgetRemaining) +
         BigInt(s.expectedIncome);
       expect(sum.toString()).toBe(s.forecastBalance);
@@ -388,7 +387,6 @@ describe('GetPeriodStatsUseCase', () => {
         BigInt(s.cardTotal) +
         BigInt(s.billsTotal) +
         BigInt(s.reportsTotal) +
-        BigInt(s.arrivedAfterEnd) +
         BigInt(s.budgetRemaining) +
         BigInt(s.expectedIncome)
       ).toString();
@@ -570,7 +568,11 @@ describe('GetPeriodStatsUseCase', () => {
       date: string,
       amount: number,
       categoryId: string | null,
-      flags: { reconciled?: boolean; pending?: boolean } = {},
+      flags: {
+        reconciled?: boolean;
+        pending?: boolean;
+        metadata?: Record<string, any>;
+      } = {},
     ) =>
       Transaction.create({
         accountId: 'acc-1',
@@ -580,8 +582,9 @@ describe('GetPeriodStatsUseCase', () => {
         amount: BigInt(amount),
         reconciled: flags.reconciled ?? false,
         pending: flags.pending ?? false,
+        metadata: flags.metadata,
       });
-    const sevenLines = (
+    const sixLines = (
       s: Awaited<ReturnType<GetPeriodStatsUseCase['execute']>>,
     ) =>
       (
@@ -589,7 +592,6 @@ describe('GetPeriodStatsUseCase', () => {
         BigInt(s.cardTotal) +
         BigInt(s.billsTotal) +
         BigInt(s.reportsTotal) +
-        BigInt(s.arrivedAfterEnd) +
         BigInt(s.budgetRemaining) +
         BigInt(s.expectedIncome)
       ).toString();
@@ -645,11 +647,10 @@ describe('GetPeriodStatsUseCase', () => {
         cardTotal: '-4000',
         billsTotal: '-80000',
         reportsTotal: '-15000',
-        arrivedAfterEnd: '0',
         budgetRemaining: '-16000',
         expectedIncome: '0',
       });
-      expect(sevenLines(stats)).toBe(stats.forecastBalance);
+      expect(sixLines(stats)).toBe(stats.forecastBalance);
     });
 
     it('A2 : une CB ancienne non pointée reste dans À venir mais plus dans En banque', async () => {
@@ -688,7 +689,7 @@ describe('GetPeriodStatsUseCase', () => {
       expect(stats.reportsTotal).toBe('-9000');
     });
 
-    it('F : prime +300 pointée datée après la fin d’une période active : En banque 3 200, À venir 3 100, prévu 1 750', async () => {
+    it('F : prime +300 pointée datée après la fin d’une période active : dans la fenêtre, En banque 3 200, À venir 3 100, prévu 2 050 (CA2, CA4)', async () => {
       exampleA();
       const txs =
         (await transactions.findAllByAccountUnpaginated()) as Transaction[];
@@ -702,13 +703,13 @@ describe('GetPeriodStatsUseCase', () => {
       expect(stats).toMatchObject({
         realBankBalance: '320000',
         upcomingBalance: '310000',
-        forecastBalance: '175000',
-        arrivedAfterEnd: '-30000',
+        forecastBalance: '205000',
       });
-      expect(sevenLines(stats)).toBe(stats.forecastBalance);
+      expect(stats).not.toHaveProperty('arrivedAfterEnd');
+      expect(sixLines(stats)).toBe(stats.forecastBalance);
     });
 
-    it('F3 : un revenu non pointé après la fin reste ignoré partout', async () => {
+    it('F3 : un revenu non pointé après la fin d’une période active compte (CA2) : prévu et À venir, pas En banque', async () => {
       exampleA();
       const txs =
         (await transactions.findAllByAccountUnpaginated()) as Transaction[];
@@ -722,10 +723,84 @@ describe('GetPeriodStatsUseCase', () => {
 
       expect(stats).toMatchObject({
         realBankBalance: '290000',
-        upcomingBalance: '280000',
-        forecastBalance: '175000',
-        arrivedAfterEnd: '0',
+        upcomingBalance: '292000',
+        forecastBalance: '217000',
       });
+      expect(sixLines(stats)).toBe(stats.forecastBalance);
+    });
+
+    it('F5 : la prochaine paie (pending, recurringId, après la fin) est exclue ; pointée ou sans recurringId elle compte (CA3)', async () => {
+      exampleA();
+      categories.findAllByAccount.mockResolvedValue([
+        category('salaire', CategoryType.INCOME, true),
+        category('courses', CategoryType.EXPENSE),
+        category('resto', CategoryType.EXPENSE),
+        category('loyer', CategoryType.EXPENSE),
+      ]);
+      const txs =
+        (await transactions.findAllByAccountUnpaginated()) as Transaction[];
+      const recurring = { metadata: { recurringId: 'rec-1' } };
+      transactions.findAllByAccountUnpaginated.mockResolvedValue([
+        ...txs,
+        at('2026-04-01', 200000, 'salaire', { pending: true, ...recurring }),
+      ]);
+      const excluded = await useCase.execute('acc-1', 'per-1');
+      expect(excluded.forecastBalance).toBe('175000');
+      expect(excluded.upcomingBalance).toBe('280000');
+
+      transactions.findAllByAccountUnpaginated.mockResolvedValue([
+        ...txs,
+        at('2026-04-01', 200000, 'salaire', { pending: true }),
+      ]);
+      const counted = await useCase.execute('acc-1', 'per-1');
+      // salaire budgété 2 000 déjà reçu 2 000 : le réel passe à 4 000, prévu + 2 000
+      expect(counted.forecastBalance).toBe('375000');
+      expect(sixLines(counted)).toBe(counted.forecastBalance);
+    });
+
+    it('CA4 chiffré : salaire pointé +2 000 daté après la fin : composition = prévu = 3 450', async () => {
+      accounts.findById.mockResolvedValue(
+        new Account({
+          id: 'acc-1',
+          name: 'Courant',
+          ownerId: 'u-1',
+          initialBalance: BigInt(100000),
+        }),
+      );
+      // avant le début : revenu pointé +200, facture pending -50
+      transactions.sumAmountsBeforeDateByBalance.mockResolvedValue({
+        all: 15000n,
+        reconciled: 20000n,
+        nonPending: 20000n,
+      });
+      transactions.findAllByAccountUnpaginated.mockResolvedValue([
+        at('2026-03-10', -3000, 'courses'),
+        at('2026-03-12', -8000, 'courses', { pending: true }),
+        at('2026-03-15', -1000, 'courses', { reconciled: true }),
+        at('2026-04-03', 200000, 'salaire', { reconciled: true }),
+      ]);
+      budgets.findAllByPeriod.mockResolvedValue([
+        b('courses', 20000),
+        b('salaire', 250000),
+      ]);
+      categories.findAllByAccount.mockResolvedValue([
+        category('salaire', CategoryType.INCOME),
+        category('courses', CategoryType.EXPENSE),
+      ]);
+
+      const stats = await useCase.execute('acc-1', 'per-1');
+
+      expect(stats).toMatchObject({
+        realBankBalance: '319000',
+        cardTotal: '-3000',
+        billsTotal: '-8000',
+        reportsTotal: '-5000',
+        budgetRemaining: '-8000',
+        expectedIncome: '50000',
+        forecastBalance: '345000',
+      });
+      expect(stats).not.toHaveProperty('arrivedAfterEnd');
+      expect(sixLines(stats)).toBe('345000');
     });
 
     it('F4 : une dépense pointée après la fin est déjà dans la fenêtre (pas de tardif)', async () => {
@@ -739,10 +814,10 @@ describe('GetPeriodStatsUseCase', () => {
 
       const stats = await useCase.execute('acc-1', 'per-1');
 
-      expect(stats.arrivedAfterEnd).toBe('0');
+      expect(stats).not.toHaveProperty('arrivedAfterEnd');
       expect(stats.realBankBalance).toBe('285000');
       expect(stats.forecastBalance).toBe('170000');
-      expect(sevenLines(stats)).toBe(stats.forecastBalance);
+      expect(sixLines(stats)).toBe(stats.forecastBalance);
     });
 
     it('F2 : période fermée, la prime pointée datée après sa fin n’est pas chargée ni comptée', async () => {
@@ -757,7 +832,7 @@ describe('GetPeriodStatsUseCase', () => {
 
       const stats = await useCase.execute('acc-1', 'per-1');
 
-      expect(stats.arrivedAfterEnd).toBe('0');
+      expect(stats).not.toHaveProperty('arrivedAfterEnd');
       expect(stats.realBankBalance).toBe('290000');
       expect(stats.forecastBalance).toBe('175000');
     });
@@ -774,7 +849,7 @@ describe('GetPeriodStatsUseCase', () => {
       expect(stats.expectedIncome).toBe('200000');
       // 1050 + (2000 - 50)
       expect(stats.forecastBalance).toBe('300000');
-      expect(sevenLines(stats)).toBe(stats.forecastBalance);
+      expect(sixLines(stats)).toBe(stats.forecastBalance);
     });
 
     it('B : un dépassement n’est plus masqué par un budget non consommé (stats)', async () => {
@@ -791,7 +866,7 @@ describe('GetPeriodStatsUseCase', () => {
       const stats = await useCase.execute('acc-1', 'per-1');
 
       expect(stats.forecastBalance).toBe('-130000');
-      expect(sevenLines(stats)).toBe(stats.forecastBalance);
+      expect(sixLines(stats)).toBe(stats.forecastBalance);
     });
 
     it('R1 : une panne de la fonction de départs fait échouer les stats (jamais un départ à 0)', async () => {

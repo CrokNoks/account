@@ -27,7 +27,6 @@ interface TransactionRow {
   id: string;
   account_id: string;
   category_id: string | null;
-  period_id: string | null;
   date: string;
   description: string;
   amount: string;
@@ -123,24 +122,34 @@ export class SupabaseTransactionRepository implements TransactionRepository {
   }
 
   /**
-   * Fenêtre d'une période, équivalent SQL de `isInPeriodWindow` : date >= début,
-   * puis, selon la période, aucune borne (sans fin), date <= fin (fermée), ou
-   * « date <= fin OU montant < 0 » (active). Ce `.or()` est un paramètre `or=`
-   * distinct de celui de la recherche : PostgREST les combine en ET.
+   * Fenêtre d'une période, équivalent SQL de `isInPeriodWindow` : date >= début, puis
+   *  - fermée : date <= fin (sans fin : aucune borne) ;
+   *  - active : tout, sauf la prochaine paie (`isNextPaie` : pending, catégorie
+   *    déclencheuse, recurringId, date > fin), soit NON(...) développé en OU. Le
+   *    `is.null` est nécessaire : `neq` sur NULL est faux en SQL.
+   * Ce `.or()` est un paramètre `or=` distinct de celui de la recherche : PostgREST
+   * les combine en ET.
    */
   private applyPeriodWindow<Q extends DateFilterable<Q>>(
     query: Q,
     window: WindowPeriod,
   ): Q {
     const day = (d: Date) => d.toISOString().split('T')[0];
-    let q = query.gte('date', day(window.startDate));
-    if (!window.endDate) return q;
-    if (window.isActive) {
-      q = q.or(`date.lte.${day(window.endDate)},amount.lt.0`);
-    } else {
-      q = q.lte('date', day(window.endDate));
+    const q = query.gte('date', day(window.startDate));
+    if (!window.isActive) {
+      return window.endDate ? q.lte('date', day(window.endDate)) : q;
     }
-    return q;
+    if (!window.endDate || !window.triggerCategoryId) return q;
+    return q.or(
+      [
+        `date.lte.${day(window.endDate)}`,
+        'pending.eq.false',
+        'pending.is.null',
+        'category_id.is.null',
+        `category_id.neq.${window.triggerCategoryId}`,
+        'metadata->>recurringId.is.null',
+      ].join(','),
+    );
   }
 
   async findAllByAccountUnpaginated(
@@ -258,19 +267,6 @@ export class SupabaseTransactionRepository implements TransactionRepository {
     };
   }
 
-  async findAllByPeriod(periodId: string): Promise<Transaction[]> {
-    const { data, error } = await this.supabase
-      .from('transactions')
-      .select('*, transaction_tags(tag_id)')
-      .eq('period_id', periodId)
-      .order('date', { ascending: false })
-      .returns<TransactionRow[]>();
-
-    if (error) throw new Error(error.message);
-
-    return (data || []).map((row) => this.mapToDomain(row));
-  }
-
   async findById(id: string): Promise<Transaction | null> {
     const { data, error } = await this.supabase
       .from('transactions')
@@ -384,8 +380,8 @@ export class SupabaseTransactionRepository implements TransactionRepository {
 
   /**
    * Relit les lignes qui viennent d'être écrites : les triggers de la base
-   * (assign_period_id, updated_at...) peuvent compléter des champs que
-   * l'entité d'avant écriture n'a pas (ex. periodId). Même ordre que l'entrée.
+   * (updated_at...) peuvent compléter des champs que
+   * l'entité d'avant écriture n'a pas (ex. updated_at). Même ordre que l'entrée.
    * L'écriture est déjà validée : si la relecture échoue, on renvoie l'entité
    * écrite plutôt qu'une erreur qui ferait croire que rien n'a été enregistré.
    */
@@ -425,7 +421,6 @@ export class SupabaseTransactionRepository implements TransactionRepository {
       id: row.id,
       accountId: row.account_id,
       categoryId: row.category_id,
-      periodId: row.period_id,
       date: new Date(row.date),
       description: row.description,
       amount: BigInt(row.amount),

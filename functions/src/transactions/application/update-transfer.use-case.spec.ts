@@ -25,7 +25,6 @@ const side = (
     id,
     accountId,
     categoryId: null,
-    periodId: `period-${accountId}`,
     date: new Date('2026-11-20'),
     description: 'Virement',
     amount: BigInt(amount),
@@ -113,7 +112,7 @@ describe('UpdateTransferUseCase', () => {
       expect(other.amount).toBe(BigInt(-8000));
     });
 
-    it('a new date goes to the other side, periods untouched', async () => {
+    it('a new date goes to the other side', async () => {
       repository.findTransferSides.mockResolvedValue([inSide()]);
 
       await run(outSide(), { date: new Date('2026-11-22') });
@@ -122,8 +121,6 @@ describe('UpdateTransferUseCase', () => {
       expect(self.date).toEqual(new Date('2026-11-22'));
       expect(other.date).toEqual(new Date('2026-11-22'));
       expect(other.amount).toBe(BigInt(5000));
-      expect(self.periodId).toBe('period-A');
-      expect(other.periodId).toBe('period-B');
     });
 
     it('keeps the own fields of the other side (reconciled, pending, notes, tags)', async () => {

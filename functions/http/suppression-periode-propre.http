@@ -321,7 +321,7 @@ Authorization: Bearer {{alice.access_token}}
 ?? js response.parsedBody.data.length == 1
 ?? js response.parsedBody.data[0].description == Facture à la main
 
-### CA4 : la paie déclenchante (pointée) et la saisie de 18,50 ont pour période la rouverte
+### CA4 / CA8 : la paie déclenchante (pointée) et la saisie de 18,50 apparaissent dans la rouverte par leurs dates
 GET {{api}}/{{acc1.id}}/transactions?periodId={{per1.id}}&limit=100
 Authorization: Bearer {{alice.access_token}}
 
@@ -331,7 +331,7 @@ Authorization: Bearer {{alice.access_token}}
 ?? js response.parsedBody.data.filter(t => t.description == 'Saisie').length == 1
 ?? js response.parsedBody.data.filter(t => t.description == 'Facture à la main').length == 1
 ?? js response.parsedBody.data.length == 3
-?? js response.parsedBody.data.every(t => t.periodId != null) == true
+?? js response.parsedBody.data.every(t => t.periodId == undefined) == true
 
 ### Supprimer deux fois : la seconde est un 404
 DELETE {{api}}/{{acc1.id}}/periods/{{switch1.periodSwitch.opened.id}}
@@ -449,7 +449,7 @@ Authorization: Bearer {{alice.access_token}}
 ?? status == 200
 ?? js response.parsedBody.data.length == 1
 ?? js response.parsedBody.data[0].description == Saisie 2
-?? js response.parsedBody.data[0].periodId == null
+?? js response.parsedBody.data[0].periodId == undefined
 
 ### CA8 : recréer la période 2 avec injection : la récurrente n'existe qu'une fois en pending (0 doublon)
 # @name p22b

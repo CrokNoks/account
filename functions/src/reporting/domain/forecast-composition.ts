@@ -5,13 +5,13 @@
  * « budget restant » et « revenus attendus » viennent de ce même calcul (sommes par
  * catégorie, une seule règle). Un virement sortant (budget négatif) compte dans le budget
  * restant comme une dépense, un virement entrant dans les revenus attendus. Égalité au centime, testée :
- *   banque + CB + factures + reports + arrivé après la fin
- *     + budget restant + revenus attendus = prévu
+ *   banque + CB + factures + reports + budget restant + revenus attendus = prévu
  *
- * Pourquoi elle tient : banque = départ pointé + pointées de la fenêtre + tardif ;
- * CB + factures = non pointées de la fenêtre ; reports = départ complet - départ pointé ;
- * arrivé après la fin = -tardif. La somme vaut donc départ complet + total de la fenêtre,
- * et le prévu = départ complet + total de la fenêtre + attendu - reste (par catégorie).
+ * Pourquoi elle tient : banque = départ pointé + pointées de la fenêtre ;
+ * CB + factures = non pointées de la fenêtre ; reports = départ complet - départ pointé.
+ * La somme vaut donc départ complet + total de la fenêtre, et le prévu = départ complet
+ * + total de la fenêtre + attendu - reste (par catégorie). Une seule fenêtre pour les
+ * deux sommes : un revenu pointé daté après la fin d'une période active est dans les deux.
  */
 
 export interface CompositionTransaction {
@@ -21,12 +21,10 @@ export interface CompositionTransaction {
 }
 
 export interface CompositionInput {
-  /** Transactions de la fenêtre de la période (le revenu tardif n'y est pas). */
+  /** Transactions de la fenêtre de la période. */
   transactions: CompositionTransaction[];
   /** Départ complet - départ pointé : CB non pointées et factures `pending` avant le début (signé). */
   reportsTotal: bigint;
-  /** Revenus pointés datés après la fin d'une période active (>= 0). */
-  lateReconciledIncome: bigint;
   /** `budgetRemaining` de `computePeriodForecast` : négatif ou nul. */
   budgetRemaining: bigint;
   /** `expectedIncome` de `computePeriodForecast` : positif ou nul. */
@@ -41,8 +39,6 @@ export interface ForecastComposition {
   billsTotal: bigint;
   /** CB non pointées et factures `pending` datées avant le début de la période : signé. */
   reportsTotal: bigint;
-  /** -(revenus pointés après la fin) : négatif ou nul. Annule ce que « En banque » compte et que le prévu ignore. */
-  arrivedAfterEnd: bigint;
   budgetRemaining: bigint;
   expectedIncome: bigint;
 }
@@ -68,7 +64,6 @@ export function computeForecastComposition(
     cardCount,
     billsTotal,
     reportsTotal: input.reportsTotal,
-    arrivedAfterEnd: -input.lateReconciledIncome,
     budgetRemaining: input.budgetRemaining,
     expectedIncome: input.expectedIncome,
   };
@@ -81,13 +76,10 @@ export interface BankBalancesInput {
   startNonPending: bigint;
   /** Transactions de la fenêtre de la période. */
   transactions: CompositionTransaction[];
-  /** Revenus pointés datés après la fin d'une période active. */
-  lateReconciledIncome: bigint;
 }
 
 /**
  * « En banque » (pointées seules) et « À venir » (non `pending`), chacun avec son départ.
- * Un revenu pointé tardif est dans les deux (une transaction pointée n'est jamais `pending`).
  */
 export function computeBankBalances(input: BankBalancesInput): {
   realBankBalance: bigint;
@@ -100,9 +92,7 @@ export function computeBankBalances(input: BankBalancesInput): {
     if (!t.pending) nonPending += t.amount;
   }
   return {
-    realBankBalance:
-      input.startReconciled + reconciled + input.lateReconciledIncome,
-    upcomingBalance:
-      input.startNonPending + nonPending + input.lateReconciledIncome,
+    realBankBalance: input.startReconciled + reconciled,
+    upcomingBalance: input.startNonPending + nonPending,
   };
 }

@@ -516,11 +516,6 @@ describe('Request body validation (e2e)', () => {
       [
         'post',
         '/00000000-0000-4000-8000-000000000101/transactions',
-        { ...tx, periodId: bad },
-      ],
-      [
-        'post',
-        '/00000000-0000-4000-8000-000000000101/transactions',
         { ...tx, tagIds: [bad] },
       ],
       [
@@ -823,7 +818,6 @@ describe('Request body validation (e2e)', () => {
 
     it.each([
       ['transactions', `/${acc}/transactions/${id}`, 'categoryId'],
-      ['transactions', `/${acc}/transactions/${id}`, 'periodId'],
       ['transactions', `/${acc}/transactions/${id}`, 'notes'],
       ['transactions/bulk', `/${acc}/transactions/bulk`, 'categoryId'],
       ['recurring', `/${acc}/recurring/${rec}`, 'categoryId'],

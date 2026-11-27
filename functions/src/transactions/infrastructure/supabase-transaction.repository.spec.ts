@@ -45,11 +45,10 @@ const deleteChain = (
   return { repository, from, inFn };
 };
 
-const rowOf = (t: Transaction, periodId: string | null) => ({
+const rowOf = (t: Transaction) => ({
   id: t.id,
   account_id: t.accountId,
   category_id: null,
-  period_id: periodId,
   date: '2026-03-01',
   description: t.description,
   amount: t.amount.toString(),
@@ -361,7 +360,7 @@ describe('SupabaseTransactionRepository findTransferSides', () => {
   it('reads the lines of the account carrying the transferId, with their tags', async () => {
     const other = tx({ accountId: 'acc-2', amount: BigInt(15000) });
     const returns = jest.fn().mockResolvedValue({
-      data: [{ ...rowOf(other, 'p-2'), transaction_tags: [{ tag_id: 't1' }] }],
+      data: [{ ...rowOf(other), transaction_tags: [{ tag_id: 't1' }] }],
       error: null,
     });
     const eqTransfer = jest.fn().mockReturnValue({ returns });
@@ -412,10 +411,10 @@ describe('SupabaseTransactionRepository returns the rows as stored', () => {
     return { repository, back };
   };
 
-  it('save returns the period assigned by the database trigger', async () => {
+  it('save returns the line as stored', async () => {
     const t = tx();
     const { repository, back } = build({
-      data: [rowOf(t, 'period-1')],
+      data: [rowOf(t)],
       error: null,
     });
 
@@ -423,40 +422,34 @@ describe('SupabaseTransactionRepository returns the rows as stored', () => {
 
     expect(back.from).toHaveBeenCalledWith('transactions');
     expect(back.inFn).toHaveBeenCalledWith('id', [t.id]);
-    expect(saved.periodId).toBe('period-1');
     expect(saved.id).toBe(t.id);
   });
 
-  it('saveTransfer returns both sides with their period, in order', async () => {
+  it('saveTransfer returns both sides, in order', async () => {
     const debit = tx();
     const credit = tx({ accountId: 'acc-2', amount: BigInt(15000) });
     const { repository } = build({
-      data: [rowOf(credit, 'p-credit'), rowOf(debit, 'p-debit')],
+      data: [rowOf(credit), rowOf(debit)],
       error: null,
     });
 
     const [d, c] = await repository.saveTransfer(debit, credit);
 
     expect(d.id).toBe(debit.id);
-    expect(d.periodId).toBe('p-debit');
     expect(c.id).toBe(credit.id);
-    expect(c.periodId).toBe('p-credit');
   });
 
-  it('saveMany returns every line with its period, in order', async () => {
+  it('saveMany returns every line, in order', async () => {
     const a = tx({ description: 'A' });
     const b = tx({ description: 'B' });
     const { repository } = build({
-      data: [rowOf(b, 'p2'), rowOf(a, 'p1')],
+      data: [rowOf(b), rowOf(a)],
       error: null,
     });
 
     const saved = await repository.saveMany([a, b]);
 
-    expect(saved.map((t) => [t.id, t.periodId])).toEqual([
-      [a.id, 'p1'],
-      [b.id, 'p2'],
-    ]);
+    expect(saved.map((t) => t.id)).toEqual([a.id, b.id]);
   });
 
   it('falls back to the written entity when the read-back fails (the write is committed)', async () => {
@@ -599,7 +592,7 @@ describe('SupabaseTransactionRepository unpaginated list beyond the 1000-row ser
   const SERVER_CAP = 1000;
   const chainOver = (total: number) => {
     const rows = Array.from({ length: total }, (_, i) => ({
-      ...rowOf(tx(), null),
+      ...rowOf(tx()),
       id: `tx-${i}`,
     }));
     let from = 0;
@@ -641,7 +634,9 @@ describe('SupabaseTransactionRepository period window (paginated list)', () => {
     description: string;
     notes: string | null;
     reconciled: boolean;
-    pending: boolean;
+    pending: boolean | null;
+    category_id: string | null;
+    metadata: Record<string, any> | null;
   };
 
   const row = (
@@ -658,12 +653,27 @@ describe('SupabaseTransactionRepository period window (paginated list)', () => {
     notes: null,
     reconciled: false,
     pending: false,
+    category_id: null,
+    metadata: null,
     ...extra,
   });
 
   const atom = (r: Row, cond: string): boolean => {
     const [col, op, ...rest] = cond.split('.');
     const raw = rest.join('.');
+    if (op === 'is' && raw === 'null') {
+      const v: unknown =
+        col === 'metadata->>recurringId'
+          ? ((r.metadata?.recurringId as unknown) ?? null)
+          : (r as unknown as Record<string, unknown>)[col];
+      return v === null || v === undefined;
+    }
+    if (op === 'eq' || op === 'neq') {
+      // PostgREST : `neq` sur NULL est faux (d'où le `is.null` explicite côté dépôt)
+      const v = (r as unknown as Record<string, string | boolean | null>)[col];
+      if (v === null) return false;
+      return op === 'eq' ? String(v) === raw : String(v) !== raw;
+    }
     if (col === 'description' || col === 'notes') {
       const v = raw.replace(/^"|"$/g, '').replace(/\\(.)/g, '$1');
       const target = (col === 'description' ? r.description : r.notes) ?? '';
@@ -761,6 +771,7 @@ describe('SupabaseTransactionRepository period window (paginated list)', () => {
     startDate: new Date('2026-11-01'),
     endDate: new Date('2026-11-30'),
     isActive: true,
+    triggerCategoryId: 'paie',
   };
   const closed: WindowPeriod = { ...active, isActive: false };
   const open: WindowPeriod = { ...active, endDate: null };
@@ -776,16 +787,42 @@ describe('SupabaseTransactionRepository period window (paginated list)', () => {
     row('08', '2026-12-05', 12000, { description: 'Remboursement' }),
     row('09', '2026-12-05', 0),
     row('10', '2026-11-01', 5000),
+    // prochaine paie et ses presque-sosies
+    row('11', '2026-12-01', 250000, {
+      pending: true,
+      category_id: 'paie',
+      metadata: { recurringId: 'rec-1' },
+    }),
+    row('12', '2026-11-30', 250000, {
+      pending: true,
+      category_id: 'paie',
+      metadata: { recurringId: 'rec-1' },
+    }),
+    row('13', '2026-12-01', 250000, { category_id: 'paie' }), // pointée ou non pending
+    row('14', '2026-12-01', 250000, { pending: true, category_id: 'paie' }), // sans recurringId
+    row('15', '2026-12-01', 5000, {
+      pending: true,
+      category_id: 'loyer',
+      metadata: { recurringId: 'rec-1' },
+    }),
+    row('16', '2026-12-01', 5000, {
+      pending: true,
+      category_id: null,
+      metadata: { recurringId: 'rec-1' },
+    }),
   ];
   const asWindowTx = (r: Row) => ({
     date: new Date(r.date),
-    amount: BigInt(r.amount),
+    pending: r.pending ?? false,
+    categoryId: r.category_id,
+    metadata: r.metadata ?? undefined,
   });
 
   it.each([
     ['active', active],
     ['closed', closed],
     ['without end', open],
+    ['active without trigger category', { ...active, triggerCategoryId: null }],
   ])(
     'lists exactly what isInPeriodWindow keeps (%s period)',
     async (_name, period) => {
@@ -804,6 +841,33 @@ describe('SupabaseTransactionRepository period window (paginated list)', () => {
       expect(result.meta.total).toBe(expected.length);
     },
   );
+
+  it('keeps rows whose pending is NULL, like isInPeriodWindow does', async () => {
+    const rows = [
+      row('n1', '2026-12-01', 250000, {
+        pending: null,
+        category_id: 'paie',
+        metadata: { recurringId: 'rec-1' },
+      }),
+    ];
+    expect(isInPeriodWindow(asWindowTx(rows[0]), active)).toBe(true);
+
+    const result = await fakeDb(rows).findAllByAccount('acc-1', {
+      periodWindow: active,
+    });
+
+    expect(result.data.map((t) => t.id)).toEqual(['n1']);
+  });
+
+  it('excludes only the next paie from an active period (CA3)', async () => {
+    const result = await fakeDb(dataset).findAllByAccount('acc-1', {
+      periodWindow: active,
+      limit: 100,
+    });
+    const ids = result.data.map((t) => t.id);
+    expect(ids).not.toContain('11');
+    expect(ids).toEqual(expect.arrayContaining(['12', '13', '14', '15', '16']));
+  });
 
   it('counts the same cards as the forecast for the "À pointer" list', async () => {
     const repository = fakeDb(dataset);
@@ -838,7 +902,8 @@ describe('SupabaseTransactionRepository period window (paginated list)', () => {
       search: 'Loyer (déc.)',
     });
 
-    expect(result.data.map((t) => t.id).sort()).toEqual(['a', 'e']);
+    // 'c' : revenu daté après la fin d'une période active, dans la fenêtre (CA2)
+    expect(result.data.map((t) => t.id).sort()).toEqual(['a', 'c', 'e']);
   });
 
   it('narrows the window with startDate and endDate, never widens it', async () => {
@@ -908,7 +973,7 @@ describe('SupabaseTransactionRepository period window (paginated list)', () => {
       ids: ['a', 'x', 'c'],
     });
 
-    expect(result.data.map((t) => t.id)).toEqual(['a']);
+    expect(result.data.map((t) => t.id)).toEqual(['a', 'c']);
   });
 
   it('pages without repeats or gaps when many rows share the same date', async () => {
