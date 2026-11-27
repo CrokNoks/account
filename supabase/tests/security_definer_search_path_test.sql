@@ -27,7 +27,7 @@ BEGIN
     END IF;
   END LOOP;
   ASSERT d >= 4, 'au moins 4 fonctions SECURITY DEFINER attendues, trouvées : ' || d;
-  ASSERT n >= 25, 'au moins 25 fonctions attendues, trouvées : ' || n;
+  ASSERT n >= 24, 'au moins 24 fonctions attendues, trouvées : ' || n;
 END $$;
 
 -- 2. Déclencheurs : sync_app_users (auth.users -> app_users) et auto_assign_user_id (user_id = auth.uid()).
@@ -130,8 +130,7 @@ BEGIN
   UPDATE public.transactions SET description = 'Modifiée' WHERE id = 'eeeeeeee-0000-4000-8000-0000000000d2';
   ASSERT (SELECT updated_at FROM public.transactions WHERE id = 'eeeeeeee-0000-4000-8000-0000000000d2') > '2000-01-02',
     'handle_updated_at : updated_at non rafraîchi';
-  -- fonctions de statistiques : s'exécutent sans erreur (get_balance_history et get_evolution_data lisent une table
-  -- « expenses » qui n'existe plus : cassées avant ce correctif et appelées nulle part)
+  -- fonction de statistiques : s'exécute sans erreur (get_balance_history et get_evolution_data, cassées, sont supprimées)
   PERFORM * FROM public.get_category_historical_stats('bbbbbbbb-0000-4000-8000-0000000000d1');
 END $$;
 
