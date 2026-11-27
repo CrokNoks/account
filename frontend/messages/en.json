@@ -54,6 +54,8 @@
     "welcome": "Your forecast balance, what needs your attention and this period's budgets, on a single screen.",
     "stats": "Period Stats",
     "forecast_on": "Forecast on {date}",
+    "bank_balance_on": "Bank balance on {date}",
+    "bank_balance_title": "Bank balance",
     "period_day_inline": "day {day} of {total}",
     "period_day": "Day {day} of {total}",
     "watch_title": "Budgets to watch",

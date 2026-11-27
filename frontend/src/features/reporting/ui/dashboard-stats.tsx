@@ -32,6 +32,13 @@ export function BalanceBar() {
 
   if (isLoading || !stats) return <div data-tour="stats" className="h-32 bg-muted animate-pulse rounded-xl border-2" />;
 
+  // Période clôturée : pas de projection, le chiffre principal est le solde en banque des stats.
+  const closed = !!period && !period.isActive;
+  const title = closed
+    ? (endDate ? t('bank_balance_on', { date: endDate }) : t('bank_balance_title'))
+    : (endDate ? t('forecast_on', { date: endDate }) : t('forecast_title'));
+  const mainAmount = closed ? stats.realBankBalance : stats.forecastBalance;
+
   return (
     <div data-tour="stats">
       <Card className="border-2 shadow-sm overflow-hidden p-4 max-lg:p-3 max-lg:gap-3 flex flex-col gap-4">
@@ -39,21 +46,22 @@ export function BalanceBar() {
         <div className="flex flex-col gap-4 max-lg:gap-1 lg:flex-row lg:items-end lg:justify-between">
         <div data-testid="balance-forecast">
           <p data-testid="forecast-title" className="max-lg:hidden text-sm font-medium text-muted-foreground">
-            {endDate ? t('forecast_on', { date: endDate }) : t('forecast_title')}
+            {title}
           </p>
           <p data-testid="forecast-title-mobile" className="lg:hidden text-sm font-medium text-muted-foreground">
-            {endDate ? t('forecast_on', { date: endDate }) : t('forecast_title')}
+            {title}
           </p>
-          <p data-amount className={cn("text-3xl max-lg:text-3xl font-black tracking-tight", present(stats.forecastBalance, 'balance').className)}>
-            {present(stats.forecastBalance, 'balance').text}
+          <p data-amount className={cn("text-3xl max-lg:text-3xl font-black tracking-tight", present(mainAmount, 'balance').className)}>
+            {present(mainAmount, 'balance').text}
           </p>
-          {progress && (
+          {progress && !closed && (
             <p data-testid="period-day" className="lg:hidden text-sm text-muted-foreground">
               {t('period_day', { day: progress.day, total: progress.total })}
             </p>
           )}
         </div>
         {/* Mobile : En banque est dans la composition du prévu, le solde à venir est en tête d'Opérations. */}
+        {!closed && (
         <div className="max-lg:hidden flex gap-8">
           <div data-testid="balance-bank">
             <p className="text-sm font-medium text-muted-foreground">
@@ -72,8 +80,9 @@ export function BalanceBar() {
             </p>
           </div>
         </div>
+        )}
         </div>
-        <ForecastComposition />
+        {!closed && <ForecastComposition />}
       </Card>
     </div>
   );

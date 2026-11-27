@@ -54,6 +54,8 @@
     "welcome": "Votre solde prévu, ce qui demande votre attention et vos budgets de la période, sur un seul écran.",
     "stats": "Statistiques de la période",
     "forecast_on": "Prévu le {date}",
+    "bank_balance_on": "Solde en banque au {date}",
+    "bank_balance_title": "Solde en banque",
     "period_day_inline": "jour {day} sur {total}",
     "period_day": "Jour {day} sur {total}",
     "watch_title": "Budgets à surveiller",

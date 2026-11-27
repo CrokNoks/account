@@ -203,4 +203,50 @@ describe('Barre des soldes', () => {
     renderBar('en');
     expect(screen.getByTestId('forecast-title').textContent).toMatch(/^Forecast on /);
   });
+
+  describe('période clôturée', () => {
+    const initialPeriods = periods.value;
+    const initialStats = stats.value;
+    afterEach(() => {
+      periods.value = initialPeriods;
+      stats.value = initialStats;
+    });
+    const close = (endDate: string | null = '2026-10-31') => {
+      periods.value = [{ id: 'p1', startDate: '2026-10-01', endDate, isActive: false }];
+    };
+
+    it('chiffre principal = solde en banque « au {fin} », sans prévu, À venir ni composition', () => {
+      close();
+      renderBar();
+      expect(screen.getByTestId('forecast-title').textContent).toBe('Solde en banque au 31 oct.');
+      expect(screen.getByTestId('forecast-title-mobile').textContent).toBe('Solde en banque au 31 oct.');
+      expect(text(screen.getByTestId('balance-forecast'))).toContain('3400,00€');
+      expect(text(screen.getByTestId('balance-forecast'))).not.toContain('3300,00€');
+      for (const id of ['balance-bank', 'balance-upcoming', 'composition']) {
+        expect(screen.queryByTestId(id)).toBeNull();
+      }
+      expect(document.body.textContent).not.toMatch(/Prévu/);
+    });
+
+    it('sans date de fin : « Solde en banque » sans date', () => {
+      close(null);
+      renderBar();
+      expect(screen.getByTestId('forecast-title').textContent).toBe('Solde en banque');
+    });
+
+    it('solde négatif affiché comme tout solde, et en anglais', () => {
+      close();
+      stats.value = { ...stats.value, realBankBalance: '-5000' };
+      renderBar('en');
+      expect(screen.getByTestId('forecast-title').textContent).toBe('Bank balance on Oct 31');
+      expect(text(screen.getByTestId('balance-forecast'))).toContain('-€50.00');
+    });
+
+    it('la période active reste inchangée', () => {
+      renderBar();
+      expect(screen.getByTestId('forecast-title').textContent).toBe('Prévu le 30 nov.');
+      expect(screen.getByTestId('balance-upcoming')).toBeTruthy();
+      expect(screen.getByTestId('composition')).toBeTruthy();
+    });
+  });
 });
