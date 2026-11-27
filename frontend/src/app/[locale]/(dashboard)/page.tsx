@@ -42,16 +42,20 @@ export default function Home() {
     }
   }, [periods, activePeriodId, setActivePeriodId]);
 
+  // Clôturée = période chargée et non active ; tant qu'elle n'est pas chargée, affichage de la période active.
+  const closed = !!periods?.find((p) => p.id === activePeriodId && !p.isActive);
+
   useEffect(() => {
     // La visite cible des blocs qui n'existent qu'avec une période : pas de visite sans période.
     const hasPeriod = !isLoadingPeriods && !!periods && periods.length > 0;
-    if (hasPeriod && !completedTours['dashboard'] && completedTours['account']) {
+    // Une période clôturée n'a pas toutes les cibles : pas de démarrage automatique.
+    if (hasPeriod && !closed && !completedTours['dashboard'] && completedTours['account']) {
       const timer = setTimeout(() => {
         startTour('dashboard');
       }, 1000);
       return () => clearTimeout(timer);
     }
-  }, [completedTours, startTour, periods, isLoadingPeriods]);
+  }, [completedTours, startTour, periods, isLoadingPeriods, closed]);
 
   // Sans aucune période, rien d'autre que l'explication et la création (ni barre, ni rythme, ni blocs).
   if (!isLoadingPeriods && periods && periods.length === 0) {
@@ -78,29 +82,38 @@ export default function Home() {
 
       <BalanceBar />
 
-      {/* Rythme (2/3) et À traiter (1/3) ; sur mobile, À traiter seul. */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-8">
-        <div className="lg:col-span-2 max-lg:hidden">
-          <SpendingPace />
-        </div>
-        <div data-tour="to-handle" className="lg:col-span-1">
-          <ToHandle />
-        </div>
-      </div>
-
-      {/* Budgets variables (2/3) et Prochaines factures (1/3) ; sur mobile, Budgets à surveiller seul. */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-8">
-        {/* Mobile : « Budgets à surveiller » à la place de la répartition (une cible de visite par largeur). */}
-        <div data-tour="budgets-to-watch" className="lg:hidden">
-          <BudgetsToWatch />
-        </div>
-        <div data-tour="budget-breakdown" className="lg:col-span-2 max-lg:hidden">
+      {closed ? (
+        // Période clôturée : seulement Budgets variables, bureau et mobile.
+        <div data-tour="budget-breakdown">
           <BudgetBreakdown />
         </div>
-        <div className="lg:col-span-1 max-lg:hidden">
-          <UpcomingDeadlinesWidget />
-        </div>
-      </div>
+      ) : (
+        <>
+          {/* Rythme (2/3) et À traiter (1/3) ; sur mobile, À traiter seul. */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-8">
+            <div className="lg:col-span-2 max-lg:hidden">
+              <SpendingPace />
+            </div>
+            <div data-tour="to-handle" className="lg:col-span-1">
+              <ToHandle />
+            </div>
+          </div>
+
+          {/* Budgets variables (2/3) et Prochaines factures (1/3) ; sur mobile, Budgets à surveiller seul. */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-8">
+            {/* Mobile : « Budgets à surveiller » à la place de la répartition (une cible de visite par largeur). */}
+            <div data-tour="budgets-to-watch" className="lg:hidden">
+              <BudgetsToWatch />
+            </div>
+            <div data-tour="budget-breakdown" className="lg:col-span-2 max-lg:hidden">
+              <BudgetBreakdown />
+            </div>
+            <div className="lg:col-span-1 max-lg:hidden">
+              <UpcomingDeadlinesWidget />
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }

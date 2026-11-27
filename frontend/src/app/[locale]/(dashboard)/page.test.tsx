@@ -150,6 +150,48 @@ describe('Écran Aujourd\'hui', () => {
     });
   });
 
+  describe('période clôturée', () => {
+    beforeEach(() => {
+      state.periods = [{ id: 'p1', startDate: '2026-10-01', endDate: '2026-10-31', isActive: false }];
+    });
+
+    it('ne garde que le hero et Budgets variables (bureau et mobile)', () => {
+      renderHome();
+      for (const id of ['balance-bar', 'budgets']) expect(screen.getByTestId(id)).toBeTruthy();
+      for (const id of ['pace', 'to-handle', 'bills', 'watch']) expect(screen.queryByTestId(id)).toBeNull();
+      // Budgets variables remplace « à surveiller » sur mobile : visible sur les deux largeurs
+      expect(screen.getByTestId('budgets').closest('.max-lg\\:hidden')).toBeNull();
+    });
+
+    it('garde le sélecteur de période', () => {
+      renderHome();
+      expect(screen.getByRole('button', { name: 'Nouvelle opération' })).toBeTruthy();
+      expect(screen.getByTestId('help')).toBeTruthy();
+    });
+
+    it('la visite guidée ne démarre pas et rien ne plante', () => {
+      vi.useFakeTimers();
+      state.startTour.mockReset();
+      state.completedTours = { account: true };
+      renderHome();
+      act(() => { vi.advanceTimersByTime(1100); });
+      expect(state.startTour).not.toHaveBeenCalled();
+      vi.useRealTimers();
+    });
+
+    it('bascule vers la période active sans rechargement', () => {
+      const { rerender } = renderHome();
+      expect(screen.queryByTestId('pace')).toBeNull();
+      state.periods = [{ id: 'p1', startDate: '2026-11-01', endDate: '2026-11-30', isActive: true }];
+      rerender(
+        <NextIntlClientProvider locale="fr" messages={fr}>
+          <Home />
+        </NextIntlClientProvider>,
+      );
+      for (const id of ['pace', 'to-handle', 'bills', 'watch']) expect(screen.getByTestId(id)).toBeTruthy();
+    });
+  });
+
   it('« Nouvelle opération » ouvre le formulaire de saisie', () => {
     renderHome();
     fireEvent.click(screen.getByRole('button', { name: 'Nouvelle opération' }));
