@@ -241,6 +241,33 @@ describe('GetBudgetBreakdownUseCase', () => {
   });
 
   // Des budgets de dépenses sont enregistrés en négatif (même signe que le réel).
+  it('un remboursement ne gonfle pas le reste au-delà de |budget| (dépense, épargne, virement sortant)', async () => {
+    categories.findAllByAccount.mockResolvedValue([
+      category('resto', CategoryType.EXPENSE),
+      category('livret', CategoryType.SAVINGS),
+      category('cj', CategoryType.TRANSFER),
+    ]);
+    budgets.findAllByPeriod.mockResolvedValue([
+      budget('resto', 10000),
+      budget('livret', 20000),
+      budget('cj', -30000),
+    ]);
+    transactions.findAllByAccountUnpaginated.mockResolvedValue([
+      tx(2000, 'resto'),
+      tx(5000, 'livret'),
+      tx(1000, 'cj'),
+    ]);
+
+    const { expenses, savings, transfers } = await useCase.execute(
+      'acc-1',
+      'per-1',
+    );
+
+    expect(expenses[0].remaining).toBe('10000');
+    expect(savings[0].remaining).toBe('20000');
+    expect(transfers[0].remaining).toBe('30000');
+  });
+
   it('reports no overrun when an expense equals its negative budget', async () => {
     budgets.findAllByPeriod.mockResolvedValue([
       budget('courses', -45000),

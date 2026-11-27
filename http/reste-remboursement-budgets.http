@@ -1,0 +1,84 @@
+# Répartition des budgets : un remboursement (réel positif) ne gonfle pas le reste au-delà du budget ; un dépassement reste négatif.
+# Lancement : npx httpyac send --all http/reste-remboursement-budgets.http --var port=8080 --var anon=<SUPABASE_ANON_KEY de functions/.env>
+# (la clé vient de la ligne de commande, jamais du fichier ; l'utilisateur est jetable, créé par le fichier)
+@baseUrl = http://localhost:{{port}}
+@authUrl = http://127.0.0.1:54321/auth/v1
+
+### Utilisateur jetable
+# @name login
+POST {{authUrl}}/signup
+apikey: {{anon}}
+Content-Type: application/json
+
+{ "email": "reste-remboursement-{{$timestamp}}@example.com", "password": "Password123!" }
+
+?? status == 200
+
+### Compte jetable
+# @name account
+POST {{baseUrl}}/accounts
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "name": "reste-remboursement-{{$timestamp}}", "initialBalance": "100000" }
+
+?? status == 201
+
+### Catégorie Courses (budget 100,00, remboursée de 20,00)
+# @name courses
+POST {{baseUrl}}/{{account.id}}/categories
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "name": "Courses", "color": "#112233", "type": "expense" }
+
+?? status == 201
+
+### Catégorie Loisirs (budget 100,00, dépassée de 30,00)
+# @name loisirs
+POST {{baseUrl}}/{{account.id}}/categories
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "name": "Loisirs", "color": "#445566", "type": "expense" }
+
+?? status == 201
+
+### Période avec deux budgets de 100,00 €
+# @name period
+POST {{baseUrl}}/{{account.id}}/periods
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "startDate": "2026-11-01", "endDate": "2026-11-30", "budgets": [
+  { "categoryId": "{{courses.id}}", "amountAllocated": "-10000" },
+  { "categoryId": "{{loisirs.id}}", "amountAllocated": "-10000" }
+] }
+
+?? status == 201
+
+### Remboursement de 20,00 € sur Courses
+POST {{baseUrl}}/{{account.id}}/transactions
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "date": "2026-11-02", "description": "Remboursement courses", "amount": "2000", "categoryId": "{{courses.id}}", "periodId": "{{period.id}}" }
+
+?? status == 201
+
+### Loisirs dépensé : 130,00 €
+POST {{baseUrl}}/{{account.id}}/transactions
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "date": "2026-11-03", "description": "Sortie", "amount": "-13000", "categoryId": "{{loisirs.id}}", "periodId": "{{period.id}}" }
+
+?? status == 201
+
+### Courses : reste 100,00 (pas 120,00) ; Loisirs : reste -30,00
+GET {{baseUrl}}/{{account.id}}/periods/{{period.id}}/reporting/budget-breakdown
+Authorization: Bearer {{login.access_token}}
+
+?? status == 200
+?? js response.parsedBody.expenses.find(e => e.name == 'Courses').remaining == 10000
+?? js response.parsedBody.expenses.find(e => e.name == 'Loisirs').remaining == -3000

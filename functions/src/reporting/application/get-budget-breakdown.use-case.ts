@@ -6,6 +6,7 @@ import { PeriodRepository } from '../../periods/domain/period.repository.interfa
 import { CategoryType } from '../../categories/domain/category.entity';
 import { ensureBelongsToAccount } from '../../shared/domain/account-ownership';
 import { roundedPercentage } from '../../shared/domain/percentage';
+import { expenseRule } from '../domain/period-forecast';
 import { filterPeriodWindow, periodLoadEndDate } from '../domain/period-window';
 import {
   transferDirection,
@@ -94,9 +95,12 @@ export class GetBudgetBreakdownUseCase {
         cat.type === CategoryType.EXPENSE ||
         cat.type === CategoryType.SAVINGS ||
         direction === 'outgoing';
-      // Dépenses, épargne, virements sortants : réel négatif => |budget| + réel.
+      // Dépenses, épargne, virements sortants : |budget| - dépensé (règle du prévu,
+      // `expenseRule`) ; un remboursement (réel positif) ne dépasse pas |budget|.
       // Revenus et virements entrants : réel positif => reste à percevoir = |budget| - réel.
-      const remaining = asExpense ? limit + real : limit - real;
+      const remaining = asExpense
+        ? limit - expenseRule(real, budget).spent
+        : limit - real;
       let percentage = 0;
       if (limit !== BigInt(0)) {
         percentage = roundedPercentage(real, limit);
