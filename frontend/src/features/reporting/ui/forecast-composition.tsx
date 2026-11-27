@@ -8,6 +8,7 @@ import { compositionView, CompositionRow, CompositionSegment } from '../model/fo
 import { useTranslations } from 'next-intl';
 import { cn } from '@/lib/utils';
 import { useState, type ReactNode } from 'react';
+import { ChevronDown } from 'lucide-react';
 import type { ReportingStats } from '../model/types';
 
 const segmentColor: Record<CompositionSegment['key'], string> = {
@@ -34,7 +35,7 @@ function BudgetLine({
   active: boolean;
   className?: string;
   testId?: string;
-  children: ReactNode;
+  children: (chevron: ReactNode) => ReactNode;
 }) {
   const t = useTranslations('Dashboard');
   const formatCurrency = useFormatCurrency();
@@ -44,7 +45,7 @@ function BudgetLine({
   if (!expandable) {
     return (
       <li data-testid={testId} className={rowClass}>
-        {children}
+        {children(null)}
       </li>
     );
   }
@@ -55,12 +56,18 @@ function BudgetLine({
         data-testid="budget-toggle"
         aria-expanded={open}
         onClick={() => setOpen((o) => !o)}
-        className={cn(rowClass, 'w-full text-left lg:hidden')}
+        className={cn(rowClass, 'w-full text-left active:bg-muted lg:hidden')}
       >
-        {children}
+        {children(
+          <ChevronDown
+            data-testid="budget-chevron"
+            aria-hidden="true"
+            className={cn('h-4 w-4 shrink-0 text-muted-foreground transition-transform', open && 'rotate-180')}
+          />,
+        )}
       </button>
       <div data-testid="budget-row-desktop" className={cn(rowClass, 'max-lg:hidden')}>
-        {children}
+        {children(null)}
       </div>
       {open && (
         <ul data-testid="budget-detail" aria-label={t('composition_budget_detail')} className="space-y-1 pb-1 pl-4 text-sm text-muted-foreground lg:hidden">
@@ -115,11 +122,16 @@ export function ForecastComposition() {
             <ul className="grid grid-cols-1 lg:grid-cols-2 gap-x-4 gap-y-1 text-sm">
               {view.segments.map((s) => (
                 <BudgetLine key={s.key} detail={stats.budgetRemainingDetail} active={s.key === 'budget' && s.amount !== BigInt(0)}>
-                  <span className="flex items-center gap-2 min-w-0">
-                    <span className={cn('h-2 w-2 shrink-0 rounded-full', segmentColor[s.key])} />
-                    <span className="lg:truncate">{label(s.key)}</span>
-                  </span>
-                  <span className="font-bold tabular-nums">{formatCurrency(s.amount)}</span>
+                  {(chevron) => (
+                    <>
+                      <span className="flex items-center gap-2 min-w-0">
+                        <span className={cn('h-2 w-2 shrink-0 rounded-full', segmentColor[s.key])} />
+                        <span className="lg:truncate">{label(s.key)}</span>
+                        {chevron}
+                      </span>
+                      <span className="font-bold tabular-nums">{formatCurrency(s.amount)}</span>
+                    </>
+                  )}
                 </BudgetLine>
               ))}
             </ul>
@@ -134,10 +146,17 @@ export function ForecastComposition() {
                 active={row.key === 'budget' && row.amount !== BigInt(0)}
                 className={cn(row.key === 'forecast' && 'border-t pt-1 font-black')}
               >
-                <span>{label(row.key)}</span>
-                <span className={cn('font-bold tabular-nums', present(row.amount, 'balance').className)}>
-                  {present(row.amount, 'balance').text}
-                </span>
+                {(chevron) => (
+                  <>
+                    <span className="flex items-center gap-2">
+                      <span>{label(row.key)}</span>
+                      {chevron}
+                    </span>
+                    <span className={cn('font-bold tabular-nums', present(row.amount, 'balance').className)}>
+                      {present(row.amount, 'balance').text}
+                    </span>
+                  </>
+                )}
               </BudgetLine>
             ))}
           </ul>

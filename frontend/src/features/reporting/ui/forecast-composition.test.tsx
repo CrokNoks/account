@@ -163,6 +163,46 @@ describe('Composition du prévu', () => {
       expect(screen.queryByTestId('budget-detail')).toBeNull();
     });
 
+    it('affiche un chevron décoratif dans le bouton, pivoté selon aria-expanded, avec un fond au toucher', () => {
+      state.stats = { ...base, budgetRemainingDetail: detail };
+      show();
+
+      const toggle = screen.getByTestId('budget-toggle');
+      const chevron = within(toggle).getByTestId('budget-chevron');
+      expect(chevron.getAttribute('aria-hidden')).toBe('true');
+      // chevron juste après le libellé (groupe gauche) : le montant reste le dernier enfant, aligné sur les autres lignes
+      expect(toggle.children).toHaveLength(2);
+      expect(toggle.children[0].contains(chevron)).toBe(true);
+      expect(toggle.children[1].contains(chevron)).toBe(false);
+      expect(chevron.getAttribute('class')).not.toContain('rotate-180');
+      expect(toggle.className.split(' ')).toContain('active:bg-muted');
+      fireEvent.click(toggle);
+      expect(toggle.getAttribute('aria-expanded')).toBe('true');
+      expect(within(toggle).getByTestId('budget-chevron').getAttribute('class')).toContain('rotate-180');
+      fireEvent.click(toggle);
+      expect(within(toggle).getByTestId('budget-chevron').getAttribute('class')).not.toContain('rotate-180');
+    });
+
+    it('n\'affiche aucun chevron hors ligne appuyable (bureau, budget à 0, détail vide ou absent, autres lignes)', () => {
+      state.stats = { ...base, budgetRemainingDetail: detail };
+      show();
+      expect(within(screen.getByTestId('budget-row-desktop')).queryByTestId('budget-chevron')).toBeNull();
+      expect(screen.getAllByTestId('budget-chevron')).toHaveLength(1);
+      cleanup();
+      state.stats = { ...base, budgetRemaining: '0', forecastBalance: '277000', budgetRemainingDetail: detail };
+      show();
+      expect(screen.queryByTestId('budget-chevron')).toBeNull();
+      cleanup();
+      state.stats = { ...base, budgetRemainingDetail: [] };
+      show();
+      expect(screen.queryByTestId('budget-chevron')).toBeNull();
+      cleanup();
+      state.stats = { ...base, expectedIncome: '50000', forecastBalance: '320000', budgetRemainingDetail: detail };
+      show();
+      expect(screen.getAllByTestId('budget-chevron')).toHaveLength(1);
+      expect(within(screen.getByTestId('line-budget')).getByTestId('budget-chevron')).toBeTruthy();
+    });
+
     it('marche en lignes signées', () => {
       state.stats = { ...base, expectedIncome: '50000', forecastBalance: '320000', budgetRemainingDetail: detail };
       show();
