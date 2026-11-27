@@ -14,10 +14,14 @@ SELECT p.account_id,
 FROM public.periods p
 JOIN public.budget_instances bi ON bi.period_id = p.id
 LEFT JOIN (
-  SELECT period_id, category_id, sum(amount) AS total
-  FROM public.transactions
-  WHERE NOT coalesce(pending, false)
-  GROUP BY period_id, category_id
+  SELECT p2.id AS period_id, t.category_id, sum(t.amount) AS total
+  FROM public.periods p2
+  JOIN public.transactions t
+    ON t.account_id = p2.account_id
+   AND t.date >= p2.start_date
+   AND (p2.is_active OR p2.end_date IS NULL OR t.date <= p2.end_date)
+  WHERE NOT coalesce(t.pending, false)
+  GROUP BY p2.id, t.category_id
 ) t ON t.period_id = p.id AND t.category_id = bi.category_id
 GROUP BY p.account_id, p.start_date, p.end_date
 ORDER BY p.account_id, p.start_date DESC;

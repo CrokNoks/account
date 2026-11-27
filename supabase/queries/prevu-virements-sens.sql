@@ -5,8 +5,9 @@
 --   nouveau : sens = signe du budget (à défaut du réel, non utilisé ici : budget non nul).
 --     budget > 0 (entrant) : règle d'avant (revenu), donc écart nul ;
 --     budget < 0 (sortant) : compté comme une dépense, -max(max(0, -réel), |budget|) + max(0, réel).
--- Réel d'une catégorie = somme de ses transactions dans la fenêtre de la période (pending comprises), comme period-window.ts :
---   date >= début ET (pas de fin OU date <= fin OU (période active ET montant < 0)).
+-- Réel d'une catégorie = somme de ses transactions dans la fenêtre de la période (pending comprises) :
+--   date >= début ET (fermée : pas de fin OU date <= fin ; active : tout sauf la prochaine paie, soit une pending de la
+--   catégorie déclencheuse avec recurringId datée après la fin), comme period-window.ts.
 -- Contrôle : sur une période active où « Virement CJ » (−2 032,48 €) n'est pas parti, ecart_centimes = -406496.
 -- ATTENTION : reproduit la formule en SQL (le prévu réel est calculé par le back).
 -- Lecture seule (transaction read only, annulée). Montants en centimes.
@@ -20,9 +21,16 @@ WITH reel AS (
   JOIN public.transactions t
     ON t.account_id = p.account_id
    AND t.date >= p.start_date
-   AND (p.end_date IS NULL
-        OR t.date <= p.end_date
-        OR (p.is_active AND t.amount < 0))
+   AND CASE
+         WHEN p.is_active THEN NOT (
+           p.end_date IS NOT NULL
+           AND t.pending IS TRUE
+           AND t.date > p.end_date
+           AND coalesce(t.metadata->>'recurringId', '') <> ''
+           AND EXISTS (SELECT 1 FROM public.categories c
+                       WHERE c.id = t.category_id AND c.is_period_trigger))
+         ELSE (p.end_date IS NULL OR t.date <= p.end_date)
+       END
   WHERE t.category_id IS NOT NULL
   GROUP BY p.id, t.category_id
 ),

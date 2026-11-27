@@ -2,7 +2,8 @@
 -- Par période : ecart_centimes = nouveau - ancien, hors solde de départ (identique des deux côtés, donc l'écart est exact).
 --   prevu_hors_depart = revenus retenus - dépenses retenues + remboursements + sans catégorie.
 -- Réel d'une catégorie = somme de ses transactions dans la fenêtre de la période (pending comprises) :
---   date >= début ET (pas de fin OU date <= fin OU (période active ET montant < 0)), comme period-window.ts.
+--   date >= début ET (fermée : pas de fin OU date <= fin ; active : tout sauf la prochaine paie, soit une pending de la
+--   catégorie déclencheuse avec recurringId datée après la fin), comme period-window.ts.
 -- Budget = |amount_allocated| ; une catégorie sans ligne de budget vaut 0.
 -- Ancien : max(Σ réel revenus, Σ |budget| revenus) ; max(max(0, -Σ réel dépenses), Σ |budget| dépenses) ; remboursement = max(0, Σ réel dépenses).
 -- Nouveau : par catégorie. Dépenses/épargne : retenu = max(max(0,-réel), |budget|), remboursement = max(0,réel).
@@ -19,9 +20,16 @@ WITH reel AS (
   JOIN public.transactions t
     ON t.account_id = p.account_id
    AND t.date >= p.start_date
-   AND (p.end_date IS NULL
-        OR t.date <= p.end_date
-        OR (p.is_active AND t.amount < 0))
+   AND CASE
+         WHEN p.is_active THEN NOT (
+           p.end_date IS NOT NULL
+           AND t.pending IS TRUE
+           AND t.date > p.end_date
+           AND coalesce(t.metadata->>'recurringId', '') <> ''
+           AND EXISTS (SELECT 1 FROM public.categories c
+                       WHERE c.id = t.category_id AND c.is_period_trigger))
+         ELSE (p.end_date IS NULL OR t.date <= p.end_date)
+       END
   WHERE t.category_id IS NOT NULL
   GROUP BY p.id, t.category_id
 ),
@@ -32,9 +40,16 @@ sans_categorie AS (
     ON t.account_id = p.account_id
    AND t.category_id IS NULL
    AND t.date >= p.start_date
-   AND (p.end_date IS NULL
-        OR t.date <= p.end_date
-        OR (p.is_active AND t.amount < 0))
+   AND CASE
+         WHEN p.is_active THEN NOT (
+           p.end_date IS NOT NULL
+           AND t.pending IS TRUE
+           AND t.date > p.end_date
+           AND coalesce(t.metadata->>'recurringId', '') <> ''
+           AND EXISTS (SELECT 1 FROM public.categories c
+                       WHERE c.id = t.category_id AND c.is_period_trigger))
+         ELSE (p.end_date IS NULL OR t.date <= p.end_date)
+       END
   GROUP BY p.id
 ),
 lignes AS (
