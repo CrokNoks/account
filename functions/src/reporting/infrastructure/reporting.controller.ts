@@ -254,6 +254,12 @@ class BudgetBreakdownResponseDto implements BudgetBreakdownResponse {
   transfers: BudgetCategoryBreakdownDto[];
 }
 
+class BudgetRemainingDetailLineDto {
+  @ApiProperty() categoryId: string;
+  @ApiProperty() name: string;
+  @ApiProperty() remaining: string;
+}
+
 class PeriodStatsResponseDto implements PeriodStatsResponse {
   @ApiProperty() startBalance: string;
   @ApiProperty() realIncome: string;
@@ -271,6 +277,8 @@ class PeriodStatsResponseDto implements PeriodStatsResponse {
   @ApiProperty() arrivedAfterEnd: string;
   @ApiProperty() budgetRemaining: string;
   @ApiProperty() expectedIncome: string;
+  @ApiProperty({ type: [BudgetRemainingDetailLineDto] })
+  budgetRemainingDetail: BudgetRemainingDetailLineDto[];
 }
 
 class SpendingPacePointDto implements SpendingPacePoint {

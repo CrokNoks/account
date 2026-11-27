@@ -32,6 +32,15 @@ export interface PeriodStatsResponse {
   arrivedAfterEnd: string;
   budgetRemaining: string;
   expectedIncome: string;
+  /**
+   * Détail de `budgetRemaining` : catégories qui ont encore du budget à dépenser, reste positif en
+   * centimes, trié par reste décroissant (puis nom, puis id). Σ remaining = -budgetRemaining.
+   */
+  budgetRemainingDetail: Array<{
+    categoryId: string;
+    name: string;
+    remaining: string;
+  }>;
 }
 
 @Injectable()
@@ -79,6 +88,7 @@ export class GetPeriodStatsUseCase {
       plannedExpenses,
       plannedExpensesExTransfers,
       budgetRemaining,
+      remainingByCategory,
       expectedIncome,
       forecastBalance,
       transferDirections,
@@ -102,6 +112,27 @@ export class GetPeriodStatsUseCase {
         direction: d.direction,
         source: d.source,
       });
+    }
+
+    const names = new Map(categories.map((c) => [c.id, c.name]));
+    const detail = remainingByCategory
+      .map((l) => ({
+        categoryId: l.categoryId,
+        name: names.get(l.categoryId) ?? '',
+        remaining: l.remaining,
+      }))
+      .sort((a, b) =>
+        a.remaining !== b.remaining
+          ? a.remaining > b.remaining
+            ? -1
+            : 1
+          : a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }) ||
+            a.categoryId.localeCompare(b.categoryId),
+      );
+    // Garde-fou d'exploitation (ne devrait jamais arriver) : sans montant ni nom.
+    const detailSum = detail.reduce((sum, l) => sum + l.remaining, BigInt(0));
+    if (detailSum !== -budgetRemaining) {
+      this.logger.warn({ event: 'budget_remaining_detail_mismatch', periodId });
     }
 
     // En banque : départ pointé + pointées de la période + revenu pointé tardif.
@@ -138,6 +169,10 @@ export class GetPeriodStatsUseCase {
       arrivedAfterEnd: composition.arrivedAfterEnd.toString(),
       budgetRemaining: composition.budgetRemaining.toString(),
       expectedIncome: composition.expectedIncome.toString(),
+      budgetRemainingDetail: detail.map((l) => ({
+        ...l,
+        remaining: l.remaining.toString(),
+      })),
     };
   }
 }

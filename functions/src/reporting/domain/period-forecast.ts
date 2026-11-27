@@ -50,6 +50,11 @@ export interface PeriodForecast {
   refundSurplus: bigint;
   /** Σ -(retenu - dépensé) par catégorie de dépense ou de virement sortant : négatif ou nul. */
   budgetRemaining: bigint;
+  /**
+   * Détail de `budgetRemaining` : reste (> 0) de chaque catégorie de dépense, d'épargne ou de
+   * virement sortant. Invariant : Σ remaining = -budgetRemaining. Non trié (le tri est à l'appelant).
+   */
+  remainingByCategory: Array<{ categoryId: string; remaining: bigint }>;
   /** Σ (retenu - réel) par catégorie de revenu ou de virement entrant : positif ou nul. */
   expectedIncome: bigint;
   forecastBalance: bigint;
@@ -119,6 +124,7 @@ export function computePeriodForecast(
   let refundSurplus = ZERO;
   let budgetRemaining = ZERO;
   let expectedIncome = ZERO;
+  const remainingByCategory: PeriodForecast['remainingByCategory'] = [];
   const transferDirections: PeriodForecast['transferDirections'] = [];
 
   for (const cat of input.categories) {
@@ -160,7 +166,11 @@ export function computePeriodForecast(
       } = expenseRule(catReal, catBudget);
       maxAbsExpenses += maxExpenses;
       refundSurplus += refund;
-      budgetRemaining -= maxExpenses - spent;
+      const left = maxExpenses - spent;
+      budgetRemaining -= left;
+      if (left > ZERO) {
+        remainingByCategory.push({ categoryId: cat.id, remaining: left });
+      }
     } else {
       realExpenses += catReal;
       plannedExpenses += catBudget;
@@ -172,7 +182,11 @@ export function computePeriodForecast(
       } = expenseRule(catReal, catBudget);
       maxAbsExpenses += maxExpenses;
       refundSurplus += refund;
-      budgetRemaining -= maxExpenses - spent;
+      const left = maxExpenses - spent;
+      budgetRemaining -= left;
+      if (left > ZERO) {
+        remainingByCategory.push({ categoryId: cat.id, remaining: left });
+      }
     }
   }
 
@@ -193,6 +207,7 @@ export function computePeriodForecast(
     maxAbsExpenses,
     refundSurplus,
     budgetRemaining,
+    remainingByCategory,
     expectedIncome,
     forecastBalance,
     transferDirections,

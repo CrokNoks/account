@@ -1,3 +1,4 @@
+import { Logger } from '@nestjs/common';
 import { GetPeriodStatsUseCase } from './get-period-stats.use-case';
 import { AccountRepository } from '../../accounts/domain/account.repository.interface';
 import { PeriodRepository } from '../../periods/domain/period.repository.interface';
@@ -297,6 +298,7 @@ describe('GetPeriodStatsUseCase', () => {
       arrivedAfterEnd: '0',
       budgetRemaining: '0',
       expectedIncome: '0',
+      budgetRemainingDetail: [],
     });
   });
 
@@ -800,6 +802,153 @@ describe('GetPeriodStatsUseCase', () => {
       await expect(useCase.execute('acc-1', 'per-1')).rejects.toThrow(
         'rpc down',
       );
+    });
+  });
+
+  describe('budgetRemainingDetail', () => {
+    const named = (id: string, name: string, type: CategoryType) =>
+      new Category({
+        id,
+        name,
+        color: '#000000',
+        type,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+    const budget = (categoryId: string, amount: number) =>
+      BudgetInstance.create({
+        periodId: 'per-1',
+        categoryId,
+        amountAllocated: BigInt(amount),
+      });
+
+    const setup = (
+      cats: Category[],
+      budgetList: BudgetInstance[],
+      txs: Transaction[],
+    ) => {
+      categories.findAllByAccount.mockResolvedValue(cats);
+      budgets.findAllByPeriod.mockResolvedValue(budgetList);
+      transactions.findAllByAccountUnpaginated.mockResolvedValue(txs);
+    };
+
+    const expectSum = (stats: {
+      budgetRemaining: string;
+      budgetRemainingDetail: Array<{ remaining: string }>;
+    }) =>
+      expect(
+        stats.budgetRemainingDetail.reduce(
+          (s, l) => s + BigInt(l.remaining),
+          BigInt(0),
+        ),
+      ).toBe(-BigInt(stats.budgetRemaining));
+
+    it('jeu mixte : trié par reste décroissant, Σ = -budgetRemaining', async () => {
+      setup(
+        [
+          named('c', 'Courses', CategoryType.EXPENSE),
+          named('r', 'Resto', CategoryType.EXPENSE),
+          named('o', 'Dépassée', CategoryType.EXPENSE),
+          named('e', 'Épargne', CategoryType.SAVINGS),
+          named('v', 'Virement sortant', CategoryType.TRANSFER),
+          named('vi', 'Virement entrant', CategoryType.TRANSFER),
+          named('s', 'Salaire', CategoryType.INCOME),
+        ],
+        [
+          budget('c', 40000),
+          budget('r', 10000),
+          budget('o', 5000),
+          budget('e', 5001),
+          budget('v', -20000),
+          budget('vi', 20000),
+          budget('s', 250000),
+        ],
+        [
+          tx(-15000, 'c'),
+          tx(2000, 'r'),
+          tx(-9000, 'o'),
+          tx(-5001, 'v'),
+          tx(100, 'vi'),
+        ],
+      );
+
+      const stats = await useCase.execute('acc-1', 'per-1');
+
+      expect(stats.budgetRemainingDetail).toEqual([
+        { categoryId: 'c', name: 'Courses', remaining: '25000' },
+        { categoryId: 'v', name: 'Virement sortant', remaining: '14999' },
+        { categoryId: 'r', name: 'Resto', remaining: '10000' },
+        { categoryId: 'e', name: 'Épargne', remaining: '5001' },
+      ]);
+      expectSum(stats);
+    });
+
+    it('même reste : ordre par nom, insensible à la casse', async () => {
+      setup(
+        [
+          named('1', 'zèbre', CategoryType.EXPENSE),
+          named('2', 'Abeille', CategoryType.EXPENSE),
+          named('3', 'chat', CategoryType.EXPENSE),
+        ],
+        [budget('1', 1000), budget('2', 1000), budget('3', 1000)],
+        [],
+      );
+
+      const stats = await useCase.execute('acc-1', 'per-1');
+
+      expect(stats.budgetRemainingDetail.map((l) => l.name)).toEqual([
+        'Abeille',
+        'chat',
+        'zèbre',
+      ]);
+      expectSum(stats);
+    });
+
+    it('même reste et même nom : ordre par categoryId, stable', async () => {
+      setup(
+        [
+          named('b', 'Doublon', CategoryType.EXPENSE),
+          named('a', 'Doublon', CategoryType.EXPENSE),
+        ],
+        [budget('b', 1000), budget('a', 1000)],
+        [],
+      );
+
+      const stats = await useCase.execute('acc-1', 'per-1');
+
+      expect(stats.budgetRemainingDetail.map((l) => l.categoryId)).toEqual([
+        'a',
+        'b',
+      ]);
+    });
+
+    it('aucun budget restant : liste vide et budgetRemaining 0', async () => {
+      setup(
+        [named('c', 'Courses', CategoryType.EXPENSE)],
+        [budget('c', 1000)],
+        [tx(-1000, 'c')],
+      );
+
+      const stats = await useCase.execute('acc-1', 'per-1');
+
+      expect(stats.budgetRemaining).toBe('0');
+      expect(stats.budgetRemainingDetail).toEqual([]);
+    });
+
+    it("n'émet aucun warn quand l'invariant tient", async () => {
+      const warn = jest
+        .spyOn(Logger.prototype, 'warn')
+        .mockImplementation(() => undefined);
+      setup(
+        [named('c', 'Courses', CategoryType.EXPENSE)],
+        [budget('c', 1000)],
+        [],
+      );
+
+      await useCase.execute('acc-1', 'per-1');
+
+      expect(warn).not.toHaveBeenCalled();
+      warn.mockRestore();
     });
   });
 

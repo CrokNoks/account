@@ -439,3 +439,74 @@ describe('computePeriodForecast', () => {
     });
   });
 });
+
+describe('computePeriodForecast — remainingByCategory (détail du budget restant)', () => {
+  const detail = (
+    real: Record<string, number>,
+    budgets: Record<string, number>,
+  ) => {
+    const r = computePeriodForecast(input(real, budgets));
+    const sum = r.remainingByCategory.reduce((s, l) => s + l.remaining, B(0));
+    expect(sum).toBe(-r.budgetRemaining);
+    return r.remainingByCategory.map((l) => [
+      l.categoryId,
+      Number(l.remaining),
+    ]);
+  };
+
+  it('dépense budget 100,00 réel -30,00 : ligne 70,00', () => {
+    expect(detail({ A: -3000 }, { A: 10000 })).toEqual([['A', 7000]]);
+  });
+
+  it('remboursement +20,00 : ligne 100,00 (pas 120,00)', () => {
+    expect(detail({ A: 2000 }, { A: 10000 })).toEqual([['A', 10000]]);
+  });
+
+  it('dépassement : pas de ligne', () => {
+    expect(detail({ A: -13000 }, { A: 10000 })).toEqual([]);
+  });
+
+  it('épuisée : pas de ligne', () => {
+    expect(detail({ A: -10000 }, { A: 10000 })).toEqual([]);
+  });
+
+  it('budget 0 : pas de ligne, réel -10,00 ou nul', () => {
+    expect(detail({ A: -1000 }, { A: 0 })).toEqual([]);
+    expect(detail({}, { A: 0 })).toEqual([]);
+  });
+
+  it('budget stocké négatif -100,00, réel -30,00 : ligne 70,00', () => {
+    expect(detail({ A: -3000 }, { A: -10000 })).toEqual([['A', 7000]]);
+  });
+
+  it('épargne budget 50,00 réel 0 : ligne 50,00', () => {
+    expect(detail({}, { S: 5000 })).toEqual([['S', 5000]]);
+  });
+
+  it('virement sortant budget -200,00 réel -50,00 : ligne 150,00', () => {
+    expect(detail({ T: -5000 }, { T: -20000 })).toEqual([['T', 15000]]);
+  });
+
+  it('virement entrant et revenu : pas de ligne, hors somme', () => {
+    expect(detail({}, { T: 20000, I: 100000 })).toEqual([]);
+  });
+
+  it('mélange de tous les cas : Σ = -budgetRemaining au centime', () => {
+    const r = detail(
+      { A: -3333, B: 2000, S: 0, T: -5001, I: 7 },
+      { A: 10000, B: -9999, S: 5001, T: -20000, I: 100000 },
+    );
+    expect(r).toEqual([
+      ['A', 6667],
+      ['B', 9999],
+      ['S', 5001],
+      ['T', 14999],
+    ]);
+  });
+
+  it('aucun budget restant : liste vide, budgetRemaining 0', () => {
+    const r = computePeriodForecast(input({ A: -20000 }, { A: 10000 }));
+    expect(r.remainingByCategory).toEqual([]);
+    expect(r.budgetRemaining).toBe(B(0));
+  });
+});

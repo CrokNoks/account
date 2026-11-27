@@ -1,0 +1,148 @@
+# Détail du budget restant : budgetRemainingDetail des stats, Σ = -budgetRemaining.
+# Lancement : npx httpyac send --all http/detail-budget-restant.http --var port=8080 --var anon=<SUPABASE_ANON_KEY de functions/.env>
+# (la clé vient de la ligne de commande, jamais du fichier ; l'utilisateur est jetable, créé par le fichier)
+@baseUrl = http://localhost:{{port}}
+@authUrl = http://127.0.0.1:54321/auth/v1
+
+### Utilisateur jetable
+# @name login
+POST {{authUrl}}/signup
+apikey: {{anon}}
+Content-Type: application/json
+
+{ "email": "detail-budget-{{$timestamp}}@example.com", "password": "Password123!" }
+
+?? status == 200
+
+### Compte jetable
+# @name account
+POST {{baseUrl}}/accounts
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "name": "detail-budget-{{$timestamp}}", "initialBalance": "100000" }
+
+?? status == 201
+
+### Catégorie Courses (dépense, dépensé partiellement)
+# @name courses
+POST {{baseUrl}}/{{account.id}}/categories
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "name": "Courses", "color": "#112233", "type": "expense" }
+
+?? status == 201
+
+### Catégorie Resto (dépense, remboursement)
+# @name resto
+POST {{baseUrl}}/{{account.id}}/categories
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "name": "Resto", "color": "#112233", "type": "expense" }
+
+?? status == 201
+
+### Catégorie Loisirs (dépassée)
+# @name loisirs
+POST {{baseUrl}}/{{account.id}}/categories
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "name": "Loisirs", "color": "#112233", "type": "expense" }
+
+?? status == 201
+
+### Catégorie Livret (épargne)
+# @name livret
+POST {{baseUrl}}/{{account.id}}/categories
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "name": "Livret", "color": "#112233", "type": "savings" }
+
+?? status == 201
+
+### Catégorie Salaire (revenu, exclu)
+# @name salaire
+POST {{baseUrl}}/{{account.id}}/categories
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "name": "Salaire", "color": "#112233", "type": "income" }
+
+?? status == 201
+
+### Catégorie Vers PEL (virement sortant)
+# @name pel
+POST {{baseUrl}}/{{account.id}}/categories
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "name": "Vers PEL", "color": "#112233", "type": "transfer" }
+
+?? status == 201
+
+### Période : Courses 100,00, Resto 100,00, Loisirs 50,00, Livret 50,00, Salaire 1000,00, PEL -200,00
+# @name period
+POST {{baseUrl}}/{{account.id}}/periods
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "startDate": "2026-11-01", "endDate": "2026-11-30", "budgets": [
+  { "categoryId": "{{courses.id}}", "amountAllocated": "10000" },
+  { "categoryId": "{{resto.id}}", "amountAllocated": "10000" },
+  { "categoryId": "{{loisirs.id}}", "amountAllocated": "5000" },
+  { "categoryId": "{{livret.id}}", "amountAllocated": "5000" },
+  { "categoryId": "{{salaire.id}}", "amountAllocated": "100000" },
+  { "categoryId": "{{pel.id}}", "amountAllocated": "-20000" }
+] }
+
+?? status == 201
+
+### Courses : -30,00
+POST {{baseUrl}}/{{account.id}}/transactions
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "date": "2026-11-02", "description": "Courses", "amount": "-3000", "categoryId": "{{courses.id}}", "periodId": "{{period.id}}" }
+
+?? status == 201
+
+### Resto : remboursement +20,00
+POST {{baseUrl}}/{{account.id}}/transactions
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "date": "2026-11-02", "description": "Remboursement", "amount": "2000", "categoryId": "{{resto.id}}", "periodId": "{{period.id}}" }
+
+?? status == 201
+
+### Loisirs : -80,00 (dépassement)
+POST {{baseUrl}}/{{account.id}}/transactions
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "date": "2026-11-02", "description": "Loisirs", "amount": "-8000", "categoryId": "{{loisirs.id}}", "periodId": "{{period.id}}" }
+
+?? status == 201
+
+### Virement sortant : -50,00
+POST {{baseUrl}}/{{account.id}}/transactions
+Authorization: Bearer {{login.access_token}}
+Content-Type: application/json
+
+{ "date": "2026-11-02", "description": "Virement", "amount": "-5000", "categoryId": "{{pel.id}}", "periodId": "{{period.id}}" }
+
+?? status == 201
+
+### Stats : Courses 70,00 ; Resto 100,00 ; PEL 150,00 ; Livret 50,00 ; ni Loisirs ni Salaire ; Σ = -budgetRemaining
+# @name stats
+GET {{baseUrl}}/{{account.id}}/periods/{{period.id}}/reporting/stats
+Authorization: Bearer {{login.access_token}}
+
+?? status == 200
+?? js response.parsedBody.budgetRemainingDetail.length == 4
+?? js response.parsedBody.budgetRemainingDetail.map(l=>l.remaining).join('|')==='15000|10000|7000|5000' == true
+?? js response.parsedBody.budgetRemainingDetail.reduce((s,l)=>s+Number(l.remaining),0)+Number(response.parsedBody.budgetRemaining) == 0
