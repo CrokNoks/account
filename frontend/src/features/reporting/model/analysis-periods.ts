@@ -54,3 +54,19 @@ export function analysisSpan(periods: Period[] | undefined): AnalysisSpan | null
   if (proposed.length === 0) return null;
   return { count: proposed.length, from: proposed[0].startDate, to: proposed[proposed.length - 1].startDate };
 }
+
+/** Fenêtres proposées dans l'onglet Évolution (nombre de périodes fermées), 12 par défaut. */
+export const EVOLUTION_WINDOWS = [3, 6, 12] as const;
+export type EvolutionWindow = (typeof EVOLUTION_WINDOWS)[number];
+export const DEFAULT_EVOLUTION_WINDOW: EvolutionWindow = 12;
+
+/** Les `count` dernières entrées d'une liste chronologique ; toutes s'il y en a moins. */
+export function lastClosed<T>(chronological: T[], count: number): T[] {
+  return chronological.slice(-count);
+}
+
+/** Cumul en centimes : chaque valeur est la somme des montants depuis le premier jusqu'à elle incluse. */
+export function cumulativeCents(amounts: bigint[]): bigint[] {
+  let sum = BigInt(0);
+  return amounts.map((a) => (sum += a));
+}

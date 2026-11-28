@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { closedPeriodsChronological, defaultComparison, validCompareWith } from './analysis-periods';
+import { closedPeriodsChronological, cumulativeCents, defaultComparison, lastClosed, validCompareWith } from './analysis-periods';
 
 const mk = (n: number, isActive = false) => ({
   id: `p${n}`,
@@ -48,5 +48,40 @@ describe('validCompareWith', () => {
 
   it("n'a aucune comparaison quand la période est la plus ancienne", () => {
     expect(validCompareWith(periods, 'p1', 'p1')).toBeNull();
+  });
+});
+
+describe('cumulativeCents (dépenses cumulées)', () => {
+  it('100 € puis 100 € : 100 €, 200 €', () => {
+    expect(cumulativeCents([BigInt(10000), BigInt(10000)])).toEqual([BigInt(10000), BigInt(20000)]);
+  });
+
+  it('somme exacte en centimes, sans arrondi', () => {
+    expect(cumulativeCents([BigInt(1), BigInt(2), BigInt(3)])).toEqual([BigInt(1), BigInt(3), BigInt(6)]);
+  });
+
+  it('une période à 0 fait stagner le cumul sans le faire baisser', () => {
+    expect(cumulativeCents([BigInt(5000), BigInt(0), BigInt(2500)])).toEqual([BigInt(5000), BigInt(5000), BigInt(7500)]);
+  });
+
+  it('une seule période : le cumul égale son total ; aucune période : rien', () => {
+    expect(cumulativeCents([BigInt(4200)])).toEqual([BigInt(4200)]);
+    expect(cumulativeCents([])).toEqual([]);
+  });
+
+  it('fenêtre réduite : le cumul repart de zéro à la plus ancienne période de la fenêtre', () => {
+    const amounts = [BigInt(10000), BigInt(20000), BigInt(30000), BigInt(40000)];
+    expect(cumulativeCents(lastClosed(amounts, 3))).toEqual([BigInt(20000), BigInt(50000), BigInt(90000)]);
+  });
+});
+
+describe('lastClosed (fenêtre des N dernières)', () => {
+  it('garde les N dernières, dans l’ordre', () => {
+    expect(lastClosed([1, 2, 3, 4, 5], 3)).toEqual([3, 4, 5]);
+  });
+
+  it('moins de périodes que la fenêtre : toutes sont gardées', () => {
+    expect(lastClosed([1, 2], 12)).toEqual([1, 2]);
+    expect(lastClosed([], 3)).toEqual([]);
   });
 });
