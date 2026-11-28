@@ -108,3 +108,18 @@ export function displayValue(reference: SavedBudget[], drafts: Drafts, categoryI
   const cents = savedCents(reference, categoryId);
   return cents === ZERO ? '' : centsToInputString(abs(cents), locale);
 }
+
+/**
+ * Montants par défaut à écrire depuis les budgets d'une période : une ligne par catégorie du compte, dans
+ * l'ordre reçu ; budget absent = 0 ; montant et signe repris tels quels (copie, aucun calcul).
+ * Un budget d'une catégorie hors liste est ignoré.
+ */
+export function buildTemplateItems(
+  categoryIds: string[],
+  budgets: SavedBudget[],
+): Array<{ categoryId: string; amount: string }> {
+  return categoryIds.map((categoryId) => ({
+    categoryId,
+    amount: budgets.find((b) => b.categoryId === categoryId)?.amountAllocated ?? '0',
+  }));
+}

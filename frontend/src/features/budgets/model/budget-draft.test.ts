@@ -6,6 +6,7 @@ import {
   displayValue,
   hasChanges,
   directionsOf,
+  buildTemplateItems,
 } from './budget-draft';
 
 const NONE = {};
@@ -184,5 +185,42 @@ describe('sens d\'un virement', () => {
         { categoryId: 'a' },
       ]),
     ).toEqual({ cj: 'outgoing' });
+  });
+});
+
+describe('buildTemplateItems', () => {
+  const item = (categoryId: string, amount: string) => ({ categoryId, amount });
+
+  it('une ligne par catégorie du compte, absent = 0', () => {
+    const budgets = [
+      { categoryId: 'A', amountAllocated: '10000' },
+      { categoryId: 'B', amountAllocated: '2500' },
+    ];
+    expect(buildTemplateItems(['A', 'B', 'C'], budgets)).toEqual([item('A', '10000'), item('B', '2500'), item('C', '0')]);
+  });
+
+  it('un budget à 0 reste 0', () => {
+    expect(buildTemplateItems(['B'], [{ categoryId: 'B', amountAllocated: '0' }])).toEqual([item('B', '0')]);
+  });
+
+  it('un virement sortant garde son signe', () => {
+    expect(buildTemplateItems(['V'], [{ categoryId: 'V', amountAllocated: '-5000' }])).toEqual([item('V', '-5000')]);
+  });
+
+  it('un budget négatif hors virement est repris tel quel', () => {
+    expect(buildTemplateItems(['D'], [{ categoryId: 'D', amountAllocated: '-300' }])).toEqual([item('D', '-300')]);
+  });
+
+  it('ignore un budget dont la catégorie n\'est pas au compte', () => {
+    expect(buildTemplateItems(['A'], [{ categoryId: 'Z', amountAllocated: '900' }])).toEqual([item('A', '0')]);
+  });
+
+  it('reprend les saisies quand on part de buildBudgets', () => {
+    const ref = [{ categoryId: 'A', amountAllocated: '10000' }];
+    expect(buildTemplateItems(['A'], buildBudgets(ref, { A: '12,00' }, {}))).toEqual([item('A', '1200')]);
+  });
+
+  it('aucune catégorie : liste vide', () => {
+    expect(buildTemplateItems([], [{ categoryId: 'A', amountAllocated: '1' }])).toEqual([]);
   });
 });
