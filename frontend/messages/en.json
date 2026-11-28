@@ -247,7 +247,11 @@
         "overrun_mark": "Overrun",
         "balance_title": "Bank balance",
         "balance_legend": "Line: reconciled bank balance at the end of each closed period.",
-        "balance_series": "Bank balance"
+        "balance_series": "Bank balance",
+        "window_label": "Last closed periods",
+        "cumulative_title": "Cumulative spending",
+        "cumulative_series": "Cumulative spending",
+        "cumulative_legend": "Line: sum of the spending totals (bars above) since the oldest period shown, pending bills included."
       },
       "overruns": {
         "category": "Category",

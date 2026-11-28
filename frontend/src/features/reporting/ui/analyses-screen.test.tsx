@@ -14,6 +14,7 @@ const state = vi.hoisted(() => ({
   evolution: [] as unknown[],
   chart: undefined as unknown,
   comparisonArgs: [] as unknown[],
+  chartArgs: [] as unknown[],
 }));
 
 vi.mock('next/navigation', () => ({ useRouter: () => ({ push }), usePathname: () => '/fr/analyses' }));
@@ -28,7 +29,10 @@ vi.mock('@/features/budgets/api/use-periods', () => ({
 }));
 vi.mock('../api/use-overruns', () => ({
   useOverrunsByPeriod: () => ({ data: state.overruns, isLoading: false, isError: false }),
-  useCategoryOverrunsChart: () => ({ data: state.chart, isLoading: false }),
+  useCategoryOverrunsChart: (...args: unknown[]) => {
+    state.chartArgs = args;
+    return { data: state.chart, isLoading: false };
+  },
 }));
 vi.mock('../api/use-period-comparison', () => ({
   usePeriodComparison: (...args: unknown[]) => {
@@ -266,7 +270,7 @@ describe('Évolution', () => {
   it("légendes des trois graphiques ; le graphique revenus face aux dépenses n'existe plus", () => {
     state.evolution = [evo(1), evo(2), evo(3, true)];
     renderScreen('evolution');
-    expect(screen.getAllByTestId('chart-legend')).toHaveLength(2);
+    expect(screen.getAllByTestId('chart-legend')).toHaveLength(3);
     expect(screen.getByRole('heading', { name: 'Dépenses par période' })).toBeTruthy();
     expect(screen.getByRole('heading', { name: 'Solde en banque' })).toBeTruthy();
     expect(screen.queryByText(/Revenus vs Dépenses/i)).toBeNull();
@@ -303,7 +307,94 @@ describe('Évolution', () => {
     expect(rows[0].textContent).toMatch(/120,00.*100,00.*Dépassement/);
     expect(rows[1].textContent).not.toContain('Dépassement');
     expect(screen.getAllByTestId('overrun-mark')).toHaveLength(1);
-    expect(screen.getAllByTestId('chart-legend')).toHaveLength(3);
+    expect(screen.getAllByTestId('chart-legend')).toHaveLength(4);
+  });
+});
+
+describe('Évolution : dépenses cumulées et fenêtre', () => {
+  const evo = (n: number, expenses: string, isActive = false) => ({
+    ...mk(n, isActive),
+    periodId: `p${n}`,
+    realIncome: '100000',
+    realExpenses: expenses,
+    realBankBalance: `${n}00000`,
+    forecastBalance: '0',
+  });
+  const cumulRows = () => within(screen.getByTestId('cumulative-table')).getAllByRole('row').slice(1).map((r) => r.textContent ?? '');
+  const pick = (name: string) => fireEvent.click(screen.getByRole('radio', { name }));
+
+  it('deux périodes à 100 € : 100 € puis 200 €, sous les barres, légende « factures en attente comprises »', () => {
+    state.periods = [mk(1), mk(2), mk(3, true)];
+    state.evolution = [evo(1, '-10000'), evo(2, '-10000'), evo(3, '-99999', true)];
+    renderScreen('evolution');
+    const rows = cumulRows();
+    expect(rows).toHaveLength(2);
+    expect(rows[0]).toMatch(/100,00.*100,00/);
+    expect(rows[1]).toMatch(/100,00.*200,00/);
+    const headings = screen.getAllByRole('heading', { level: 3 }).map((h) => h.textContent);
+    expect(headings.indexOf('Dépenses cumulées')).toBe(headings.indexOf('Dépenses par période') + 1);
+    expect(screen.getByTestId('cumulative-section').textContent).toContain('factures en attente comprises');
+  });
+
+  it('période à 0 € ou remboursée : le cumul stagne sans baisser', () => {
+    state.periods = [mk(1), mk(2), mk(3), mk(4, true)];
+    state.evolution = [evo(1, '-5000'), evo(2, '0'), evo(3, '3000'), evo(4, '0', true)];
+    renderScreen('evolution');
+    const rows = cumulRows();
+    expect(rows[0]).toMatch(/50,00\s*€?$/);
+    expect(rows[1]).toMatch(/0,00.*50,00/);
+    expect(rows[2]).toMatch(/0,00.*50,00/);
+  });
+
+  it('une seule période fermée : le cumul égale son total, le sélecteur est là', () => {
+    state.periods = [mk(1), mk(2, true)];
+    state.evolution = [evo(1, '-4200'), evo(2, '0', true)];
+    renderScreen('evolution');
+    expect(cumulRows()).toHaveLength(1);
+    expect(cumulRows()[0]).toMatch(/42,00.*42,00/);
+    expect(screen.getAllByRole('radio').map((r) => r.textContent)).toEqual(['3', '6', '12']);
+  });
+
+  it('12 par défaut ; 3 réduit toutes les sections et le cumul repart de zéro', () => {
+    state.periods = [1, 2, 3, 4, 5].map((n) => mk(n)).concat(mk(6, true));
+    state.evolution = [1, 2, 3, 4, 5].map((n) => evo(n, '-10000')).concat(evo(6, '0', true));
+    renderScreen('evolution');
+    expect(screen.getByRole('radio', { name: '12' }).getAttribute('aria-checked')).toBe('true');
+    expect(cumulRows()).toHaveLength(5);
+    expect(state.chartArgs.slice(2)).toEqual(['p1', 'p5']);
+
+    pick('3');
+    const rows = cumulRows();
+    expect(rows).toHaveLength(3);
+    expect(rows[0]).toMatch(/100,00.*100,00/);
+    expect(rows[2]).toMatch(/100,00.*300,00/);
+    expect(state.chartArgs.slice(2)).toEqual(['p3', 'p5']);
+    expect(screen.getByRole('radio', { name: '3' }).getAttribute('aria-checked')).toBe('true');
+  });
+
+  it('moins de périodes que le filtre : toutes affichées, aucun message, aucun choix grisé', () => {
+    state.periods = [mk(1), mk(2), mk(3, true)];
+    state.evolution = [evo(1, '-10000'), evo(2, '-10000'), evo(3, '0', true)];
+    renderScreen('evolution');
+    pick('6');
+    expect(cumulRows()).toHaveLength(2);
+    screen.getAllByRole('radio').forEach((r) => expect((r as HTMLButtonElement).disabled).toBe(false));
+  });
+
+  it('changer le filtre garde la catégorie choisie', () => {
+    state.periods = [1, 2, 3, 4].map((n) => mk(n)).concat(mk(5, true));
+    state.evolution = [1, 2, 3, 4].map((n) => evo(n, '-10000')).concat(evo(5, '0', true));
+    state.chart = {
+      categoryId: 'courses',
+      points: [{ periodId: 'p4', startDate: mk(4).startDate, endDate: mk(4).endDate, budget: '10000', real: '-7000', overrun: '0' }],
+    };
+    renderScreen('evolution');
+    fireEvent.click(screen.getByRole('button', { name: 'Catégorie' }));
+    expect(state.chartArgs[1]).toBe('courses');
+    pick('3');
+    expect(state.chartArgs[1]).toBe('courses');
+    expect(state.chartArgs.slice(2)).toEqual(['p2', 'p4']);
+    expect(screen.getByTestId('category-evolution-table')).toBeTruthy();
   });
 });
 

@@ -8,10 +8,11 @@ import { CategoryType } from '@/features/categories/model/types';
 import { CategorySelector } from '@/features/categories/ui/category-selector';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useFormatCurrency } from '@/shared/lib/use-format-currency';
+import { cn } from '@/lib/utils';
 import { useEvolution } from '../../api/use-evolution';
 import { usePeriods } from '@/features/budgets/api/use-periods';
 import { useCategoryOverrunsChart } from '../../api/use-overruns';
-import { closedPeriodsChronological } from '../../model/analysis-periods';
+import { closedPeriodsChronological, cumulativeCents, DEFAULT_EVOLUTION_WINDOW, EVOLUTION_WINDOWS, lastClosed } from '../../model/analysis-periods';
 import { absCents } from '../../model/breakdown';
 import { spentAmount } from '../../lib/budget-surplus';
 import { AXIS_TICK, CHART, PX_PER_PERIOD, TOOLTIP_STYLE } from './chart-style';
@@ -47,16 +48,20 @@ export function EvolutionTab() {
   const { data: evolution, isLoading } = useEvolution(activeAccountId);
   const { data: periods } = usePeriods(activeAccountId);
   const [categoryId, setCategoryId] = useState('');
+  const [windowSize, setWindowSize] = useState<number>(DEFAULT_EVOLUTION_WINDOW);
 
   // Périodes fermées seulement, de la plus ancienne à la plus récente.
   const closedEvolution = useMemo(
     () =>
-      (evolution ?? [])
-        .filter((d) => !d.isActive)
-        .sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime()),
-    [evolution],
+      lastClosed(
+        (evolution ?? [])
+          .filter((d) => !d.isActive)
+          .sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime()),
+        windowSize,
+      ),
+    [evolution, windowSize],
   );
-  const closed = useMemo(() => closedPeriodsChronological(periods), [periods]);
+  const closed = useMemo(() => lastClosed(closedPeriodsChronological(periods), windowSize), [periods, windowSize]);
   const first = closed[0]?.id ?? null;
   const last = closed[closed.length - 1]?.id ?? null;
   const { data: categoryChart, isLoading: loadingCategory } = useCategoryOverrunsChart(
@@ -76,10 +81,18 @@ export function EvolutionTab() {
     return <p data-testid="evolution-empty" className="text-muted-foreground">{te('empty')}</p>;
   }
 
-  const totals = closedEvolution.map((d) => ({
+  const spentCents = closedEvolution.map((d) => spentAmount(BigInt(d.realExpenses)));
+  const cumulCents = cumulativeCents(spentCents);
+  const totals = closedEvolution.map((d, i) => ({
     name: shortPeriodLabel(d.startDate, locale),
-    total: Number(spentAmount(BigInt(d.realExpenses))),
-    totalLabel: formatCurrency(spentAmount(BigInt(d.realExpenses)).toString()),
+    total: Number(spentCents[i]),
+    totalLabel: formatCurrency(spentCents[i].toString()),
+  }));
+  const cumulative = closedEvolution.map((d, i) => ({
+    name: shortPeriodLabel(d.startDate, locale),
+    cumul: Number(cumulCents[i]),
+    cumulLabel: formatCurrency(cumulCents[i].toString()),
+    totalLabel: formatCurrency(spentCents[i].toString()),
   }));
   const balances = closedEvolution.map((d) => ({
     name: shortPeriodLabel(d.startDate, locale),
@@ -97,6 +110,25 @@ export function EvolutionTab() {
 
   return (
     <div className="space-y-10">
+      <div role="radiogroup" aria-label={te('window_label')} className="flex flex-wrap items-center gap-2" data-testid="evolution-window">
+        <span className="text-sm text-muted-foreground">{te('window_label')}</span>
+        {EVOLUTION_WINDOWS.map((n) => (
+          <button
+            key={n}
+            type="button"
+            role="radio"
+            aria-checked={windowSize === n}
+            onClick={() => setWindowSize(n)}
+            className={cn(
+              'h-11 lg:h-8 min-w-11 rounded-md border px-3 text-sm lg:text-xs font-medium',
+              windowSize === n ? 'bg-primary text-primary-foreground border-primary' : 'bg-muted/30',
+            )}
+          >
+            {n}
+          </button>
+        ))}
+      </div>
+
       <section className="space-y-3" aria-labelledby="evo-total">
         <h3 id="evo-total" className="text-base font-semibold">{te('total_title')}</h3>
         <Scrollable count={totals.length}>
@@ -111,6 +143,40 @@ export function EvolutionTab() {
           </BarChart>
         </Scrollable>
         <ChartLegend items={[{ label: te('total_series'), kind: 'bar' }]} note={te('total_legend')} />
+      </section>
+
+      <section className="space-y-3" aria-labelledby="evo-cumulative" data-testid="cumulative-section">
+        <h3 id="evo-cumulative" className="text-base font-semibold">{te('cumulative_title')}</h3>
+        <Scrollable count={cumulative.length}>
+          <LineChart data={cumulative} margin={{ top: 20, right: 24, left: 0, bottom: 0 }}>
+            <CartesianGrid stroke={CHART.grid} vertical={false} />
+            <XAxis dataKey="name" tick={AXIS_TICK} />
+            <YAxis tick={AXIS_TICK} tickFormatter={axisEuros} width={48} />
+            <Tooltip {...TOOLTIP_STYLE} formatter={tooltipLabel} />
+            <Line type="monotone" dataKey="cumul" name={te('cumulative_series')} stroke={CHART.strong} strokeWidth={2.5} dot={{ r: 4, fill: CHART.strong }}>
+              <LabelList dataKey="cumulLabel" position="top" fill={CHART.text} fontSize={12} />
+            </Line>
+          </LineChart>
+        </Scrollable>
+        <table className="sr-only" data-testid="cumulative-table">
+          <thead>
+            <tr>
+              <th>{te('period')}</th>
+              <th>{te('total_series')}</th>
+              <th>{te('cumulative_series')}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {cumulative.map((p, i) => (
+              <tr key={closedEvolution[i].periodId}>
+                <td>{p.name}</td>
+                <td>{p.totalLabel}</td>
+                <td>{p.cumulLabel}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        <ChartLegend items={[{ label: te('cumulative_series'), kind: 'line' }]} note={te('cumulative_legend')} />
       </section>
 
       <section className="space-y-3" aria-labelledby="evo-category">

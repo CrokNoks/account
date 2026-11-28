@@ -247,7 +247,11 @@
         "overrun_mark": "Dépassement",
         "balance_title": "Solde en banque",
         "balance_legend": "Courbe : solde pointé en banque à la fin de chaque période fermée.",
-        "balance_series": "Solde en banque"
+        "balance_series": "Solde en banque",
+        "window_label": "Dernières périodes fermées",
+        "cumulative_title": "Dépenses cumulées",
+        "cumulative_series": "Dépenses cumulées",
+        "cumulative_legend": "Courbe : somme des totaux dépensés (barres ci-dessus) depuis la plus ancienne période affichée, factures en attente comprises."
       },
       "overruns": {
         "category": "Catégorie",
