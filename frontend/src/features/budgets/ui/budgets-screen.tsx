@@ -10,6 +10,8 @@ import { usePeriods } from '../api/use-periods';
 import { PeriodSelect } from '@/features/periods/ui/period-select';
 import { usePeriodBudgets } from '@/features/periods/api/use-period-budgets';
 import { useUpdatePeriodBudgets } from '@/features/periods/api/use-update-period-budgets';
+import { useBudgetTemplates } from '@/features/periods/api/use-budget-templates';
+import { useSaveBudgetTemplates } from '@/features/periods/api/use-save-budget-templates';
 import { useBudgetBreakdown } from '@/features/reporting/api/use-budget-breakdown';
 import { useReportingStats } from '@/features/reporting/api/use-reporting-stats';
 import { overrunAmount } from '@/features/reporting/model/current-overruns';
@@ -25,6 +27,7 @@ import {
   Drafts,
   SavedBudget,
   buildBudgets,
+  buildTemplateItems,
   changedDrafts,
   directionsOf,
   displayValue,
@@ -39,7 +42,7 @@ const NO_BUDGETS: SavedBudget[] = [];
 
 /**
  * Budgets de la période choisie : saisie des montants avec simulation immédiate du prévu.
- * Rien n'est écrit avant « Enregistrer ». Le calcul du prévu est fait par l'API (pas de formule ici).
+ * Rien n'est écrit avant « Enregistrer » ni avant « Montants par défaut » (après confirmation). Le calcul du prévu est fait par l'API (pas de formule ici).
  */
 export function BudgetsScreen() {
   const formatCurrency = useFormatCurrency();
@@ -54,6 +57,8 @@ export function BudgetsScreen() {
   const { data: breakdown, isLoading } = useBudgetBreakdown(activeAccountId, activePeriodId);
   const { data: savedBudgets } = usePeriodBudgets(activeAccountId, activePeriodId);
   const { mutateAsync: saveBudgets, isPending } = useUpdatePeriodBudgets();
+  const { data: templateLines } = useBudgetTemplates(activeAccountId);
+  const { mutateAsync: saveTemplates, isPending: isSavingTemplates } = useSaveBudgetTemplates();
 
   const [drafts, setDrafts] = useState<Drafts>({});
   // Budgets tels que lus à la première saisie : figés tant qu'il y a des saisies (un rechargement en
@@ -170,6 +175,23 @@ export function BudgetsScreen() {
     setBanner(null);
   };
 
+  // Échec d'enregistrement de la période : 409 BUDGETS_CHANGED = relecture et saisies montrées à côté.
+  const onSaveError = async (error: unknown) => {
+    if (isAxiosError(error) && error.response?.status === 409 && error.response.data?.code === 'BUDGETS_CHANGED') {
+      const mine = changed;
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['periods', activePeriodId, 'budgets'] }),
+        queryClient.invalidateQueries({ queryKey: ['reporting'] }),
+      ]);
+      setDrafts({});
+      setFrozen(null);
+      setRejected(mine);
+      setBanner(t('changed_elsewhere'));
+    } else {
+      setBanner(t('save_error'));
+    }
+  };
+
   const onSave = async () => {
     if (submitting.current || !dirty || !activeAccountId || !activePeriodId) return;
     if (hasErrors) {
@@ -187,18 +209,43 @@ export function BudgetsScreen() {
       reset();
       toast.success(t('saved'));
     } catch (error) {
-      if (isAxiosError(error) && error.response?.status === 409 && error.response.data?.code === 'BUDGETS_CHANGED') {
-        const mine = changed;
-        await Promise.all([
-          queryClient.invalidateQueries({ queryKey: ['periods', activePeriodId, 'budgets'] }),
-          queryClient.invalidateQueries({ queryKey: ['reporting'] }),
-        ]);
-        setDrafts({});
-        setFrozen(null);
-        setRejected(mine);
-        setBanner(t('changed_elsewhere'));
-      } else {
-        setBanner(t('save_error'));
+      await onSaveError(error);
+    } finally {
+      submitting.current = false;
+    }
+  };
+
+  // Écrase les montants par défaut du compte avec les budgets de la période, tels qu'enregistrés (saisies
+  // comprises). Les saisies sont d'abord enregistrées ; la configuration n'est écrite qu'après ce succès.
+  const onOverwrite = async () => {
+    if (submitting.current || !activeAccountId || !activePeriodId || !ready || !templateLines || hasErrors) return;
+    if (!confirm(t('overwrite_confirm'))) return;
+    submitting.current = true;
+    setBanner(null);
+    try {
+      if (dirty) {
+        try {
+          await saveBudgets({
+            accountId: activeAccountId,
+            periodId: activePeriodId,
+            data: { budgets: full, expectedBudgets: reference },
+          });
+        } catch (error) {
+          await onSaveError(error);
+          return;
+        }
+      }
+      // Calculée avant reset() : ce sont les budgets de la période enregistrée, pas l'état relu.
+      const items = buildTemplateItems(
+        templateLines.map((l) => l.categoryId),
+        dirty ? full : reference,
+      );
+      if (dirty) reset();
+      try {
+        await saveTemplates({ accountId: activeAccountId, items });
+        toast.success(t('overwritten'));
+      } catch {
+        setBanner(t(dirty ? 'overwrite_partial_error' : 'overwrite_error'));
       }
     } finally {
       submitting.current = false;
@@ -277,6 +324,14 @@ export function BudgetsScreen() {
         <PeriodSelect periods={periods} value={activePeriodId} onChange={onPeriodChange} />
         <PeriodSubtitle period={period} className="text-sm text-muted-foreground" />
         <span className="text-sm text-muted-foreground">{t('budgets_help')}</span>
+        <Button
+          variant="outline"
+          className="min-h-11"
+          onClick={onOverwrite}
+          disabled={!ready || !templateLines || hasErrors || isPending || isSavingTemplates}
+        >
+          {isSavingTemplates ? t('overwriting') : t('overwrite')}
+        </Button>
       </div>
 
       <ClosedPeriodWarning period={period} />

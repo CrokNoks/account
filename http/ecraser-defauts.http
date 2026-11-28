@@ -1,0 +1,179 @@
+# Écraser les montants par défaut depuis une période : la séquence du bouton (PUT budgets, puis PUT budget-templates), CA3 à CA6 et CA8 en réel.
+# Lancement : npx httpyac send --all http/ecraser-defauts.http --var port=<PORT> --var anon=<ANON_KEY de functions/.env ou `supabase status`>
+# (la clé vient de la ligne de commande, jamais du fichier ; les utilisateurs sont jetables, créés par le fichier)
+# La confirmation (CA2), le bouton visible (CA1) et le message d'échec partiel (CA8) sont couverts par les tests du front.
+@baseUrl = http://localhost:{{port}}
+@authUrl = http://127.0.0.1:54321/auth/v1
+
+### A : propriétaire
+# @name a
+POST {{authUrl}}/signup
+apikey: {{anon}}
+Content-Type: application/json
+
+{ "email": "ed-a-{{$timestamp}}@example.com", "password": "Password123!" }
+
+?? status == 200
+
+### B : partage en lecture seule
+# @name b
+POST {{authUrl}}/signup
+apikey: {{anon}}
+Content-Type: application/json
+
+{ "email": "ed-b-{{$timestamp}}@example.com", "password": "Password123!" }
+
+?? status == 200
+
+### Compte
+# @name account
+POST {{baseUrl}}/accounts
+Authorization: Bearer {{a.access_token}}
+Content-Type: application/json
+
+{ "name": "ed-{{$timestamp}}", "initialBalance": "0" }
+
+?? status == 201
+
+### Partage en lecture à B
+POST {{baseUrl}}/accounts/{{account.id}}/shares
+Authorization: Bearer {{a.access_token}}
+Content-Type: application/json
+
+{ "email": "{{b.user.email}}", "permission": "read" }
+
+?? status == 201
+
+### Catégorie Courses
+# @name cat1
+POST {{baseUrl}}/{{account.id}}/categories
+Authorization: Bearer {{a.access_token}}
+Content-Type: application/json
+
+{ "name": "Courses", "color": "#112233", "type": "expense" }
+
+?? status == 201
+
+### Catégorie Loyer
+# @name cat2
+POST {{baseUrl}}/{{account.id}}/categories
+Authorization: Bearer {{a.access_token}}
+Content-Type: application/json
+
+{ "name": "Loyer", "color": "#445566", "type": "expense" }
+
+?? status == 201
+
+### Catégorie Sport (sans budget dans la période)
+# @name cat3
+POST {{baseUrl}}/{{account.id}}/categories
+Authorization: Bearer {{a.access_token}}
+Content-Type: application/json
+
+{ "name": "Sport", "color": "#778899", "type": "expense" }
+
+?? status == 201
+
+### Montants par défaut de départ : Courses 1000, Sport 7000
+PUT {{baseUrl}}/{{account.id}}/budget-templates
+Authorization: Bearer {{a.access_token}}
+Content-Type: application/json
+
+{ "items": [
+  { "categoryId": "{{cat1.id}}", "amount": "1000" },
+  { "categoryId": "{{cat3.id}}", "amount": "7000" }
+] }
+
+?? status == 204
+
+### Période (Courses 20000, Loyer -5000 : sens sortant conservé, Sport absent)
+# @name per
+POST {{baseUrl}}/{{account.id}}/periods
+Authorization: Bearer {{a.access_token}}
+Content-Type: application/json
+
+{ "startDate": "2026-11-01", "endDate": "2026-11-30", "budgets": [
+  { "categoryId": "{{cat1.id}}", "amountAllocated": "20000" },
+  { "categoryId": "{{cat2.id}}", "amountAllocated": "-5000" }
+] }
+
+?? status == 201
+
+### Étape 1 (CA3) : la saisie Courses 30000 est enregistrée dans la période, avec expectedBudgets
+PUT {{baseUrl}}/{{account.id}}/periods/{{per.id}}/budgets
+Authorization: Bearer {{a.access_token}}
+Content-Type: application/json
+
+{ "budgets": [
+  { "categoryId": "{{cat1.id}}", "amountAllocated": "30000" },
+  { "categoryId": "{{cat2.id}}", "amountAllocated": "-5000" }
+], "expectedBudgets": [
+  { "categoryId": "{{cat1.id}}", "amountAllocated": "20000" },
+  { "categoryId": "{{cat2.id}}", "amountAllocated": "-5000" }
+] }
+
+?? status == 200
+
+### Étape 2 (CA3, CA4, CA5) : une ligne par catégorie du compte ; Sport (sans budget) passe à 0, Loyer garde son signe
+PUT {{baseUrl}}/{{account.id}}/budget-templates
+Authorization: Bearer {{a.access_token}}
+Content-Type: application/json
+
+{ "items": [
+  { "categoryId": "{{cat1.id}}", "amount": "30000" },
+  { "categoryId": "{{cat2.id}}", "amount": "-5000" },
+  { "categoryId": "{{cat3.id}}", "amount": "0" }
+] }
+
+?? status == 204
+
+### Relecture des montants par défaut
+GET {{baseUrl}}/{{account.id}}/budget-templates
+Authorization: Bearer {{a.access_token}}
+
+?? status == 200
+?? js response.parsedBody.length == 3
+?? js (response.parsedBody.find(c => c.name === "Courses").amount === "30000") == true
+?? js (response.parsedBody.find(c => c.name === "Loyer").amount === "-5000") == true
+?? js (response.parsedBody.find(c => c.name === "Sport").amount === "0") == true
+?? js response.parsedBody.find(c => c.name === "Sport").isProposal == false
+
+### CA8 : les budgets de la période déjà créée ne changent pas
+GET {{baseUrl}}/{{account.id}}/periods/{{per.id}}/budgets
+Authorization: Bearer {{a.access_token}}
+
+?? status == 200
+?? js response.parsedBody.length == 2
+?? js response.parsedBody.some(x => x.amountAllocated === "30000") == true
+
+### CA7 : l'enregistrement de la période échoue (expectedBudgets périmé) : 409, rien à écrire ensuite
+PUT {{baseUrl}}/{{account.id}}/periods/{{per.id}}/budgets
+Authorization: Bearer {{a.access_token}}
+Content-Type: application/json
+
+{ "budgets": [
+  { "categoryId": "{{cat1.id}}", "amountAllocated": "99900" },
+  { "categoryId": "{{cat2.id}}", "amountAllocated": "-5000" }
+], "expectedBudgets": [
+  { "categoryId": "{{cat1.id}}", "amountAllocated": "20000" },
+  { "categoryId": "{{cat2.id}}", "amountAllocated": "-5000" }
+] }
+
+?? status == 409
+?? body contains "BUDGETS_CHANGED"
+
+### CA7 : les montants par défaut n'ont pas bougé
+GET {{baseUrl}}/{{account.id}}/budget-templates
+Authorization: Bearer {{a.access_token}}
+
+?? status == 200
+?? js (response.parsedBody.find(c => c.name === "Courses").amount === "30000") == true
+
+### CA7 : B (lecture seule) ne peut écrire ni la période ni les montants par défaut
+PUT {{baseUrl}}/{{account.id}}/budget-templates
+Authorization: Bearer {{b.access_token}}
+Content-Type: application/json
+
+{ "items": [ { "categoryId": "{{cat1.id}}", "amount": "1" } ] }
+
+?? status == 403

@@ -787,6 +787,12 @@
     "changed_elsewhere": "The budgets of this period changed since the screen was opened (by someone else). Nothing was saved: the saved amounts are reloaded, your inputs are shown next to them for reference.",
     "your_input": "Your input: {value}",
     "simulation_error": "Simulation unavailable: the forecast shown is not up to date.",
+    "overwrite": "Save as default amounts",
+    "overwriting": "Writing…",
+    "overwrite_confirm": "The default amounts of all categories will be replaced by this period's budgets (0 for a category without a budget). Your current entries will first be saved in the period. Periods already created do not change. Continue?",
+    "overwritten": "Default amounts updated",
+    "overwrite_partial_error": "The period is saved, but the default amounts were not updated. Click again to retry.",
+    "overwrite_error": "The default amounts were not updated. Try again.",
     "discard_confirm": "You have unsaved budgets. Discard them?"
   }
 }

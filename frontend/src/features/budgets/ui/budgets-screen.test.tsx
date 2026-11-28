@@ -42,6 +42,17 @@ const simResult = {
 const simState = { data: undefined as unknown, isStale: false, isError: false };
 const simCalls: Array<{ budgets: Array<{ categoryId: string; amountAllocated: string }>; enabled: boolean }> = [];
 const saveMock = vi.fn();
+const saveTemplatesMock = vi.fn();
+const templatesState = {
+  data: [
+    { categoryId: 'e1', name: 'Loisirs', amount: '0', isProposal: false },
+    { categoryId: 'e2', name: 'Courses', amount: '0', isProposal: false },
+    { categoryId: 'e3', name: 'Cadeaux', amount: '500', isProposal: false },
+    { categoryId: 's1', name: 'Livret', amount: '0', isProposal: false },
+    { categoryId: 'i1', name: 'Salaire', amount: '0', isProposal: false },
+  ] as unknown[] | undefined,
+};
+const periodState = { periods: undefined as unknown, saved: undefined as unknown };
 const setPeriod = vi.fn();
 const toastSuccess = vi.fn();
 
@@ -49,12 +60,16 @@ const toastSuccess = vi.fn();
 vi.mock('@/features/accounts/model/use-account-store', () => ({
   useAccountStore: () => ({ activeAccountId: 'a', activePeriodId: 'p0', setActivePeriodId: setPeriod }),
 }));
-vi.mock('../api/use-periods', () => ({ usePeriods: () => ({ data: periods }) }));
+vi.mock('../api/use-periods', () => ({ usePeriods: () => ({ data: periodState.periods ?? periods }) }));
+vi.mock('@/features/periods/api/use-budget-templates', () => ({ useBudgetTemplates: () => ({ data: templatesState.data }) }));
+vi.mock('@/features/periods/api/use-save-budget-templates', () => ({
+  useSaveBudgetTemplates: () => ({ mutateAsync: saveTemplatesMock, isPending: false }),
+}));
 vi.mock('@/features/reporting/api/use-reporting-stats', () => ({ useReportingStats: () => ({ data: stats }) }));
 vi.mock('@/features/reporting/api/use-budget-breakdown', () => ({
   useBudgetBreakdown: () => ({ data: breakdown, isLoading: false }),
 }));
-vi.mock('@/features/periods/api/use-period-budgets', () => ({ usePeriodBudgets: () => ({ data: saved }) }));
+vi.mock('@/features/periods/api/use-period-budgets', () => ({ usePeriodBudgets: () => ({ data: periodState.saved ?? saved }) }));
 vi.mock('@/features/periods/api/use-update-period-budgets', () => ({
   useUpdatePeriodBudgets: () => ({ mutateAsync: saveMock, isPending: false }),
 }));
@@ -82,6 +97,16 @@ describe('BudgetsScreen', () => {
     simState.isError = false;
     simCalls.length = 0;
     saveMock.mockReset().mockResolvedValue([]);
+    saveTemplatesMock.mockReset().mockResolvedValue(undefined);
+    periodState.periods = undefined;
+    periodState.saved = undefined;
+    templatesState.data = [
+      { categoryId: 'e1', name: 'Loisirs', amount: '0', isProposal: false },
+      { categoryId: 'e2', name: 'Courses', amount: '0', isProposal: false },
+      { categoryId: 'e3', name: 'Cadeaux', amount: '500', isProposal: false },
+      { categoryId: 's1', name: 'Livret', amount: '0', isProposal: false },
+      { categoryId: 'i1', name: 'Salaire', amount: '0', isProposal: false },
+    ];
     setPeriod.mockReset();
     toastSuccess.mockReset();
   });
@@ -630,6 +655,158 @@ describe('BudgetsScreen', () => {
       });
       expect(field('Loisirs').value).toBe('20');
       expect(screen.queryByTestId('rejected-input')).toBeNull();
+    });
+  });
+
+  describe('Montants par défaut (écraser depuis la période)', () => {
+    const click = async () => {
+      await act(async () => {
+        fireEvent.click(screen.getByText('Enregistrer comme montants par défaut'));
+      });
+    };
+    const confirmWith = (answer: boolean) => vi.spyOn(window, 'confirm').mockReturnValue(answer);
+    const savedItems = [
+      { categoryId: 'e1', amount: '10000' },
+      { categoryId: 'e2', amount: '50000' },
+      { categoryId: 'e3', amount: '0' },
+      { categoryId: 's1', amount: '10000' },
+      { categoryId: 'i1', amount: '250000' },
+    ];
+
+    it('le bouton est visible sans saisie', () => {
+      renderScreen();
+      expect((screen.getByText('Enregistrer comme montants par défaut') as HTMLButtonElement).disabled).toBe(false);
+    });
+
+    it('confirmation refusée : rien n\'est écrit, les saisies restent', async () => {
+      const ask = confirmWith(false);
+      renderScreen();
+      type('Loisirs', '20');
+      await click();
+      expect(ask).toHaveBeenCalledTimes(1);
+      expect(saveMock).not.toHaveBeenCalled();
+      expect(saveTemplatesMock).not.toHaveBeenCalled();
+      expect(field('Loisirs').value).toBe('20');
+    });
+
+    it('sans saisie : seule la configuration est écrite, absent = 0', async () => {
+      confirmWith(true);
+      renderScreen();
+      await click();
+      expect(saveMock).not.toHaveBeenCalled();
+      expect(saveTemplatesMock).toHaveBeenCalledWith({ accountId: 'a', items: savedItems });
+      await waitFor(() => expect(toastSuccess).toHaveBeenCalledWith('Montants par défaut mis à jour'));
+    });
+
+    it('avec saisies : la période est enregistrée (expectedBudgets), puis la configuration reçoit les saisies', async () => {
+      confirmWith(true);
+      const order: string[] = [];
+      let release: () => void = () => {};
+      saveMock.mockImplementation(() => {
+        order.push('budgets');
+        return new Promise<void>((r) => (release = r));
+      });
+      saveTemplatesMock.mockImplementation(async () => {
+        order.push('templates');
+      });
+      renderScreen();
+      type('Loisirs', '20');
+      await click();
+      expect(saveMock.mock.calls[0][0].data.expectedBudgets).toHaveLength(4);
+      expect(saveTemplatesMock).not.toHaveBeenCalled();
+      await act(async () => release());
+      expect(order).toEqual(['budgets', 'templates']);
+      expect(saveTemplatesMock.mock.calls[0][0].items).toEqual([{ categoryId: 'e1', amount: '2000' }, ...savedItems.slice(1)]);
+      expect(screen.queryByText('Enregistrer')).toBeNull();
+    });
+
+    it('un virement sortant et un budget négatif gardent leur signe', async () => {
+      confirmWith(true);
+      periodState.saved = [
+        { id: 'b1', categoryId: 'e1', amountAllocated: '-5000' },
+        { id: 'b2', categoryId: 'e2', amountAllocated: '-300' },
+      ];
+      renderScreen();
+      await click();
+      expect(saveTemplatesMock.mock.calls[0][0].items.slice(0, 2)).toEqual([
+        { categoryId: 'e1', amount: '-5000' },
+        { categoryId: 'e2', amount: '-300' },
+      ]);
+    });
+
+    it('échec de l\'enregistrement (500) : la configuration n\'est pas touchée', async () => {
+      confirmWith(true);
+      saveMock.mockRejectedValue(new AxiosError('boom', '500', undefined, undefined, { status: 500, data: {} } as never));
+      renderScreen();
+      type('Loisirs', '20');
+      await click();
+      expect(saveTemplatesMock).not.toHaveBeenCalled();
+      expect(screen.getByTestId('budgets-banner').textContent).toContain('a échoué');
+      expect(field('Loisirs').value).toBe('20');
+    });
+
+    it('409 BUDGETS_CHANGED : message habituel, configuration non touchée', async () => {
+      confirmWith(true);
+      saveMock.mockRejectedValue(
+        new AxiosError('conflict', '409', undefined, undefined, { status: 409, data: { code: 'BUDGETS_CHANGED' } } as never),
+      );
+      renderScreen();
+      type('Loisirs', '20');
+      await click();
+      expect(saveTemplatesMock).not.toHaveBeenCalled();
+      expect(screen.getByTestId('budgets-banner').textContent).toContain('ont changé');
+    });
+
+    it('échec de la configuration : message « période enregistrée », un nouveau clic réessaie', async () => {
+      confirmWith(true);
+      saveTemplatesMock.mockRejectedValueOnce(new Error('boom'));
+      renderScreen();
+      type('Loisirs', '20');
+      await click();
+      expect(saveMock).toHaveBeenCalledTimes(1);
+      expect(screen.getByTestId('budgets-banner').textContent).toContain('La période est enregistrée');
+      await click();
+      expect(saveMock).toHaveBeenCalledTimes(1);
+      expect(saveTemplatesMock).toHaveBeenCalledTimes(2);
+      expect(screen.queryByTestId('budgets-banner')).toBeNull();
+    });
+
+    it('période clôturée : même séquence, l\'avertissement reste affiché', async () => {
+      confirmWith(true);
+      renderScreen();
+      await click();
+      expect(saveTemplatesMock).toHaveBeenCalledTimes(1);
+      expect(screen.getByText(/période est fermée/)).toBeTruthy();
+    });
+
+    it('catégories du compte non chargées : bouton désactivé, rien écrit', async () => {
+      const ask = confirmWith(true);
+      templatesState.data = undefined;
+      renderScreen();
+      expect((screen.getByText('Enregistrer comme montants par défaut') as HTMLButtonElement).disabled).toBe(true);
+      await click();
+      expect(ask).not.toHaveBeenCalled();
+      expect(saveTemplatesMock).not.toHaveBeenCalled();
+    });
+
+    it('saisie invalide : bouton désactivé', () => {
+      renderScreen();
+      type('Loisirs', 'abc');
+      expect((screen.getByText('Enregistrer comme montants par défaut') as HTMLButtonElement).disabled).toBe(true);
+    });
+
+    it('double clic : une seule séquence', async () => {
+      confirmWith(true);
+      let release: () => void = () => {};
+      saveMock.mockImplementation(() => new Promise<void>((r) => (release = r)));
+      renderScreen();
+      type('Loisirs', '20');
+      const button = screen.getByText('Enregistrer comme montants par défaut');
+      fireEvent.click(button);
+      fireEvent.click(button);
+      await act(async () => release());
+      expect(saveMock).toHaveBeenCalledTimes(1);
+      expect(saveTemplatesMock).toHaveBeenCalledTimes(1);
     });
   });
 

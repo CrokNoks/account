@@ -787,6 +787,12 @@
     "changed_elsewhere": "Les budgets de cette période ont changé depuis l'ouverture de l'écran (par une autre personne). Rien n'a été enregistré : les montants enregistrés sont rechargés, vos saisies s'affichent à côté à titre indicatif.",
     "your_input": "Votre saisie : {value}",
     "simulation_error": "Simulation indisponible : le prévu affiché n'est pas à jour.",
+    "overwrite": "Enregistrer comme montants par défaut",
+    "overwriting": "Écriture…",
+    "overwrite_confirm": "Les montants par défaut de toutes les catégories seront remplacés par les budgets de cette période (0 pour une catégorie sans budget). Vos saisies en cours seront d'abord enregistrées dans la période. Les périodes déjà créées ne changent pas. Continuer ?",
+    "overwritten": "Montants par défaut mis à jour",
+    "overwrite_partial_error": "La période est enregistrée, mais les montants par défaut n'ont pas été mis à jour. Cliquez de nouveau pour réessayer.",
+    "overwrite_error": "Les montants par défaut n'ont pas été mis à jour. Réessayez.",
     "discard_confirm": "Vous avez des budgets non enregistrés. Les abandonner ?"
   }
 }
