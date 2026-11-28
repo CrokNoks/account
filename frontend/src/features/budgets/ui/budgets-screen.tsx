@@ -152,13 +152,11 @@ export function BudgetsScreen() {
     const base = frozen ?? reference;
     const next = { ...drafts, [categoryId]: text };
     if (!frozen) setFrozen(base);
-    if (!dirtyAfter(base, next)) {
-      // tout est revenu à l'enregistré : on reprend l'enregistré courant
-      setDrafts({});
-      setFrozen(null);
-      return;
-    }
+    // Le texte tapé est toujours gardé : un montant qui redonne l'enregistré après arrondi (« 100,001 » pour
+    // 100,00) n'est pas un changement, mais effacer la saisie ferait disparaître le chiffre tapé.
     setDrafts(next);
+    // tout est revenu à l'enregistré : on reprend l'enregistré courant
+    if (!dirtyAfter(base, next)) setFrozen(null);
   };
 
   const onPeriodChange = (id: string) => {

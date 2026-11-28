@@ -133,6 +133,15 @@ describe('BudgetsScreen', () => {
     }
   });
 
+  it('un chiffre tapé à la fin du montant affiché reste dans le champ, même si l\'arrondi redonne l\'enregistré (clavier Android : pas de sélection)', () => {
+    renderScreen('fr');
+    type('Loisirs', '100,001');
+    expect(field('Loisirs').value).toBe('100,001');
+    type('Loisirs', '100,0012');
+    expect(field('Loisirs').value).toBe('100,0012');
+    expect(screen.queryByText('Enregistrer')).toBeNull();
+  });
+
   it('shows forecast, planned income and total budgeted', () => {
     renderScreen();
     const text = nbsp(document.body.textContent!);
